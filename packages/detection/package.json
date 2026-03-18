@@ -1,0 +1,24 @@
+{
+  "name": "@securegpt/detection",
+  "version": "1.0.0",
+  "description": "SecureGPT detection engine — regex, NER, OCR tiers",
+  "main": "./src/pipeline.ts",
+  "types": "./src/pipeline.ts",
+  "exports": {
+    ".": "./src/pipeline.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@securegpt/shared": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

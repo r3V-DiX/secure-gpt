@@ -1,0 +1,100 @@
+/* ─────────────────────────────────────────────
+   SecureGPT Extension — Global Styles
+   Design tokens + base reset
+───────────────────────────────────────────── */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand */
+  --sg-primary: #1a56db;
+  --sg-primary-hover: #1648c0;
+  --sg-primary-light: #e8f0fe;
+
+  /* Severity */
+  --sg-block: #dc2626;
+  --sg-block-bg: #fef2f2;
+  --sg-mask: #d97706;
+  --sg-mask-bg: #fffbeb;
+  --sg-warn: #ea580c;
+  --sg-warn-bg: #fff7ed;
+  --sg-allow: #2563eb;
+  --sg-allow-bg: #eff6ff;
+  --sg-success: #16a34a;
+  --sg-success-bg: #f0fdf4;
+
+  /* Neutral */
+  --sg-gray-50: #f9fafb;
+  --sg-gray-100: #f3f4f6;
+  --sg-gray-200: #e5e7eb;
+  --sg-gray-300: #d1d5db;
+  --sg-gray-400: #9ca3af;
+  --sg-gray-500: #6b7280;
+  --sg-gray-600: #4b5563;
+  --sg-gray-700: #374151;
+  --sg-gray-800: #1f2937;
+  --sg-gray-900: #111827;
+
+  /* Typography */
+  --sg-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  --sg-font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+
+  /* Radius */
+  --sg-radius-sm: 4px;
+  --sg-radius: 8px;
+  --sg-radius-lg: 12px;
+  --sg-radius-xl: 16px;
+
+  /* Shadow */
+  --sg-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --sg-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+  --sg-shadow-lg: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--sg-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--sg-gray-800);
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--sg-gray-300); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--sg-gray-400); }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--sg-primary);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+.animate-slide-up { animation: slide-up 0.25s ease-out; }

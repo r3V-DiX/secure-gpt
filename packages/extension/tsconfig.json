@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["chrome", "vite/client"],
+    "paths": {
+      "@securegpt/shared": ["../shared/src/index.ts"],
+      "@securegpt/shared/*": ["../shared/src/*"],
+      "@securegpt/detection": ["../detection/src/pipeline.ts"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests"]
+}

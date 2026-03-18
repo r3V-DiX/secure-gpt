@@ -1,0 +1,40 @@
+// ─────────────────────────────────────────────
+// Content Script — Entry Point
+// Injected into every LLM page
+// ─────────────────────────────────────────────
+
+import { setupInterceptor } from './interceptor'
+import { policyStorage, stateStorage } from '@/lib/storage/storage'
+import { DEFAULT_EXTENSION_CONFIG } from '@/config/defaults.config'
+
+async function init() {
+  // Check if extension is active
+  const isActive = await stateStorage.isActive()
+  if (!isActive) return
+
+  // Load policy — fall back to defaults
+  const policy = (await policyStorage.getPolicy()) ?? DEFAULT_EXTENSION_CONFIG
+
+  // Start intercepting submit events
+  setupInterceptor(policy)
+
+  // Listen for policy updates from background
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'POLICY_UPDATED' && message.policy) {
+      setupInterceptor(message.policy)
+    }
+    if (message.type === 'EXTENSION_PAUSED') {
+      teardown()
+    }
+    if (message.type === 'EXTENSION_RESUMED') {
+      void init()
+    }
+  })
+}
+
+function teardown() {
+  // Remove all injected banners and listeners
+  document.querySelectorAll('[data-securegpt]').forEach((el) => el.remove())
+}
+
+void init()
