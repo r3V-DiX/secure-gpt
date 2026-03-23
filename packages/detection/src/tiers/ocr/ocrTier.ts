@@ -1,33 +1,65 @@
 // ─────────────────────────────────────────────
 // Tier 3 — OCR (Image Text Extraction)
-// STUB — AI dev will implement this
+// Extracts text from images and runs detection
 // ─────────────────────────────────────────────
 
 import { BaseTier } from '../base-tier'
+import { getOcrWorker } from './ocrWorker'
+import { classifyDocument } from './ocrUtils'
 import type { PIIEntity } from '@securegpt/shared/types'
 import type { PIIConfig } from '@securegpt/shared/types'
+import { normalizeText } from '@securegpt/shared/utils/detection-helpers'
 
 export class OCRTier extends BaseTier {
   readonly name = 'ocr' as const
-  readonly enabled = false // disabled until AI dev implements
+  readonly enabled = true
 
-  async initialize(): Promise<void> {
-    // TODO (AI dev):
-    // 1. Initialize Tesseract.js WASM engine via ocrWorker.ts
-    // 2. Load eng.traineddata language pack
-    // 3. Keep engine warm between calls
-    console.warn('[OCRTier] Not yet implemented — skipping OCR tier')
+  override async initialize(): Promise<void> {
+    await getOcrWorker()
   }
 
-  async run(_text: string, _config: PIIConfig): Promise<PIIEntity[]> {
-    // TODO (AI dev):
-    // NOTE: For OCR, input is not text but an image (base64 or ImageData)
-    // The pipeline will need to handle image inputs separately
-    // 1. Send image to ocrWorker via chrome offscreen document
-    // 2. Receive extracted text back
-    // 3. Run RegexTier on extracted text
-    // 4. Optionally run NERTier on extracted text
-    // 5. Return combined entities with tier = 'ocr'
+  /**
+   * For OCR, the pipeline handles the image input.
+   * This method runs when text extracted from an image needs additional processing.
+   */
+  async run(text: string, _config: PIIConfig): Promise<PIIEntity[]> {
+    if (!text || text.trim().length === 0) return []
+    
+    // The OCR detection is usually triggered by detectPIIFromImage which runs
+    // its own logic. This run() method can be used if OCR is treated as a 
+    // text-processing tier on extracted text.
     return []
+  }
+
+  /**
+   * Specialized method for image-based detection.
+   * Called by the pipeline when an image is processed.
+   */
+  async runOnImage(imageUrl: string, _config: PIIConfig): Promise<{
+    rawText: string
+    entities: PIIEntity[]
+  }> {
+    const worker = await getOcrWorker()
+    if (!worker) return { rawText: '', entities: [] }
+
+    try {
+      console.info('[OCRTier] Processing image...')
+      const { data } = await worker.recognize(imageUrl)
+      const rawText = normalizeText(data.text)
+      
+      if (!rawText) return { rawText: '', entities: [] }
+
+      // Document classification
+      classifyDocument(rawText)
+
+      // In the pipeline, we run RegexTier and NERTier on the extracted rawText.
+      // This is handled by detectPIIFromImage in pipeline.ts.
+      
+      return { rawText, entities: [] } // Entities will be filled by pipeline
+
+    } catch (err) {
+      console.error('[OCRTier] OCR failed:', (err as Error).message)
+      return { rawText: '', entities: [] }
+    }
   }
 }

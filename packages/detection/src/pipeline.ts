@@ -81,19 +81,39 @@ export async function detectPII(
 // ─── OCR entry point (image input) ────────────
 // Called separately when user pastes an image
 export async function detectPIIFromImage(
-  _imageData: string,
-  _config: PIIConfig
+  imageData: string,
+  config: PIIConfig
 ): Promise<DetectionResult> {
   const startTime = performance.now()
 
-  // TODO: OCR tier not yet implemented
-  // When AI dev implements OCRTier:
-  // 1. Pass imageData to ocrTier.run()
-  // 2. OCR tier extracts text internally
-  // 3. Runs regex + NER on extracted text
-  // 4. Returns entities with tier = 'ocr'
+  if (!ocrTier.enabled) {
+    return buildResult([], 'ocr', startTime, '')
+  }
 
-  return buildResult([], 'ocr', startTime, '')
+  // Initialize tiers
+  await initializePipeline()
+
+  // 1. Extract text via OCR
+  const { rawText } = await ocrTier.runOnImage(imageData, config)
+  
+  if (!rawText) {
+    return buildResult([], 'ocr', startTime, '')
+  }
+
+  // 2. Run Regex and NER on extracted text
+  const [regexEntities, nerEntities] = await Promise.all([
+    regexTier.run(rawText, config),
+    nerTier.run(rawText, config),
+  ])
+
+  // 3. Merge results and tag as OCR tier
+  const merged = mergeEntities(regexEntities, nerEntities, [])
+  const ocrEntities = merged.map(e => ({ ...e, tier: 'ocr' as const }))
+
+  // Apply allowlist
+  const filtered = applyAllowlist(ocrEntities, config)
+
+  return buildResult(filtered, 'ocr', startTime, rawText)
 }
 
 // ─── Helpers ──────────────────────────────────

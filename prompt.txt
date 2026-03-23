@@ -1,0 +1,22 @@
+You are a senior software engineer.
+
+I have an MVP project in this directory: /home/anshuldying/rivedix_internshhip/secureGPT
+I also have a target org repository here: /home/anshuldying/rivedix_internshhip/secure-gpt (current)
+
+Task:
+- Analyze the MVP codebase
+- Extract ONLY the core business logic (no UI, no styling, no experimental code)
+- Refactor it into clean, modular, production-ready code
+- Follow best practices (separation of concerns, naming, structure)
+
+Output:
+- Place the logic into appropriate folders/files in the org repo
+- Create any necessary service/helper modules
+- Do NOT include unnecessary dependencies
+- Add brief comments explaining key logic
+
+Constraints:
+- Keep it minimal and clean
+- Avoid duplication
+- Preserve functionality exactly
+    

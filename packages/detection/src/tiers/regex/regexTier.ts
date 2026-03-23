@@ -10,15 +10,19 @@ import { luhnCheck } from '../../validators/luhn.validator'
 import { verhoeffCheck } from '../../validators/verhoeff.validator'
 import { panCheck } from '../../validators/pan.validator'
 import { DETECTION_TYPE_TO_TOKEN, MASKING_TOKENS } from '@securegpt/shared/constants'
+import { getSlidingWindow } from '@securegpt/shared/utils/detection-helpers'
 import type { PIIEntity } from '@securegpt/shared/types'
 import type { PIIConfig } from '@securegpt/shared/types'
 import { v4 as uuidv4 } from 'uuid'
+import { CONTEXT_TRIGGERS } from '@securegpt/shared/utils/detection-helpers'
 
 const VALIDATORS: Record<string, (value: string) => boolean> = {
   luhn: luhnCheck,
   verhoeff: verhoeffCheck,
   pan: panCheck,
 }
+
+const ALL_TRIGGERS = Object.values(CONTEXT_TRIGGERS).flat()
 
 export class RegexTier extends BaseTier {
   readonly name = 'regex' as const
@@ -40,7 +44,8 @@ export class RegexTier extends BaseTier {
       let match: RegExpExecArray | null
 
       while ((match = rule.pattern.exec(text)) !== null) {
-        const value = match[0]
+        // Handle patterns that might use capture groups (extracted from MVP)
+        const value = match[1] ?? match[0]
 
         // Skip empty matches
         if (!value || value.trim().length === 0) continue
@@ -51,14 +56,28 @@ export class RegexTier extends BaseTier {
           continue
         }
 
+        // Context-gated patterns (extracted from MVP)
+        if (rule.requireContext) {
+          const context = getSlidingWindow(text, match.index, 100).toLowerCase()
+          if (!ALL_TRIGGERS.some(t => context.includes(t.toLowerCase()))) {
+            continue
+          }
+        }
+
         // Run validator if rule requires it
         if (rule.validatorId) {
           const validator = VALIDATORS[rule.validatorId]
-          if (validator && !validator(value)) continue
+          if (validator && !validator(value)) {
+            // If validation fails, backtrack tocatch overlapping candidates
+            rule.pattern.lastIndex = match.index + 1
+            continue
+          }
         }
 
         const maskedValue =
           DETECTION_TYPE_TO_TOKEN[rule.type] ?? MASKING_TOKENS.GENERIC
+
+        const start = match.index + (match[0].indexOf(value))
 
         entities.push({
           id: uuidv4(),
@@ -66,8 +85,8 @@ export class RegexTier extends BaseTier {
           category: rule.category,
           value,
           maskedValue,
-          startIndex: match.index,
-          endIndex: match.index + value.length,
+          startIndex: start,
+          endIndex: start + value.length,
           confidence: rule.validatorId ? 0.99 : 0.85,
           severity: rule.severity,
           tier: 'regex',

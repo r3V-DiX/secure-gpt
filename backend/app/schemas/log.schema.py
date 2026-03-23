@@ -2,9 +2,10 @@
 # Log Schemas
 # ─────────────────────────────────────────────
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from typing import Optional
+import re
 
 
 class AuditLogEventSchema(BaseModel):
@@ -25,6 +26,26 @@ class AuditLogEventSchema(BaseModel):
     os_platform: str
     browser: str
     acknowledged: bool = False
+
+    @field_validator("llm_platform")
+    @classmethod
+    def sanitize_platform(cls, v: str) -> str:
+        """Strip any path components and normalize hostname."""
+        return v.split("/")[0].lower()
+
+    @field_validator("detection_type")
+    @classmethod
+    def no_pii_values(cls, v: str) -> str:
+        """
+        Reject submissions that look like they contain raw PII rather than
+        entity type labels (e.g. 'PAN_CARD', 'EMAIL').
+        """
+        pattern = re.compile(r"^[A-Z0-9_]{1,100}$")
+        if not pattern.match(v):
+            raise ValueError(
+                f"detection_type must be an uppercase type label only, got: {v!r}"
+            )
+        return v
 
 
 class LogBatchRequest(BaseModel):

@@ -13,6 +13,7 @@ export interface DetectionRule {
   label: string                 // human readable label
   pattern: RegExp               // regex pattern
   validatorId?: string          // optional: 'luhn' | 'verhoeff' | 'pan'
+  requireContext?: boolean      // if true, only flag when a context trigger is nearby
   severity: Severity
   enabled: boolean
   description: string

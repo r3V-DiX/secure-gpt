@@ -39,3 +39,7 @@ cryptography==42.0.7
 # Utilities
 python-dotenv==1.0.1
 uuid==1.30
+
+# Redaction (extracted from MVP)
+pdf2image==1.17.0
+Pillow==10.3.0

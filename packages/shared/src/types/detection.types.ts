@@ -2,7 +2,7 @@
 // Detection Types
 // ─────────────────────────────────────────────
 
-import type { PIICategory, PolicyAction } from '../constants/pii-categories.constants'
+import type { PIICategory } from '../constants/pii-categories.constants'
 
 export type DetectionTier = 'regex' | 'ner' | 'ocr'
 
