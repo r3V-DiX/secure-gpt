@@ -14,6 +14,7 @@ export interface DetectionRule {
   pattern: RegExp               // regex pattern
   validatorId?: string          // optional: 'luhn' | 'verhoeff' | 'pan'
   requireContext?: boolean      // if true, only flag when a context trigger is nearby
+  triggers?: string[]           // optional: specific trigger words for this rule
   severity: Severity
   enabled: boolean
   description: string

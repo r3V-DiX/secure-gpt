@@ -19,6 +19,7 @@ export interface PIIEntity {
   confidence: number            // 0.0 - 1.0
   severity: Severity
   tier: DetectionTier           // which tier detected it
+  bboxes?: Array<{ x0: number; y0: number; x1: number; y1: number }> // For OCR-based masking
 }
 
 export interface DetectionResult {

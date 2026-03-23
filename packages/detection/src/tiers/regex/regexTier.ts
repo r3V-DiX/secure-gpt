@@ -22,7 +22,7 @@ const VALIDATORS: Record<string, (value: string) => boolean> = {
   pan: panCheck,
 }
 
-const ALL_TRIGGERS = Object.values(CONTEXT_TRIGGERS).flat()
+// const ALL_TRIGGERS = Object.values(CONTEXT_TRIGGERS).flat()
 
 export class RegexTier extends BaseTier {
   readonly name = 'regex' as const
@@ -56,10 +56,16 @@ export class RegexTier extends BaseTier {
           continue
         }
 
-        // Context-gated patterns (extracted from MVP)
+        // Context-gated patterns
         if (rule.requireContext) {
           const context = getSlidingWindow(text, match.index, 100).toLowerCase()
-          if (!ALL_TRIGGERS.some(t => context.includes(t.toLowerCase()))) {
+          
+          // Use specific triggers if defined, otherwise fall back to category triggers
+          const triggers = rule.triggers ?? 
+            CONTEXT_TRIGGERS[rule.category.toLowerCase()] ?? 
+            []
+            
+          if (!triggers.some(t => context.includes(t.toLowerCase()))) {
             continue
           }
         }

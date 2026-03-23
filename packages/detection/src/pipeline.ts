@@ -94,7 +94,7 @@ export async function detectPIIFromImage(
   await initializePipeline()
 
   // 1. Extract text via OCR
-  const { rawText } = await ocrTier.runOnImage(imageData, config)
+  const { rawText, ocrData, severityFloor } = await ocrTier.runOnImage(imageData, config)
   
   if (!rawText) {
     return buildResult([], 'ocr', startTime, '')
@@ -106,9 +106,9 @@ export async function detectPIIFromImage(
     nerTier.run(rawText, config),
   ])
 
-  // 3. Merge results and tag as OCR tier
+  // 3. Merge results and map to BBOXes
   const merged = mergeEntities(regexEntities, nerEntities, [])
-  const ocrEntities = merged.map(e => ({ ...e, tier: 'ocr' as const }))
+  const ocrEntities = ocrTier.mapEntitiesToBboxes(merged, ocrData, rawText, severityFloor)
 
   // Apply allowlist
   const filtered = applyAllowlist(ocrEntities, config)

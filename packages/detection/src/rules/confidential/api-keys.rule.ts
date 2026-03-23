@@ -77,4 +77,14 @@ export const confidentialRules: DetectionRule[] = [
     enabled: true,
     description: 'GitHub personal, OAuth, or refresh tokens',
   },
+  {
+    id: 'confidential.jwt_token',
+    category: 'CONFIDENTIAL',
+    type: 'jwt_token',
+    label: 'JSON Web Token (JWT)',
+    pattern: /\b(eyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.[A-Za-z0-9-_.+/=]+)\b/g,
+    severity: 'high',
+    enabled: true,
+    description: 'Standard JWT pattern',
+  },
 ]

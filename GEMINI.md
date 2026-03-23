@@ -55,7 +55,9 @@ The project is structured as a monorepo with the following main components:
 - `pip install -r requirements.txt`
 - `uvicorn app.main:app --reload`: Start development server.
 - `alembic upgrade head`: Apply database migrations.
-- `python scripts/export_ner.py`: Export and quantize the NER model for the extension.
+
+### Model Preparation (NER)
+- `python packages/detection/scripts/export_ner.py`: Export and quantize the NER model for the extension.
 
 ## Development Conventions
 

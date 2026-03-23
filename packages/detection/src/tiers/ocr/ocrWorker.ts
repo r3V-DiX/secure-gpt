@@ -3,48 +3,105 @@
 // Tesseract.js worker initialization and lifecycle
 // ─────────────────────────────────────────────
 
-import { createWorker, type Worker, PSM } from 'tesseract.js'
+import { createWorker, PSM } from 'tesseract.js'
 
 declare const chrome: any
 
+export interface OcrWorkerProxy {
+  recognize(imageUrl: string): Promise<{ data: any }>;
+  setParameters(params: any): Promise<void>;
+  terminate?(): void;
+}
+
 type WorkerState =
   | { status: 'unloaded' }
-  | { status: 'loading'; promise: Promise<Worker | null> }
-  | { status: 'ready'; worker: Worker }
+  | { status: 'loading'; promise: Promise<OcrWorkerProxy | null> }
+  | { status: 'ready'; worker: OcrWorkerProxy }
   | { status: 'unavailable' }
 
 let workerState: WorkerState = { status: 'unloaded' }
 const OCR_LANG = 'eng'
 
-async function loadWorker(): Promise<Worker | null> {
+const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
+
+async function loadWorker(): Promise<OcrWorkerProxy | null> {
   try {
-    console.info('[OCRTier] Initializing Tesseract.js worker...')
+    console.info('[OCRTier] Initializing OCR Worker Proxy...')
 
-    // Use bundled extension assets if available
-    const isExtension = typeof chrome !== 'undefined' && chrome.runtime?.getURL
-    const options: any = isExtension ? {
-      workerPath: chrome.runtime.getURL('ocr/worker.min.js'),
-      corePath: chrome.runtime.getURL('ocr/tesseract-core.wasm.js'),
-      langPath: chrome.runtime.getURL('ocr'),
-      workerBlobURL: false, // Critical for CSP bypass
-      gzip: true,
-    } : {}
+    if (isExtension) {
+      const proxy: OcrWorkerProxy = {
+        async recognize(imageUrl: string) {
+          return new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({
+              target: 'offscreen-ocr',
+              action: 'recognize',
+              imageUrl
+            }, (response: any) => {
+              if (chrome.runtime.lastError) {
+                return reject(new Error(chrome.runtime.lastError.message));
+              }
+              if (response && response.error) {
+                return reject(new Error(response.error));
+              }
+              resolve({ data: response?.data });
+            });
+          });
+        },
+        async setParameters(params: any) {
+          return new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({
+              target: 'offscreen-ocr',
+              action: 'setParameters',
+              params
+            }, (response: any) => {
+              if (chrome.runtime.lastError) {
+                return reject(new Error(chrome.runtime.lastError.message));
+              }
+              if (response && response.error) {
+                return reject(new Error(response.error));
+              }
+              resolve();
+            });
+          });
+        }
+      };
 
-    const worker = await createWorker(OCR_LANG, 1, options)
+      // Initial ping
+      await new Promise<void>((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          target: 'offscreen-ocr',
+          action: 'init'
+        }, (response: any) => {
+          if (chrome.runtime.lastError) {
+            console.warn('[OCRTier] Init message ignored or offscreen doc not ready:', chrome.runtime.lastError.message);
+            resolve();
+          } else if (response?.error) {
+            reject(new Error(response.error));
+          } else {
+            resolve();
+          }
+        });
+      });
 
-    await worker.setParameters({
-      tessedit_pageseg_mode: PSM.AUTO,
-    })
+      console.info('[OCRTier] Extension Proxy OCR Worker ready')
+      return proxy;
+    } else {
+      // Direct instanciation (Node / Test / Dashboard environment)
+      const worker = await createWorker(OCR_LANG, 1, {})
+      await worker.setParameters({
+        tessedit_pageseg_mode: PSM.AUTO,
+      })
+      console.info('[OCRTier] Standard Tesseract worker ready')
+      return worker as unknown as OcrWorkerProxy;
+    }
 
-    console.info('[OCRTier] Tesseract worker ready')
-    return worker
   } catch (err) {
     console.warn('[OCRTier] Worker initialization failed:', (err as Error).message)
     return null
   }
 }
 
-export async function getOcrWorker(): Promise<Worker | null> {
+export async function getOcrWorker(): Promise<OcrWorkerProxy | null> {
   if (workerState.status === 'ready') return workerState.worker
   if (workerState.status === 'unavailable') return null
 
@@ -66,7 +123,9 @@ export async function getOcrWorker(): Promise<Worker | null> {
 
 export function resetOcrWorker(): void {
   if (workerState.status === 'ready') {
-    workerState.worker.terminate()
+    if (workerState.worker.terminate) {
+      workerState.worker.terminate()
+    }
   }
   workerState = { status: 'unloaded' }
 }
