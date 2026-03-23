@@ -1,72 +1,56 @@
-# ─────────────────────────────────────────────
-# Core Config
-# All env vars loaded via pydantic-settings
-# ─────────────────────────────────────────────
+# backend/app/core/config.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Application configuration loaded from environment variables / .env file.
+# ─────────────────────────────────────────────────────────────────────────────
 
-from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, field_validator
-from typing import List
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    # ── App ──────────────────────────────────
-    APP_NAME: str = "SecureGPT"
-    APP_ENV: str = "development"
-    APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
-    SECRET_KEY: str
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
-    # ── Server ───────────────────────────────
-    HOST: str = "0.0.0.0"
-    PORT: int = 8000
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173,chrome-extension://*"
+    # ── Application ────────────────────────────────────────────────────────────
+    app_name: str = "DLP Shield"
+    app_env: str = "development"
+    debug: bool = True
+    secret_key: str = "change-this-secret-key"
 
-    # ── Database ─────────────────────────────
-    DATABASE_URL: str
-    DATABASE_POOL_SIZE: int = 10
-    DATABASE_MAX_OVERFLOW: int = 20
+    # ── Database ───────────────────────────────────────────────────────────────
+    database_url: str = "postgresql+asyncpg://postgres:password@localhost:5432/dlp_shield"
 
-    # ── Redis ────────────────────────────────
-    REDIS_URL: str = "redis://localhost:6379/0"
-    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
+    # ── Session ────────────────────────────────────────────────────────────────
+    session_secret_key: str = "change-this-session-secret"
+    session_max_age: int = 86400  # 24 hours
 
-    # ── Auth / JWT ───────────────────────────
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    # ── Google OAuth ───────────────────────────────────────────────────────────
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
 
-    # ── Google OAuth ─────────────────────────
-    GOOGLE_CLIENT_ID: str
-    GOOGLE_CLIENT_SECRET: str
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
+    # ── CORS ───────────────────────────────────────────────────────────────────
+    allowed_origins: str = "http://localhost:3000,http://localhost:3001"
 
-    # ── Email ────────────────────────────────
-    SENDGRID_API_KEY: str = ""
-    EMAIL_FROM: str = "noreply@securegpt.app"
-    EMAIL_FROM_NAME: str = "SecureGPT"
-
-    # ── Security ─────────────────────────────
-    BCRYPT_ROUNDS: int = 12
-    LOG_RETENTION_DAYS: int = 90
-
-    # ── Alert thresholds ─────────────────────
-    HIGH_RISK_BLOCK_THRESHOLD: int = 5
-    HIGH_RISK_WINDOW_DAYS: int = 7
+    # ── API ────────────────────────────────────────────────────────────────────
+    api_v1_prefix: str = "/api/v1"
 
     @property
-    def allowed_origins_list(self) -> List[str]:
-        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
+    def allowed_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.allowed_origins.split(",")]
 
     @property
     def is_production(self) -> bool:
-        return self.APP_ENV == "production"
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+        return self.app_env == "production"
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()

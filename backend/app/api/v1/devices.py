@@ -1,114 +1,95 @@
-# ─────────────────────────────────────────────
-# Devices Routes
-# Extension device enrollment + management
-# ─────────────────────────────────────────────
+# backend/app/api/v1/devices.py
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
-from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_security_admin
-from app.services.device.service import (
-    enroll_device,
-    get_devices_by_org,
-    update_device_heartbeat,
-    revoke_device,
-)
-from app.models.user import User
-import math
+from fastapi import APIRouter, HTTPException, status, Query
+from sqlalchemy import select, func
+from pydantic import BaseModel
+from datetime import datetime
 
-router = APIRouter(prefix="/devices", tags=["Devices"])
+from app.core.dependencies import DBSession, CurrentUser, RequireSecurityAdmin
+from app.models.device import Device
+
+router = APIRouter(prefix="/devices", tags=["devices"])
 
 
-@router.post("/enroll")
-def enroll(
-    payload: dict,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Enroll a new device (extension installation).
-    Returns device_token ONCE — store securely in extension."""
-    device, raw_token = enroll_device(
-        db,
+class DeviceResponse(BaseModel):
+    id: str
+    name: str
+    hostname: str | None
+    os: str | None
+    browser: str | None
+    extension_version: str | None
+    is_active: bool
+    user_id: str | None
+    org_id: str | None
+    created_at: datetime
+    last_seen_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+class DeviceCreateRequest(BaseModel):
+    name: str
+    hostname: str | None = None
+    os: str | None = None
+    browser: str | None = None
+    extension_version: str | None = None
+
+
+class DevicesListResponse(BaseModel):
+    total: int
+    items: list[DeviceResponse]
+
+
+@router.get("", response_model=DevicesListResponse, dependencies=[RequireSecurityAdmin])
+async def list_devices(
+    db: DBSession,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    org_id: str | None = None,
+    user_id: str | None = None,
+):
+    query = select(Device)
+    if org_id:
+        query = query.where(Device.org_id == org_id)
+    if user_id:
+        query = query.where(Device.user_id == user_id)
+
+    total_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = total_result.scalar_one()
+
+    query = query.offset((page - 1) * page_size).limit(page_size).order_by(Device.created_at.desc())
+    result = await db.execute(query)
+    devices = result.scalars().all()
+
+    return DevicesListResponse(total=total, items=[DeviceResponse.model_validate(d) for d in devices])
+
+
+@router.post("", response_model=DeviceResponse, status_code=status.HTTP_201_CREATED)
+async def register_device(body: DeviceCreateRequest, db: DBSession, current_user: CurrentUser):
+    device = Device(
+        **body.model_dump(),
         user_id=current_user.id,
         org_id=current_user.org_id,
-        os_platform=payload["os_platform"],
-        browser=payload["browser"],
-        extension_version=payload["extension_version"],
     )
-
-    return {
-        "success": True,
-        "data": {
-            "device_id": device.id,
-            "device_token": raw_token,   # Raw token — only time it's returned
-        },
-        "message": "Device enrolled. Store the device_token securely — it will not be shown again.",
-    }
+    db.add(device)
+    await db.flush()
+    await db.refresh(device)
+    return DeviceResponse.model_validate(device)
 
 
-@router.post("/heartbeat")
-def heartbeat(
-    payload: dict,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Extension pings this to update last_seen and version info."""
-    try:
-        device = update_device_heartbeat(
-            db,
-            device_id=payload["device_id"],
-            extension_version=payload["extension_version"],
-            os_platform=payload["os_platform"],
-            browser=payload["browser"],
-        )
-        return {"success": True, "data": {"device_id": device.id, "last_seen_at": device.last_seen_at.isoformat()}}
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+@router.get("/{device_id}", response_model=DeviceResponse, dependencies=[RequireSecurityAdmin])
+async def get_device(device_id: str, db: DBSession):
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return DeviceResponse.model_validate(device)
 
 
-@router.get("/")
-def list_devices(
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=50, ge=1, le=200),
-    current_user: User = Depends(require_security_admin),
-    db: Session = Depends(get_db),
-) -> dict:
-    """List all enrolled devices for the org. Security admin only."""
-    devices, total = get_devices_by_org(db, current_user.org_id, page, limit)
-
-    return {
-        "success": True,
-        "data": [
-            {
-                "id": d.id,
-                "user_id": d.user_id,
-                "os_platform": d.os_platform,
-                "browser": d.browser,
-                "extension_version": d.extension_version,
-                "is_active": d.is_active,
-                "last_seen_at": d.last_seen_at.isoformat() if d.last_seen_at else None,
-                "enrolled_at": d.enrolled_at.isoformat(),
-            }
-            for d in devices
-        ],
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": total,
-            "total_pages": math.ceil(total / limit),
-        },
-    }
-
-
-@router.delete("/{device_id}")
-def revoke(
-    device_id: str,
-    current_user: User = Depends(require_security_admin),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Revoke a device token. Security admin only."""
-    try:
-        revoke_device(db, device_id)
-        return {"success": True, "message": "Device revoked"}
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+@router.delete("/{device_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[RequireSecurityAdmin])
+async def delete_device(device_id: str, db: DBSession):
+    result = await db.execute(select(Device).where(Device.id == device_id))
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    await db.delete(device)

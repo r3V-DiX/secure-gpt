@@ -1,39 +1,41 @@
-# ─────────────────────────────────────────────
-# Database
-# SQLAlchemy engine + session factory
-# ─────────────────────────────────────────────
+# backend/app/core/database.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Async SQLAlchemy engine + session factory.
+# ─────────────────────────────────────────────────────────────────────────────
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from sqlalchemy.pool import NullPool
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+
 from app.core.config import settings
 
-
-# ── Engine ───────────────────────────────────
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW,
-    echo=settings.DEBUG,
-    future=True,
+engine = create_async_engine(
+    settings.database_url,
+    echo=settings.debug,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
 )
 
-# ── Session factory ──────────────────────────
-SessionLocal = sessionmaker(
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
     autocommit=False,
     autoflush=False,
-    bind=engine,
 )
 
-# ── Base model class ─────────────────────────
+
 class Base(DeclarativeBase):
     pass
 
 
-# ── Dependency ───────────────────────────────
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db() -> AsyncSession:  # type: ignore[return]
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()

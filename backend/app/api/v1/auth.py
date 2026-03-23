@@ -1,107 +1,131 @@
-# ─────────────────────────────────────────────
-# Auth Routes
-# Google OAuth + token management
-# ─────────────────────────────────────────────
+# backend/app/api/v1/auth.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Auth routes: email login/register + Google OAuth.
+# Session is stored server-side via Starlette SessionMiddleware.
+# ─────────────────────────────────────────────────────────────────────────────
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from app.core.database import get_db
-from app.core.dependencies import get_current_user
-from app.services.auth.service import (
-    exchange_google_code,
-    get_or_create_user,
-    create_tokens_for_user,
-    refresh_access_token,
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
+import httpx
+
+from app.core.config import settings
+from app.core.dependencies import DBSession, CurrentUser
+from app.services.auth_service import (
+    authenticate_user,
+    create_user,
+    get_user_by_email,
+    upsert_google_user,
 )
-from app.services.user.service import update_last_seen
-from app.models.user import User
+from app.schemas.auth_schema import LoginRequest, RegisterRequest, SessionResponse, UserResponse
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
-
-@router.get("/google/url")
-def get_google_auth_url() -> dict:
-    """Return Google OAuth URL for the extension to open."""
-    from app.core.config import settings
-    import urllib.parse
-
-    params = {
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
-        "response_type": "code",
-        "scope": "openid email profile",
-        "access_type": "offline",
-        "prompt": "consent",
-    }
-    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode(params)
-    return {"url": url}
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 
-@router.post("/google/callback")
-async def google_callback(code: str, db: Session = Depends(get_db)) -> dict:
-    """Exchange Google OAuth code for JWT tokens."""
-    try:
-        google_user = await exchange_google_code(code)
-    except Exception:
+# ─── Email Auth ───────────────────────────────────────────────────────────────
+
+@router.post("/register", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+async def register(body: RegisterRequest, request: Request, db: DBSession):
+    existing = await get_user_by_email(db, body.email)
+    if existing:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to exchange Google OAuth code",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered",
         )
 
-    user = get_or_create_user(db, google_user)
-    tokens = create_tokens_for_user(user)
-    update_last_seen(db, user.id)
-
-    return {
-        "success": True,
-        "data": {
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "name": user.name,
-                "avatar_url": user.avatar_url,
-                "role": user.role,
-                "org_id": user.org_id,
-            },
-            "tokens": tokens,
-        },
-        "timestamp": __import__("datetime").datetime.utcnow().isoformat(),
-    }
+    user = await create_user(db, body.email, body.full_name, body.password)
+    request.session["user_id"] = user.id
+    return SessionResponse(user=UserResponse.model_validate(user))
 
 
-@router.post("/refresh")
-def refresh_token(refresh_token: str, db: Session = Depends(get_db)) -> dict:
-    """Refresh access token using refresh token."""
-    try:
-        tokens = refresh_access_token(db, refresh_token)
-    except ValueError as e:
+@router.post("/login", response_model=SessionResponse)
+async def login(body: LoginRequest, request: Request, db: DBSession):
+    user = await authenticate_user(db, body.email, body.password)
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
+            detail="Invalid credentials",
         )
-    return {"success": True, "data": tokens}
 
-
-@router.get("/me")
-def get_me(current_user: User = Depends(get_current_user)) -> dict:
-    """Return current authenticated user info."""
-    return {
-        "success": True,
-        "data": {
-            "id": current_user.id,
-            "email": current_user.email,
-            "name": current_user.name,
-            "avatar_url": current_user.avatar_url,
-            "role": current_user.role,
-            "org_id": current_user.org_id,
-            "department": current_user.department,
-        },
-    }
+    request.session["user_id"] = user.id
+    return SessionResponse(user=UserResponse.model_validate(user))
 
 
 @router.post("/logout")
-def logout() -> dict:
-    """Client-side logout — invalidate token client-side."""
-    # JWT is stateless — client should delete token
-    # For enhanced security, implement token blacklist with Redis
-    return {"success": True, "message": "Logged out successfully"}
+async def logout(request: Request):
+    request.session.clear()
+    return {"message": "Logged out successfully"}
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: CurrentUser):
+    return UserResponse.model_validate(current_user)
+
+
+# ─── Google OAuth ─────────────────────────────────────────────────────────────
+
+@router.get("/google")
+async def google_login():
+    """Redirect user to Google's OAuth consent screen."""
+    params = {
+        "client_id": settings.google_client_id,
+        "redirect_uri": settings.google_redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "prompt": "select_account",
+    }
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return RedirectResponse(url=f"{GOOGLE_AUTH_URL}?{query}")
+
+
+@router.get("/google/callback")
+async def google_callback(code: str, request: Request, db: DBSession):
+    """Exchange code for token, fetch profile, upsert user, set session."""
+    if not code:
+        raise HTTPException(status_code=400, detail="Missing authorization code")
+
+    async with httpx.AsyncClient() as client:
+        # Exchange code for tokens
+        token_resp = await client.post(
+            GOOGLE_TOKEN_URL,
+            data={
+                "code": code,
+                "client_id": settings.google_client_id,
+                "client_secret": settings.google_client_secret,
+                "redirect_uri": settings.google_redirect_uri,
+                "grant_type": "authorization_code",
+            },
+        )
+        if token_resp.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to exchange token with Google")
+
+        tokens = token_resp.json()
+        access_token = tokens.get("access_token")
+
+        # Fetch user profile
+        userinfo_resp = await client.get(
+            GOOGLE_USERINFO_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        if userinfo_resp.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to fetch Google user info")
+
+        profile = userinfo_resp.json()
+
+    user = await upsert_google_user(
+        db,
+        google_id=profile["sub"],
+        email=profile["email"],
+        full_name=profile.get("name", ""),
+        avatar_url=profile.get("picture"),
+    )
+
+    request.session["user_id"] = user.id
+
+    # Redirect to dashboard
+    frontend_url = settings.allowed_origins_list[0]
+    return RedirectResponse(url=f"{frontend_url}/dashboard", status_code=302)

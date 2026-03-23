@@ -1,40 +1,36 @@
-# ─────────────────────────────────────────────
-# Auth Schemas
-# ─────────────────────────────────────────────
+# backend/app/schemas/auth.schema.py
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
-class GoogleAuthRequest(BaseModel):
-    code: str                   # OAuth authorization code from Google
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6)
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-    expires_in: int
-
-
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6)
+    full_name: str = Field(min_length=1, max_length=255)
 
 
 class UserResponse(BaseModel):
     id: str
     email: str
-    name: str
+    full_name: str | None
     avatar_url: str | None
     role: str
-    org_id: str
-    department: str | None
     is_active: bool
-    created_at: str
+    org_id: str | None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
-class MeResponse(BaseModel):
+class SessionResponse(BaseModel):
     user: UserResponse
-    tokens: TokenResponse
+    message: str = "Login successful"
+
+
+class GoogleCallbackRequest(BaseModel):
+    code: str
+    state: str | None = None

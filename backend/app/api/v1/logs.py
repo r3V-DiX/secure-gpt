@@ -1,153 +1,156 @@
-# ─────────────────────────────────────────────
-# Logs Routes
-# Audit log ingestion + querying
-# ─────────────────────────────────────────────
+# backend/app/api/v1/logs.py
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+import csv
+import io
 from datetime import datetime
-from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_auditor
-from app.services.log.service import ingest_log_batch, get_logs, get_log_stats
-from app.models.user import User
-import math
+from fastapi import APIRouter, Query
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select, func
+from pydantic import BaseModel
 
-router = APIRouter(prefix="/logs", tags=["Logs"])
+from app.core.dependencies import DBSession, CurrentUser, RequireSecurityAdmin, RequireAuditor
+from app.models.audit_log import AuditLog, ActionType, SeverityLevel
 
-
-@router.post("/batch")
-def ingest_batch(
-    payload: dict,
-    db: Session = Depends(get_db),
-) -> dict:
-    """Extension calls this to submit a batch of audit log events.
-    Authenticated via device token (not user JWT)."""
-    try:
-        count = ingest_log_batch(
-            db,
-            device_token=payload["device_token"],
-            org_id=payload["org_id"],
-            events=payload["events"],
-        )
-        return {
-            "success": True,
-            "data": {"received": count, "message": f"{count} events logged"},
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+router = APIRouter(prefix="/logs", tags=["logs"])
 
 
-@router.get("/")
-def list_logs(
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=50, ge=1, le=200),
-    user_id: str | None = Query(default=None),
-    action: str | None = Query(default=None),
-    category: str | None = Query(default=None),
-    platform: str | None = Query(default=None),
-    start_date: datetime | None = Query(default=None),
-    end_date: datetime | None = Query(default=None),
-    current_user: User = Depends(require_auditor),
-    db: Session = Depends(get_db),
-) -> dict:
-    """List audit logs with role-based access control."""
-    logs, total = get_logs(
-        db,
+class LogCreateRequest(BaseModel):
+    action: ActionType
+    domain: str
+    timestamp: datetime
+    entity_types: list[str] = []
+    severities: list[str] = []
+    latency_ms: int | None = None
+    pipeline_version: str | None = None
+
+    # camelCase aliases from extension
+    model_config = {"populate_by_name": True}
+
+
+class LogResponse(BaseModel):
+    id: str
+    action: str
+    domain: str
+    entity_types: list[str]
+    severities: list[str]
+    latency_ms: int | None
+    pipeline_version: str | None
+    client_ip: str | None
+    user_id: str | None
+    org_id: str | None
+    timestamp: datetime
+    received_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class LogsListResponse(BaseModel):
+    total: int
+    items: list[LogResponse]
+
+
+@router.post("", response_model=dict, status_code=201)
+async def create_log(body: LogCreateRequest, db: DBSession, current_user: CurrentUser):
+    log = AuditLog(
+        action=body.action,
+        domain=body.domain,
+        timestamp=body.timestamp,
+        entity_types=body.entity_types,
+        severities=body.severities,
+        latency_ms=body.latency_ms,
+        pipeline_version=body.pipeline_version,
+        user_id=current_user.id,
         org_id=current_user.org_id,
-        user_id=user_id,
-        action=action,
-        category=category,
-        platform=platform,
-        start_date=start_date,
-        end_date=end_date,
-        page=page,
-        limit=limit,
-        requesting_user_role=current_user.role,
-        requesting_user_id=current_user.id,
-        requesting_user_dept=current_user.department,
+    )
+    db.add(log)
+    await db.flush()
+    return {"id": log.id, "status": "ok"}
+
+
+@router.get("", response_model=LogsListResponse, dependencies=[RequireAuditor])
+async def list_logs(
+    db: DBSession,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    user_id: str | None = None,
+    org_id: str | None = None,
+    action: ActionType | None = None,
+    domain: str | None = None,
+):
+    query = select(AuditLog)
+    if user_id:
+        query = query.where(AuditLog.user_id == user_id)
+    if org_id:
+        query = query.where(AuditLog.org_id == org_id)
+    if action:
+        query = query.where(AuditLog.action == action)
+    if domain:
+        query = query.where(AuditLog.domain.ilike(f"%{domain}%"))
+
+    total_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = total_result.scalar_one()
+
+    query = query.offset((page - 1) * page_size).limit(page_size).order_by(AuditLog.received_at.desc())
+    result = await db.execute(query)
+    logs = result.scalars().all()
+
+    return LogsListResponse(total=total, items=[LogResponse.model_validate(l) for l in logs])
+
+
+@router.get("/export", dependencies=[RequireAuditor])
+async def export_logs(db: DBSession):
+    result = await db.execute(select(AuditLog).order_by(AuditLog.received_at.desc()))
+    logs = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Action", "Domain", "Entity Types", "Severities", "Latency (ms)", "User ID", "Timestamp", "Received At"])
+
+    for log in logs:
+        writer.writerow([
+            log.id, log.action.value, log.domain,
+            ",".join(log.entity_types), ",".join(log.severities),
+            log.latency_ms or 0, log.user_id or "",
+            log.timestamp.isoformat(), log.received_at.isoformat(),
+        ])
+
+    output.seek(0)
+    filename = f"audit_logs_{datetime.now().strftime('%Y%m%d')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
-    return {
-        "success": True,
-        "data": [
-            {
-                "id": log.id,
-                "event_id": log.event_id,
-                "timestamp": log.timestamp.isoformat(),
-                "user_id": log.user_id,
-                "user_email": log.user_email,
-                "department": log.department,
-                "action_taken": log.action_taken,
-                "category_triggered": log.category_triggered,
-                "detection_type": log.detection_type,
-                "detection_tier": log.detection_tier,
-                "llm_platform": log.llm_platform,
-                "match_count": log.match_count,
-                "extension_version": log.extension_version,
-                "os_platform": log.os_platform,
-                "browser": log.browser,
-                "acknowledged": log.acknowledged,
-            }
-            for log in logs
-        ],
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": total,
-            "total_pages": math.ceil(total / limit),
-            "has_next": page * limit < total,
-            "has_prev": page > 1,
-        },
-    }
 
+@router.get("/stats", dependencies=[RequireAuditor])
+async def get_log_stats(db: DBSession, org_id: str | None = None):
+    query = select(AuditLog)
+    if org_id:
+        query = query.where(AuditLog.org_id == org_id)
 
-@router.get("/stats")
-def get_stats(
-    current_user: User = Depends(require_auditor),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Get aggregate stats for dashboard KPI cards."""
-    stats = get_log_stats(db, current_user.org_id)
-    return {"success": True, "data": stats}
+    result = await db.execute(query)
+    logs = result.scalars().all()
 
+    total = len(logs)
+    masked = sum(1 for l in logs if l.action == ActionType.MASK)
+    allowed = sum(1 for l in logs if l.action == ActionType.ALLOW)
+    blocked = sum(1 for l in logs if l.action == ActionType.BLOCK)
+    cancelled = sum(1 for l in logs if l.action == ActionType.CANCEL)
 
-@router.get("/my")
-def get_my_logs(
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=20, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Users see only their own logs."""
-    logs, total = get_logs(
-        db,
-        org_id=current_user.org_id,
-        page=page,
-        limit=limit,
-        requesting_user_role="USER",
-        requesting_user_id=current_user.id,
-    )
+    # Entity type frequency
+    entity_counts: dict[str, int] = {}
+    for log in logs:
+        for et in log.entity_types:
+            entity_counts[et] = entity_counts.get(et, 0) + 1
+
+    top_entities = sorted(entity_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
     return {
-        "success": True,
-        "data": [
-            {
-                "event_id": log.event_id,
-                "timestamp": log.timestamp.isoformat(),
-                "action_taken": log.action_taken,
-                "category_triggered": log.category_triggered,
-                "detection_type": log.detection_type,
-                "llm_platform": log.llm_platform,
-                "match_count": log.match_count,
-            }
-            for log in logs
-        ],
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": total,
-            "total_pages": math.ceil(total / limit),
-        },
+        "total": total,
+        "masked": masked,
+        "allowed": allowed,
+        "blocked": blocked,
+        "cancelled": cancelled,
+        "top_entity_types": [{"type": k, "count": v} for k, v in top_entities],
     }
