@@ -1,95 +1,164 @@
 # backend/app/api/v1/devices.py
 
-from fastapi import APIRouter, HTTPException, status, Query
-from sqlalchemy import select, func
+from datetime import datetime, timezone
+from fastapi import APIRouter, Request
+from sqlalchemy import select, func, desc
 from pydantic import BaseModel
-from datetime import datetime
 
-from app.core.dependencies import DBSession, CurrentUser, RequireSecurityAdmin
+from app.core.dependencies import DBSession, CurrentUser
+from app.core.exceptions import NotFound
+from app.core.pagination import Pagination
+from app.core.response import success, paginated
+from app.core.ratelimit import limiter, LIMIT_DEVICES
 from app.models.device import Device
 
 router = APIRouter(prefix="/devices", tags=["devices"])
 
 
-class DeviceResponse(BaseModel):
-    id: str
-    name: str
-    hostname: str | None
-    os: str | None
-    browser: str | None
-    extension_version: str | None
-    is_active: bool
-    user_id: str | None
-    org_id: str | None
-    created_at: datetime
-    last_seen_at: datetime | None
-
-    model_config = {"from_attributes": True}
-
-
-class DeviceCreateRequest(BaseModel):
+class DeviceRegisterRequest(BaseModel):
     name: str
     hostname: str | None = None
-    os: str | None = None
+    osPlatform: str | None = None
     browser: str | None = None
-    extension_version: str | None = None
+    extensionVersion: str | None = None
 
 
-class DevicesListResponse(BaseModel):
-    total: int
-    items: list[DeviceResponse]
+def _serialize_device(device: Device) -> dict:
+    return {
+        "id": device.id,
+        "userId": device.user_id,
+        "name": device.name,
+        "hostname": device.hostname,
+        "osPlatform": device.os_platform,
+        "browser": device.browser,
+        "extensionVersion": device.extension_version,
+        "isActive": device.is_active,
+        "createdAt": device.created_at.isoformat(),
+        "lastSeenAt": device.last_seen_at.isoformat() if device.last_seen_at else None,
+    }
 
 
-@router.get("", response_model=DevicesListResponse, dependencies=[RequireSecurityAdmin])
+@router.get("", summary="List own devices")
+@limiter.limit(LIMIT_DEVICES)
 async def list_devices(
+    request: Request,
     db: DBSession,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    org_id: str | None = None,
-    user_id: str | None = None,
+    current_user: CurrentUser,
+    pagination: Pagination,
 ):
-    query = select(Device)
-    if org_id:
-        query = query.where(Device.org_id == org_id)
-    if user_id:
-        query = query.where(Device.user_id == user_id)
+    count_result = await db.execute(
+        select(func.count()).select_from(
+            select(Device).where(Device.user_id == current_user.id).subquery()
+        )
+    )
+    total = count_result.scalar_one()
 
-    total_result = await db.execute(select(func.count()).select_from(query.subquery()))
-    total = total_result.scalar_one()
-
-    query = query.offset((page - 1) * page_size).limit(page_size).order_by(Device.created_at.desc())
-    result = await db.execute(query)
+    result = await db.execute(
+        select(Device)
+        .where(Device.user_id == current_user.id)
+        .order_by(desc(Device.created_at))
+        .offset(pagination.offset)
+        .limit(pagination.limit)
+    )
     devices = result.scalars().all()
 
-    return DevicesListResponse(total=total, items=[DeviceResponse.model_validate(d) for d in devices])
+    return paginated(
+        data=[_serialize_device(d) for d in devices],
+        page=pagination.page,
+        page_size=pagination.page_size,
+        total=total,
+    )
 
 
-@router.post("", response_model=DeviceResponse, status_code=status.HTTP_201_CREATED)
-async def register_device(body: DeviceCreateRequest, db: DBSession, current_user: CurrentUser):
+@router.post("", summary="Register a new device", status_code=201)
+@limiter.limit(LIMIT_DEVICES)
+async def register_device(
+    request: Request,
+    body: DeviceRegisterRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
     device = Device(
-        **body.model_dump(),
         user_id=current_user.id,
-        org_id=current_user.org_id,
+        name=body.name,
+        hostname=body.hostname,
+        os_platform=body.osPlatform,
+        browser=body.browser,
+        extension_version=body.extensionVersion,
+        last_seen_at=datetime.now(timezone.utc),
     )
     db.add(device)
     await db.flush()
     await db.refresh(device)
-    return DeviceResponse.model_validate(device)
+    await db.commit()  # explicit commit — get_db no longer auto-commits
+
+    return success(data=_serialize_device(device), message="Device registered successfully")
 
 
-@router.get("/{device_id}", response_model=DeviceResponse, dependencies=[RequireSecurityAdmin])
-async def get_device(device_id: str, db: DBSession):
-    result = await db.execute(select(Device).where(Device.id == device_id))
+@router.get("/{device_id}", summary="Get a specific device")
+@limiter.limit(LIMIT_DEVICES)
+async def get_device(
+    request: Request,
+    device_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.user_id == current_user.id)
+    )
     device = result.scalar_one_or_none()
     if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
-    return DeviceResponse.model_validate(device)
+        raise NotFound("Device not found")
+    return success(data=_serialize_device(device), message="Device fetched")
 
 
-@router.delete("/{device_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[RequireSecurityAdmin])
-async def delete_device(device_id: str, db: DBSession):
-    result = await db.execute(select(Device).where(Device.id == device_id))
+@router.patch("/{device_id}/heartbeat", summary="Update device last seen")
+@limiter.limit(LIMIT_DEVICES)
+async def device_heartbeat(
+    request: Request,
+    device_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+    body: DeviceRegisterRequest | None = None,
+):
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.user_id == current_user.id)
+    )
     device = result.scalar_one_or_none()
     if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
+        raise NotFound("Device not found")
+
+    device.last_seen_at = datetime.now(timezone.utc)
+    if body:
+        if body.extensionVersion:
+            device.extension_version = body.extensionVersion
+        if body.osPlatform:
+            device.os_platform = body.osPlatform
+        if body.browser:
+            device.browser = body.browser
+
+    await db.flush()
+    await db.commit()
+
+    return success(data=_serialize_device(device), message="Heartbeat updated")
+
+
+@router.delete("/{device_id}", summary="Remove a device", status_code=200)
+@limiter.limit(LIMIT_DEVICES)
+async def delete_device(
+    request: Request,
+    device_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.user_id == current_user.id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
+        raise NotFound("Device not found")
+
     await db.delete(device)
+    await db.commit()
+
+    return success(message="Device removed successfully")

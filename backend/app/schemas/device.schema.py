@@ -1,39 +1,33 @@
-# ─────────────────────────────────────────────
-# Device Schemas
-# ─────────────────────────────────────────────
+# backend/app/schemas/device.schema.py
+# Aligned with actual Device model and devices.py API
 
 from pydantic import BaseModel
-from typing import Optional
 
 
-class DeviceEnrollRequest(BaseModel):
-    org_id: str
-    os_platform: str
-    browser: str
-    extension_version: str
+class DeviceRegisterRequest(BaseModel):
+    name: str
+    hostname: str | None = None
+    osPlatform: str | None = None
+    browser: str | None = None
+    extensionVersion: str | None = None
 
 
-class DeviceEnrollResponse(BaseModel):
-    device_id: str
-    device_token: str           # raw token — sent once, never stored raw
+class DeviceHeartbeatRequest(BaseModel):
+    extensionVersion: str | None = None
+    osPlatform: str | None = None
+    browser: str | None = None
 
 
 class DeviceResponse(BaseModel):
     id: str
-    user_id: str
-    org_id: str
-    os_platform: str
-    browser: str
-    extension_version: str
-    is_active: bool
-    last_seen_at: Optional[str]
-    enrolled_at: str
+    userId: str | None
+    name: str
+    hostname: str | None
+    osPlatform: str | None
+    browser: str | None
+    extensionVersion: str | None
+    isActive: bool
+    createdAt: str
+    lastSeenAt: str | None
 
-    class Config:
-        from_attributes = True
-
-
-class DeviceHeartbeatRequest(BaseModel):
-    extension_version: str
-    os_platform: str
-    browser: str
+    model_config = {"from_attributes": True}

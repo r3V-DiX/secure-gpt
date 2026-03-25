@@ -10,7 +10,7 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/backend/:path*',
+        source: '/api/v1/:path*',                        // ← FIXED
         destination: `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/api/v1/:path*`,
       },
     ]

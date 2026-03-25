@@ -1,55 +1,45 @@
-# ─────────────────────────────────────────────
-# Policy Schemas
-# ─────────────────────────────────────────────
+# backend/app/schemas/policy.schema.py
+# Aligned with actual Policy model and camelCase API
 
 from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
 
 
-class CategoryConfigSchema(BaseModel):
+class CategoryConfig(BaseModel):
     enabled: bool
-    action: str
-    custom_keywords: list[str] = []
+    action: str  # BLOCK | MASK | WARN_ALLOW | ALLOW
+    customKeywords: list[str] = []
     allowlist: list[str] = []
-    fuzzy_match: bool = False
+    fuzzyMatch: bool = False
 
 
-class PIIConfigSchema(BaseModel):
-    version: int
-    categories: dict[str, CategoryConfigSchema]
-    monitored_platforms: list[str]
-    custom_domains: list[str] = []
-    allow_pause: bool = True
-    log_user_email: bool = False
-    sensitivity_level: str = "medium"
-    updated_at: str
+class PIIConfig(BaseModel):
+    version: int = 1
+    categories: dict[str, CategoryConfig]
+    monitoredPlatforms: list[str]
+    customDomains: list[str] = []
+    allowPause: bool = True
+    logUserEmail: bool = False
+    sensitivityLevel: str = "medium"
+    updatedAt: str | None = None
 
 
 class PolicyCreateRequest(BaseModel):
-    config: PIIConfigSchema
-    publish_immediately: bool = True
+    config: dict  # Full PIIConfig as dict
+    publishImmediately: bool = True
 
 
 class PolicyUpdateRequest(BaseModel):
-    config: PIIConfigSchema
-    publish_immediately: bool = True
+    config: dict
+    publishImmediately: bool = True
 
 
 class PolicyResponse(BaseModel):
     id: str
-    org_id: str
+    userId: str | None
     config: dict
     version: int
-    is_active: bool
-    published_at: Optional[str]
-    created_at: str
-
-    class Config:
-        from_attributes = True
-
-
-class DevicePolicyResponse(BaseModel):
-    version: int
-    config: dict
-    updated_at: str
+    isActive: bool
+    publishedAt: str | None
+    createdAt: str
+    updatedAt: str

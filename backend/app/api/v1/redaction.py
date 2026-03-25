@@ -1,78 +1,73 @@
-# ─────────────────────────────────────────────
-# Redaction Routes
-# Endpoints for irreversible PDF redaction
-# ─────────────────────────────────────────────
+# backend/app/api/v1/redaction.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Redaction Routes — irreversible PDF redaction via image pipeline.
+# ─────────────────────────────────────────────────────────────────────────────
 
-import os
 import json
+import os
 import shutil
 import tempfile
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, BackgroundTasks, status
+
+from fastapi import APIRouter, File, Form, UploadFile, BackgroundTasks, Request
 from fastapi.responses import FileResponse
-from app.core.dependencies import get_current_user
+
+from app.core.dependencies import CurrentUser
+from app.core.exceptions import ValidationError, AppException
+from app.core.ratelimit import limiter, LIMIT_REDACT
 from app.services import redaction_service
 
-router = APIRouter(prefix="/redact", tags=["Redaction"])
+router = APIRouter(prefix="/redact", tags=["redaction"])
 
 
-@router.post("/pdf")
+@router.post("/pdf", summary="Irreversible PDF redaction")
+@limiter.limit(LIMIT_REDACT)
 async def redact_pdf(
+    request: Request,
     background_tasks: BackgroundTasks,
+    current_user: CurrentUser,
     file: UploadFile = File(...),
-    regions: str = Form(...),  # Expected to be a JSON string from frontend
-    current_user=Depends(get_current_user)
+    regions: str = Form(...),
 ):
     """
-    STRICT REQUIREMENT: 100% irreversible PDF redaction via image-based pipeline.
-    This endpoint rasterizes the PDF to destroy all text layers and metadata, 
-    then applies solid black redaction marks.
+    100% irreversible PDF redaction via image-based pipeline.
+    Rasterizes the PDF (destroying all text layers and metadata),
+    then applies solid black redaction marks over specified regions.
     """
     if file.content_type != "application/pdf":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Only PDF files are supported"
-        )
+        raise ValidationError("Only PDF files are supported")
 
     try:
         parsed_regions = json.loads(regions)
     except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Invalid regions JSON format"
-        )
+        raise ValidationError("Invalid regions JSON format")
 
-    # Save uploaded file to a temporary location
-    temp_dir = tempfile.mkdtemp(prefix="securegpt_redact_")
+    temp_dir = tempfile.mkdtemp(prefix="sgpt_redact_")
     input_pdf_path = os.path.join(temp_dir, "input.pdf")
-    
+
     try:
         with open(input_pdf_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        # Call the redaction service
-        # It creates its own temp dir for processing and returns the output path
+            content = await file.read()
+            buffer.write(content)
+
         output_pdf_path = redaction_service.redact_pdf_file(
-            input_pdf_path, 
-            parsed_regions, 
-            dpi=300
+            input_pdf_path,
+            parsed_regions,
+            dpi=300,
         )
-        
-        # Schedule cleanup of both the input and output directories
-        # output_pdf_path is inside another temp dir created by the service
+
         output_dir = os.path.dirname(output_pdf_path)
         background_tasks.add_task(redaction_service.cleanup_temp_dir, temp_dir)
         background_tasks.add_task(redaction_service.cleanup_temp_dir, output_dir)
-        
+
         return FileResponse(
             output_pdf_path,
             media_type="application/pdf",
-            filename=f"redacted_{file.filename}"
+            filename=f"redacted_{file.filename}",
         )
 
+    except (ValidationError, AppException):
+        raise
     except Exception as e:
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail=f"Redaction failed: {str(e)}"
-        )
+        raise AppException(f"Redaction failed: {str(e)}")

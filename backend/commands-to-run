@@ -1,0 +1,13 @@
+# 1. Wipe the broken venv and recreate it
+Remove-Item -Recurse -Force .venv
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+# 2. Install deps (should work now)
+pip install -r requirements.txt
+
+# 3. Run migrations
+alembic upgrade head
+
+# 4. Start the server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

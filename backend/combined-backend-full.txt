@@ -1,0 +1,3602 @@
+===== .env =====
+# ─── Application ──────────────────────────────────────────────────────────────
+APP_NAME="SecureGPT"
+APP_ENV="development"           # development | staging | production
+DEBUG=true
+SECRET_KEY="6f3b9a2d1e8c7f4a0b5d2e9c6f1a3b8d4e7c0f2a5b9d1e6c3f8a2b7d4e0c9f5"
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+DATABASE_URL="postgresql+asyncpg://postgres:rana@localhost:5432/securegpt"
+
+# ─── Session ──────────────────────────────────────────────────────────────────
+SESSION_SECRET_KEY="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+SESSION_MAX_AGE=86400           # 24 hours in seconds
+
+# ─── Google OAuth ─────────────────────────────────────────────────────────────
+GOOGLE_CLIENT_ID="89973232129-ooqqpjhjbsmasih49gegr1ub2306r551.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="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"
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/v1/auth/google/callback"
+
+
+# ─── CORS ─────────────────────────────────────────────────────────────────────
+ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001"
+
+# ─── API ──────────────────────────────────────────────────────────────────────
+API_V1_PREFIX="/api/v1"
+
+
+===== .env.example =====
+# ─── Application ──────────────────────────────────────────────────────────────
+APP_NAME="SecureGPT"
+APP_ENV="development"           # development | staging | production
+DEBUG=true
+SECRET_KEY="change-this-to-a-random-secret-key-at-least-32-chars"
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+DATABASE_URL="postgresql+asyncpg://postgres:password@localhost:5432/dlp_shield"
+
+# ─── Session ──────────────────────────────────────────────────────────────────
+SESSION_SECRET_KEY="change-this-to-another-random-secret-key"
+SESSION_MAX_AGE=86400           # 24 hours in seconds
+
+# ─── Google OAuth ─────────────────────────────────────────────────────────────
+GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/v1/auth/google/callback"
+
+# ─── CORS ─────────────────────────────────────────────────────────────────────
+ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001"
+
+# ─── API ──────────────────────────────────────────────────────────────────────
+API_V1_PREFIX="/api/v1"
+
+
+===== alembic.ini =====
+[alembic]
+script_location = app/migrations
+prepend_sys_path = .
+version_path_separator = os
+
+sqlalchemy.url = postgresql+asyncpg://postgres:password@localhost:5432/dlp_shield
+
+[post_write_hooks]
+
+[loggers]
+keys = root,sqlalchemy,alembic
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARN
+handlers = console
+qualname =
+
+[logger_sqlalchemy]
+level = WARN
+handlers =
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+datefmt = %H:%M:%S
+
+
+===== Dockerfile =====
+# backend/Dockerfile
+# Multi-stage build — keeps the final image lean.
+# Stage 1: install dependencies
+# Stage 2: copy app + run with non-root user
+
+# ─── Stage 1: dependency builder ─────────────────────────────────────────────
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# System deps needed to compile asyncpg + Pillow
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libffi-dev \
+    # pdf2image needs poppler-utils
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python deps into a prefix so we can copy them cleanly
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install --prefix=/install --no-cache-dir -r requirements.txt
+
+
+# ─── Stage 2: runtime image ───────────────────────────────────────────────────
+FROM python:3.12-slim AS runtime
+
+# Runtime system deps only (no build tools)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed Python packages from builder
+COPY --from=builder /install /usr/local
+
+# Non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+WORKDIR /app
+
+# Copy application code
+COPY --chown=appuser:appuser . .
+
+# Switch to non-root
+USER appuser
+
+# Expose the port uvicorn listens on
+EXPOSE 8000
+
+# Health check — matches the /health endpoint in main.py
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+
+# Start with uvicorn. Use --workers 1 in containers — scale via replicas.
+CMD ["uvicorn", "app.main:app", \
+    "--host", "0.0.0.0", \
+    "--port", "8000", \
+    "--workers", "1", \
+    "--loop", "uvloop", \
+    "--http", "httptools", \
+    "--proxy-headers", \
+    "--forwarded-allow-ips", "*"]
+
+
+===== folder-structure.txt =====
+.env
+.env.example
+alembic.ini
+combined-backend-full.txt
+Dockerfile
+folder-structure.txt
+requirements.txt
+app\main.py
+app\api\v1\alerts.py
+app\api\v1\auth.py
+app\api\v1\devices.py
+app\api\v1\logs.py
+app\api\v1\policy.py
+app\api\v1\redaction.py
+app\api\v1\router.py
+app\api\v1\__init__.py
+app\api\v1\extension\log.py
+app\api\v1\extension\policy.py
+app\api\v1\extension\__init__.py
+app\core\config.py
+app\core\database.py
+app\core\dependencies.py
+app\core\error_handlers.py
+app\core\exceptions.py
+app\core\fingerprint.py
+app\core\pagination.py
+app\core\ratelimit.py
+app\core\response.py
+app\core\security.py
+app\migrations\env.py
+app\migrations\script.py.mako
+app\models\audit_log.py
+app\models\auth_event.py
+app\models\device.py
+app\models\org.py
+app\models\policy.py
+app\models\session.py
+app\models\user.py
+app\models\__init__.py
+app\schemas\auth.schema.py
+app\schemas\device.schema.py
+app\schemas\log.schema.py
+app\schemas\policy.schema.py
+app\schemas\redaction.schema.py
+app\schemas\__init__.py
+app\services\auth_event_service.py
+app\services\auth_service.py
+app\services\device.service.py
+app\services\extension_service.py
+app\services\log.service.py
+app\services\policy.service.py
+app\services\redaction_service.py
+app\services\session_service.py
+
+
+===== requirements.txt =====
+# backend/requirements.txt
+
+# ── Web framework ──────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+starlette==0.38.6              # Must be >=0.37.2 and <0.39.0 for fastapi==0.115.0
+
+# ── Database ───────────────────────────────────────────────────────────────────
+sqlalchemy==2.0.35
+asyncpg==0.29.0
+alembic==1.13.3
+
+# ── Settings ───────────────────────────────────────────────────────────────────
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# ── Auth / HTTP ────────────────────────────────────────────────────────────────
+httpx==0.27.2                  # Async HTTP client for Google OAuth token exchange
+
+# ── Rate limiting ──────────────────────────────────────────────────────────────
+slowapi==0.1.9
+
+# ── PDF redaction ──────────────────────────────────────────────────────────────
+pdf2image==1.17.0
+Pillow==10.4.0
+
+# ── File upload ───────────────────────────────────────────────────────────────
+python-multipart==0.0.12       # Required for UploadFile / Form parsing in FastAPI
+
+
+===== app\main.py =====
+# backend/app/main.py
+# ─────────────────────────────────────────────────────────────────────────────
+# FastAPI application entrypoint.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+from app.core.config import settings
+from app.core.database import engine, Base
+from app.core.error_handlers import register_error_handlers
+from app.core.ratelimit import limiter
+from app.core.response import error as make_error
+from app.api.v1.router import api_router
+
+import app.models  # noqa: F401
+
+logging.basicConfig(
+    level=logging.DEBUG if settings.debug else logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting %s [%s]", settings.app_name, settings.app_env)
+    if settings.debug:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables synced (dev mode)")
+    yield
+    await engine.dispose()
+    logger.info("Shutdown complete")
+
+
+app = FastAPI(
+    title=settings.app_name,
+    version="1.0.0",
+    description="DLP Shield — Data Loss Prevention API",
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
+    lifespan=lifespan,
+)
+
+# ─── Rate limiter ─────────────────────────────────────────────────────────────
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=429,
+        content=make_error(
+            code="RATE_LIMITED",
+            message="Too many requests. Please slow down.",
+            details={"retry_after": str(exc.retry_after) if hasattr(exc, "retry_after") else "60"},
+        ),
+    )
+
+# ─── Middleware ───────────────────────────────────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins_list,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
+)
+
+# ─── Error handlers ───────────────────────────────────────────────────────────
+register_error_handlers(app)
+
+# ─── Routes ───────────────────────────────────────────────────────────────────
+app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+
+@app.get("/health", tags=["meta"])
+async def health():
+    return {
+        "status": "ok",
+        "app": settings.app_name,
+        "env": settings.app_env,
+        "version": "1.0.0",
+    }
+
+
+===== app\api\v1\alerts.py =====
+# backend/app/api/v1/alerts.py
+# FIX: Severity filter count mismatch.
+# The old code counted ALL alerts (ignoring severity) but returned only
+# severity-filtered rows. Pagination total was therefore wrong when filtering.
+#
+# Fix strategy: when a severity filter is active, fetch a larger batch,
+# apply Python-side filter, then return the correctly filtered count.
+# (This is the right approach for a JSON column that can't use DB @> operator.)
+
+from fastapi import APIRouter, Request, Query
+from sqlalchemy import select, func, desc
+
+from app.core.dependencies import DBSession, CurrentUser
+from app.core.pagination import Pagination
+from app.core.response import success, paginated
+from app.core.ratelimit import limiter, LIMIT_ALERTS
+from app.models.audit_log import AuditLog, ActionType
+
+router = APIRouter(prefix="/alerts", tags=["alerts"])
+
+ALERT_ACTIONS = [ActionType.BLOCK, ActionType.WARN_ALLOW]
+SEV_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+
+
+def _serialize_alert(log: AuditLog) -> dict:
+    severities = log.severities or []
+    top_severity = next((s for s in SEV_ORDER if s in severities), "LOW")
+    return {
+        "id": log.id,
+        "eventId": log.event_id,
+        "actionTaken": log.action_taken.value,
+        "categoryTriggered": log.category_triggered,
+        "detectionType": log.detection_type,
+        "llmPlatform": log.llm_platform,
+        "domain": log.domain,
+        "matchCount": log.match_count,
+        "entityTypes": log.entity_types or [],
+        "severities": severities,
+        "topSeverity": top_severity,
+        "acknowledged": log.acknowledged,
+        "timestamp": log.timestamp.isoformat(),
+        "receivedAt": log.received_at.isoformat(),
+    }
+
+
+@router.get("", summary="List alerts for current user")
+@limiter.limit(LIMIT_ALERTS)
+async def list_alerts(
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+    pagination: Pagination,
+    severity: str | None = Query(
+        None, description="Filter by severity: CRITICAL, HIGH, MEDIUM, LOW"
+    ),
+):
+    """
+    Return alert-level events for the current user.
+
+    FIX: When severity filter is active we now return the correct filtered
+    total instead of the unfiltered count. We fetch all matching alerts
+    server-side (no OFFSET/LIMIT yet) so we can filter in Python, then
+    slice the correct page from the filtered list.
+
+    For high-volume use, migrate severities column to JSONB and use DB-side
+    filtering with @> operator — see comment in models/audit_log.py.
+    """
+    base_query = (
+        select(AuditLog)
+        .where(
+            AuditLog.user_id == current_user.id,
+            AuditLog.action_taken.in_(ALERT_ACTIONS),
+        )
+        .order_by(desc(AuditLog.received_at))
+    )
+
+    sev = severity.upper() if severity else None
+    valid_sev = sev in SEV_ORDER if sev else False
+
+    if valid_sev:
+        # FIX: fetch ALL rows so we can filter and get the correct total.
+        # For very large datasets this should be replaced with JSONB + DB filter.
+        result = await db.execute(base_query)
+        all_logs = list(result.scalars().all())
+        filtered = [log for log in all_logs if sev in (log.severities or [])]
+        total = len(filtered)
+        # Manually page the filtered list
+        start = pagination.offset
+        end = start + pagination.limit
+        logs = filtered[start:end]
+    else:
+        # No severity filter — use efficient DB-side pagination
+        count_result = await db.execute(
+            select(func.count()).select_from(base_query.subquery())
+        )
+        total = count_result.scalar_one()
+        result = await db.execute(
+            base_query.offset(pagination.offset).limit(pagination.limit)
+        )
+        logs = list(result.scalars().all())
+
+    return paginated(
+        data=[_serialize_alert(log) for log in logs],
+        page=pagination.page,
+        page_size=pagination.page_size,
+        total=total,
+        message="Alerts fetched successfully",
+    )
+
+
+@router.get("/summary", summary="Alert counts summary")
+@limiter.limit(LIMIT_ALERTS)
+async def get_alert_summary(
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    """Return a quick summary of alert counts by action and severity."""
+    result = await db.execute(
+        select(AuditLog).where(
+            AuditLog.user_id == current_user.id,
+            AuditLog.action_taken.in_(ALERT_ACTIONS),
+        )
+    )
+    logs = result.scalars().all()
+
+    blocked = sum(1 for log in logs if log.action_taken == ActionType.BLOCK)
+    warned  = sum(1 for log in logs if log.action_taken == ActionType.WARN_ALLOW)
+
+    sev_counts: dict[str, int] = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    for log in logs:
+        for sev in (log.severities or []):
+            if sev in sev_counts:
+                sev_counts[sev] += 1
+
+    return success(
+        data={
+            "total": len(logs),
+            "blocked": blocked,
+            "warned": warned,
+            "bySeverity": sev_counts,
+        },
+        message="Alert summary fetched",
+    )
+
+
+===== app\api\v1\auth.py =====
+import logging
+import httpx
+from fastapi import APIRouter, Request, Response
+from fastapi.responses import RedirectResponse
+
+from app.core.config import settings
+from app.core.dependencies import DBSession, CurrentUser
+from app.core.exceptions import OAuthFailed, UserInactive
+from app.core.response import success
+from app.core.ratelimit import limiter, LIMIT_AUTH, LIMIT_AUTH_ME, LIMIT_LOGOUT
+from app.services.auth_service import upsert_google_user
+from app.services.session_service import (
+    create_session,
+    revoke_session,
+    get_session_id_from_request,
+    clear_session_cookie,
+)
+from app.services.auth_event_service import (
+    log_login_success,
+    log_login_failed,
+    log_logout,
+    log_oauth_failed,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+
+
+@router.get("/google", summary="Redirect to Google OAuth consent screen")
+@limiter.limit(LIMIT_AUTH)
+async def google_login(request: Request):
+    logger.info("GOOGLE LOGIN — redirect_uri being sent to Google: %s", settings.google_redirect_uri)
+    params = {
+        "client_id": settings.google_client_id,
+        "redirect_uri": settings.google_redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "prompt": "select_account",
+    }
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return RedirectResponse(url=f"{GOOGLE_AUTH_URL}?{query}")
+
+
+@router.get("/google/callback", summary="Google OAuth callback")
+@limiter.limit(LIMIT_AUTH)
+async def google_callback(
+    request: Request,
+    response: Response,
+    db: DBSession,
+    code: str | None = None,
+    error: str | None = None,
+):
+    logger.info("=== CALLBACK HIT ===")
+    logger.info("  host header : %s", request.headers.get("host", "MISSING"))
+    logger.info("  full url    : %s", str(request.url))
+    logger.info("  port        : %s", request.url.port)
+    logger.info("  code present: %s", bool(code))
+    logger.info("  error       : %s", error)
+
+    if error or not code:
+        await log_oauth_failed(db, request, reason=error or "missing_code")
+        frontend_url = settings.allowed_origins_list[0]
+        return RedirectResponse(url=f"{frontend_url}/callback", status_code=302)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            token_resp = await client.post(
+                GOOGLE_TOKEN_URL,
+                data={
+                    "code": code,
+                    "client_id": settings.google_client_id,
+                    "client_secret": settings.google_client_secret,
+                    "redirect_uri": settings.google_redirect_uri,
+                    "grant_type": "authorization_code",
+                },
+            )
+            if token_resp.status_code != 200:
+                await log_oauth_failed(db, request, reason="token_exchange_failed")
+                raise OAuthFailed("Failed to exchange authorization code with Google")
+
+            tokens = token_resp.json()
+            access_token = tokens.get("access_token")
+            if not access_token:
+                await log_oauth_failed(db, request, reason="no_access_token")
+                raise OAuthFailed("No access token returned from Google")
+
+            userinfo_resp = await client.get(
+                GOOGLE_USERINFO_URL,
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            if userinfo_resp.status_code != 200:
+                await log_oauth_failed(db, request, reason="userinfo_fetch_failed")
+                raise OAuthFailed("Failed to fetch user profile from Google")
+
+            profile = userinfo_resp.json()
+
+    except OAuthFailed:
+        raise
+    except Exception as exc:
+        await log_oauth_failed(db, request, reason=str(exc))
+        raise OAuthFailed("Google OAuth request failed")
+
+    user = await upsert_google_user(
+        db,
+        google_id=profile["sub"],
+        email=profile["email"],
+        full_name=profile.get("name", ""),
+        avatar_url=profile.get("picture"),
+    )
+
+    if not user.is_active:
+        await log_login_failed(db, request, reason="user_inactive", email=user.email)
+        raise UserInactive()
+
+    session = await create_session(db, request, response, user.id)
+    await log_login_success(db, request, user_id=user.id, session_id=session.id)
+    await db.commit()
+
+    frontend_url = settings.allowed_origins_list[0]
+    logger.info("CALLBACK DONE — redirecting to: %s/callback", frontend_url)
+    return RedirectResponse(url=f"{frontend_url}/callback", status_code=302)
+
+
+@router.get("/me", summary="Get current authenticated user")
+@limiter.limit(LIMIT_AUTH_ME)
+async def get_me(request: Request, current_user: CurrentUser):
+    return success(
+        data={
+            "id": current_user.id,
+            "email": current_user.email,
+            "fullName": current_user.full_name,
+            "avatarUrl": current_user.avatar_url,
+            "role": current_user.role.value,
+            "isActive": current_user.is_active,
+            "orgId": current_user.org_id,
+            "createdAt": current_user.created_at.isoformat(),
+            "lastLoginAt": current_user.last_login_at.isoformat() if current_user.last_login_at else None,
+        },
+        message="User fetched successfully",
+    )
+
+
+@router.post("/logout", summary="Invalidate current session")
+@limiter.limit(LIMIT_LOGOUT)
+async def logout(request: Request, response: Response, db: DBSession, current_user: CurrentUser):
+    session_id = get_session_id_from_request(request)
+    if session_id:
+        await revoke_session(db, session_id)
+        await log_logout(db, request, user_id=current_user.id, session_id=session_id)
+    clear_session_cookie(response)
+    await db.commit()
+    return success(message="Logged out successfully")
+
+
+===== app\api\v1\devices.py =====
+# backend/app/api/v1/devices.py
+
+from datetime import datetime, timezone
+from fastapi import APIRouter, Request
+from sqlalchemy import select, func, desc
+from pydantic import BaseModel
+
+from app.core.dependencies import DBSession, CurrentUser
+from app.core.exceptions import NotFound
+from app.core.pagination import Pagination
+from app.core.response import success, paginated
+from app.core.ratelimit import limiter, LIMIT_DEVICES
+from app.models.device import Device
+
+router = APIRouter(prefix="/devices", tags=["devices"])
+
+
+class DeviceRegisterRequest(BaseModel):
+    name: str
+    hostname: str | None = None
+    osPlatform: str | None = None
+    browser: str | None = None
+    extensionVersion: str | None = None
+
+
+def _serialize_device(device: Device) -> dict:
+    return {
+        "id": device.id,
+        "userId": device.user_id,
+        "name": device.name,
+        "hostname": device.hostname,
+        "osPlatform": device.os_platform,
+        "browser": device.browser,
+        "extensionVersion": device.extension_version,
+        "isActive": device.is_active,
+        "createdAt": device.created_at.isoformat(),
+        "lastSeenAt": device.last_seen_at.isoformat() if device.last_seen_at else None,
+    }
+
+
+@router.get("", summary="List own devices")
+@limiter.limit(LIMIT_DEVICES)
+async def list_devices(
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+    pagination: Pagination,
+):
+    count_result = await db.execute(
+        select(func.count()).select_from(
+            select(Device).where(Device.user_id == current_user.id).subquery()
+        )
+    )
+    total = count_result.scalar_one()
+
+    result = await db.execute(
+        select(Device)
+        .where(Device.user_id == current_user.id)
+        .order_by(desc(Device.created_at))
+        .offset(pagination.offset)
+        .limit(pagination.limit)
+    )
+    devices = result.scalars().all()
+
+    return paginated(
+        data=[_serialize_device(d) for d in devices],
+        page=pagination.page,
+        page_size=pagination.page_size,
+        total=total,
+    )
+
+
+@router.post("", summary="Register a new device", status_code=201)
+@limiter.limit(LIMIT_DEVICES)
+async def register_device(
+    request: Request,
+    body: DeviceRegisterRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    device = Device(
+        user_id=current_user.id,
+        name=body.name,
+        hostname=body.hostname,
+        os_platform=body.osPlatform,
+        browser=body.browser,
+        extension_version=body.extensionVersion,
+        last_seen_at=datetime.now(timezone.utc),
+    )
+    db.add(device)
+    await db.flush()
+    await db.refresh(device)
+    await db.commit()  # explicit commit — get_db no longer auto-commits
+
+    return success(data=_serialize_device(device), message="Device registered successfully")
+
+
+@router.get("/{device_id}", summary="Get a specific device")
+@limiter.limit(LIMIT_DEVICES)
+async def get_device(
+    request: Request,
+    device_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.user_id == current_user.id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
+        raise NotFound("Device not found")
+    return success(data=_serialize_device(device), message="Device fetched")
+
+
+@router.patch("/{device_id}/heartbeat", summary="Update device last seen")
+@limiter.limit(LIMIT_DEVICES)
+async def device_heartbeat(
+    request: Request,
+    device_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+    body: DeviceRegisterRequest | None = None,
+):
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.user_id == current_user.id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
+        raise NotFound("Device not found")
+
+    device.last_seen_at = datetime.now(timezone.utc)
+    if body:
+        if body.extensionVersion:
+            device.extension_version = body.extensionVersion
+        if body.osPlatform:
+            device.os_platform = body.osPlatform
+        if body.browser:
+            device.browser = body.browser
+
+    await db.flush()
+    await db.commit()
+
+    return success(data=_serialize_device(device), message="Heartbeat updated")
+
+
+@router.delete("/{device_id}", summary="Remove a device", status_code=200)
+@limiter.limit(LIMIT_DEVICES)
+async def delete_device(
+    request: Request,
+    device_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.user_id == current_user.id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
+        raise NotFound("Device not found")
+
+    await db.delete(device)
+    await db.commit()
+
+    return success(message="Device removed successfully")
+
+
+===== app\api\v1\logs.py =====
+# backend/app/api/v1/logs.py
+# FIX: get_log_stats() and get_dashboard_stats() previously loaded ALL logs
+# into Python memory with no LIMIT — causes OOM at scale.
+# Fixed with DB-side aggregation using GROUP BY + func.count().
+
+import csv
+import io
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Query, Request
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select, func, desc, cast, String
+
+from app.core.dependencies import DBSession, CurrentUser
+from app.core.pagination import Pagination
+from app.core.response import success, paginated
+from app.core.ratelimit import limiter, LIMIT_LOGS, LIMIT_LOGS_STATS
+from app.models.audit_log import AuditLog, ActionType
+
+router = APIRouter(prefix="/logs", tags=["logs"])
+
+
+def _serialize_log(log: AuditLog) -> dict:
+    return {
+        "id": log.id,
+        "eventId": log.event_id,
+        "actionTaken": log.action_taken.value,
+        "categoryTriggered": log.category_triggered,
+        "detectionType": log.detection_type,
+        "detectionTier": log.detection_tier,
+        "llmPlatform": log.llm_platform,
+        "domain": log.domain,
+        "matchCount": log.match_count,
+        "entityTypes": log.entity_types or [],
+        "severities": log.severities or [],
+        "extensionVersion": log.extension_version,
+        "osPlatform": log.os_platform,
+        "browser": log.browser,
+        "acknowledged": log.acknowledged,
+        "latencyMs": log.latency_ms,
+        "timestamp": log.timestamp.isoformat(),
+        "receivedAt": log.received_at.isoformat(),
+    }
+
+
+@router.get("", summary="List own logs with filters and pagination")
+@limiter.limit(LIMIT_LOGS)
+async def list_logs(
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+    pagination: Pagination,
+    action: str | None = Query(None),
+    category: str | None = Query(None),
+    platform: str | None = Query(None),
+    domain: str | None = Query(None),
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
+):
+    query = select(AuditLog).where(AuditLog.user_id == current_user.id)
+
+    if action:
+        query = query.where(AuditLog.action_taken == action.upper())
+    if category:
+        query = query.where(AuditLog.category_triggered == category.upper())
+    if platform:
+        query = query.where(AuditLog.llm_platform == platform.lower())
+    if domain:
+        query = query.where(AuditLog.domain.ilike(f"%{domain}%"))
+    if start_date:
+        try:
+            query = query.where(AuditLog.timestamp >= datetime.fromisoformat(start_date))
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            query = query.where(AuditLog.timestamp <= datetime.fromisoformat(end_date))
+        except ValueError:
+            pass
+
+    count_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = count_result.scalar_one()
+
+    query = query.order_by(desc(AuditLog.received_at)).offset(pagination.offset).limit(pagination.limit)
+    result = await db.execute(query)
+    logs = result.scalars().all()
+
+    return paginated(
+        data=[_serialize_log(log) for log in logs],
+        page=pagination.page,
+        page_size=pagination.page_size,
+        total=total,
+    )
+
+
+@router.get("/stats", summary="Aggregated stats for current user")
+@limiter.limit(LIMIT_LOGS_STATS)
+async def get_log_stats(request: Request, db: DBSession, current_user: CurrentUser):
+    """
+    Return aggregated detection stats for dashboard KPI cards.
+    FIX: Uses DB-side GROUP BY aggregation instead of loading all rows into memory.
+    entity_types and severities are JSON columns — those still need Python-side
+    aggregation, but we cap the row fetch to last 10k events for safety.
+    """
+    # DB-side action aggregation
+    action_rows = await db.execute(
+        select(AuditLog.action_taken, func.count().label("cnt"))
+        .where(AuditLog.user_id == current_user.id)
+        .group_by(AuditLog.action_taken)
+    )
+    action_counts = {row.action_taken.value: row.cnt for row in action_rows}
+
+    total_result = await db.execute(
+        select(func.count()).where(AuditLog.user_id == current_user.id)
+    )
+    total = total_result.scalar_one()
+
+    # DB-side platform aggregation
+    platform_rows = await db.execute(
+        select(AuditLog.llm_platform, func.count().label("cnt"))
+        .where(AuditLog.user_id == current_user.id)
+        .group_by(AuditLog.llm_platform)
+        .order_by(desc("cnt"))
+        .limit(10)
+    )
+    top_platforms = [{"platform": r.llm_platform, "count": r.cnt} for r in platform_rows]
+
+    # DB-side domain aggregation
+    domain_rows = await db.execute(
+        select(AuditLog.domain, func.count().label("cnt"))
+        .where(AuditLog.user_id == current_user.id, AuditLog.domain.isnot(None))
+        .group_by(AuditLog.domain)
+        .order_by(desc("cnt"))
+        .limit(10)
+    )
+    top_domains = [{"domain": r.domain, "count": r.cnt} for r in domain_rows]
+
+    # entity_types is a JSON array column — needs Python-side unpack.
+    # Cap at 10k rows to prevent OOM on large datasets.
+    entity_result = await db.execute(
+        select(AuditLog.entity_types)
+        .where(AuditLog.user_id == current_user.id)
+        .limit(10_000)
+    )
+    entity_counts: dict[str, int] = {}
+    for (entity_types,) in entity_result:
+        for et in (entity_types or []):
+            entity_counts[et] = entity_counts.get(et, 0) + 1
+
+    top_entity_types = sorted(
+        [{"type": k, "count": v} for k, v in entity_counts.items()],
+        key=lambda x: x["count"], reverse=True
+    )[:10]
+
+    return success(
+        data={
+            "totalEvents": total,
+            "blockedCount": action_counts.get("BLOCK", 0),
+            "maskedCount": action_counts.get("MASK", 0),
+            "warnedCount": action_counts.get("WARN_ALLOW", 0),
+            "allowedCount": action_counts.get("ALLOW", 0),
+            "topEntityTypes": top_entity_types,
+            "topPlatforms": top_platforms,
+            "topDomains": top_domains,
+        },
+        message="Stats fetched successfully",
+    )
+
+
+@router.get("/dashboard", summary="Dashboard summary stats with time-series data")
+@limiter.limit(LIMIT_LOGS_STATS)
+async def get_dashboard_stats(
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+    days: int = Query(default=30, ge=1, le=90),
+):
+    """
+    Full dashboard stats: KPI counts + events_by_day chart data.
+    FIX: Uses DB-side GROUP BY for action/platform/domain counts.
+    """
+    now = datetime.now(timezone.utc)
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    since = today - timedelta(days=days - 1)
+
+    where = [
+        AuditLog.user_id == current_user.id,
+        AuditLog.timestamp >= since,
+    ]
+
+    # DB-side action counts
+    action_rows = await db.execute(
+        select(AuditLog.action_taken, func.count().label("cnt"))
+        .where(*where)
+        .group_by(AuditLog.action_taken)
+    )
+    action_counts = {row.action_taken.value: row.cnt for row in action_rows}
+
+    total_result = await db.execute(
+        select(func.count()).where(*where)
+    )
+    total = total_result.scalar_one()
+
+    # DB-side domain aggregation
+    domain_rows = await db.execute(
+        select(AuditLog.domain, func.count().label("cnt"))
+        .where(*where, AuditLog.domain.isnot(None))
+        .group_by(AuditLog.domain)
+        .order_by(desc("cnt"))
+        .limit(8)
+    )
+    top_domains = [{"domain": r.domain, "count": r.cnt} for r in domain_rows]
+
+    # entity_types: JSON column, still needs Python (cap at 10k)
+    entity_result = await db.execute(
+        select(AuditLog.entity_types).where(*where).limit(10_000)
+    )
+    entity_counts: dict[str, int] = {}
+    for (entity_types,) in entity_result:
+        for et in (entity_types or []):
+            entity_counts[et] = entity_counts.get(et, 0) + 1
+
+    top_entity_types = sorted(
+        [{"type": k, "count": v} for k, v in entity_counts.items()],
+        key=lambda x: x["count"], reverse=True
+    )[:8]
+
+    # Events by day — fetch only date + count
+    day_result = await db.execute(
+        select(AuditLog.timestamp).where(*where)
+    )
+    day_counts: dict[str, int] = defaultdict(int)
+    for (ts,) in day_result:
+        day_counts[ts.strftime("%Y-%m-%d")] += 1
+
+    events_by_day = [
+        {"date": (since + timedelta(days=i)).strftime("%Y-%m-%d"),
+         "count": day_counts.get((since + timedelta(days=i)).strftime("%Y-%m-%d"), 0)}
+        for i in range(days)
+    ]
+
+    return success(
+        data={
+            "totalEvents": total,
+            "maskedCount": action_counts.get("MASK", 0),
+            "allowedCount": action_counts.get("ALLOW", 0),
+            "blockedCount": action_counts.get("BLOCK", 0),
+            "cancelledCount": action_counts.get("WARN_ALLOW", 0),
+            "topEntityTypes": top_entity_types,
+            "topDomains": top_domains,
+            "eventsByDay": events_by_day,
+        },
+        message="Dashboard stats fetched",
+    )
+
+
+@router.get("/export", summary="Export own logs as CSV")
+@limiter.limit(LIMIT_LOGS_STATS)
+async def export_logs(request: Request, db: DBSession, current_user: CurrentUser):
+    """Download all the current user's logs as a CSV file."""
+    result = await db.execute(
+        select(AuditLog)
+        .where(AuditLog.user_id == current_user.id)
+        .order_by(desc(AuditLog.received_at))
+    )
+    logs = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Event ID", "Action", "Category", "Detection Type",
+        "Detection Tier", "Platform", "Domain", "Match Count",
+        "Latency (ms)", "Timestamp", "Received At",
+    ])
+    for log in logs:
+        writer.writerow([
+            log.id, log.event_id or "", log.action_taken.value,
+            log.category_triggered, log.detection_type, log.detection_tier,
+            log.llm_platform, log.domain or "", log.match_count,
+            log.latency_ms or "", log.timestamp.isoformat(), log.received_at.isoformat(),
+        ])
+
+    output.seek(0)
+    filename = f"dlp_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+===== app\api\v1\policy.py =====
+# backend/app/api/v1/policy.py
+# FIX: deepcopy config before mutating to avoid caller side-effects.
+
+import copy
+from datetime import datetime, timezone
+from fastapi import APIRouter, Request
+from sqlalchemy import select, update, func, desc
+from pydantic import BaseModel
+
+from app.core.dependencies import DBSession, CurrentUser
+from app.core.exceptions import NotFound
+from app.core.response import success, paginated
+from app.core.pagination import Pagination
+from app.core.ratelimit import limiter, LIMIT_POLICY
+from app.models.policy import Policy
+
+router = APIRouter(prefix="/policy", tags=["policy"])
+
+
+class PolicyCreateRequest(BaseModel):
+    config: dict
+    publishImmediately: bool = True
+
+
+class PolicyUpdateRequest(BaseModel):
+    config: dict
+    publishImmediately: bool = True
+
+
+def _serialize_policy(policy: Policy) -> dict:
+    return {
+        "id": policy.id,
+        "userId": policy.user_id,
+        "config": policy.config,
+        "version": policy.version,
+        "isActive": policy.is_active,
+        "publishedAt": policy.published_at.isoformat() if policy.published_at else None,
+        "createdAt": policy.created_at.isoformat(),
+        "updatedAt": policy.updated_at.isoformat(),
+    }
+
+
+@router.get("/current", summary="Get current active policy")
+@limiter.limit(LIMIT_POLICY)
+async def get_current_policy(request: Request, db: DBSession, current_user: CurrentUser):
+    result = await db.execute(
+        select(Policy)
+        .where(Policy.user_id == current_user.id, Policy.is_active == True)  # noqa: E712
+        .order_by(Policy.version.desc())
+        .limit(1)
+    )
+    policy = result.scalar_one_or_none()
+
+    if not policy:
+        from app.services.extension_service import DEFAULT_POLICY_CONFIG
+        now = datetime.now(timezone.utc).isoformat()
+        default = copy.deepcopy(DEFAULT_POLICY_CONFIG)
+        default["updatedAt"] = now
+        # FIX: return a consistent shape with top-level updatedAt so the
+        # frontend Policy type doesn't get null where it expects a string.
+        return success(
+            data={
+                "id": None,
+                "userId": current_user.id,
+                "config": default,
+                "version": 1,
+                "isActive": True,
+                "publishedAt": None,
+                "createdAt": None,
+                "updatedAt": now,          # ← top-level field now populated
+            },
+            message="Default policy returned (no custom policy set)",
+        )
+
+    return success(data=_serialize_policy(policy), message="Policy fetched")
+
+
+@router.get("", summary="List all policy versions")
+@limiter.limit(LIMIT_POLICY)
+async def list_policies(
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+    pagination: Pagination,
+):
+    count_result = await db.execute(
+        select(func.count()).select_from(
+            select(Policy).where(Policy.user_id == current_user.id).subquery()
+        )
+    )
+    total = count_result.scalar_one()
+
+    result = await db.execute(
+        select(Policy)
+        .where(Policy.user_id == current_user.id)
+        .order_by(Policy.version.desc())
+        .offset(pagination.offset)
+        .limit(pagination.limit)
+    )
+    policies = result.scalars().all()
+
+    return paginated(
+        data=[_serialize_policy(p) for p in policies],
+        page=pagination.page,
+        page_size=pagination.page_size,
+        total=total,
+    )
+
+
+async def _create_policy_version(db, user_id: str, config: dict, publish: bool) -> Policy:
+    """Deactivate old active policy, then create a new versioned policy."""
+    # FIX: deepcopy so we don't mutate the caller's dict object.
+    config = copy.deepcopy(config)
+
+    await db.execute(
+        update(Policy)
+        .where(Policy.user_id == user_id, Policy.is_active == True)  # noqa: E712
+        .values(is_active=False)
+    )
+    await db.flush()
+
+    result = await db.execute(
+        select(Policy)
+        .where(Policy.user_id == user_id)
+        .order_by(Policy.version.desc())
+        .limit(1)
+    )
+    latest = result.scalars().first()
+    next_version = (latest.version + 1) if latest else 1
+
+    now = datetime.now(timezone.utc)
+    config["version"] = next_version
+    config["updatedAt"] = now.isoformat()
+
+    policy = Policy(
+        user_id=user_id,
+        config=config,
+        version=next_version,
+        is_active=True,
+        published_at=now if publish else None,
+    )
+    db.add(policy)
+    await db.flush()
+    await db.refresh(policy)
+    return policy
+
+
+@router.post("", summary="Create a new policy version", status_code=201)
+@limiter.limit(LIMIT_POLICY)
+async def create_policy(
+    request: Request,
+    body: PolicyCreateRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    policy = await _create_policy_version(db, current_user.id, body.config, body.publishImmediately)
+    await db.commit()
+    return success(data=_serialize_policy(policy), message="Policy created successfully")
+
+
+@router.put("/current", summary="Update the active policy (creates new version)")
+@limiter.limit(LIMIT_POLICY)
+async def update_policy(
+    request: Request,
+    body: PolicyUpdateRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    policy = await _create_policy_version(db, current_user.id, body.config, body.publishImmediately)
+    await db.commit()
+    return success(data=_serialize_policy(policy), message="Policy updated successfully")
+
+
+@router.get("/{policy_id}", summary="Get a specific policy version")
+@limiter.limit(LIMIT_POLICY)
+async def get_policy(
+    request: Request,
+    policy_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    result = await db.execute(
+        select(Policy).where(Policy.id == policy_id, Policy.user_id == current_user.id)
+    )
+    policy = result.scalar_one_or_none()
+    if not policy:
+        raise NotFound("Policy not found")
+    return success(data=_serialize_policy(policy), message="Policy fetched")
+
+
+@router.delete("/{policy_id}", summary="Delete a policy version", status_code=200)
+@limiter.limit(LIMIT_POLICY)
+async def delete_policy(
+    request: Request,
+    policy_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    result = await db.execute(
+        select(Policy).where(Policy.id == policy_id, Policy.user_id == current_user.id)
+    )
+    policy = result.scalar_one_or_none()
+    if not policy:
+        raise NotFound("Policy not found")
+    await db.delete(policy)
+    await db.commit()
+    return success(message="Policy deleted successfully")
+
+
+===== app\api\v1\redaction.py =====
+# backend/app/api/v1/redaction.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Redaction Routes — irreversible PDF redaction via image pipeline.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import json
+import os
+import shutil
+import tempfile
+
+from fastapi import APIRouter, File, Form, UploadFile, BackgroundTasks, Request
+from fastapi.responses import FileResponse
+
+from app.core.dependencies import CurrentUser
+from app.core.exceptions import ValidationError, AppException
+from app.core.ratelimit import limiter, LIMIT_REDACT
+from app.services import redaction_service
+
+router = APIRouter(prefix="/redact", tags=["redaction"])
+
+
+@router.post("/pdf", summary="Irreversible PDF redaction")
+@limiter.limit(LIMIT_REDACT)
+async def redact_pdf(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+    regions: str = Form(...),
+):
+    """
+    100% irreversible PDF redaction via image-based pipeline.
+    Rasterizes the PDF (destroying all text layers and metadata),
+    then applies solid black redaction marks over specified regions.
+    """
+    if file.content_type != "application/pdf":
+        raise ValidationError("Only PDF files are supported")
+
+    try:
+        parsed_regions = json.loads(regions)
+    except Exception:
+        raise ValidationError("Invalid regions JSON format")
+
+    temp_dir = tempfile.mkdtemp(prefix="sgpt_redact_")
+    input_pdf_path = os.path.join(temp_dir, "input.pdf")
+
+    try:
+        with open(input_pdf_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+
+        output_pdf_path = redaction_service.redact_pdf_file(
+            input_pdf_path,
+            parsed_regions,
+            dpi=300,
+        )
+
+        output_dir = os.path.dirname(output_pdf_path)
+        background_tasks.add_task(redaction_service.cleanup_temp_dir, temp_dir)
+        background_tasks.add_task(redaction_service.cleanup_temp_dir, output_dir)
+
+        return FileResponse(
+            output_pdf_path,
+            media_type="application/pdf",
+            filename=f"redacted_{file.filename}",
+        )
+
+    except (ValidationError, AppException):
+        raise
+    except Exception as e:
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        raise AppException(f"Redaction failed: {str(e)}")
+
+
+===== app\api\v1\router.py =====
+# backend/app/api/v1/router.py
+# ─────────────────────────────────────────────────────────────────────────────
+# V1 API Router — registers all active routes.
+# Admin routes (users, reports, orgs) are excluded — separate backend later.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from fastapi import APIRouter
+
+from app.api.v1 import auth, logs, policy, alerts, devices, redaction
+from app.api.v1.extension import log as extension_log
+from app.api.v1.extension import policy as extension_policy
+
+api_router = APIRouter()
+
+# ── Core auth ─────────────────────────────────────────────────────────────────
+api_router.include_router(auth.router)
+
+# ── User data ─────────────────────────────────────────────────────────────────
+api_router.include_router(logs.router)
+api_router.include_router(alerts.router)
+api_router.include_router(policy.router)
+api_router.include_router(devices.router)
+
+# ── Extension APIs ────────────────────────────────────────────────────────────
+api_router.include_router(extension_log.router)
+api_router.include_router(extension_policy.router)
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+api_router.include_router(redaction.router)
+
+
+===== app\api\v1\__init__.py =====
+# backend/app/api/v1/__init__.py
+
+
+===== app\api\v1\extension\log.py =====
+# backend/app/api/v1/extension/log.py
+
+from fastapi import APIRouter, Request
+from pydantic import BaseModel, Field
+
+from app.core.dependencies import DBSession, CurrentUser
+from app.core.exceptions import BatchTooLarge, InvalidLogBatch
+from app.core.response import success
+from app.core.ratelimit import limiter, LIMIT_EXTENSION_LOG
+from app.services.extension_service import ingest_log_batch
+
+router = APIRouter(prefix="/extension/log", tags=["extension"])
+
+MAX_BATCH_SIZE = 100
+
+
+class LogBatchRequest(BaseModel):
+    events: list[dict] = Field(..., description="Array of detection events from the extension")
+
+
+@router.post("", summary="Ingest a batch of detection events from the extension")
+@limiter.limit(LIMIT_EXTENSION_LOG)
+async def ingest_logs(
+    request: Request,
+    body: LogBatchRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    if not body.events:
+        raise InvalidLogBatch("Batch must contain at least one event")
+
+    if len(body.events) > MAX_BATCH_SIZE:
+        raise BatchTooLarge(f"Batch contains {len(body.events)} events, maximum is {MAX_BATCH_SIZE}")
+
+    inserted = await ingest_log_batch(db, current_user.id, body.events)
+    await db.commit()  # explicit commit — get_db no longer auto-commits
+
+    return success(
+        data={
+            "received": len(body.events),
+            "inserted": inserted,
+            "duplicates": len(body.events) - inserted,
+        },
+        message=f"Batch processed: {inserted} new events stored",
+    )
+
+
+===== app\api\v1\extension\policy.py =====
+# backend/app/api/v1/extension/policy.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Extension policy sync endpoint.
+# The browser extension polls this to get the latest policy config.
+# Auth via session cookie.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from fastapi import APIRouter, Request
+
+from app.core.dependencies import DBSession, CurrentUser
+from app.core.response import success
+from app.core.ratelimit import limiter, LIMIT_EXTENSION_POLICY
+from app.services.extension_service import get_policy_for_extension
+
+router = APIRouter(prefix="/extension/policy", tags=["extension"])
+
+
+@router.get("", summary="Get active policy for extension")
+@limiter.limit(LIMIT_EXTENSION_POLICY)
+async def get_extension_policy(
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    """
+    Return the user's active policy config for the browser extension.
+    Falls back to sensible defaults if no policy has been configured yet.
+    Rate limited to 10 requests/minute — extension should poll every 30s max.
+    """
+    policy_data = await get_policy_for_extension(db, current_user.id)
+
+    return success(
+        data=policy_data,
+        message="Policy fetched successfully",
+    )
+
+
+===== app\core\config.py =====
+# backend/app/core/config.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Application configuration loaded from environment variables / .env file.
+# Sensitive fields have NO defaults — app will FAIL FAST at startup if they
+# are missing, rather than silently running with insecure placeholder values.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # ── Application ────────────────────────────────────────────────────────────
+    # Non-sensitive — safe defaults are fine here
+    app_name: str = "DLP Shield"
+    app_env: str = "development"
+    debug: bool = False
+
+    # SENSITIVE — no default, must be set in .env
+    secret_key: str = Field(..., min_length=32)
+
+    # ── Database ───────────────────────────────────────────────────────────────
+    # SENSITIVE — no default, must be set in .env
+    database_url: str = Field(...)
+
+    # ── Session ────────────────────────────────────────────────────────────────
+    # SENSITIVE — no default, must be set in .env
+    session_secret_key: str = Field(..., min_length=32)
+    session_max_age: int = 86400  # 24 hours in seconds — safe default
+
+    # ── Google OAuth ───────────────────────────────────────────────────────────
+    # SENSITIVE — no default, must be set in .env
+    google_client_id: str = Field(...)
+    google_client_secret: str = Field(...)
+
+    # Non-sensitive — default is fine for local dev
+    google_redirect_uri: str = Field(...)
+    
+    # ── CORS ───────────────────────────────────────────────────────────────────
+    # Non-sensitive — default covers local dev
+    allowed_origins: str = "http://localhost:3000,http://localhost:3001"
+
+    # ── API ────────────────────────────────────────────────────────────────────
+    api_v1_prefix: str = "/api/v1"
+
+    # ── Rate limiting ──────────────────────────────────────────────────────────
+    rate_limit_enabled: bool = True
+
+    # ── Computed properties ────────────────────────────────────────────────────
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.allowed_origins.split(",")]
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
+
+    @property
+    def frontend_url(self) -> str:
+        return self.allowed_origins_list[0]
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
+
+
+===== app\core\database.py =====
+# backend/app/core/database.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Async SQLAlchemy engine + session factory.
+#
+# TRANSACTION STRATEGY:
+# - get_db() does NOT auto-commit. Routes own their transactions.
+# - Routes call db.commit() explicitly when they want to persist.
+# - get_db() only handles rollback on exception + session close.
+# - This prevents double-commit issues.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+
+from app.core.config import settings
+
+engine = create_async_engine(
+    settings.database_url,
+    echo=settings.debug,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+)
+
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+async def get_db() -> AsyncSession:  # type: ignore[return]
+    """
+    Yields an async DB session. Routes are responsible for calling db.commit().
+    Rolls back automatically on any unhandled exception.
+    """
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+===== app\core\dependencies.py =====
+# backend/app/core/dependencies.py
+# ─────────────────────────────────────────────────────────────────────────────
+# FastAPI dependency injection.
+# Session-based auth — reads cookie, validates against DB, checks fingerprint.
+# No JWT. No localStorage. Pure httpOnly cookie + server-side session.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from typing import Annotated
+
+from fastapi import Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.exceptions import (
+    AuthRequired,
+    SessionExpired,
+    SessionRevoked,
+    FingerprintMismatch,
+    UserInactive,
+    Forbidden,
+)
+from app.models.user import User, UserRole
+# FIX: AuthEventType lives in models/auth_event.py, not auth_event_service
+from app.models.auth_event import AuthEventType
+from app.services.auth_service import get_user_by_id
+from app.services.session_service import (
+    get_session_id_from_request,
+    validate_session,
+)
+from app.services import auth_event_service
+
+DBSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+async def get_current_user(
+    request: Request,
+    db: DBSession,
+) -> User:
+    """
+    Full session validation dependency.
+
+    Flow:
+    1. Read session ID from httpOnly cookie
+    2. Look up session in DB
+    3. Check revoked / expired
+    4. Verify fingerprint (mismatch → revoke + log)
+    5. Load user, check is_active
+    6. Attach user_id to request.state for rate limiter key function
+    """
+    session_id = get_session_id_from_request(request)
+    if not session_id:
+        raise AuthRequired()
+
+    session, error_code = await validate_session(db, request, session_id)
+
+    if error_code == "SESSION_REVOKED":
+        await auth_event_service.log_auth_event(
+            db,
+            event_type=AuthEventType.SESSION_INVALIDATED,
+            success=False,
+            request=request,
+            metadata={"session_id": session_id},
+        )
+        raise SessionRevoked()
+
+    if error_code == "SESSION_EXPIRED":
+        await auth_event_service.log_session_expired(
+            db,
+            request=request,
+            user_id=session.user_id if session else "unknown",
+            session_id=session_id,
+        )
+        raise SessionExpired()
+
+    if error_code == "FINGERPRINT_MISMATCH":
+        # Session already revoked by validate_session — log and raise
+        await auth_event_service.log_fingerprint_mismatch(
+            db,
+            request=request,
+            user_id=session.user_id if session else "unknown",
+            session_id=session_id,
+        )
+        raise FingerprintMismatch()
+
+    if error_code or not session:
+        raise AuthRequired()
+
+    # Load user
+    user = await get_user_by_id(db, session.user_id)
+    if not user:
+        raise AuthRequired("User account not found")
+
+    if not user.is_active:
+        raise UserInactive()
+
+    # Attach to request.state — used by ratelimit key function
+    request.state.user_id = user.id
+
+    return user
+
+
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def require_roles(*roles: UserRole):
+    """Factory that returns a dependency enforcing one of the given roles."""
+
+    async def _check(current_user: CurrentUser) -> User:
+        if current_user.role not in roles:
+            raise Forbidden()
+        return current_user
+
+    return Depends(_check)
+
+
+# Convenience role guards — kept for future admin backend
+RequireSuperAdmin = require_roles(UserRole.SUPER_ADMIN)
+RequireSecurityAdmin = require_roles(UserRole.SUPER_ADMIN, UserRole.SECURITY_ADMIN)
+RequireAuditor = require_roles(
+    UserRole.SUPER_ADMIN, UserRole.SECURITY_ADMIN, UserRole.AUDITOR
+)
+
+
+===== app\core\error_handlers.py =====
+# backend/app/core/error_handlers.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Global exception handlers registered on the FastAPI app.
+# Nothing ever leaks a raw Python traceback to the client.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import logging
+import traceback
+
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from app.core.exceptions import AppException
+from app.core.response import error
+
+logger = logging.getLogger(__name__)
+
+
+def register_error_handlers(app: FastAPI) -> None:
+    """Register all global error handlers on the FastAPI app."""
+
+    # ── 1. Our custom AppException hierarchy ──────────────────────────────────
+    @app.exception_handler(AppException)
+    async def app_exception_handler(
+        request: Request, exc: AppException
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=error(
+                code=exc.code,
+                message=exc.message,
+                details=exc.details,
+            ),
+        )
+
+    # ── 2. Pydantic / FastAPI request validation errors ───────────────────────
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        # Group field errors by field name
+        field_errors: dict[str, list[str]] = {}
+        for e in exc.errors():
+            loc = e.get("loc", [])
+            # Skip 'body' prefix
+            field = ".".join(str(p) for p in loc if p != "body") or "request"
+            field_errors.setdefault(field, []).append(e["msg"])
+
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=error(
+                code="VALIDATION_ERROR",
+                message="Request validation failed",
+                details=field_errors,
+            ),
+        )
+
+    # ── 3. Starlette / FastAPI HTTPException ──────────────────────────────────
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(
+        request: Request, exc: StarletteHTTPException
+    ) -> JSONResponse:
+        # Map common HTTP status codes to our error codes
+        code_map = {
+            400: "BAD_REQUEST",
+            401: "AUTH_REQUIRED",
+            403: "FORBIDDEN",
+            404: "NOT_FOUND",
+            405: "METHOD_NOT_ALLOWED",
+            409: "ALREADY_EXISTS",
+            422: "VALIDATION_ERROR",
+            429: "RATE_LIMITED",
+            500: "INTERNAL_ERROR",
+            503: "SERVICE_UNAVAILABLE",
+        }
+        code = code_map.get(exc.status_code, "INTERNAL_ERROR")
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=error(
+                code=code,
+                message=str(exc.detail),
+            ),
+        )
+
+    # ── 4. Catch-all for unexpected exceptions ────────────────────────────────
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
+        # Always log the full traceback server-side
+        logger.error(
+            "Unhandled exception on %s %s\n%s",
+            request.method,
+            request.url.path,
+            traceback.format_exc(),
+        )
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=error(
+                code="INTERNAL_ERROR",
+                message="An unexpected error occurred. Please try again later.",
+            ),
+        )
+
+
+===== app\core\exceptions.py =====
+# backend/app/core/exceptions.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Custom exception hierarchy. Every error in the app raises one of these.
+# The global error handler in error_handlers.py catches them all.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from typing import Any
+
+
+class AppException(Exception):
+    """Base exception for all application errors."""
+
+    status_code: int = 500
+    code: str = "INTERNAL_ERROR"
+    message: str = "An unexpected error occurred"
+
+    def __init__(
+        self,
+        message: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        self.message = message or self.__class__.message
+        self.details = details or {}
+        super().__init__(self.message)
+
+
+# ─── Auth Errors (4xx) ────────────────────────────────────────────────────────
+
+class AuthRequired(AppException):
+    status_code = 401
+    code = "AUTH_REQUIRED"
+    message = "Authentication required"
+
+
+class SessionExpired(AppException):
+    status_code = 401
+    code = "SESSION_EXPIRED"
+    message = "Your session has expired. Please sign in again"
+
+
+class SessionRevoked(AppException):
+    status_code = 401
+    code = "SESSION_REVOKED"
+    message = "Your session has been revoked. Please sign in again"
+
+
+class FingerprintMismatch(AppException):
+    status_code = 401
+    code = "FINGERPRINT_MISMATCH"
+    message = "Session invalidated due to suspicious activity. Please sign in again"
+
+
+class OAuthFailed(AppException):
+    status_code = 400
+    code = "OAUTH_FAILED"
+    message = "Google authentication failed"
+
+
+class UserInactive(AppException):
+    status_code = 403
+    code = "USER_INACTIVE"
+    message = "Your account has been deactivated"
+
+
+class Forbidden(AppException):
+    status_code = 403
+    code = "FORBIDDEN"
+    message = "You do not have permission to perform this action"
+
+
+# ─── Resource Errors (4xx) ────────────────────────────────────────────────────
+
+class NotFound(AppException):
+    status_code = 404
+    code = "NOT_FOUND"
+    message = "Resource not found"
+
+
+class AlreadyExists(AppException):
+    status_code = 409
+    code = "ALREADY_EXISTS"
+    message = "Resource already exists"
+
+
+class ValidationError(AppException):
+    status_code = 422
+    code = "VALIDATION_ERROR"
+    message = "Validation failed"
+
+
+class RateLimited(AppException):
+    status_code = 429
+    code = "RATE_LIMITED"
+    message = "Too many requests. Please slow down"
+
+
+# ─── Extension Errors (4xx) ───────────────────────────────────────────────────
+
+class InvalidLogBatch(AppException):
+    status_code = 400
+    code = "INVALID_LOG_BATCH"
+    message = "Malformed log batch"
+
+
+class BatchTooLarge(AppException):
+    status_code = 400
+    code = "BATCH_TOO_LARGE"
+    message = "Batch exceeds maximum of 100 events"
+
+
+class PolicyNotFound(AppException):
+    status_code = 404
+    code = "POLICY_NOT_FOUND"
+    message = "No active policy found for this user"
+
+
+# ─── Server Errors (5xx) ──────────────────────────────────────────────────────
+
+class DatabaseError(AppException):
+    status_code = 503
+    code = "DATABASE_ERROR"
+    message = "Database operation failed"
+
+
+class ServiceUnavailable(AppException):
+    status_code = 503
+    code = "SERVICE_UNAVAILABLE"
+    message = "Service temporarily unavailable"
+
+
+===== app\core\fingerprint.py =====
+# backend/app/core/fingerprint.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Device fingerprint computation.
+# Uses only stable, browser-level signals — NO IP address.
+# IP is excluded because it changes frequently (mobile networks, VPNs, DHCP)
+# and would cause legitimate users to be logged out constantly.
+#
+# Signals used (all stable across sessions for the same browser/device):
+#   - User-Agent       → browser + OS version
+#   - Accept-Language  → locale preference
+#   - X-Client-Fingerprint header → client-side: platform, timezone, screen res
+# ─────────────────────────────────────────────────────────────────────────────
+
+import hashlib
+import hmac
+import logging
+
+from fastapi import Request
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+# Header sent by the dashboard frontend on every request
+FINGERPRINT_HEADER = "X-Client-Fingerprint"
+
+
+def compute_fingerprint(request: Request) -> str:
+    """
+    Compute a stable device fingerprint from request headers.
+    Returns a hex digest string.
+
+    Components:
+        - User-Agent (browser + OS)
+        - Accept-Language (locale)
+        - X-Client-Fingerprint (client-collected: platform, timezone, screen)
+    """
+    user_agent = request.headers.get("user-agent", "")
+    accept_language = request.headers.get("accept-language", "")
+    client_fp = request.headers.get(FINGERPRINT_HEADER, "")
+
+    raw = f"{user_agent}|{accept_language}|{client_fp}"
+
+    # HMAC with the app secret key — prevents rainbow table attacks
+    digest = hmac.new(
+        settings.secret_key.encode(),
+        raw.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    return digest
+
+
+def verify_fingerprint(request: Request, stored_hash: str) -> bool:
+    """
+    Verify the current request fingerprint matches the stored one.
+    Returns True if they match, False if mismatch (suspicious activity).
+    """
+    current = compute_fingerprint(request)
+    return hmac.compare_digest(current, stored_hash)
+
+
+===== app\core\pagination.py =====
+# backend/app/core/pagination.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Reusable server-side pagination dependency.
+# Inject `Pagination` into any route that returns a list.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from dataclasses import dataclass
+from typing import Annotated
+from fastapi import Depends, Query
+
+
+@dataclass
+class PaginationParams:
+    page: int
+    page_size: int
+
+    @property
+    def offset(self) -> int:
+        return (self.page - 1) * self.page_size
+
+    @property
+    def limit(self) -> int:
+        return self.page_size
+
+
+async def pagination_params(
+    page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
+) -> PaginationParams:
+    return PaginationParams(page=page, page_size=page_size)
+
+
+# Annotated shorthand for injection
+Pagination = Annotated[PaginationParams, Depends(pagination_params)]
+
+
+===== app\core\ratelimit.py =====
+# backend/app/core/ratelimit.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Rate limiting via slowapi (FastAPI-native limiter).
+# Key is user_id from session — NOT IP address.
+# Falls back to user-agent for unauthenticated routes (auth endpoints).
+# ─────────────────────────────────────────────────────────────────────────────
+
+from slowapi import Limiter
+from fastapi import Request
+
+
+def _rate_limit_key(request: Request) -> str:
+    """
+    Use session user_id as the rate limit key for authenticated routes.
+    For unauthenticated routes (auth flow), fall back to user-agent
+    since we explicitly avoid IP-based limiting.
+    """
+    user_id: str | None = getattr(request.state, "user_id", None)
+    if user_id:
+        return f"user:{user_id}"
+
+    # Unauthenticated — use user-agent as a soft identifier
+    ua = request.headers.get("user-agent", "unknown")
+    return f"ua:{ua[:64]}"
+
+
+limiter = Limiter(
+    key_func=_rate_limit_key,
+    default_limits=["200/minute"],
+)
+
+# ─── Per-endpoint limit strings ───────────────────────────────────────────────
+
+LIMIT_AUTH = "10/minute"
+LIMIT_AUTH_ME = "60/minute"
+LIMIT_LOGOUT = "10/minute"
+LIMIT_EXTENSION_LOG = "100/minute"
+LIMIT_EXTENSION_POLICY = "10/minute"
+LIMIT_LOGS = "60/minute"
+LIMIT_LOGS_STATS = "30/minute"
+LIMIT_POLICY = "30/minute"
+LIMIT_ALERTS = "30/minute"
+LIMIT_DEVICES = "30/minute"
+LIMIT_REDACT = "10/minute"
+
+
+===== app\core\response.py =====
+# backend/app/core/response.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Consistent response builder. Every route must use these helpers.
+# Shape is always predictable — frontend can rely on it unconditionally.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from datetime import datetime, timezone
+from typing import Any
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def success(
+    data: Any = None,
+    message: str = "",
+) -> dict:
+    """
+    Standard success response.
+
+    {
+        "success": true,
+        "data": ...,
+        "message": "...",
+        "timestamp": "..."
+    }
+    """
+    return {
+        "success": True,
+        "data": data,
+        "message": message,
+        "timestamp": _now(),
+    }
+
+
+def paginated(
+    data: list,
+    page: int,
+    page_size: int,
+    total: int,
+    message: str = "",
+) -> dict:
+    """
+    Paginated success response.
+
+    {
+        "success": true,
+        "data": [...],
+        "pagination": { page, page_size, total, total_pages, has_next, has_prev },
+        "message": "...",
+        "timestamp": "..."
+    }
+    """
+    total_pages = max(1, -(-total // page_size))  # ceiling division
+    return {
+        "success": True,
+        "data": data,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1,
+        },
+        "message": message,
+        "timestamp": _now(),
+    }
+
+
+def error(
+    code: str,
+    message: str,
+    details: dict | None = None,
+) -> dict:
+    """
+    Standard error response.
+
+    {
+        "success": false,
+        "error": { "code": "...", "message": "...", "details": {} },
+        "timestamp": "..."
+    }
+    """
+    return {
+        "success": False,
+        "error": {
+            "code": code,
+            "message": message,
+            "details": details or {},
+        },
+        "timestamp": _now(),
+    }
+
+
+===== app\core\security.py =====
+# backend/app/core/security.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Security utilities.
+# Email/password auth is removed — Google OAuth only.
+# This file kept minimal for any future needs.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import hashlib
+import hmac
+import secrets
+
+
+def generate_token(nbytes: int = 32) -> str:
+    """Generate a cryptographically secure random token."""
+    return secrets.token_urlsafe(nbytes)
+
+
+def hash_token(token: str, secret: str) -> str:
+    """HMAC-SHA256 hash of a token with a secret key."""
+    return hmac.new(
+        secret.encode(),
+        token.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+===== app\migrations\env.py =====
+# backend/app/migrations/env.py
+
+import asyncio
+from logging.config import fileConfig
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
+from alembic import context
+
+# Import Base and all models so Alembic detects them
+from app.core.database import Base
+from app.core.config import settings
+import app.models  # noqa: F401 — registers all ORM models
+
+config = context.config
+
+# Override sqlalchemy.url from our settings (reads .env)
+config.set_main_option("sqlalchemy.url", settings.database_url)
+
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+target_metadata = Base.metadata
+
+
+def run_migrations_offline() -> None:
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def do_run_migrations(connection: Connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata)
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+async def run_async_migrations() -> None:
+    connectable = async_engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+    await connectable.dispose()
+
+
+def run_migrations_online() -> None:
+    asyncio.run(run_async_migrations())
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+
+
+===== app\migrations\script.py.mako =====
+
+
+===== app\models\audit_log.py =====
+# backend/app/models/audit_log.py
+
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import String, DateTime, Integer, JSON, ForeignKey, Enum, Boolean
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from enum import Enum as PyEnum
+from app.core.database import Base
+
+
+class ActionType(str, PyEnum):
+    BLOCK = "BLOCK"
+    MASK = "MASK"
+    WARN_ALLOW = "WARN_ALLOW"
+    ALLOW = "ALLOW"
+
+
+class SeverityLevel(str, PyEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+
+    # Dedup key — extension generates a unique event ID per capture
+    event_id: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True, index=True)
+
+    # Who
+    user_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    user_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Org — nullable, schema only for now
+    org_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True
+    )
+
+    # What happened
+    action_taken: Mapped[ActionType] = mapped_column(Enum(ActionType), nullable=False)
+    category_triggered: Mapped[str] = mapped_column(String(50), nullable=False)  # FINANCIAL | PII | CONFIDENTIAL | IP
+    detection_type: Mapped[str] = mapped_column(String(100), nullable=False)  # e.g. credit_card, email
+    detection_tier: Mapped[str] = mapped_column(String(20), default="regex")  # regex | ner | ocr
+
+    # Where
+    llm_platform: Mapped[str] = mapped_column(String(100), nullable=False)
+    domain: Mapped[str | None] = mapped_column(String(253), nullable=True)
+
+    # Detection details
+    match_count: Mapped[int] = mapped_column(Integer, default=1)
+    snippet_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)  # SHA-256, never raw text
+    entity_types: Mapped[list] = mapped_column(JSON, default=list)
+    severities: Mapped[list] = mapped_column(JSON, default=list)
+
+    # Extension metadata
+    extension_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    os_platform: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    browser: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # User acknowledgement (for WARN_ALLOW)
+    acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Performance
+    latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    pipeline_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    # Timestamps
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    user: Mapped["User | None"] = relationship("User", back_populates="audit_logs")  # noqa: F821
+    organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="audit_logs")  # noqa: F821
+
+
+===== app\models\auth_event.py =====
+# backend/app/models/auth_event.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Auth event model — immutable audit trail of every auth-related action.
+# Never deleted, append-only. Used for security monitoring and compliance.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import uuid
+from datetime import datetime, timezone
+from enum import Enum as PyEnum
+from sqlalchemy import String, DateTime, Boolean, JSON, ForeignKey, Enum, Index
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.core.database import Base
+
+
+class AuthEventType(str, PyEnum):
+    LOGIN_SUCCESS = "login_success"
+    LOGIN_FAILED = "login_failed"
+    LOGOUT = "logout"
+    SESSION_CREATED = "session_created"
+    SESSION_EXPIRED = "session_expired"
+    SESSION_INVALIDATED = "session_invalidated"
+    FINGERPRINT_MISMATCH = "fingerprint_mismatch"
+    SUSPICIOUS_ACTIVITY = "suspicious_activity"
+    OAUTH_FAILED = "oauth_failed"
+    USER_INACTIVE = "user_inactive"
+
+
+class AuthEvent(Base):
+    __tablename__ = "auth_events"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+
+    # user_id is nullable — failed logins may not have a resolved user
+    user_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    event_type: Mapped[AuthEventType] = mapped_column(
+        Enum(AuthEventType), nullable=False
+    )
+
+    success: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+    # Request metadata
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    fingerprint_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # Extra context (session_id, error reason, etc.) — renamed from 'metadata' (reserved by SQLAlchemy)
+    event_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    # Relationship
+    user: Mapped["User | None"] = relationship("User", back_populates="auth_events")  # noqa: F821
+
+    __table_args__ = (
+        Index("ix_auth_events_user_created", "user_id", "created_at"),
+        Index("ix_auth_events_type", "event_type"),
+    )
+
+
+===== app\models\device.py =====
+# backend/app/models/device.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Fixed: added `name` column and `created_at` column.
+# devices.py API uses both fields — they were missing from the original model.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import String, DateTime, Boolean, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+
+
+class Device(Base):
+    __tablename__ = "devices"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+
+    # Owner
+    user_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    org_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True
+    )
+
+    # FIX: name column was missing — devices.py creates Device(name=body.name)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # Device info from extension
+    hostname: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    os_platform: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    browser: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    extension_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # FIX: created_at was missing — devices.py orders by Device.created_at
+    # enrolled_at kept as alias for semantic clarity
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Relationships
+    user: Mapped["User | None"] = relationship("User", back_populates="devices")  # noqa: F821
+    organisation: Mapped["Organisation | None"] = relationship(  # noqa: F821
+        "Organisation", back_populates="devices"
+    )
+
+
+===== app\models\org.py =====
+# backend/app/models/org.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Organisation model — SCHEMA ONLY.
+# No service, no routes, no business logic.
+# Kept for future multi-tenant support.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import String, DateTime, Boolean, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.core.database import Base
+
+
+class Organisation(Base):
+    __tablename__ = "organisations"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    admin_email: Mapped[str] = mapped_column(String(255), nullable=False)
+    plan: Mapped[str] = mapped_column(String(50), default="free")  # free | pro | enterprise
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    sso_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    sso_config: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON string
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Relationships (future use)
+    users: Mapped[list["User"]] = relationship("User", back_populates="organisation")  # noqa: F821
+    devices: Mapped[list["Device"]] = relationship("Device", back_populates="organisation")  # noqa: F821
+    policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="organisation")  # noqa: F821
+    audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="organisation")  # noqa: F821
+
+
+===== app\models\policy.py =====
+# backend/app/models/policy.py
+
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, JSON, Text, Integer
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.core.database import Base
+
+
+class Policy(Base):
+    __tablename__ = "policies"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+
+    # Owner — policy belongs to a user for now
+    user_id: Mapped[str] = mapped_column(
+        String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Org FK — nullable, schema only for future multi-tenant
+    org_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True
+    )
+
+    # Full PIIConfig stored as JSON
+    config: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+    # Versioning
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="policies")  # noqa: F821
+    organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="policies")  # noqa: F821
+
+
+===== app\models\session.py =====
+# backend/app/models/session.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Session model — server-side session storage.
+# Cookie holds only the session_id. All session data lives here.
+# Bound to a device fingerprint to prevent cookie theft attacks.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, Index
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.core.database import Base
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[str] = mapped_column(
+        String(64), primary_key=True  # secrets.token_urlsafe(32) = 43 chars
+    )
+
+    user_id: Mapped[str] = mapped_column(
+        String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Fingerprint hash — HMAC-SHA256 of stable browser signals
+    fingerprint_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    # Metadata for audit/display
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Lifecycle
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    last_active_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    is_revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Relationship
+    user: Mapped["User"] = relationship("User", back_populates="sessions")  # noqa: F821
+
+    # Indexes for fast lookups
+    __table_args__ = (
+        Index("ix_sessions_user_id_active", "user_id", "is_revoked"),
+    )
+
+    @property
+    def is_expired(self) -> bool:
+        return datetime.now(timezone.utc) >= self.expires_at
+
+    @property
+    def is_valid(self) -> bool:
+        return not self.is_revoked and not self.is_expired
+
+
+===== app\models\user.py =====
+# backend/app/models/user.py
+
+import uuid
+from datetime import datetime, timezone
+from enum import Enum as PyEnum
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, Enum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.core.database import Base
+
+
+class UserRole(str, PyEnum):
+    SUPER_ADMIN = "super_admin"
+    SECURITY_ADMIN = "security_admin"
+    AUDITOR = "auditor"
+    USER = "user"
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Google OAuth only — no password
+    google_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
+
+    # Role & Status
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_high_risk: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Organisation FK — nullable, schema only for now
+    org_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="users")  # noqa: F821
+    sessions: Mapped[list["Session"]] = relationship("Session", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
+    auth_events: Mapped[list["AuthEvent"]] = relationship("AuthEvent", back_populates="user")  # noqa: F821
+    devices: Mapped[list["Device"]] = relationship("Device", back_populates="user")  # noqa: F821
+    audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="user")  # noqa: F821
+    policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="user")  # noqa: F821
+
+
+===== app\models\__init__.py =====
+# backend/app/models/__init__.py
+# Import all models so Alembic and Base.metadata can discover them
+
+from app.models.org import Organisation
+from app.models.user import User, UserRole
+from app.models.session import Session
+from app.models.auth_event import AuthEvent, AuthEventType
+from app.models.audit_log import AuditLog, ActionType, SeverityLevel
+from app.models.device import Device
+from app.models.policy import Policy
+
+__all__ = [
+    "Organisation",
+    "User",
+    "UserRole",
+    "Session",
+    "AuthEvent",
+    "AuthEventType",
+    "AuditLog",
+    "ActionType",
+    "SeverityLevel",
+    "Device",
+    "Policy",
+]
+
+
+===== app\schemas\auth.schema.py =====
+# backend/app/schemas/auth.schema.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Auth schemas — Google OAuth only.
+# Email/password schemas removed. Routes use inline Pydantic models.
+# This file kept for any future schema reuse.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from pydantic import BaseModel
+
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    fullName: str | None
+    avatarUrl: str | None
+    role: str
+    isActive: bool
+    orgId: str | None
+    createdAt: str
+    lastLoginAt: str | None
+
+    model_config = {"from_attributes": True}
+
+
+class SessionResponse(BaseModel):
+    user: UserResponse
+    message: str = "Login successful"
+
+
+===== app\schemas\device.schema.py =====
+# backend/app/schemas/device.schema.py
+# Aligned with actual Device model and devices.py API
+
+from pydantic import BaseModel
+
+
+class DeviceRegisterRequest(BaseModel):
+    name: str
+    hostname: str | None = None
+    osPlatform: str | None = None
+    browser: str | None = None
+    extensionVersion: str | None = None
+
+
+class DeviceHeartbeatRequest(BaseModel):
+    extensionVersion: str | None = None
+    osPlatform: str | None = None
+    browser: str | None = None
+
+
+class DeviceResponse(BaseModel):
+    id: str
+    userId: str | None
+    name: str
+    hostname: str | None
+    osPlatform: str | None
+    browser: str | None
+    extensionVersion: str | None
+    isActive: bool
+    createdAt: str
+    lastSeenAt: str | None
+
+    model_config = {"from_attributes": True}
+
+
+===== app\schemas\log.schema.py =====
+# backend/app/schemas/log.schema.py
+# Aligned with actual AuditLog model and camelCase API responses
+
+from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
+import re
+
+
+class ExtensionLogEvent(BaseModel):
+    """Single detection event sent from the browser extension."""
+    eventId: str
+    timestamp: str
+    actionTaken: str
+    categoryTriggered: str
+    detectionType: str
+    detectionTier: str = "regex"
+    llmPlatform: str
+    domain: str | None = None
+    matchCount: int = 1
+    snippetHash: str | None = None
+    entityTypes: list[str] = []
+    severities: list[str] = []
+    extensionVersion: str | None = None
+    osPlatform: str | None = None
+    browser: str | None = None
+    acknowledged: bool = False
+    latencyMs: int | None = None
+    pipelineVersion: str | None = None
+
+    @field_validator("llmPlatform")
+    @classmethod
+    def sanitize_platform(cls, v: str) -> str:
+        return v.split("/")[0].lower()
+
+    @field_validator("detectionType")
+    @classmethod
+    def validate_detection_type(cls, v: str) -> str:
+        """Ensure detectionType is a label, not raw PII."""
+        if not re.match(r"^[a-zA-Z0-9_]{1,100}$", v):
+            raise ValueError(
+                f"detectionType must be an alphanumeric label, got: {v!r}"
+            )
+        return v
+
+
+class ExtensionLogBatchRequest(BaseModel):
+    events: list[ExtensionLogEvent] = Field(..., max_length=100)
+
+
+class LogResponse(BaseModel):
+    id: str
+    eventId: str | None
+    actionTaken: str
+    categoryTriggered: str
+    detectionType: str
+    detectionTier: str
+    llmPlatform: str
+    domain: str | None
+    matchCount: int
+    entityTypes: list[str]
+    severities: list[str]
+    extensionVersion: str | None
+    osPlatform: str | None
+    browser: str | None
+    acknowledged: bool
+    latencyMs: int | None
+    timestamp: str
+    receivedAt: str
+
+
+class LogStatsResponse(BaseModel):
+    totalEvents: int
+    blockedCount: int
+    maskedCount: int
+    warnedCount: int
+    allowedCount: int
+    topEntityTypes: list[dict]
+    topPlatforms: list[dict]
+    topDomains: list[dict]
+
+
+===== app\schemas\policy.schema.py =====
+# backend/app/schemas/policy.schema.py
+# Aligned with actual Policy model and camelCase API
+
+from pydantic import BaseModel
+from datetime import datetime
+
+
+class CategoryConfig(BaseModel):
+    enabled: bool
+    action: str  # BLOCK | MASK | WARN_ALLOW | ALLOW
+    customKeywords: list[str] = []
+    allowlist: list[str] = []
+    fuzzyMatch: bool = False
+
+
+class PIIConfig(BaseModel):
+    version: int = 1
+    categories: dict[str, CategoryConfig]
+    monitoredPlatforms: list[str]
+    customDomains: list[str] = []
+    allowPause: bool = True
+    logUserEmail: bool = False
+    sensitivityLevel: str = "medium"
+    updatedAt: str | None = None
+
+
+class PolicyCreateRequest(BaseModel):
+    config: dict  # Full PIIConfig as dict
+    publishImmediately: bool = True
+
+
+class PolicyUpdateRequest(BaseModel):
+    config: dict
+    publishImmediately: bool = True
+
+
+class PolicyResponse(BaseModel):
+    id: str
+    userId: str | None
+    config: dict
+    version: int
+    isActive: bool
+    publishedAt: str | None
+    createdAt: str
+    updatedAt: str
+
+
+===== app\schemas\redaction.schema.py =====
+# ─────────────────────────────────────────────
+# Redaction Schemas
+# ─────────────────────────────────────────────
+
+from pydantic import BaseModel, Field
+from typing import List
+
+
+class RedactionRegion(BaseModel):
+    page: int = Field(..., ge=0)
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+class RedactionRequest(BaseModel):
+    regions: List[RedactionRegion]
+
+
+===== app\schemas\__init__.py =====
+
+
+===== app\services\auth_event_service.py =====
+# backend/app/services/auth_event_service.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Auth event logging — append-only audit trail.
+# All calls are fire-and-forget: logging failures never block the auth flow.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import logging
+from typing import Any
+
+from fastapi import Request
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.auth_event import AuthEvent, AuthEventType
+from app.core.fingerprint import compute_fingerprint
+
+logger = logging.getLogger(__name__)
+
+
+async def log_auth_event(
+    db: AsyncSession,
+    event_type: AuthEventType,
+    success: bool,
+    request: Request,
+    user_id: str | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    """
+    Log an auth event. Never raises — failures are swallowed and logged.
+    This ensures auth event logging never blocks or breaks the auth flow.
+    """
+    try:
+        fingerprint = compute_fingerprint(request)
+
+        event = AuthEvent(
+            user_id=user_id,
+            event_type=event_type,
+            success=success,
+            user_agent=request.headers.get("user-agent"),
+            fingerprint_hash=fingerprint,
+            metadata=metadata,
+        )
+        db.add(event)
+        await db.flush()
+
+    except Exception as exc:
+        # Log but never propagate — auth logging is observability, not critical path
+        logger.error("Failed to log auth event %s: %s", event_type, exc)
+
+
+# ─── Convenience helpers ──────────────────────────────────────────────────────
+
+async def log_login_success(
+    db: AsyncSession, request: Request, user_id: str, session_id: str
+) -> None:
+    await log_auth_event(
+        db, AuthEventType.LOGIN_SUCCESS, True, request,
+        user_id=user_id,
+        metadata={"session_id": session_id},
+    )
+
+
+async def log_login_failed(
+    db: AsyncSession, request: Request, reason: str, email: str | None = None
+) -> None:
+    await log_auth_event(
+        db, AuthEventType.LOGIN_FAILED, False, request,
+        metadata={"reason": reason, "email": email},
+    )
+
+
+async def log_logout(
+    db: AsyncSession, request: Request, user_id: str, session_id: str
+) -> None:
+    await log_auth_event(
+        db, AuthEventType.LOGOUT, True, request,
+        user_id=user_id,
+        metadata={"session_id": session_id},
+    )
+
+
+async def log_fingerprint_mismatch(
+    db: AsyncSession, request: Request, user_id: str, session_id: str
+) -> None:
+    await log_auth_event(
+        db, AuthEventType.FINGERPRINT_MISMATCH, False, request,
+        user_id=user_id,
+        metadata={"session_id": session_id, "note": "Session revoked automatically"},
+    )
+
+
+async def log_session_expired(
+    db: AsyncSession, request: Request, user_id: str, session_id: str
+) -> None:
+    await log_auth_event(
+        db, AuthEventType.SESSION_EXPIRED, False, request,
+        user_id=user_id,
+        metadata={"session_id": session_id},
+    )
+
+
+async def log_oauth_failed(
+    db: AsyncSession, request: Request, reason: str
+) -> None:
+    await log_auth_event(
+        db, AuthEventType.OAUTH_FAILED, False, request,
+        metadata={"reason": reason},
+    )
+
+
+===== app\services\auth_service.py =====
+# backend/app/services/auth_service.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Auth service — Google OAuth only.
+# No email/password. No JWT. Session-based.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from datetime import datetime, timezone
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from app.models.user import User, UserRole
+
+
+async def get_user_by_id(db: AsyncSession, user_id: str) -> User | None:
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+    result = await db.execute(select(User).where(User.email == email.lower()))
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_google_id(db: AsyncSession, google_id: str) -> User | None:
+    result = await db.execute(select(User).where(User.google_id == google_id))
+    return result.scalar_one_or_none()
+
+
+async def upsert_google_user(
+    db: AsyncSession,
+    google_id: str,
+    email: str,
+    full_name: str,
+    avatar_url: str | None,
+) -> User:
+    """
+    Create or update a user from Google OAuth profile.
+    Lookup order: google_id → email → create new.
+    """
+    # 1. Try find by google_id (most common path after first login)
+    user = await get_user_by_google_id(db, google_id)
+
+    # 2. Try find by email (account existed before Google auth)
+    if not user:
+        user = await get_user_by_email(db, email)
+
+    if user:
+        # Update Google fields
+        user.google_id = google_id
+        user.avatar_url = avatar_url or user.avatar_url
+        user.full_name = full_name or user.full_name
+        user.last_login_at = datetime.now(timezone.utc)
+        await db.flush()
+        await db.refresh(user)
+        return user
+
+    # 3. Create new user
+    user = User(
+        email=email.lower(),
+        full_name=full_name,
+        avatar_url=avatar_url,
+        google_id=google_id,
+        role=UserRole.USER,
+        last_login_at=datetime.now(timezone.utc),
+    )
+    db.add(user)
+    await db.flush()
+    await db.refresh(user)
+    return user
+
+
+===== app\services\device.service.py =====
+# backend/app/services/device.service.py
+# ─────────────────────────────────────────────────────────────────────────────
+# DEPRECATED — device logic is now inline in api/v1/devices.py
+# This file is kept as a placeholder to avoid import errors.
+# All device operations use AsyncSession directly in the route handlers.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+===== app\services\extension_service.py =====
+# backend/app/services/extension_service.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Extension service — handles log batch ingest and policy sync.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import logging
+from datetime import datetime, timezone
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from app.models.audit_log import AuditLog, ActionType
+from app.models.policy import Policy
+
+logger = logging.getLogger(__name__)
+
+# Default policy config served when user has no policy set up yet.
+# updatedAt is intentionally omitted here — callers inject it at request time.
+DEFAULT_POLICY_CONFIG = {
+    "version": 1,
+    "categories": {
+        "FINANCIAL": {"enabled": True, "action": "BLOCK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False},
+        "PII": {"enabled": True, "action": "MASK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False},
+        "CONFIDENTIAL": {"enabled": True, "action": "BLOCK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False},
+        "IP": {"enabled": True, "action": "WARN_ALLOW", "customKeywords": [], "allowlist": [], "fuzzyMatch": False},
+    },
+    "monitoredPlatforms": ["chatgpt", "gemini", "copilot", "claude", "perplexity", "meta-ai"],
+    "customDomains": [],
+    "allowPause": True,
+    "logUserEmail": False,
+    "sensitivityLevel": "medium",
+}
+
+
+async def ingest_log_batch(
+    db: AsyncSession,
+    user_id: str,
+    events: list[dict],
+) -> int:
+    """
+    Ingest a batch of detection events from the extension.
+    Deduplicates by event_id. Returns count of new events stored.
+    """
+    if not events:
+        return 0
+
+    inserted = 0
+    for event in events:
+        event_id = event.get("eventId") or event.get("event_id")
+
+        # Skip duplicates
+        if event_id:
+            existing = await db.execute(
+                select(AuditLog).where(AuditLog.event_id == event_id)
+            )
+            if existing.scalar_one_or_none():
+                continue
+
+        # Parse timestamp
+        ts = event.get("timestamp")
+        if isinstance(ts, str):
+            try:
+                ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            except ValueError:
+                ts = datetime.now(timezone.utc)
+        elif not ts:
+            ts = datetime.now(timezone.utc)
+
+        log = AuditLog(
+            event_id=event_id,
+            user_id=user_id,
+            action_taken=_parse_action(event.get("actionTaken") or event.get("action_taken", "ALLOW")),
+            category_triggered=event.get("categoryTriggered") or event.get("category_triggered", "PII"),
+            detection_type=event.get("detectionType") or event.get("detection_type", "unknown"),
+            detection_tier=event.get("detectionTier") or event.get("detection_tier", "regex"),
+            llm_platform=event.get("llmPlatform") or event.get("llm_platform", "unknown"),
+            domain=event.get("domain"),
+            match_count=event.get("matchCount") or event.get("match_count", 1),
+            snippet_hash=event.get("snippetHash") or event.get("snippet_hash"),
+            entity_types=event.get("entityTypes") or event.get("entity_types", []),
+            severities=event.get("severities", []),
+            extension_version=event.get("extensionVersion") or event.get("extension_version"),
+            os_platform=event.get("osPlatform") or event.get("os_platform"),
+            browser=event.get("browser"),
+            acknowledged=event.get("acknowledged", False),
+            latency_ms=event.get("latencyMs") or event.get("latency_ms"),
+            pipeline_version=event.get("pipelineVersion") or event.get("pipeline_version"),
+            timestamp=ts,
+        )
+        db.add(log)
+        inserted += 1
+
+    if inserted:
+        await db.flush()
+        logger.info("Ingested %d log events for user %s", inserted, user_id)
+
+    return inserted
+
+
+async def get_policy_for_extension(
+    db: AsyncSession,
+    user_id: str,
+) -> dict:
+    """
+    Return the active policy config for extension polling.
+    Falls back to default config if user has no policy.
+    """
+    result = await db.execute(
+        select(Policy)
+        .where(Policy.user_id == user_id, Policy.is_active == True)  # noqa: E712
+        .order_by(Policy.version.desc())
+        .limit(1)  # FIX: prevent MultipleResultsFound on race condition
+    )
+    policy = result.scalar_one_or_none()
+
+    if not policy:
+        import copy
+        default = copy.deepcopy(DEFAULT_POLICY_CONFIG)
+        default["updatedAt"] = datetime.now(timezone.utc).isoformat()
+        return {
+            "version": 1,
+            "config": default,
+            "updatedAt": datetime.now(timezone.utc).isoformat(),
+        }
+
+    return {
+        "version": policy.version,
+        "config": policy.config,
+        "updatedAt": policy.updated_at.isoformat(),
+    }
+
+
+def _parse_action(value: str) -> ActionType:
+    try:
+        return ActionType(value.upper())
+    except ValueError:
+        return ActionType.ALLOW
+
+
+===== app\services\log.service.py =====
+# backend/app/services/log.service.py
+# ─────────────────────────────────────────────────────────────────────────────
+# DEPRECATED — log logic is now inline in api/v1/logs.py
+# Extension log ingestion is handled by services/extension_service.py
+# This file is kept as a placeholder to avoid import errors.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+===== app\services\policy.service.py =====
+# backend/app/services/policy.service.py
+# ─────────────────────────────────────────────────────────────────────────────
+# DEPRECATED — policy logic is now inline in api/v1/policy.py
+# Extension policy sync is handled by services/extension_service.py
+# This file is kept as a placeholder to avoid import errors.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+===== app\services\redaction_service.py =====
+# backend/app/services/redaction_service.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Redaction Service — core logic for irreversible PDF redaction.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import os
+import shutil
+import tempfile
+import uuid
+from typing import List, Dict, Any
+
+from pdf2image import convert_from_path
+from PIL import Image, ImageDraw
+
+
+def redact_pdf_file(
+    file_path: str,
+    regions: List[Dict[str, Any]],
+    dpi: int = 300,
+) -> str:
+    """
+    Perform 100% irreversible PDF redaction via rasterization.
+
+    Step 1: Convert PDF to high-DPI images (destroys all text layers + metadata).
+    Step 2: Draw solid black rectangles over sensitive regions.
+    Step 3: Rebuild a new PDF from the processed images.
+
+    Returns the path to the redacted output PDF.
+    Caller is responsible for cleanup (via background task).
+    """
+    job_id = str(uuid.uuid4())
+    temp_dir = tempfile.mkdtemp(prefix=f"redact_{job_id}_")
+
+    try:
+        # Step 1 — rasterize (destroys text layer and metadata)
+        images = convert_from_path(file_path, dpi=dpi, fmt="png")
+        if not images:
+            raise ValueError("PDF has no pages or failed to render")
+
+        # Industry standard PDF DPI is 72. pdf2image renders at the requested DPI.
+        scale_factor = dpi / 72.0
+
+        # Step 2 — apply redaction rectangles
+        processed_images: list[Image.Image] = []
+        for i, img in enumerate(images):
+            draw = ImageDraw.Draw(img)
+            page_regions = [r for r in regions if int(r.get("page", -1)) == i]
+            for region in page_regions:
+                x1 = float(region["x"]) * scale_factor
+                y1 = float(region["y"]) * scale_factor
+                x2 = (float(region["x"]) + float(region["width"])) * scale_factor
+                y2 = (float(region["y"]) + float(region["height"])) * scale_factor
+                draw.rectangle([x1, y1, x2, y2], fill="black", outline="black")
+            processed_images.append(img)
+
+        # Step 3 — rebuild PDF from images
+        output_pdf_path = os.path.join(temp_dir, "redacted.pdf")
+        first_img = processed_images[0]
+        other_imgs = processed_images[1:]
+        first_img.save(
+            output_pdf_path,
+            "PDF",
+            resolution=float(dpi),
+            save_all=True,
+            append_images=other_imgs,
+        )
+
+        return output_pdf_path
+
+    except Exception:
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        raise
+
+
+def cleanup_temp_dir(temp_dir: str) -> None:
+    """Safely remove a temporary directory."""
+    if os.path.exists(temp_dir):
+        shutil.rmtree(temp_dir)
+
+
+===== app\services\session_service.py =====
+import secrets
+import logging
+from datetime import datetime, timezone, timedelta
+
+from fastapi import Request, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update
+
+from app.models.session import Session
+from app.core.config import settings
+from app.core.fingerprint import compute_fingerprint, verify_fingerprint
+
+logger = logging.getLogger(__name__)
+
+SESSION_COOKIE_NAME = "sgpt_session"
+SESSION_TTL_SECONDS = settings.session_max_age
+
+
+async def create_session(
+    db: AsyncSession,
+    request: Request,
+    response: Response,
+    user_id: str,
+) -> Session:
+    session_id = secrets.token_urlsafe(32)
+    fingerprint = compute_fingerprint(request)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
+
+    session = Session(
+        id=session_id,
+        user_id=user_id,
+        fingerprint_hash=fingerprint,
+        user_agent=request.headers.get("user-agent"),
+        expires_at=expires_at,
+    )
+    db.add(session)
+    await db.flush()
+
+    if settings.is_production:
+        same_site = "lax"
+        secure = True
+        domain = None
+    else:
+        same_site = "lax"
+        secure = False
+        domain = None
+
+    logger.info("=== SETTING COOKIE ===")
+    logger.info("  session_id : %s", session_id[:8] + "...")
+    logger.info("  samesite   : %s", same_site)
+    logger.info("  secure     : %s", secure)
+    logger.info("  domain     : %s", domain)
+    logger.info("  path       : /")
+    logger.info("  max_age    : %s", SESSION_TTL_SECONDS)
+
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_id,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=secure,
+        samesite=same_site,
+        path="/",
+    )
+
+    logger.info("  COOKIE SET ON RESPONSE OBJECT — id: %s", id(response))
+    logger.info("  response headers after set_cookie: %s", dict(response.headers))
+
+    logger.info("Session created for user %s", user_id)
+    return session
+
+
+async def get_session(db: AsyncSession, session_id: str) -> Session | None:
+    result = await db.execute(select(Session).where(Session.id == session_id))
+    return result.scalar_one_or_none()
+
+
+async def validate_session(
+    db: AsyncSession,
+    request: Request,
+    session_id: str,
+) -> tuple[Session | None, str | None]:
+    logger.info("VALIDATE SESSION — id: %s", session_id[:8] + "..." if session_id else "NONE")
+
+    session = await get_session(db, session_id)
+
+    if not session:
+        logger.info("  result: SESSION_NOT_FOUND")
+        return None, "SESSION_NOT_FOUND"
+    if session.is_revoked:
+        logger.info("  result: SESSION_REVOKED")
+        return None, "SESSION_REVOKED"
+    if session.is_expired:
+        logger.info("  result: SESSION_EXPIRED")
+        return session, "SESSION_EXPIRED"
+    if not verify_fingerprint(request, session.fingerprint_hash):
+        await revoke_session(db, session_id)
+        logger.warning("  result: FINGERPRINT_MISMATCH — session revoked")
+        return session, "FINGERPRINT_MISMATCH"
+
+    await db.execute(
+        update(Session)
+        .where(Session.id == session_id)
+        .values(last_active_at=datetime.now(timezone.utc))
+    )
+    logger.info("  result: VALID")
+    return session, None
+
+
+async def revoke_session(db: AsyncSession, session_id: str) -> None:
+    await db.execute(
+        update(Session).where(Session.id == session_id).values(is_revoked=True)
+    )
+    await db.flush()
+
+
+async def revoke_all_user_sessions(db: AsyncSession, user_id: str) -> int:
+    result = await db.execute(
+        update(Session)
+        .where(Session.user_id == user_id, Session.is_revoked == False)  # noqa: E712
+        .values(is_revoked=True)
+    )
+    await db.flush()
+    return result.rowcount
+
+
+def clear_session_cookie(response: Response) -> None:
+    if settings.is_production:
+        response.delete_cookie(key=SESSION_COOKIE_NAME, path="/", secure=True, httponly=True, samesite="lax")
+    else:
+        response.delete_cookie(key=SESSION_COOKIE_NAME, path="/", secure=False, httponly=True, samesite="lax")
+
+
+def get_session_id_from_request(request: Request) -> str | None:
+    cookie = request.cookies.get(SESSION_COOKIE_NAME)
+    logger.info("GET SESSION FROM COOKIE — found: %s", bool(cookie))
+    return cookie
+
+

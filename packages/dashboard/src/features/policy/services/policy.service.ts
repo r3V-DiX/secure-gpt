@@ -1,28 +1,26 @@
-// ─────────────────────────────────────────────
-// Policy Service — Dashboard
-// ─────────────────────────────────────────────
+// src/features/policy/services/policy.service.ts
+import { apiGet, apiPut } from '@/lib/api/client'
+import type { Policy, PIIConfig } from '@/types'
 
-import apiClient from '@/lib/api/client'
-import type { PIIConfig } from '@securegpt/shared/types'
-
-export interface PolicyVersion {
-  id: string
-  version: number
-  is_active: boolean
-  published_at: string | null
-  created_at: string
+export async function fetchCurrentPolicy(): Promise<Policy> {
+  return apiGet<Policy>('/policy/current')
 }
 
-export async function fetchCurrentPolicy(): Promise<{ config: PIIConfig; version: number }> {
-  const res = await apiClient.get('/policy/current')
-  return (res.data as { data: { config: PIIConfig; version: number } }).data
+export async function savePolicy(config: PIIConfig, publishImmediately = true): Promise<Policy> {
+  return apiPut<Policy>('/policy/current', { config, publishImmediately })
 }
 
-export async function updatePolicy(config: PIIConfig, publishImmediately = true): Promise<void> {
-  await apiClient.put('/policy', { config, publish_immediately: publishImmediately })
-}
-
-export async function fetchPolicyHistory(): Promise<PolicyVersion[]> {
-  const res = await apiClient.get('/policy/history')
-  return (res.data as { data: PolicyVersion[] }).data
+export const DEFAULT_POLICY_CONFIG: PIIConfig = {
+  version: 1,
+  categories: {
+    FINANCIAL: { enabled: true, action: 'BLOCK', customKeywords: [], allowlist: [], fuzzyMatch: false },
+    PII: { enabled: true, action: 'MASK', customKeywords: [], allowlist: [], fuzzyMatch: false },
+    CONFIDENTIAL: { enabled: true, action: 'BLOCK', customKeywords: [], allowlist: [], fuzzyMatch: false },
+    IP: { enabled: true, action: 'WARN_ALLOW', customKeywords: [], allowlist: [], fuzzyMatch: false },
+  },
+  monitoredPlatforms: ['chatgpt', 'gemini', 'copilot', 'claude', 'perplexity', 'meta-ai'],
+  customDomains: [],
+  allowPause: true,
+  logUserEmail: false,
+  sensitivityLevel: 'medium',
 }

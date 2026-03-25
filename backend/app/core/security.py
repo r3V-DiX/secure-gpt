@@ -1,16 +1,24 @@
 # backend/app/core/security.py
 # ─────────────────────────────────────────────────────────────────────────────
-# Password hashing utilities.
+# Security utilities.
+# Email/password auth is removed — Google OAuth only.
+# This file kept minimal for any future needs.
 # ─────────────────────────────────────────────────────────────────────────────
 
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+import hashlib
+import hmac
+import secrets
 
 
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+def generate_token(nbytes: int = 32) -> str:
+    """Generate a cryptographically secure random token."""
+    return secrets.token_urlsafe(nbytes)
+
+
+def hash_token(token: str, secret: str) -> str:
+    """HMAC-SHA256 hash of a token with a secret key."""
+    return hmac.new(
+        secret.encode(),
+        token.encode(),
+        hashlib.sha256,
+    ).hexdigest()

@@ -1,37 +1,56 @@
-"use client";
-// packages/dashboard/src/app/(auth)/callback/page.tsx
-// Backend redirects here after Google OAuth — just refresh auth state and go.
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context";
+"use client"
+// src/app/(auth)/callback/page.tsx
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { ShieldCheck } from "lucide-react"
 
 export default function CallbackPage() {
-  const { refresh } = useAuth();
-  const router = useRouter();
+  const { refresh } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    refresh().then(() => router.replace("/dashboard"));
-  }, [refresh, router]);
+    refresh()
+      .then(() => router.replace("/dashboard"))
+      .catch(() => router.replace("/login?error=oauth_failed"))
+  }, [refresh, router])
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "var(--bg)",
-      gap: 16,
-    }}>
-      <div style={{
-        width: 40, height: 40,
-        border: "3px solid rgba(59,130,246,0.2)",
-        borderTopColor: "var(--accent)",
-        borderRadius: "50%",
-        animation: "spin 0.8s linear infinite",
-      }} />
-      <p style={{ color: "var(--text-2)", fontSize: 14 }}>Signing you in…</p>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-5"
+      style={{ background: 'var(--bg-base)' }}
+    >
+      {/* Animated logo */}
+      <div
+        className="size-14 rounded-2xl flex items-center justify-center"
+        style={{
+          background: 'var(--accent-light)',
+          border: '1px solid var(--accent-border)',
+          color: 'var(--accent-text)',
+        }}
+      >
+        <ShieldCheck size={26} />
+      </div>
+
+      {/* Spinner */}
+      <div className="relative size-8">
+        <div
+          className="absolute inset-0 rounded-full animate-spin"
+          style={{
+            border: '2px solid var(--accent-border)',
+            borderTopColor: 'var(--accent)',
+          }}
+        />
+      </div>
+
+      <div className="text-center">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Signing you in…
+        </p>
+        <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+          Verifying your session
+        </p>
+      </div>
     </div>
-  );
+  )
 }

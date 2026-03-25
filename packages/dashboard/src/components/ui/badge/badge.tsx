@@ -1,44 +1,59 @@
-import React from 'react'
+// src/components/ui/badge/badge.tsx
 import { clsx } from 'clsx'
 
-type Variant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'purple'
+export type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'neutral'
 
 interface BadgeProps {
-  variant?: Variant
+  variant?: BadgeVariant
   children: React.ReactNode
   dot?: boolean
   className?: string
 }
 
-const styles: Record<Variant, string> = {
-  default: 'bg-gray-100 text-gray-700',
-  success: 'bg-green-50 text-green-700 border border-green-100',
-  warning: 'bg-amber-50 text-amber-700 border border-amber-100',
-  danger: 'bg-red-50 text-red-700 border border-red-100',
-  info: 'bg-blue-50 text-blue-700 border border-blue-100',
-  neutral: 'bg-gray-100 text-gray-500',
-  purple: 'bg-purple-50 text-purple-700 border border-purple-100',
+// Uses CSS variables so both themes look great
+const variantClasses: Record<BadgeVariant, string> = {
+  default: 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border-2)]',
+  success: 'bg-[var(--success-light)] text-[var(--success)] border border-[var(--success-border)]',
+  warning: 'bg-[var(--warning-light)] text-[var(--warning)] border border-[var(--warning-border)]',
+  danger: 'bg-[var(--danger-light)]  text-[var(--danger)]  border border-[var(--danger-border)]',
+  info: 'bg-[var(--info-light)]    text-[var(--info)]    border border-[var(--info-border)]',
+  purple: 'bg-violet-50 text-violet-600 border border-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20',
+  neutral: 'bg-[var(--bg-surface-3)] text-[var(--text-tertiary)] border border-[var(--border)]',
 }
 
-const dotColors: Record<Variant, string> = {
-  default: 'bg-gray-400',
-  success: 'bg-green-500',
-  warning: 'bg-amber-500',
-  danger: 'bg-red-500',
-  info: 'bg-blue-500',
-  neutral: 'bg-gray-400',
-  purple: 'bg-purple-500',
+const dotClasses: Record<BadgeVariant, string> = {
+  default: 'bg-[var(--text-tertiary)]',
+  success: 'bg-[var(--success)]',
+  warning: 'bg-[var(--warning)]',
+  danger: 'bg-[var(--danger)]',
+  info: 'bg-[var(--info)]',
+  purple: 'bg-violet-500',
+  neutral: 'bg-[var(--text-tertiary)]',
 }
 
 export function Badge({ variant = 'default', children, dot, className }: BadgeProps) {
   return (
     <span className={clsx(
-      'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium',
-      styles[variant],
-      className
+      'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap',
+      variantClasses[variant],
+      className,
     )}>
-      {dot && <span className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', dotColors[variant])} />}
+      {dot && <span className={clsx('size-1.5 rounded-full shrink-0', dotClasses[variant])} />}
       {children}
     </span>
   )
+}
+
+export function actionVariant(action: string): BadgeVariant {
+  const map: Record<string, BadgeVariant> = {
+    BLOCK: 'danger', MASK: 'warning', WARN_ALLOW: 'info', ALLOW: 'success',
+  }
+  return map[action] ?? 'neutral'
+}
+
+export function severityVariant(sev: string): BadgeVariant {
+  const map: Record<string, BadgeVariant> = {
+    CRITICAL: 'danger', HIGH: 'warning', MEDIUM: 'info', LOW: 'success',
+  }
+  return map[sev] ?? 'neutral'
 }

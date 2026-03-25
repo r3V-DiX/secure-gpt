@@ -1,38 +1,100 @@
 // packages/dashboard/src/lib/api/client.ts
+// Single Axios instance — session-cookie auth, auto-unwraps backend envelope.
+//
+// KEY FIX: baseURL is /api/v1 (relative) — all requests go to localhost:3000
+// which Next.js proxies to the backend. This means the session cookie is
+// always on the same origin (localhost:3000) — no cross-origin cookie issues.
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 
-type RequestOptions = {
-  method?: string;
-  body?: unknown;
-  headers?: Record<string, string>;
-};
+const apiClient: AxiosInstance = axios.create({
+  // Relative base — goes through Next.js rewrite proxy
+  // next.config.mjs: /api/v1/:path* → backend:8000/api/v1/:path*
+  baseURL: '/api/v1',
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 15_000,
+})
 
-async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const res = await fetch(`${BASE_URL}/api/v1${path}`, {
-    method: opts.method ?? "GET",
-    credentials: "include", // send session cookie
-    headers: {
-      "Content-Type": "application/json",
-      ...opts.headers,
-    },
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(error.detail ?? "Request failed");
+// ── Request interceptor — fingerprint header ──────────────────────────────────
+apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  if (typeof window !== 'undefined') {
+    const fp = [
+      navigator.platform,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+      `${screen.width}x${screen.height}`,
+    ].join('|')
+    config.headers['X-Client-Fingerprint'] = fp
   }
+  return config
+})
 
-  // 204 No Content
-  if (res.status === 204) return undefined as T;
+// ── Response interceptor — unwrap envelope, redirect on 401 ──────────────────
+apiClient.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
+    }
+    const message =
+      error.response?.data?.error?.message ??
+      error.response?.data?.detail ??
+      error.message ??
+      'An unexpected error occurred'
+    return Promise.reject(new Error(message))
+  },
+)
 
-  return res.json() as Promise<T>;
+export default apiClient
+
+export interface BackendEnvelope<T> {
+  success: boolean
+  data: T
+  message: string
+  timestamp: string
 }
 
-export const api = {
-  get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body }),
-  patch: <T>(path: string, body: unknown) => request<T>(path, { method: "PATCH", body }),
-  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
-};
+export interface BackendPaginatedEnvelope<T> {
+  success: boolean
+  data: T[]
+  pagination: {
+    page: number
+    page_size: number
+    total: number
+    total_pages: number
+    has_next: boolean
+    has_prev: boolean
+  }
+  message: string
+  timestamp: string
+}
+
+export async function apiGet<T>(path: string, params?: Record<string, unknown>): Promise<T> {
+  const res = await apiClient.get<BackendEnvelope<T>>(path, { params })
+  return res.data.data
+}
+
+export async function apiGetPaginated<T>(
+  path: string,
+  params?: Record<string, unknown>,
+): Promise<{ data: T[]; pagination: BackendPaginatedEnvelope<T>['pagination'] }> {
+  const res = await apiClient.get<BackendPaginatedEnvelope<T>>(path, { params })
+  return { data: res.data.data, pagination: res.data.pagination }
+}
+
+export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  const res = await apiClient.post<BackendEnvelope<T>>(path, body)
+  return res.data.data
+}
+
+export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
+  const res = await apiClient.put<BackendEnvelope<T>>(path, body)
+  return res.data.data
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const res = await apiClient.delete<BackendEnvelope<T>>(path)
+  return res.data.data
+}

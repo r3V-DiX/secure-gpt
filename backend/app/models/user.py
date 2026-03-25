@@ -15,11 +15,6 @@ class UserRole(str, PyEnum):
     USER = "user"
 
 
-class AuthProvider(str, PyEnum):
-    GOOGLE = "google"
-    EMAIL = "email"
-
-
 class User(Base):
     __tablename__ = "users"
 
@@ -30,19 +25,15 @@ class User(Base):
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    # Auth
-    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    auth_provider: Mapped[AuthProvider] = mapped_column(
-        Enum(AuthProvider), default=AuthProvider.EMAIL
-    )
-    google_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
+    # Google OAuth only — no password
+    google_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
 
     # Role & Status
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_high_risk: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # Organisation FK
+    # Organisation FK — nullable, schema only for now
     org_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True
     )
@@ -60,5 +51,8 @@ class User(Base):
 
     # Relationships
     organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="users")  # noqa: F821
+    sessions: Mapped[list["Session"]] = relationship("Session", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
+    auth_events: Mapped[list["AuthEvent"]] = relationship("AuthEvent", back_populates="user")  # noqa: F821
     devices: Mapped[list["Device"]] = relationship("Device", back_populates="user")  # noqa: F821
     audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="user")  # noqa: F821
+    policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="user")  # noqa: F821

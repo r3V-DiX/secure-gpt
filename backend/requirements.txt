@@ -1,32 +1,28 @@
-# ─── Web Framework ────────────────────────────────────────────────────────────
-fastapi==0.115.5
-uvicorn[standard]==0.32.1
+# backend/requirements.txt
 
-# ─── Database ─────────────────────────────────────────────────────────────────
-sqlalchemy[asyncio]==2.0.36
-asyncpg==0.30.0
-alembic==1.14.0
+# ── Web framework ──────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+starlette==0.38.6              # Must be >=0.37.2 and <0.39.0 for fastapi==0.115.0
 
-# ─── Auth & Sessions ──────────────────────────────────────────────────────────
-itsdangerous==2.2.0
-httpx==0.28.0
-authlib==1.3.2
+# ── Database ───────────────────────────────────────────────────────────────────
+sqlalchemy==2.0.35
+asyncpg==0.29.0
+alembic==1.13.3
 
-# ─── Validation ───────────────────────────────────────────────────────────────
-pydantic==2.10.3
-pydantic-settings==2.6.1
-pydantic[email]==2.10.3
-python-multipart==0.0.19
+# ── Settings ───────────────────────────────────────────────────────────────────
+pydantic==2.9.2
+pydantic-settings==2.5.2
 
-# ─── Password Hashing ─────────────────────────────────────────────────────────
-bcrypt==4.2.1
-passlib[bcrypt]==1.7.4
+# ── Auth / HTTP ────────────────────────────────────────────────────────────────
+httpx==0.27.2                  # Async HTTP client for Google OAuth token exchange
 
-# ─── Utilities ────────────────────────────────────────────────────────────────
-python-dotenv==1.0.1
-python-jose[cryptography]==3.3.0
+# ── Rate limiting ──────────────────────────────────────────────────────────────
+slowapi==0.1.9
 
-# ─── Dev / Test ───────────────────────────────────────────────────────────────
-pytest==8.3.4
-pytest-asyncio==0.24.0
-httpx==0.28.0
+# ── PDF redaction ──────────────────────────────────────────────────────────────
+pdf2image==1.17.0
+Pillow==10.4.0
+
+# ── File upload ───────────────────────────────────────────────────────────────
+python-multipart==0.0.12       # Required for UploadFile / Form parsing in FastAPI

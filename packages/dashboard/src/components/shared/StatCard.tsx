@@ -1,56 +1,113 @@
-"use client";
-// packages/dashboard/src/components/shared/StatCard.tsx
+// src/components/shared/StatCard.tsx
+import { TrendingUp, TrendingDown } from 'lucide-react'
+
+type Accent = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'indigo'
 
 interface StatCardProps {
-    label: string;
-    value: string | number;
-    sub?: string;
-    accent?: "blue" | "green" | "amber" | "red" | "purple";
-    icon?: React.ReactNode;
+  label: string
+  value: string | number
+  sub?: string
+  accent?: Accent
+  icon?: React.ReactNode
+  loading?: boolean
+  trend?: number        // positive = up, negative = down, undefined = no trend
+  trendLabel?: string
 }
 
-const accentMap = {
-    blue: { color: "var(--accent)", dim: "var(--accent-dim)", border: "rgba(59,130,246,0.25)" },
-    green: { color: "var(--green)", dim: "var(--green-dim)", border: "rgba(16,185,129,0.25)" },
-    amber: { color: "var(--amber)", dim: "var(--amber-dim)", border: "rgba(245,158,11,0.25)" },
-    red: { color: "var(--red)", dim: "var(--red-dim)", border: "rgba(239,68,68,0.25)" },
-    purple: { color: "var(--purple)", dim: "var(--purple-dim)", border: "rgba(139,92,246,0.25)" },
-};
+const accentTokens: Record<Accent, { icon: string; value: string; bg: string; border: string }> = {
+  indigo: {
+    icon: 'text-indigo-500 dark:text-indigo-400',
+    value: 'text-indigo-600 dark:text-indigo-400',
+    bg: 'bg-indigo-50 dark:bg-indigo-500/10',
+    border: 'border-indigo-100 dark:border-indigo-500/20',
+  },
+  blue: {
+    icon: 'text-sky-500 dark:text-sky-400',
+    value: 'text-sky-600 dark:text-sky-400',
+    bg: 'bg-sky-50 dark:bg-sky-500/10',
+    border: 'border-sky-100 dark:border-sky-500/20',
+  },
+  green: {
+    icon: 'text-emerald-500 dark:text-emerald-400',
+    value: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    border: 'border-emerald-100 dark:border-emerald-500/20',
+  },
+  amber: {
+    icon: 'text-amber-500 dark:text-amber-400',
+    value: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
+    border: 'border-amber-100 dark:border-amber-500/20',
+  },
+  red: {
+    icon: 'text-red-500 dark:text-red-400',
+    value: 'text-red-600 dark:text-red-400',
+    bg: 'bg-red-50 dark:bg-red-500/10',
+    border: 'border-red-100 dark:border-red-500/20',
+  },
+  purple: {
+    icon: 'text-violet-500 dark:text-violet-400',
+    value: 'text-violet-600 dark:text-violet-400',
+    bg: 'bg-violet-50 dark:bg-violet-500/10',
+    border: 'border-violet-100 dark:border-violet-500/20',
+  },
+}
 
-export function StatCard({ label, value, sub, accent = "blue", icon }: StatCardProps) {
-    const a = accentMap[accent];
+export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, trend, trendLabel }: StatCardProps) {
+  if (loading) {
     return (
-        <div style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--r-lg)",
-            padding: "20px 22px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-            transition: "border-color 0.15s",
-        }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    {label}
-                </span>
-                {icon && (
-                    <div style={{
-                        width: 30, height: 30,
-                        background: a.dim,
-                        border: `1px solid ${a.border}`,
-                        borderRadius: "var(--r-sm)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: a.color,
-                    }}>
-                        {icon}
-                    </div>
-                )}
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.5px", lineHeight: 1 }}>
-                {value}
-            </div>
-            {sub && <div style={{ fontSize: 12, color: "var(--text-3)" }}>{sub}</div>}
+      <div className="card p-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="skeleton h-3 w-20 rounded" />
+          <div className="skeleton size-8 rounded-lg" />
         </div>
-    );
+        <div className="skeleton h-8 w-24 rounded" />
+        <div className="skeleton h-3 w-28 rounded" />
+      </div>
+    )
+  }
+
+  const tokens = accentTokens[accent]
+  const hasTrend = trend !== undefined
+
+  return (
+    <div className="card p-5 flex flex-col gap-3 hover:shadow-md transition-all duration-200 group cursor-default">
+      {/* Top row */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-semibold uppercase tracking-widest"
+          style={{ color: 'var(--text-tertiary)' }}>
+          {label}
+        </span>
+        {icon && (
+          <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${tokens.bg} ${tokens.border} ${tokens.icon}`}>
+            {icon}
+          </div>
+        )}
+      </div>
+
+      {/* Value */}
+      <div className={`text-[28px] font-bold tracking-tight leading-none transition-transform duration-200 group-hover:scale-[1.01] ${tokens.value}`}>
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </div>
+
+      {/* Sub row */}
+      <div className="flex items-center justify-between gap-2">
+        {sub && (
+          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            {sub}
+          </span>
+        )}
+        {hasTrend && (
+          <div className={`flex items-center gap-1 text-[11px] font-semibold ${trend >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
+            }`}>
+            {trend >= 0
+              ? <TrendingUp size={11} />
+              : <TrendingDown size={11} />
+            }
+            {Math.abs(trend)}% {trendLabel ?? ''}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }

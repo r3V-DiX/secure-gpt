@@ -1,9 +1,12 @@
 # backend/app/core/config.py
 # ─────────────────────────────────────────────────────────────────────────────
 # Application configuration loaded from environment variables / .env file.
+# Sensitive fields have NO defaults — app will FAIL FAST at startup if they
+# are missing, rather than silently running with insecure placeholder values.
 # ─────────────────────────────────────────────────────────────────────────────
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 from functools import lru_cache
 
 
@@ -16,29 +19,42 @@ class Settings(BaseSettings):
     )
 
     # ── Application ────────────────────────────────────────────────────────────
+    # Non-sensitive — safe defaults are fine here
     app_name: str = "DLP Shield"
     app_env: str = "development"
-    debug: bool = True
-    secret_key: str = "change-this-secret-key"
+    debug: bool = False
+
+    # SENSITIVE — no default, must be set in .env
+    secret_key: str = Field(..., min_length=32)
 
     # ── Database ───────────────────────────────────────────────────────────────
-    database_url: str = "postgresql+asyncpg://postgres:password@localhost:5432/dlp_shield"
+    # SENSITIVE — no default, must be set in .env
+    database_url: str = Field(...)
 
     # ── Session ────────────────────────────────────────────────────────────────
-    session_secret_key: str = "change-this-session-secret"
-    session_max_age: int = 86400  # 24 hours
+    # SENSITIVE — no default, must be set in .env
+    session_secret_key: str = Field(..., min_length=32)
+    session_max_age: int = 86400  # 24 hours in seconds — safe default
 
     # ── Google OAuth ───────────────────────────────────────────────────────────
-    google_client_id: str = ""
-    google_client_secret: str = ""
-    google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
+    # SENSITIVE — no default, must be set in .env
+    google_client_id: str = Field(...)
+    google_client_secret: str = Field(...)
 
+    # Non-sensitive — default is fine for local dev
+    google_redirect_uri: str = Field(...)
+    
     # ── CORS ───────────────────────────────────────────────────────────────────
+    # Non-sensitive — default covers local dev
     allowed_origins: str = "http://localhost:3000,http://localhost:3001"
 
     # ── API ────────────────────────────────────────────────────────────────────
     api_v1_prefix: str = "/api/v1"
 
+    # ── Rate limiting ──────────────────────────────────────────────────────────
+    rate_limit_enabled: bool = True
+
+    # ── Computed properties ────────────────────────────────────────────────────
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",")]
@@ -46,6 +62,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
+
+    @property
+    def frontend_url(self) -> str:
+        return self.allowed_origins_list[0]
 
 
 @lru_cache

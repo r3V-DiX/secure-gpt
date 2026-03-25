@@ -1,50 +1,23 @@
-// ─────────────────────────────────────────────
-// Event Log Service
-// ─────────────────────────────────────────────
-
-import apiClient from '@/lib/api/client'
-import type { AuditLog, LogStats } from '@securegpt/shared/types'
+// src/features/event-log/services/event-log.service.ts
+import { apiGetPaginated } from '@/lib/api/client'
+import type { AuditLog, PaginatedResult } from '@/types'
 
 export interface LogFilters {
   page?: number
-  limit?: number
-  user_id?: string
+  page_size?: number
   action?: string
   category?: string
   platform?: string
+  domain?: string
   start_date?: string
   end_date?: string
 }
 
-export interface LogsResponse {
-  data: AuditLog[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    total_pages: number
-    has_next: boolean
-    has_prev: boolean
-  }
-}
-
-export async function fetchLogs(filters: LogFilters = {}): Promise<LogsResponse> {
+export async function fetchMyLogs(filters: LogFilters = {}): Promise<PaginatedResult<AuditLog>> {
+  // Strip undefined/empty values
   const params = Object.fromEntries(
-    Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
-  )
-  const res = await apiClient.get('/logs', { params })
-  return res.data as LogsResponse
-}
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
+  ) as Record<string, unknown>
 
-export async function fetchMyLogs(filters: LogFilters = {}): Promise<LogsResponse> {
-  const params = Object.fromEntries(
-    Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
-  )
-  const res = await apiClient.get('/logs/my', { params })
-  return res.data as LogsResponse
-}
-
-export async function fetchLogStats(): Promise<LogStats> {
-  const res = await apiClient.get('/logs/stats')
-  return (res.data as { data: LogStats }).data
+  return apiGetPaginated<AuditLog>('/logs', params)
 }

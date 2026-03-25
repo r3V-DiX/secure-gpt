@@ -1,6 +1,12 @@
 # backend/app/core/database.py
 # ─────────────────────────────────────────────────────────────────────────────
 # Async SQLAlchemy engine + session factory.
+#
+# TRANSACTION STRATEGY:
+# - get_db() does NOT auto-commit. Routes own their transactions.
+# - Routes call db.commit() explicitly when they want to persist.
+# - get_db() only handles rollback on exception + session close.
+# - This prevents double-commit issues.
 # ─────────────────────────────────────────────────────────────────────────────
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -30,10 +36,13 @@ class Base(DeclarativeBase):
 
 
 async def get_db() -> AsyncSession:  # type: ignore[return]
+    """
+    Yields an async DB session. Routes are responsible for calling db.commit().
+    Rolls back automatically on any unhandled exception.
+    """
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()
         except Exception:
             await session.rollback()
             raise

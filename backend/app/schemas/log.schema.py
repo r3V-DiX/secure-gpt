@@ -1,104 +1,79 @@
-# ─────────────────────────────────────────────
-# Log Schemas
-# ─────────────────────────────────────────────
+# backend/app/schemas/log.schema.py
+# Aligned with actual AuditLog model and camelCase API responses
 
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
-from typing import Optional
 import re
 
 
-class AuditLogEventSchema(BaseModel):
-    event_id: str
-    timestamp: datetime
-    user_id: str
-    user_email: Optional[str] = None
-    org_id: str
-    department: Optional[str] = None
-    action_taken: str
-    category_triggered: str
-    detection_type: str
-    detection_tier: str = "regex"
-    llm_platform: str
-    match_count: int = 1
-    snippet_hash: str
-    extension_version: str
-    os_platform: str
-    browser: str
+class ExtensionLogEvent(BaseModel):
+    """Single detection event sent from the browser extension."""
+    eventId: str
+    timestamp: str
+    actionTaken: str
+    categoryTriggered: str
+    detectionType: str
+    detectionTier: str = "regex"
+    llmPlatform: str
+    domain: str | None = None
+    matchCount: int = 1
+    snippetHash: str | None = None
+    entityTypes: list[str] = []
+    severities: list[str] = []
+    extensionVersion: str | None = None
+    osPlatform: str | None = None
+    browser: str | None = None
     acknowledged: bool = False
+    latencyMs: int | None = None
+    pipelineVersion: str | None = None
 
-    @field_validator("llm_platform")
+    @field_validator("llmPlatform")
     @classmethod
     def sanitize_platform(cls, v: str) -> str:
-        """Strip any path components and normalize hostname."""
         return v.split("/")[0].lower()
 
-    @field_validator("detection_type")
+    @field_validator("detectionType")
     @classmethod
-    def no_pii_values(cls, v: str) -> str:
-        """
-        Reject submissions that look like they contain raw PII rather than
-        entity type labels (e.g. 'PAN_CARD', 'EMAIL').
-        """
-        pattern = re.compile(r"^[A-Z0-9_]{1,100}$")
-        if not pattern.match(v):
+    def validate_detection_type(cls, v: str) -> str:
+        """Ensure detectionType is a label, not raw PII."""
+        if not re.match(r"^[a-zA-Z0-9_]{1,100}$", v):
             raise ValueError(
-                f"detection_type must be an uppercase type label only, got: {v!r}"
+                f"detectionType must be an alphanumeric label, got: {v!r}"
             )
         return v
 
 
-class LogBatchRequest(BaseModel):
-    device_token: str
-    org_id: str
-    events: list[AuditLogEventSchema] = Field(max_length=50)
+class ExtensionLogBatchRequest(BaseModel):
+    events: list[ExtensionLogEvent] = Field(..., max_length=100)
 
 
-class LogBatchResponse(BaseModel):
-    received: int
-    message: str
-
-
-class AuditLogResponse(BaseModel):
+class LogResponse(BaseModel):
     id: str
-    event_id: str
-    timestamp: str
-    user_id: str
-    user_email: Optional[str]
-    org_id: str
-    department: Optional[str]
-    action_taken: str
-    category_triggered: str
-    detection_type: str
-    detection_tier: str
-    llm_platform: str
-    match_count: int
-    extension_version: str
-    os_platform: str
-    browser: str
+    eventId: str | None
+    actionTaken: str
+    categoryTriggered: str
+    detectionType: str
+    detectionTier: str
+    llmPlatform: str
+    domain: str | None
+    matchCount: int
+    entityTypes: list[str]
+    severities: list[str]
+    extensionVersion: str | None
+    osPlatform: str | None
+    browser: str | None
     acknowledged: bool
-
-    class Config:
-        from_attributes = True
+    latencyMs: int | None
+    timestamp: str
+    receivedAt: str
 
 
 class LogStatsResponse(BaseModel):
-    total_events: int
-    blocked_count: int
-    masked_count: int
-    warned_count: int
-    allowed_count: int
-    top_categories: list[dict]
-    top_platforms: list[dict]
-    top_users: list[dict]
-
-
-class LogFiltersSchema(BaseModel):
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    user_id: Optional[str] = None
-    action: Optional[str] = None
-    category: Optional[str] = None
-    platform: Optional[str] = None
-    page: int = Field(default=1, ge=1)
-    limit: int = Field(default=50, ge=1, le=200)
+    totalEvents: int
+    blockedCount: int
+    maskedCount: int
+    warnedCount: int
+    allowedCount: int
+    topEntityTypes: list[dict]
+    topPlatforms: list[dict]
+    topDomains: list[dict]
