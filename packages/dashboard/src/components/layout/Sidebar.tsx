@@ -15,12 +15,12 @@ import { useLogoutConfirm } from '@/components/ui/modal/modal'
 import { useToast } from '@/contexts/toast-context'
 
 const NAV = [
-  { label: 'Dashboard',  href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Event Log',  href: '/logs',       icon: FileText },
-  { label: 'Alerts',     href: '/alerts',     icon: Bell },
-  { label: 'Policy',     href: '/policy',     icon: ShieldCheck },
-  { label: 'Profile',    href: '/profile',    icon: User },
-  { label: 'Settings',   href: '/settings',   icon: Settings },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Event Log', href: '/logs', icon: FileText },
+  { label: 'Alerts', href: '/alerts', icon: Bell },
+  { label: 'Policy', href: '/policy', icon: ShieldCheck },
+  { label: 'Profile', href: '/profile', icon: User },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ]
 
 export function Sidebar() {
@@ -43,7 +43,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="sidebar w-56 min-h-screen flex flex-col px-3 py-4 sticky top-0 shrink-0 z-30">
+    <aside className="sidebar w-56 h-screen flex flex-col px-3 py-4 sticky top-0 shrink-0 z-30 overflow-y-auto">
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-2 pb-5 mb-2 border-b border-[var(--sidebar-border)]">
