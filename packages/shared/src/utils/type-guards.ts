@@ -1,6 +1,4 @@
-// ─────────────────────────────────────────────
-// Type Guards
-// ─────────────────────────────────────────────
+// packages/shared/src/utils/type-guards.ts
 
 import type { DetectionResult, PIIEntity } from '../types/detection.types'
 import type { PIIConfig } from '../types/config.types'
@@ -44,8 +42,8 @@ export function isAuditLog(value: unknown): value is AuditLog {
     typeof value === 'object' &&
     value !== null &&
     'eventId' in value &&
-    'userId' in value &&
-    'actionTaken' in value
+    'actionTaken' in value &&
+    'categoryTriggered' in value
   )
 }
 

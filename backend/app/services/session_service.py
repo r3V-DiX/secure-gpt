@@ -11,8 +11,12 @@
 #   2. On the FIRST real authenticated request from the browser, bind the fingerprint
 #   3. On subsequent requests, validate against the bound fingerprint
 #
-# This gives you the security benefit of fingerprint pinning while correctly
-# handling the OAuth redirect flow where server-side code creates the session.
+# EXTENSION BYPASS:
+#   Requests from the Chrome extension background service worker carry the
+#   X-Extension-Request: true header. These skip fingerprint binding/validation
+#   entirely because service workers have unstable headers that would cause
+#   constant false FINGERPRINT_MISMATCH revocations.
+#   The session cookie is still fully validated for extension requests.
 
 import secrets
 import logging
@@ -24,7 +28,11 @@ from sqlalchemy import select, update
 
 from app.models.session import Session
 from app.core.config import settings
-from app.core.fingerprint import compute_fingerprint, verify_fingerprint
+from app.core.fingerprint import (
+    compute_fingerprint,
+    verify_fingerprint,
+    is_extension_request,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,18 +57,21 @@ async def create_session(
     It will be bound lazily on the first real browser request in validate_session().
 
     For all other session creation paths, fingerprint is bound immediately.
+    Extension requests always leave fingerprint unbound.
     """
     session_id = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
 
     is_oauth_callback = request.headers.get(OAUTH_CALLBACK_HEADER) == "true"
+    is_ext = is_extension_request(request)
 
-    if is_oauth_callback:
-        # Unbound — will be set on first real authenticated request
+    if is_oauth_callback or is_ext:
         fingerprint_hash = None
-        logger.info("Session created via OAuth BFF proxy — fingerprint unbound, will bind on first request")
+        logger.info(
+            "Session created via %s — fingerprint unbound",
+            "OAuth BFF proxy" if is_oauth_callback else "extension",
+        )
     else:
-        # Direct request — bind fingerprint immediately
         fingerprint_hash = compute_fingerprint(request)
         logger.info("Session created directly — fingerprint bound immediately")
 
@@ -110,13 +121,14 @@ async def validate_session(
     """
     Validate a session and enforce fingerprint matching.
 
+    EXTENSION BYPASS:
+    Requests from the Chrome extension background service worker (detected via
+    X-Extension-Request header) skip fingerprint validation entirely.
+    The session cookie validity (expiry, revocation) is still fully checked.
+
     LAZY BINDING:
     If fingerprint_hash is None (session created via OAuth BFF proxy),
     we bind it on this first real browser request instead of rejecting.
-    This is safe because:
-      - The session ID itself is a cryptographically secure random token
-      - The session is httpOnly, so JS cannot read or forge it
-      - After binding, all subsequent requests are fingerprint-validated
     """
     logger.info("VALIDATE SESSION — id: %s...", session_id[:8] if session_id else "NONE")
 
@@ -133,6 +145,16 @@ async def validate_session(
     if session.is_expired:
         logger.info("  result: SESSION_EXPIRED")
         return session, "SESSION_EXPIRED"
+
+    # ── Extension bypass — skip fingerprint entirely ───────────────────────
+    if is_extension_request(request):
+        logger.info("  result: VALID (extension request — fingerprint skipped)")
+        await db.execute(
+            update(Session)
+            .where(Session.id == session_id)
+            .values(last_active_at=datetime.now(timezone.utc))
+        )
+        return session, None
 
     current_fingerprint = compute_fingerprint(request)
 

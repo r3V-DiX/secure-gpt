@@ -1,6 +1,4 @@
 'use client'
-// packages/dashboard/src/contexts/auth-context.tsx
-// Single source of truth for auth. Cookie-session based — no JWT, no localStorage.
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { apiGet, apiPost } from '@/lib/api/client'
@@ -20,26 +18,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
+    console.log('[AuthContext] refresh() called')
     try {
       const me = await apiGet<AuthUser>('/auth/me')
+      console.log('[AuthContext] /auth/me success:', me)
       setUser(me)
-    } catch {
+    } catch (err) {
+      console.warn('[AuthContext] /auth/me failed:', err)
       setUser(null)
     }
   }, [])
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false))
+    console.log('[AuthContext] Initial auth check starting...')
+    refresh().finally(() => {
+      console.log('[AuthContext] Initial auth check done. loading → false')
+      setLoading(false)
+    })
   }, [refresh])
 
-  // FIX: logout now throws on API failure so callers can catch it and show a toast.
-  // State is cleared and redirect happens only after the API call succeeds (or
-  // in the finally if the caller doesn't re-throw).
   const logout = async () => {
+    console.log('[AuthContext] logout() called')
     await apiPost('/auth/logout')
+    console.log('[AuthContext] logout API success, clearing user')
     setUser(null)
     window.location.href = '/login'
   }
+
+  console.log('[AuthContext] Render — user:', user?.email ?? 'null', '| loading:', loading)
 
   return (
     <AuthContext.Provider value={{ user, loading, logout, refresh }}>

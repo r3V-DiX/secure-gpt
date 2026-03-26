@@ -1,26 +1,15 @@
-// middleware.ts
-// Session-based auth guard.
-// Backend sets `sgpt_session` httpOnly cookie on login.
-// We just check its presence here — real validation happens on the backend.
-// No JWT decoding needed since there's no JWT.
-
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const SESSION_COOKIE = 'sgpt_session'
-
-// Routes that don't require auth
-const PUBLIC_PATHS = ['/login', '/callback', '/api']
+const PUBLIC_PATHS = ['/callback', '/api']
+const AUTH_PATHS = ['/login']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Allow public paths
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
-    return NextResponse.next()
-  }
+  console.log('[Middleware] Request:', pathname)
 
-  // Allow Next.js internals + static files
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
@@ -29,16 +18,28 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check session cookie presence
-  const session = request.cookies.get(SESSION_COOKIE)?.value
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+    console.log('[Middleware] Public path, skipping:', pathname)
+    return NextResponse.next()
+  }
 
-  if (!session) {
+  const session = request.cookies.get(SESSION_COOKIE)?.value
+  console.log('[Middleware] Session cookie:', session ? `EXISTS (${session.substring(0, 10)}...)` : 'NOT FOUND')
+  console.log('[Middleware] All cookies:', request.cookies.getAll().map(c => c.name))
+
+  if (session && AUTH_PATHS.some(p => pathname.startsWith(p))) {
+    console.log('[Middleware] Logged in user on auth page → redirecting to /dashboard')
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  if (!session && !AUTH_PATHS.some(p => pathname.startsWith(p))) {
+    console.log('[Middleware] No session on protected route → redirecting to /login')
     const loginUrl = new URL('/login', request.url)
-    // Preserve intended destination so we can redirect back after login
     loginUrl.searchParams.set('from', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
+  console.log('[Middleware] Passing through:', pathname)
   return NextResponse.next()
 }
 

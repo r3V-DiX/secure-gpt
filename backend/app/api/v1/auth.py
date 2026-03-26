@@ -1,18 +1,30 @@
 # backend/app/api/v1/auth.py
+#
+# FIX: google_callback no longer redirects directly to the frontend.
+# It returns a 200 response with set-cookie so the Next.js BFF proxy
+# (route.ts) can intercept it, re-plant the cookie on localhost:3000,
+# and then redirect the browser to /callback.
+#
+# Previously the backend was sending a 302 directly to localhost:3000/callback
+# with set-cookie — the browser followed that redirect and the cookie got
+# attributed to localhost:8000, NOT localhost:3000. Middleware never saw it.
 
 import logging
+import secrets
 import httpx
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 from app.core.config import settings
 from app.core.dependencies import DBSession, CurrentUser
 from app.core.exceptions import OAuthFailed, UserInactive
 from app.core.response import success
 from app.core.ratelimit import limiter, LIMIT_AUTH, LIMIT_AUTH_ME, LIMIT_LOGOUT
+from app.core.fingerprint import compute_fingerprint
+from app.models.session import Session
 from app.services.auth_service import upsert_google_user
 from app.services.session_service import (
-    create_session,
     revoke_session,
     get_session_id_from_request,
     clear_session_cookie,
@@ -55,6 +67,7 @@ async def google_login(request: Request):
 @limiter.limit(LIMIT_AUTH)
 async def google_callback(
     request: Request,
+    response: Response,
     db: DBSession,
     code: str | None = None,
     error: str | None = None,
@@ -65,11 +78,15 @@ async def google_callback(
     logger.info("  code present: %s", bool(code))
     logger.info("  error       : %s", error)
 
-    frontend_url = settings.allowed_origins_list[0]
+    is_oauth_callback = request.headers.get("x-oauth-callback") == "true"
+    frontend_url = settings.allowed_origins_list[0]  # http://localhost:3000
 
     if error or not code:
         await log_oauth_failed(db, request, reason=error or "missing_code")
-        return RedirectResponse(url=f"{frontend_url}/callback", status_code=302)
+        # If proxied via BFF, return error JSON; else redirect
+        if is_oauth_callback:
+            return JSONResponse(status_code=400, content={"error": "oauth_failed"})
+        return RedirectResponse(url=f"{frontend_url}/login?error=oauth_failed", status_code=302)
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -121,23 +138,11 @@ async def google_callback(
         await log_login_failed(db, request, reason="user_inactive", email=user.email)
         raise UserInactive()
 
-    # FIX: Create the RedirectResponse FIRST, then set the cookie directly on it.
-    # Previously we passed the injected `Response` object to create_session,
-    # then returned a NEW RedirectResponse — the cookie was set on the injected
-    # response but discarded because we returned a different response object.
-    redirect_response = RedirectResponse(url=f"{frontend_url}/callback", status_code=302)
-
-    is_prod = settings.is_production
-    is_oauth_callback = request.headers.get("x-oauth-callback") == "true"
-
-    # Generate session
-    import secrets
-    from datetime import datetime, timezone, timedelta
-    from app.models.session import Session
-    from app.core.fingerprint import compute_fingerprint
-
+    # Create session
     session_id = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
+
+    # Fingerprint is unbound when proxied via BFF (no real browser headers available)
     fingerprint_hash = None if is_oauth_callback else compute_fingerprint(request)
 
     session = Session(
@@ -150,31 +155,56 @@ async def google_callback(
     db.add(session)
     await db.flush()
 
-    logger.info("Session created via OAuth BFF proxy — fingerprint %s",
-                "unbound" if not fingerprint_hash else "bound")
+    logger.info("Session created — fingerprint %s", "unbound" if not fingerprint_hash else "bound")
 
-    # Set cookie directly on the redirect response — this is the key fix.
-    # Cookies set here will actually be in the HTTP response headers.
-    redirect_response.set_cookie(
-        key=SESSION_COOKIE_NAME,
-        value=session_id,
-        max_age=SESSION_TTL_SECONDS,
-        httponly=True,
-        secure=is_prod,
-        samesite="lax",
-        path="/",
-    )
+    is_prod = settings.is_production
 
-    logger.info("=== COOKIE SET ON REDIRECT RESPONSE ===")
+    logger.info("=== SETTING COOKIE ===")
     logger.info("  session_id : %s...", session_id[:8])
     logger.info("  secure     : %s", is_prod)
-    logger.info("  headers    : %s", dict(redirect_response.headers))
+    logger.info("  proxied    : %s", is_oauth_callback)
 
     await log_login_success(db, request, user_id=user.id, session_id=session.id)
     await db.commit()
 
-    logger.info("CALLBACK DONE — redirecting to: %s/callback", frontend_url)
-    return redirect_response
+    if is_oauth_callback:
+        # ── BFF proxy path ────────────────────────────────────────────────────
+        # Return 200 + set-cookie so the Next.js proxy (route.ts) can
+        # intercept the cookie and re-plant it on localhost:3000.
+        # The proxy then redirects the browser to /callback.
+        json_response = JSONResponse(
+            status_code=200,
+            content={"ok": True},
+        )
+        json_response.set_cookie(
+            key=SESSION_COOKIE_NAME,
+            value=session_id,
+            max_age=SESSION_TTL_SECONDS,
+            httponly=True,
+            secure=is_prod,
+            samesite="lax",
+            path="/",
+        )
+        logger.info("CALLBACK DONE (BFF) — returning 200 with set-cookie")
+        return json_response
+    else:
+        # ── Direct browser path (non-proxied) ────────────────────────────────
+        # Redirect directly to frontend with cookie set on the response.
+        redirect_response = RedirectResponse(
+            url=f"{frontend_url}/callback",
+            status_code=302,
+        )
+        redirect_response.set_cookie(
+            key=SESSION_COOKIE_NAME,
+            value=session_id,
+            max_age=SESSION_TTL_SECONDS,
+            httponly=True,
+            secure=is_prod,
+            samesite="lax",
+            path="/",
+        )
+        logger.info("CALLBACK DONE (direct) — redirecting to: %s/callback", frontend_url)
+        return redirect_response
 
 
 @router.get("/me", summary="Get current authenticated user")

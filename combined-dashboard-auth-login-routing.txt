@@ -1,3 +1,4 @@
+===== packages/dashboard/src/app/(auth)/login/page.tsx =====
 'use client'
 // packages/dashboard/src/app/(auth)/login/page.tsx
 // Login redirects to /api/v1/auth/google which Next.js rewrites to backend.
@@ -136,3 +137,138 @@ function GoogleIcon() {
     </svg>
   )
 }
+
+
+===== packages/dashboard/src/app/(auth)/layout.tsx =====
+// packages/dashboard/src/app/(auth)/layout.tsx
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+
+===== packages/dashboard/src/contexts/auth-context.tsx =====
+'use client'
+// packages/dashboard/src/contexts/auth-context.tsx
+// Single source of truth for auth. Cookie-session based — no JWT, no localStorage.
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { apiGet, apiPost } from '@/lib/api/client'
+import type { AuthUser } from '@/types'
+
+interface AuthContextValue {
+  user: AuthUser | null
+  loading: boolean
+  logout: () => Promise<void>
+  refresh: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const refresh = useCallback(async () => {
+    try {
+      const me = await apiGet<AuthUser>('/auth/me')
+      setUser(me)
+    } catch {
+      setUser(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    refresh().finally(() => setLoading(false))
+  }, [refresh])
+
+  // FIX: logout now throws on API failure so callers can catch it and show a toast.
+  // State is cleared and redirect happens only after the API call succeeds (or
+  // in the finally if the caller doesn't re-throw).
+  const logout = async () => {
+    await apiPost('/auth/logout')
+    setUser(null)
+    window.location.href = '/login'
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, loading, logout, refresh }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
+  return ctx
+}
+
+
+===== packages/dashboard/src/features/auth/components/ProtectedRoute.tsx =====
+'use client'
+// packages/dashboard/src/features/auth/components/ProtectedRoute.tsx
+// Declarative auth guard — wraps any component that needs authentication.
+// The (app)/layout.tsx already handles redirect, so this is a lightweight
+// render-null guard for use inside pages if needed.
+
+import { useAuth } from '@/contexts/auth-context'
+
+interface Props {
+    children: React.ReactNode
+    fallback?: React.ReactNode
+}
+
+export function ProtectedRoute({ children, fallback = null }: Props) {
+    const { user, loading } = useAuth()
+    if (loading || !user) return <>{fallback}</>
+    return <>{children}</>
+}
+
+
+===== packages/dashboard/middleware.ts =====
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+const SESSION_COOKIE = 'sgpt_session'
+const PUBLIC_PATHS = ['/callback', '/api']
+const AUTH_PATHS = ['/login']
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Allow Next.js internals + static files
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    pathname.match(/\.(png|svg|jpg|ico|webp)$/)
+  ) {
+    return NextResponse.next()
+  }
+
+  // Allow callback + api routes always
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+    return NextResponse.next()
+  }
+
+  const session = request.cookies.get(SESSION_COOKIE)?.value
+
+  // If logged in and trying to access /login → redirect to /dashboard
+  if (session && AUTH_PATHS.some(p => pathname.startsWith(p))) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // If NOT logged in and trying to access protected route → redirect to /login
+  if (!session && !AUTH_PATHS.some(p => pathname.startsWith(p))) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('from', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}
+
+

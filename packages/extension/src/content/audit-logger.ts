@@ -1,7 +1,10 @@
 // ─────────────────────────────────────────────
 // Audit Logger
-// Builds AuditLog events and queues them
-// NEVER logs raw text — only hashes + metadata
+// Builds AuditLog events and queues them via background worker.
+// NEVER logs raw text — only SHA-256 hash of matched value.
+//
+// NOTE: userId / orgId are intentionally NOT included in the event.
+// Backend reads those from the session cookie server-side.
 // ─────────────────────────────────────────────
 
 import { authStorage } from '@/lib/storage/storage'
@@ -26,38 +29,43 @@ export async function logDetectionEvent(
   action: PolicyAction,
   acknowledged = false
 ): Promise<void> {
-  const auth = await authStorage.getAuth()
-  if (!auth) return
+  // Only queue if logged in — background will retry if session expires mid-queue
+  const isLoggedIn = await authStorage.isLoggedIn()
+  if (!isLoggedIn) return
 
   const topEntity = result.entities[0]
   if (!topEntity) return
 
   const platform = DOMAIN_TO_PLATFORM[window.location.hostname] ?? 'unknown'
 
-  // Hash the matched snippet — NEVER the full text
+  // Hash the matched value — NEVER log raw text
   const snippetHash = await sha256(topEntity.value)
+
+  // Collect all entity types and severities across detected entities
+  const entityTypes = [...new Set(result.entities.map((e) => e.type))]
+  const severities = [...new Set(result.entities.map((e) => e.severity.toUpperCase()))]
 
   const event: AuditLog = {
     eventId: uuidv4(),
     timestamp: new Date().toISOString(),
-    userId: auth.user.id,
-    userEmail: auth.user.email,
-    orgId: auth.user.orgId,
-    department: auth.user.department,
     actionTaken: action,
     categoryTriggered: topEntity.category,
     detectionType: topEntity.type,
     detectionTier: result.tier,
     llmPlatform: platform,
+    domain: window.location.hostname,
     matchCount: result.entities.length,
     snippetHash,
+    entityTypes,
+    severities,
     extensionVersion: EXTENSION_VERSION,
     osPlatform: navigator.platform,
     browser: getBrowserName(),
     acknowledged,
+    latencyMs: result.processingTimeMs,
   }
 
-  // Send to background worker for batching
+  // Send to background worker for batching and API submission
   chrome.runtime.sendMessage({ type: 'QUEUE_LOG', event })
 }
 

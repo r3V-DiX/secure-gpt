@@ -1,10 +1,8 @@
-// ─────────────────────────────────────────────
-// Interceptor
-// Hooks into LLM page submit events
-// Runs detection and applies policy action
-// ─────────────────────────────────────────────
+// packages/extension/src/content/interceptor.ts
+// Interceptor — hooks into LLM page submit events
+// Fixed: retry logic for dynamic DOM, proper listener dedup, no duplicate handlers
 
-import { detectPII } from '@securegpt/detection'
+import { detectPIIDemo as detectPII } from '@/lib/detection/demo-detection'
 import { getInputElement, extractText } from './dom-utils'
 import { logDetectionEvent } from './audit-logger'
 import { showBanner, removeBanner } from './banners'
@@ -15,77 +13,90 @@ import type { PIIConfig } from '@securegpt/shared/types'
 import { DOMAIN_TO_PLATFORM } from '@securegpt/shared/constants'
 
 let currentPolicy: PIIConfig
-let submitListeners: Array<{ element: Element; handler: EventListener }> = []
+let domObserver: MutationObserver | null = null
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+
+// Track attached elements to avoid duplicate listeners
+const attachedElements = new WeakSet<Element>()
 
 export function setupInterceptor(policy: PIIConfig): void {
   currentPolicy = policy
-
-  // Remove existing listeners before re-setup
-  teardownListeners()
-
-  // Find all submit triggers on current LLM page
-  setupSubmitListeners()
-
-  // Watch for dynamic DOM changes (SPAs re-render input areas)
+  teardown()
+  tryAttachListeners()
   observeDOM()
 }
 
-function setupSubmitListeners(): void {
-  const platform = DOMAIN_TO_PLATFORM[window.location.hostname]
-  if (!platform) return
-
-  // Check if platform is monitored
-  if (!currentPolicy.monitoredPlatforms.includes(platform)) return
-
-  // Intercept keyboard Enter key on the input
-  const handleKeyDown = async (e: Event) => {
-    const keyEvent = e as KeyboardEvent
-    if (keyEvent.key !== 'Enter' || keyEvent.shiftKey) return
-    await handleSubmit(e)
-  }
-
-  // Intercept form submit buttons
-  const handleClick = async (e: Event) => {
-    await handleSubmit(e)
-  }
-
-  const inputEl = getInputElement()
-  if (inputEl) {
-    inputEl.addEventListener('keydown', handleKeyDown)
-    submitListeners.push({ element: inputEl, handler: handleKeyDown })
-  }
-
-  // Find and intercept send button
-  const sendBtn = document.querySelector(
-    'button[data-testid="send-button"], button[aria-label="Send message"], button[aria-label="Submit"]'
-  )
-  if (sendBtn) {
-    sendBtn.addEventListener('click', handleClick)
-    submitListeners.push({ element: sendBtn, handler: handleClick })
+// Try to attach listeners — if input not found yet, retry after delay
+function tryAttachListeners(): void {
+  const attached = attachListeners()
+  if (!attached) {
+    // Input not in DOM yet — retry every 500ms up to 10 times
+    let attempts = 0
+    const retry = () => {
+      if (attempts >= 10) return
+      attempts++
+      if (attachListeners()) return // success
+      retryTimer = setTimeout(retry, 500)
+    }
+    retryTimer = setTimeout(retry, 500)
   }
 }
 
+// Returns true if successfully attached to input
+function attachListeners(): boolean {
+  const platform = DOMAIN_TO_PLATFORM[window.location.hostname]
+  if (!platform) return true // not a monitored platform — don't retry
+
+  if (!currentPolicy.monitoredPlatforms.includes(platform)) return true
+
+  const inputEl = getInputElement()
+  const sendBtn = document.querySelector<HTMLElement>(
+    'button[data-testid="send-button"], button[aria-label="Send message"], button[aria-label="Submit"]'
+  )
+
+  let attached = false
+
+  if (inputEl && !attachedElements.has(inputEl)) {
+    const handleKeyDown = async (e: Event) => {
+      const keyEvent = e as KeyboardEvent
+      if (keyEvent.key !== 'Enter' || keyEvent.shiftKey) return
+      await handleSubmit(e)
+    }
+    inputEl.addEventListener('keydown', handleKeyDown)
+    attachedElements.add(inputEl)
+    attached = true
+    console.log('[SecureGPT] Attached keydown listener to input')
+  }
+
+  if (sendBtn && !attachedElements.has(sendBtn)) {
+    const handleClick = async (e: Event) => {
+      await handleSubmit(e)
+    }
+    sendBtn.addEventListener('click', handleClick)
+    attachedElements.add(sendBtn)
+    attached = true
+    console.log('[SecureGPT] Attached click listener to send button')
+  }
+
+  return attached
+}
+
 async function handleSubmit(e: Event): Promise<void> {
-  // Extension paused?
   const isActive = await stateStorage.isActive()
   if (!isActive) return
 
   const text = extractText()
   if (!text || text.trim().length === 0) return
 
-  // Run detection pipeline
   const result = await detectPII(text, currentPolicy)
-
   if (!result.hasFindings) return
 
-  // Determine action for the highest severity category found
   const topEntity = result.entities[0]
   if (!topEntity) return
 
   const categoryConfig = currentPolicy.categories[topEntity.category]
   const action = categoryConfig?.action ?? 'BLOCK'
 
-  // Apply action
   switch (action) {
     case 'BLOCK': {
       e.preventDefault()
@@ -104,7 +115,6 @@ async function handleSubmit(e: Event): Promise<void> {
       showBanner('mask', topEntity.category, result.entities.length)
       await logDetectionEvent(result, action)
       await stateStorage.incrementStat('mask')
-      // Re-submit with masked text after brief delay
       setTimeout(() => resubmit(), 100)
       break
     }
@@ -112,7 +122,7 @@ async function handleSubmit(e: Event): Promise<void> {
     case 'WARN_ALLOW': {
       e.preventDefault()
       e.stopImmediatePropagation()
-      showShieldModal(result, currentPolicy, async (proceed, acknowledged) => {
+      showShieldModal(result, currentPolicy, text, async (proceed, _masked, acknowledged) => {
         if (proceed) {
           await logDetectionEvent(result, action, acknowledged)
           resubmit()
@@ -124,7 +134,6 @@ async function handleSubmit(e: Event): Promise<void> {
     }
 
     case 'ALLOW': {
-      // Silent — just log
       await logDetectionEvent(result, action)
       break
     }
@@ -135,38 +144,39 @@ function setInputValue(text: string): void {
   const input = getInputElement()
   if (!input) return
 
-  // Handle both contenteditable and textarea
   if (input.getAttribute('contenteditable')) {
     input.textContent = text
   } else {
     (input as HTMLTextAreaElement).value = text
   }
 
-  // Dispatch input event so React state updates
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
 function resubmit(): void {
-  const sendBtn = document.querySelector(
+  const sendBtn = document.querySelector<HTMLButtonElement>(
     'button[data-testid="send-button"], button[aria-label="Send message"]'
-  ) as HTMLButtonElement | null
-  if (sendBtn) {
-    sendBtn.click()
-  }
+  )
+  sendBtn?.click()
 }
 
+// Watch for new elements added to DOM — re-try attaching when DOM changes
 function observeDOM(): void {
-  const observer = new MutationObserver(() => {
-    // Re-attach listeners if DOM changed
-    setupSubmitListeners()
+  domObserver = new MutationObserver(() => {
+    attachListeners()
   })
-  observer.observe(document.body, { childList: true, subtree: true })
+  domObserver.observe(document.body, { childList: true, subtree: true })
 }
 
-function teardownListeners(): void {
-  for (const { element, handler } of submitListeners) {
-    element.removeEventListener('keydown', handler)
-    element.removeEventListener('click', handler)
+function teardown(): void {
+  if (domObserver) {
+    domObserver.disconnect()
+    domObserver = null
   }
-  submitListeners = []
+  if (retryTimer) {
+    clearTimeout(retryTimer)
+    retryTimer = null
+  }
+  // Remove banners
+  document.querySelectorAll('[data-securegpt]').forEach((el) => el.remove())
 }

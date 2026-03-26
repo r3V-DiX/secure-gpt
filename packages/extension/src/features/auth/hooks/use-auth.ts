@@ -1,9 +1,12 @@
-// ─────────────────────────────────────────────
-// useAuth Hook
-// ─────────────────────────────────────────────
+// packages/extension/src/features/auth/hooks/use-auth.ts
 
 import { useState, useEffect } from 'react'
-import { isAuthenticated, getCurrentUser, signInWithGoogle, signOut } from '../services/auth.service'
+import {
+  getCurrentUser,
+  fetchCurrentUser,
+  signInWithGoogle,
+  signOut,
+} from '../services/auth.service'
 import type { User } from '@securegpt/shared/types'
 
 export function useAuth() {
@@ -17,8 +20,16 @@ export function useAuth() {
   async function loadAuth() {
     setLoading(true)
     try {
-      const u = await getCurrentUser()
-      setUser(u)
+      // Try cached user first (fast)
+      const cached = await getCurrentUser()
+      if (cached) {
+        setUser(cached)
+        setLoading(false)
+        return
+      }
+      // No cached user — check with backend
+      const fresh = await fetchCurrentUser()
+      setUser(fresh)
     } finally {
       setLoading(false)
     }
@@ -33,5 +44,12 @@ export function useAuth() {
     setUser(null)
   }
 
-  return { user, loading, isLoggedIn: !!user, login, logout, reload: loadAuth }
+  return {
+    user,
+    loading,
+    isLoggedIn: !!user,
+    login,
+    logout,
+    reload: loadAuth,
+  }
 }

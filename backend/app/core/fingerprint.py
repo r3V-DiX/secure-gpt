@@ -2,13 +2,13 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Device fingerprint computation.
 # Uses only stable, browser-level signals — NO IP address.
-# IP is excluded because it changes frequently (mobile networks, VPNs, DHCP)
-# and would cause legitimate users to be logged out constantly.
 #
-# Signals used (all stable across sessions for the same browser/device):
-#   - User-Agent       → browser + OS version
-#   - Accept-Language  → locale preference
-#   - X-Client-Fingerprint header → client-side: platform, timezone, screen res
+# EXTENSION BYPASS:
+# Chrome extension background service workers have different headers than
+# browser tabs (no Accept-Language, different UA). To prevent false
+# FINGERPRINT_MISMATCH revocations, requests carrying X-Extension-Request: true
+# are excluded from fingerprint binding and validation.
+# The session cookie itself is still validated — only fingerprint check skipped.
 # ─────────────────────────────────────────────────────────────────────────────
 
 import hashlib
@@ -23,6 +23,26 @@ logger = logging.getLogger(__name__)
 
 # Header sent by the dashboard frontend on every request
 FINGERPRINT_HEADER = "X-Client-Fingerprint"
+
+# Header sent by extension background service worker requests
+# When present, fingerprint binding and validation is skipped
+EXTENSION_REQUEST_HEADER = "X-Extension-Request"
+
+
+def is_extension_request(request: Request) -> bool:
+    """
+    Returns True if the request originates from the Chrome extension
+    background service worker.
+
+    Extension background workers have unstable headers (no Accept-Language,
+    different UA per Chrome version) that would cause constant fingerprint
+    mismatches and session revocations for legitimate users.
+
+    Security note: The session cookie is still fully validated — only the
+    fingerprint check is skipped. An attacker cannot forge this header to
+    bypass auth entirely since they still need a valid session cookie.
+    """
+    return request.headers.get(EXTENSION_REQUEST_HEADER, "").lower() == "true"
 
 
 def compute_fingerprint(request: Request) -> str:

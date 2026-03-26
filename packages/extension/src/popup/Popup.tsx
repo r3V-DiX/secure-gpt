@@ -1,28 +1,26 @@
-// ─────────────────────────────────────────────
-// Popup Component
-// Main extension toolbar popup
-// ─────────────────────────────────────────────
+// packages/extension/src/popup/Popup.tsx
+// Simple professional popup — login, status, session stats
 
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/features/auth/hooks/use-auth'
 import { stateStorage } from '@/lib/storage/storage'
-import { StatusIndicator } from '@/components/common/StatusIndicator'
-import { Button } from '@/components/ui/button/button'
-import { Badge } from '@/components/ui/badge/badge'
-import { Card } from '@/components/ui/card/card'
-import { PAUSE_OPTIONS } from '@/config/defaults.config'
-
-type PopupView = 'main' | 'pause'
 
 export function Popup() {
-  const { user, loading, isLoggedIn, login } = useAuth()
-  const [view, setView] = useState<PopupView>('main')
+  const { user, loading, isLoggedIn, login, logout } = useAuth()
   const [isActive, setIsActive] = useState(true)
   const [stats, setStats] = useState({ blockCount: 0, maskCount: 0, warnCount: 0 })
   const [pausing, setPausing] = useState(false)
 
   useEffect(() => {
     void loadState()
+
+    // Listen for auth success from background
+    const handler = (msg: { type: string }) => {
+      if (msg.type === 'AUTH_SUCCESS') void loadState()
+      if (msg.type === 'AUTH_LOST') void loadState()
+    }
+    chrome.runtime.onMessage.addListener(handler)
+    return () => chrome.runtime.onMessage.removeListener(handler)
   }, [])
 
   async function loadState() {
@@ -32,204 +30,375 @@ export function Popup() {
     setStats(s as typeof stats)
   }
 
-  async function handlePause(minutes: number) {
-    setPausing(true)
-    await stateStorage.pauseFor(minutes)
-    setIsActive(false)
-    setView('main')
-    setPausing(false)
+  async function handleToggle() {
+    if (isActive) {
+      setPausing(true)
+      await stateStorage.pauseFor(60)
+      setIsActive(false)
+      setPausing(false)
+    } else {
+      await stateStorage.setActive(true)
+      setIsActive(true)
+    }
   }
 
-  async function handleResume() {
-    await stateStorage.setActive(true)
-    setIsActive(true)
+  async function handleLogout() {
+    await logout()
   }
 
   if (loading) {
     return (
-      <div className="w-80 h-32 flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <div style={styles.loadingWrap}>
+        <div style={styles.spinner} />
       </div>
     )
   }
 
   if (!isLoggedIn) {
-    return <NotSignedIn onSignIn={login} />
+    return <LoginView onLogin={login} />
   }
 
   return (
-    <div className="w-80 animate-fade-in" style={{ fontFamily: 'var(--sg-font)' }}>
+    <div style={styles.wrap}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center shadow-sm">
-            <span className="text-blue-600 text-xs font-bold">S</span>
-          </div>
-          <span className="text-white font-semibold text-sm">SecureGPT</span>
+      <div style={styles.header}>
+        <div style={styles.logoRow}>
+          <div style={styles.logoIcon}>S</div>
+          <span style={styles.logoText}>SecureGPT</span>
         </div>
-        <StatusIndicator
-          status={isActive ? 'active' : 'paused'}
-          size="sm"
-        />
+        <div style={{ ...styles.statusPill, background: isActive ? 'rgba(34,197,94,.15)' : 'rgba(251,191,36,.15)' }}>
+          <div style={{ ...styles.statusDot, background: isActive ? '#22c55e' : '#fbbf24' }} />
+          <span style={{ ...styles.statusLabel, color: isActive ? '#16a34a' : '#d97706' }}>
+            {isActive ? 'Active' : 'Paused'}
+          </span>
+        </div>
       </div>
 
-      <div className="p-4 space-y-3">
-        {/* User info */}
-        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-          {user?.avatarUrl ? (
-            <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full" />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-sm">
-              {user?.name?.[0]?.toUpperCase() ?? 'U'}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+      {/* User row */}
+      <div style={styles.userRow}>
+        {user?.avatarUrl ? (
+          <img src={user.avatarUrl} alt="" style={styles.avatar} />
+        ) : (
+          <div style={styles.avatarFallback}>
+            {user?.fullName?.[0]?.toUpperCase() ?? 'U'}
           </div>
+        )}
+        <div style={styles.userInfo}>
+          <div style={styles.userName}>{user?.fullName ?? 'User'}</div>
+          <div style={styles.userEmail}>{user?.email}</div>
         </div>
+      </div>
 
-        {/* Status card */}
-        <Card padding="sm" className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Protection status</span>
-            <StatusIndicator status={isActive ? 'active' : 'paused'} size="sm" />
-          </div>
-          <p className="text-xs text-gray-500">
-            {isActive
-              ? 'Monitoring all configured LLM platforms'
-              : 'Protection paused — data is not being scanned'}
-          </p>
-        </Card>
+      {/* Divider */}
+      <div style={styles.divider} />
 
-        {/* Session stats */}
-        <Card padding="sm">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Session stats</p>
-          <div className="grid grid-cols-3 gap-2">
-            <StatPill label="Blocked" value={stats.blockCount} color="red" />
-            <StatPill label="Masked" value={stats.maskCount} color="amber" />
-            <StatPill label="Warned" value={stats.warnCount} color="orange" />
-          </div>
-        </Card>
+      {/* Stats */}
+      <div style={styles.statsLabel}>Session activity</div>
+      <div style={styles.statsGrid}>
+        <StatCard label="Blocked" value={stats.blockCount} color="#ef4444" bg="#fef2f2" />
+        <StatCard label="Masked" value={stats.maskCount} color="#f59e0b" bg="#fffbeb" />
+        <StatCard label="Warned" value={stats.warnCount} color="#3b82f6" bg="#eff6ff" />
+      </div>
 
-        {/* Actions */}
-        {view === 'main' && (
-          <div className="space-y-2">
-            {isActive ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                fullWidth
-                onClick={() => setView('pause')}
-              >
-                Pause protection
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                size="sm"
-                fullWidth
-                onClick={handleResume}
-              >
-                Resume protection
-              </Button>
-            )}
+      {/* Divider */}
+      <div style={styles.divider} />
 
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL('settings/index.html') })}
-              >
-                Settings
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => chrome.tabs.create({ url: 'https://securegpt.app/dashboard' })}
-              >
-                Dashboard ↗
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {view === 'pause' && (
-          <PauseView onPause={handlePause} onCancel={() => setView('main')} loading={pausing} />
-        )}
+      {/* Actions */}
+      <div style={styles.actions}>
+        <button
+          style={{ ...styles.btn, ...styles.btnSecondary }}
+          onClick={handleToggle}
+          disabled={pausing}
+        >
+          {pausing ? '...' : isActive ? 'Pause protection' : 'Resume protection'}
+        </button>
+        <div style={styles.actionRow}>
+          <button
+            style={{ ...styles.btn, ...styles.btnGhost, flex: 1 }}
+            onClick={() => chrome.tabs.create({ url: 'http://localhost:3000' })}
+          >
+            Dashboard ↗
+          </button>
+          <button
+            style={{ ...styles.btn, ...styles.btnDanger }}
+            onClick={handleLogout}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-400">v{chrome.runtime.getManifest().version}</span>
-        <a
-          href="#"
-          onClick={(e) => { e.preventDefault(); chrome.tabs.create({ url: 'https://securegpt.app' }) }}
-          className="text-xs text-blue-500 hover:text-blue-600"
-        >
-          securegpt.app
-        </a>
+      <div style={styles.footer}>
+        <span style={styles.footerText}>v{chrome.runtime.getManifest().version}</span>
+        <span style={styles.footerText}>securegpt.app</span>
       </div>
     </div>
   )
 }
 
-// ── Sub-components ────────────────────────────
-
-function StatPill({ label, value, color }: { label: string; value: number; color: string }) {
-  const colorMap: Record<string, string> = {
-    red: 'bg-red-50 text-red-700',
-    amber: 'bg-amber-50 text-amber-700',
-    orange: 'bg-orange-50 text-orange-700',
-  }
+function StatCard({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
   return (
-    <div className={`rounded-lg p-2 text-center ${colorMap[color] ?? 'bg-gray-50 text-gray-700'}`}>
-      <p className="text-lg font-bold leading-none">{value}</p>
-      <p className="text-xs mt-0.5 opacity-80">{label}</p>
+    <div style={{ ...styles.statCard, background: bg }}>
+      <div style={{ ...styles.statValue, color }}>{value}</div>
+      <div style={{ ...styles.statLabel, color }}>{label}</div>
     </div>
   )
 }
 
-function NotSignedIn({ onSignIn }: { onSignIn: () => void }) {
+function LoginView({ onLogin }: { onLogin: () => void }) {
   return (
-    <div className="w-80 p-6 flex flex-col items-center gap-4 animate-fade-in">
-      <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-        <span className="text-white text-xl font-bold">S</span>
-      </div>
-      <div className="text-center">
-        <h2 className="font-semibold text-gray-800">Welcome to SecureGPT</h2>
-        <p className="text-xs text-gray-500 mt-1">Sign in to start protecting your data</p>
-      </div>
-      <Button variant="primary" size="md" fullWidth onClick={onSignIn}>
+    <div style={styles.loginWrap}>
+      <div style={styles.loginIcon}>S</div>
+      <div style={styles.loginTitle}>SecureGPT</div>
+      <div style={styles.loginSub}>Sign in to start protecting your data across AI platforms</div>
+      <button style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }} onClick={onLogin}>
+        <svg width="16" height="16" viewBox="0 0 24 24" style={{ marginRight: 8 }}>
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
         Sign in with Google
-      </Button>
+      </button>
     </div>
   )
 }
 
-function PauseView({ onPause, onCancel, loading }: {
-  onPause: (minutes: number) => void
-  onCancel: () => void
-  loading: boolean
-}) {
-  return (
-    <div className="space-y-2 animate-slide-up">
-      <p className="text-xs text-gray-500 font-medium">Pause protection for:</p>
-      <div className="space-y-1.5">
-        {PAUSE_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => onPause(opt.value)}
-            disabled={loading}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-100 disabled:opacity-50"
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-      <Button variant="ghost" size="sm" fullWidth onClick={onCancel}>
-        Cancel
-      </Button>
-    </div>
-  )
+// ── Styles ────────────────────────────────────────────────────────────────────
+const styles: Record<string, React.CSSProperties> = {
+  wrap: {
+    width: 300,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    background: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  loadingWrap: {
+    width: 300,
+    height: 120,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#fff',
+  },
+  spinner: {
+    width: 20,
+    height: 20,
+    border: '2px solid #e5e7eb',
+    borderTopColor: '#2563eb',
+    borderRadius: '50%',
+    animation: 'spin 0.7s linear infinite',
+  },
+  header: {
+    background: '#1e40af',
+    padding: '12px 14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  logoRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logoIcon: {
+    width: 24,
+    height: 24,
+    background: 'white',
+    borderRadius: 6,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#1e40af',
+  },
+  logoText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: 600,
+    letterSpacing: '-0.01em',
+  },
+  statusPill: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 5,
+    padding: '3px 8px',
+    borderRadius: 20,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+  },
+  statusLabel: {
+    fontSize: 11,
+    fontWeight: 500,
+  },
+  userRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '12px 14px',
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: '50%',
+    border: '1.5px solid #e5e7eb',
+  },
+  avatarFallback: {
+    width: 34,
+    height: 34,
+    borderRadius: '50%',
+    background: '#dbeafe',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#1d4ed8',
+  },
+  userInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  userName: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#111827',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  userEmail: {
+    fontSize: 11,
+    color: '#6b7280',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  divider: {
+    height: 1,
+    background: '#f3f4f6',
+    margin: '0 14px',
+  },
+  statsLabel: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: '#9ca3af',
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    padding: '10px 14px 6px',
+  },
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
+    gap: 6,
+    padding: '0 14px 10px',
+  },
+  statCard: {
+    borderRadius: 8,
+    padding: '8px 6px',
+    textAlign: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 700,
+    lineHeight: 1,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: 500,
+    marginTop: 3,
+    opacity: 0.8,
+  },
+  actions: {
+    padding: '10px 14px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  actionRow: {
+    display: 'flex',
+    gap: 6,
+  },
+  btn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontSize: 12,
+    fontWeight: 500,
+    padding: '8px 12px',
+    transition: 'opacity .15s',
+    fontFamily: 'inherit',
+  },
+  btnPrimary: {
+    background: '#2563eb',
+    color: 'white',
+  },
+  btnSecondary: {
+    background: '#f3f4f6',
+    color: '#374151',
+    width: '100%',
+  },
+  btnGhost: {
+    background: '#f9fafb',
+    color: '#374151',
+    border: '1px solid #e5e7eb',
+  },
+  btnDanger: {
+    background: '#fef2f2',
+    color: '#dc2626',
+    border: '1px solid #fecaca',
+  },
+  footer: {
+    padding: '8px 14px',
+    borderTop: '1px solid #f3f4f6',
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  footerText: {
+    fontSize: 10,
+    color: '#d1d5db',
+  },
+  loginWrap: {
+    width: 300,
+    padding: '28px 20px 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+    background: '#fff',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  loginIcon: {
+    width: 44,
+    height: 44,
+    background: '#1e40af',
+    borderRadius: 12,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 20,
+    fontWeight: 700,
+    color: 'white',
+    marginBottom: 4,
+  },
+  loginTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: '#111827',
+  },
+  loginSub: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 1.5,
+    marginBottom: 8,
+  },
 }

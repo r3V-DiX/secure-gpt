@@ -1,11 +1,12 @@
 // ─────────────────────────────────────────────
 // Policy Sync
-// Polls backend for latest org policy every 15 min
+// Polls backend /api/v1/extension/policy every 30s
+// Uses session cookie auth — no device_token needed
 // ─────────────────────────────────────────────
 
-import axios from 'axios'
 import { policyStorage, authStorage } from '@/lib/storage/storage'
-import { API_BASE_URL, POLICY_SYNC_INTERVAL_MS, API_ENDPOINTS } from '@/config/api.config'
+import { POLICY_SYNC_INTERVAL_MS, API_ENDPOINTS } from '@/config/api.config'
+import apiClient from '@/lib/api/client'
 import type { PIIConfig } from '@securegpt/shared/types'
 
 let syncIntervalId: ReturnType<typeof setInterval> | null = null
@@ -14,7 +15,6 @@ export function startPolicySync(): void {
   // Run immediately on startup
   void syncPolicy()
 
-  // Then every 15 minutes
   syncIntervalId = setInterval(() => {
     void syncPolicy()
   }, POLICY_SYNC_INTERVAL_MS)
@@ -29,24 +29,22 @@ export function stopPolicySync(): void {
 
 async function syncPolicy(): Promise<void> {
   try {
-    const auth = await authStorage.getAuth()
-    if (!auth) return // Not logged in — skip
+    const isLoggedIn = await authStorage.isLoggedIn()
+    if (!isLoggedIn) return // not logged in — skip
 
     const currentVersion = await policyStorage.getPolicyVersion()
 
-    const response = await axios.get(
-      `${API_BASE_URL}${API_ENDPOINTS.POLICY_DEVICE(auth.user.orgId)}`,
-      {
-        params: { device_token: auth.deviceToken },
-        timeout: 8000,
+    // apiClient has withCredentials: true + X-Extension-Request: true
+    const response = await apiClient.get<{
+      success: boolean
+      data: {
+        version: number
+        config: PIIConfig
+        updatedAt: string
       }
-    )
+    }>(API_ENDPOINTS.EXTENSION_POLICY, { timeout: 8000 })
 
-    const data = response.data?.data as {
-      version: number
-      config: PIIConfig
-      updated_at: string
-    }
+    const data = response.data.data
 
     // Only update if new version available
     if (data.version > currentVersion) {
@@ -66,8 +64,8 @@ async function syncPolicy(): Promise<void> {
         }
       }
     }
-  } catch (error) {
-    // Offline or backend down — use cached policy
+  } catch (err) {
+    // Offline or backend down — use cached policy silently
     console.warn('[SecureGPT] Policy sync failed — using cached policy')
   }
 }

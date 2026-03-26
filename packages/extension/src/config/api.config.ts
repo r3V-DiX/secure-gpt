@@ -1,34 +1,22 @@
-// ─────────────────────────────────────────────
-// API Config
-// ─────────────────────────────────────────────
+// packages/extension/src/config/api.config.ts
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
+// Dashboard URL — auth flows go through here so cookie lands on the right origin
+export const DASHBOARD_URL =
+  import.meta.env.VITE_DASHBOARD_URL ?? 'http://localhost:3000'
+
 export const API_ENDPOINTS = {
-  // Auth
-  AUTH_GOOGLE_URL: '/api/v1/auth/google/url',
-  AUTH_GOOGLE_CALLBACK: '/api/v1/auth/google/callback',
-  AUTH_REFRESH: '/api/v1/auth/refresh',
+  AUTH_GOOGLE: '/api/v1/auth/google',
   AUTH_ME: '/api/v1/auth/me',
   AUTH_LOGOUT: '/api/v1/auth/logout',
-
-  // Devices
-  DEVICE_ENROLL: '/api/v1/devices/enroll',
-  DEVICE_HEARTBEAT: '/api/v1/devices/heartbeat',
-
-  // Policy — extension polling
-  POLICY_DEVICE: (orgId: string) => `/api/v1/policy/device/${orgId}`,
-
-  // Logs — batch submission
-  LOGS_BATCH: '/api/v1/logs/batch',
+  DEVICE_REGISTER: '/api/v1/devices',
+  DEVICE_HEARTBEAT: (deviceId: string) => `/api/v1/devices/${deviceId}/heartbeat`,
+  EXTENSION_POLICY: '/api/v1/extension/policy',
+  EXTENSION_LOG: '/api/v1/extension/log',
 } as const
 
-// Policy sync interval — 15 minutes
-export const POLICY_SYNC_INTERVAL_MS = 15 * 60 * 1000
-
-// Log batch interval — 30 seconds
+export const POLICY_SYNC_INTERVAL_MS = 30 * 1000
 export const LOG_BATCH_INTERVAL_MS = 30 * 1000
-
-// Max log batch size per PRD
 export const LOG_BATCH_MAX_SIZE = 50

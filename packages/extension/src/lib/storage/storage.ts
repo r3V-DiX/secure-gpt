@@ -1,20 +1,19 @@
-// ─────────────────────────────────────────────
+// packages\extension\src\lib\storage\storage.ts
 // Chrome Storage Wrapper
-// Type-safe wrapper around chrome.storage API
+// Session-cookie auth — StoredAuth stores only the user profile.
+// No tokens, no deviceToken. Session lives in the httpOnly cookie.
 // ─────────────────────────────────────────────
 
 import type { PIIConfig } from '@securegpt/shared/types'
-import type { AuthTokens, User } from '@securegpt/shared/types'
+import type { User } from '@securegpt/shared/types'
 
+// Only the user profile is stored — session cookie handled by browser automatically
 export interface StoredAuth {
   user: User
-  tokens: AuthTokens
-  deviceId: string
-  deviceToken: string
 }
 
 export interface ExtensionStorageSchema {
-  // Auth
+  // Auth — just the user profile fetched from /auth/me
   auth: StoredAuth | null
   // Policy — synced from backend
   policy: PIIConfig | null
@@ -97,9 +96,16 @@ export const authStorage = {
     return syncStorage.remove('auth')
   },
 
-  async getAccessToken(): Promise<string | null> {
+  // Convenience — returns user or null
+  async getUser(): Promise<User | null> {
     const auth = await syncStorage.get('auth')
-    return auth?.tokens.accessToken ?? null
+    return auth?.user ?? null
+  },
+
+  // Check if we have a cached user (doesn't verify session is still valid)
+  async isLoggedIn(): Promise<boolean> {
+    const auth = await syncStorage.get('auth')
+    return auth !== null
   },
 }
 

@@ -1,0 +1,209 @@
+===== packages/dashboard/src/app/(auth)/callback/page.tsx =====
+"use client"
+// src/app/(auth)/callback/page.tsx
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { ShieldCheck } from "lucide-react"
+
+export default function CallbackPage() {
+  const { refresh } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    refresh()
+      .then(() => router.replace("/dashboard"))
+      .catch(() => router.replace("/login?error=oauth_failed"))
+  }, [refresh, router])
+
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-5"
+      style={{ background: 'var(--bg-base)' }}
+    >
+      {/* Animated logo */}
+      <div
+        className="size-14 rounded-2xl flex items-center justify-center"
+        style={{
+          background: 'var(--accent-light)',
+          border: '1px solid var(--accent-border)',
+          color: 'var(--accent-text)',
+        }}
+      >
+        <ShieldCheck size={26} />
+      </div>
+
+      {/* Spinner */}
+      <div className="relative size-8">
+        <div
+          className="absolute inset-0 rounded-full animate-spin"
+          style={{
+            border: '2px solid var(--accent-border)',
+            borderTopColor: 'var(--accent)',
+          }}
+        />
+      </div>
+
+      <div className="text-center">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Signing you in…
+        </p>
+        <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+          Verifying your session
+        </p>
+      </div>
+    </div>
+  )
+}
+
+
+===== packages/extension/src/background/index.ts =====
+// packages/extension/src/background/index.ts
+// Background Service Worker
+// Manages policy sync, log batching, OAuth tab watching
+
+import { startPolicySync } from './policy-sync'
+import { startLogBatcher, flushLogs, queueLog } from './log-batcher'
+import { stateStorage, authStorage } from '@/lib/storage/storage'
+import { fetchCurrentUser } from '@/features/auth/services/auth.service'
+import type { AuditLog } from '@securegpt/shared/types'
+
+// Dashboard /callback URL signals OAuth is complete
+const OAUTH_CALLBACK_PATTERNS = ['/callback', '/auth/callback']
+
+// ── Start background services ─────────────────
+startPolicySync()
+startLogBatcher()
+
+// ── OAuth callback tab watcher ────────────────
+// After Google OAuth, backend redirects to dashboard /callback.
+// We detect this, fetch the user, store it, close the tab.
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete') return
+  if (!tab.url) return
+
+  const isCallback = OAUTH_CALLBACK_PATTERNS.some((p) => tab.url!.includes(p))
+  if (!isCallback) return
+
+  console.log('[SecureGPT] OAuth callback detected — fetching user...')
+
+  try {
+    const user = await fetchCurrentUser()
+    if (user) {
+      console.log('[SecureGPT] Login successful:', user.email)
+      chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS', user }).catch(() => {})
+      setTimeout(() => chrome.tabs.remove(tabId).catch(() => {}), 1500)
+    }
+  } catch (err) {
+    console.warn('[SecureGPT] Failed to fetch user after OAuth:', err)
+  }
+})
+
+// ── Message handler ───────────────────────────
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  switch (message.type) {
+
+    case 'AUTH_LOST':
+      authStorage.clearAuth().then(() => sendResponse({ success: true }))
+      return true
+
+    case 'QUEUE_LOG':
+      queueLog(message.event as AuditLog).then(() => sendResponse({ success: true }))
+      return true
+
+    case 'GET_STATE':
+      stateStorage.isActive().then((active) => sendResponse({ active }))
+      return true
+
+    case 'PAUSE_EXTENSION':
+      stateStorage.pauseFor(message.minutes).then(() => sendResponse({ success: true }))
+      return true
+
+    case 'RESUME_EXTENSION':
+      stateStorage.setActive(true).then(() => sendResponse({ success: true }))
+      return true
+
+    case 'GET_SESSION_STATS':
+      stateStorage.getSessionStats().then((stats) => sendResponse(stats))
+      return true
+
+    case 'FLUSH_LOGS':
+      flushLogs().then(() => sendResponse({ success: true }))
+      return true
+
+    default:
+      sendResponse({ error: 'Unknown message type' })
+  }
+})
+
+// ── Flush logs on suspend ─────────────────────
+chrome.runtime.onSuspend.addListener(() => {
+  void flushLogs()
+})
+
+
+===== packages/extension/src/features/auth/hooks/use-auth.ts =====
+// packages/extension/src/features/auth/hooks/use-auth.ts
+
+import { useState, useEffect } from 'react'
+import {
+  getCurrentUser,
+  fetchCurrentUser,
+  signInWithGoogle,
+  signOut,
+} from '../services/auth.service'
+import type { User } from '@securegpt/shared/types'
+
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    void loadAuth()
+  }, [])
+
+  async function loadAuth() {
+    setLoading(true)
+    try {
+      // Try cached user first (fast)
+      const cached = await getCurrentUser()
+      if (cached) {
+        setUser(cached)
+        setLoading(false)
+        return
+      }
+      // No cached user — check with backend
+      const fresh = await fetchCurrentUser()
+      setUser(fresh)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function login() {
+    await signInWithGoogle()
+  }
+
+  async function logout() {
+    await signOut()
+    setUser(null)
+  }
+
+  return {
+    user,
+    loading,
+    isLoggedIn: !!user,
+    login,
+    logout,
+    reload: loadAuth,
+  }
+}
+
+
+===== packages/dashboard/src/app/(auth)/layout.tsx =====
+// packages/dashboard/src/app/(auth)/layout.tsx
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+

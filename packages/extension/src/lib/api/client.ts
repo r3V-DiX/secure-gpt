@@ -1,59 +1,57 @@
 // ─────────────────────────────────────────────
-// API Client
-// Axios instance for backend calls
+// API Client — Extension
+// Session-cookie auth. withCredentials: true so the httpOnly cookie
+// is sent automatically on every request.
+//
+// KEY CHANGES from old version:
+//   - No Bearer token header — session cookie handles auth
+//   - withCredentials: true — sends cookie cross-origin to backend
+//   - X-Extension-Request: true — tells backend to skip fingerprint check
+//     for background service worker requests
+//   - 401 handler just clears stored user + notifies popup — no refresh
 // ─────────────────────────────────────────────
 
 import axios, { type AxiosInstance, type AxiosError } from 'axios'
 import { authStorage } from '../storage/storage'
 import { API_BASE_URL } from '@/config/api.config'
 
-// ── Create instance ───────────────────────────
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true,          // send httpOnly session cookie on every request
   headers: {
     'Content-Type': 'application/json',
+    'X-Extension-Request': 'true', // tells backend to skip fingerprint validation
   },
 })
 
-// ── Request interceptor — attach JWT ──────────
-apiClient.interceptors.request.use(async (config) => {
-  const token = await authStorage.getAccessToken()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// ── Response interceptor — handle 401 ────────
+// ── Response interceptor — handle session errors ──────────────────────────────
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Token expired — try refresh
+  async (error: AxiosError<{ error?: { code?: string; message?: string } }>) => {
+    const status = error.response?.status
+    const code = error.response?.data?.error?.code
+
+    if (status === 401) {
+      // Session expired, revoked or fingerprint mismatch
+      // Clear stored user and notify background to update popup state
+      await authStorage.clearAuth()
+
+      // Notify all extension contexts that auth was lost
       try {
-        const auth = await authStorage.getAuth()
-        if (auth?.tokens.refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
-            refresh_token: auth.tokens.refreshToken,
-          })
-          const newTokens = response.data.data
-          await authStorage.setAuth({
-            ...auth,
-            tokens: { ...auth.tokens, ...newTokens },
-          })
-          // Retry original request
-          if (error.config) {
-            error.config.headers.Authorization = `Bearer ${newTokens.access_token}`
-            return apiClient(error.config)
-          }
-        }
+        chrome.runtime.sendMessage({ type: 'AUTH_LOST', code })
       } catch {
-        // Refresh failed — clear auth
-        await authStorage.clearAuth()
+        // Ignore — content script may not have runtime access
       }
     }
-    return Promise.reject(error)
+
+    // Always reject with a clean error message
+    const message =
+      error.response?.data?.error?.message ??
+      error.message ??
+      'An unexpected error occurred'
+
+    return Promise.reject(new Error(message))
   }
 )
 
