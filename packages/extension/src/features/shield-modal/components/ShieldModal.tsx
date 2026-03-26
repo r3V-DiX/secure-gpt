@@ -1,7 +1,10 @@
 // ─────────────────────────────────────────────
 // Shield Modal
-// Shown when WARN_ALLOW action is triggered
-// User reviews detected entities and decides
+// Shown when sensitive data is detected (MASK / WARN_ALLOW actions)
+// User reviews detected entities and decides what to do:
+//   • Mask & Send   → replaces PII with placeholders before sending
+//   • Send Directly → sends original text (user acknowledges risk)
+//   • Cancel        → keeps message in input, does nothing
 // ─────────────────────────────────────────────
 
 import React, { useEffect, useRef } from 'react'
@@ -10,20 +13,19 @@ import { Badge } from '@/components/ui/badge/badge'
 import { previewMasking } from '@/features/actions/services/masking.service'
 import {
   PII_CATEGORY_LABELS,
-  POLICY_ACTION_LABELS,
 } from '@securegpt/shared/constants'
 import type { DetectionResult, PIIEntity } from '@securegpt/shared/types'
 import type { PIIConfig } from '@securegpt/shared/types'
-import type { PIICategory, PolicyAction } from '@securegpt/shared/constants'
+import type { PIICategory } from '@securegpt/shared/constants'
 import { clsx } from 'clsx'
 
 interface ShieldModalProps {
   result: DetectionResult
   config: PIIConfig
   originalText: string
-  onProceed: (acknowledged: boolean) => void
-  onCancel: () => void
-  onMask: () => void
+  onProceed: (acknowledged: boolean) => void   // Send Directly
+  onCancel: () => void                          // Cancel
+  onMask: () => void                            // Mask & Send
 }
 
 const severityColors = {
@@ -40,6 +42,13 @@ const categoryColors: Record<PIICategory, string> = {
   IP: 'bg-blue-50 border-blue-200 text-blue-700',
 }
 
+const categoryIcons: Record<PIICategory, string> = {
+  FINANCIAL: '💳',
+  PII: '👤',
+  CONFIDENTIAL: '🔐',
+  IP: '📋',
+}
+
 export function ShieldModal({
   result,
   config,
@@ -50,7 +59,7 @@ export function ShieldModal({
 }: ShieldModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
 
-  // Trap focus inside modal
+  // Trap focus + Escape key
   useEffect(() => {
     const el = modalRef.current
     if (!el) return
@@ -79,6 +88,8 @@ export function ShieldModal({
     {}
   )
 
+  const totalItems = result.entities.length
+
   return (
     <>
       {/* Backdrop */}
@@ -98,50 +109,59 @@ export function ShieldModal({
       >
         <div
           className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up"
-          style={{ fontFamily: 'var(--sg-font)' }}
+          style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
+
+          {/* ── Header ───────────────────────────────── */}
           <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3 flex-shrink-0">
             <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <span className="text-amber-600 text-lg">⚠️</span>
+              <span className="text-lg">⚠️</span>
             </div>
             <div className="flex-1 min-w-0">
               <h2 id="shield-modal-title" className="font-semibold text-gray-900 text-sm">
                 Sensitive data detected
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {result.entities.length} item{result.entities.length !== 1 ? 's' : ''} found
-                {' · '}detected by {result.tier.toUpperCase()} tier
+                {totalItems} item{totalItems !== 1 ? 's' : ''} found
+                {' · '}review before sending
               </p>
             </div>
             <button
               onClick={onCancel}
-              className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 flex-shrink-0"
               aria-label="Close"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}
             >
               ✕
             </button>
           </div>
 
-          {/* Scrollable body */}
+          {/* ── Scrollable body ───────────────────────── */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+
             {/* Detected entities grouped by category */}
             <div className="space-y-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Detected items
+                What was detected
               </p>
               {(Object.entries(grouped) as [PIICategory, PIIEntity[]][]).map(([cat, entities]) => (
                 <div key={cat} className={clsx('rounded-xl border p-3', categoryColors[cat])}>
                   <div className="flex items-center gap-2 mb-2">
+                    <span>{categoryIcons[cat]}</span>
                     <span className="text-xs font-semibold">{PII_CATEGORY_LABELS[cat]}</span>
                     <Badge variant="neutral" className="text-xs">{entities.length}</Badge>
                   </div>
                   <div className="space-y-1.5">
                     {entities.map((entity) => (
-                      <div key={entity.id} className="flex items-center justify-between gap-3 bg-white/60 rounded-lg px-3 py-1.5">
+                      <div
+                        key={entity.id}
+                        className="flex items-center justify-between gap-3 bg-white/60 rounded-lg px-3 py-1.5"
+                      >
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs text-gray-500 flex-shrink-0">{entity.type.replace(/_/g, ' ')}</span>
+                          <span className="text-xs text-gray-500 flex-shrink-0">
+                            {entity.type.replace(/_/g, ' ')}
+                          </span>
                           <span className="text-xs font-mono text-gray-700 truncate bg-gray-100 px-2 py-0.5 rounded">
                             {entity.value.length > 30
                               ? `${entity.value.slice(0, 15)}...${entity.value.slice(-8)}`
@@ -163,7 +183,7 @@ export function ShieldModal({
               ))}
             </div>
 
-            {/* Preview masked text */}
+            {/* Preview after masking */}
             {diff.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -188,43 +208,51 @@ export function ShieldModal({
 
             {/* Policy notice */}
             <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 border border-blue-100">
-              <strong>Company policy applies.</strong> This event will be logged regardless of your choice.
+              <strong>This event will be logged</strong> regardless of the action you choose.
             </div>
           </div>
 
-          {/* Action footer */}
-          <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0">
+          {/* ── Footer actions ────────────────────────── */}
+          <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0 space-y-2">
+            {/* Primary actions */}
             <div className="flex items-center gap-2">
+              {/* Cancel */}
               <Button
-                variant="danger"
+                variant="secondary"
                 size="sm"
                 onClick={onCancel}
                 className="flex-shrink-0"
               >
                 Cancel
               </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={onMask}
-                className="flex-shrink-0"
-              >
-                🎭 Mask & Send
-              </Button>
+
+              {/* Send Directly */}
               <Button
                 variant="ghost"
                 size="sm"
-                fullWidth
                 onClick={() => onProceed(true)}
-                className="text-gray-600 justify-center"
+                className="flex-shrink-0 text-gray-600"
               >
-                Acknowledge & Send anyway
+                Send directly
+              </Button>
+
+              {/* Mask & Send — primary CTA */}
+              <Button
+                variant="primary"
+                size="sm"
+                fullWidth
+                onClick={onMask}
+                className="justify-center"
+              >
+                🎭 Mask &amp; Send
               </Button>
             </div>
-            <p className="text-xs text-gray-400 mt-2 text-center">
-              Pressing "Mask & Send" is the recommended action
+
+            <p className="text-xs text-gray-400 text-center">
+              <strong>Mask &amp; Send</strong> is recommended — replaces sensitive values before sending
             </p>
           </div>
+
         </div>
       </div>
     </>

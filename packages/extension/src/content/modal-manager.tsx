@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // Modal Manager
 // Injects and manages the ShieldModal in LLM pages
-// Uses a Shadow DOM to isolate styles
+// Uses a Shadow DOM to isolate styles from the host page
 // ─────────────────────────────────────────────
 
 import React from 'react'
@@ -13,16 +13,20 @@ import type { PIIConfig } from '@securegpt/shared/types'
 let modalRoot: Root | null = null
 let shadowHost: HTMLElement | null = null
 
+// onDecision(proceed, masked, acknowledged)
+//   proceed:      true = user wants to send (either masked or directly)
+//   masked:       true = mask & send, false = send directly
+//   acknowledged: true = user explicitly acknowledged the risk
 export function showShieldModal(
   result: DetectionResult,
   config: PIIConfig,
   originalText: string,
   onDecision: (proceed: boolean, masked: boolean, acknowledged: boolean) => void
 ): void {
-  // Remove existing modal if open
+  // Remove any existing modal first
   removeShieldModal()
 
-  // Create shadow host to isolate CSS from LLM page
+  // Shadow host — isolates modal CSS from the LLM page's styles
   shadowHost = document.createElement('div')
   shadowHost.setAttribute('data-securegpt', 'true')
   shadowHost.setAttribute('data-securegpt-modal', 'true')
@@ -31,7 +35,7 @@ export function showShieldModal(
 
   const shadow = shadowHost.attachShadow({ mode: 'open' })
 
-  // Inject Tailwind base styles into shadow DOM
+  // Inject base styles into shadow DOM
   const styleEl = document.createElement('style')
   styleEl.textContent = getModalStyles()
   shadow.appendChild(styleEl)
@@ -46,14 +50,17 @@ export function showShieldModal(
       config={config}
       originalText={originalText}
       onProceed={(acknowledged) => {
+        // "Send Directly" — proceed=true, masked=false
         onDecision(true, false, acknowledged)
         removeShieldModal()
       }}
       onCancel={() => {
+        // "Cancel" — proceed=false
         onDecision(false, false, false)
         removeShieldModal()
       }}
       onMask={() => {
+        // "Mask & Send" — proceed=true, masked=true
         onDecision(true, true, false)
         removeShieldModal()
       }}
@@ -72,7 +79,6 @@ export function removeShieldModal(): void {
   }
 }
 
-// Minimal styles needed for the modal inside shadow DOM
 function getModalStyles(): string {
   return `
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -166,7 +172,46 @@ function getModalStyles(): string {
     .rounded-lg { border-radius: 0.5rem; }
     .rounded { border-radius: 0.25rem; }
     .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,.25); }
-    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* Button base styles */
+    button {
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      padding: 0.375rem 0.875rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      transition: opacity 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Button variants */
+    .btn-primary { background: #2563eb; color: #fff; border: none; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #fff; color: #374151; border: 1px solid #e5e7eb; }
+    .btn-secondary:hover { background: #f9fafb; }
+    .btn-ghost { background: transparent; color: #4b5563; border: none; }
+    .btn-ghost:hover { background: #f3f4f6; }
+    .btn-danger { background: #dc2626; color: #fff; border: none; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-full { width: 100%; }
+
+    /* Badge */
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.375rem;
+      padding: 0.125rem 0.5rem; border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 500;
+    }
+    .badge-neutral { background: #f3f4f6; color: #6b7280; }
+    .badge-danger { background: #fef2f2; color: #b91c1c; }
+    .badge-warning { background: #fffbeb; color: #b45309; }
+    .badge-info { background: #eff6ff; color: #1d4ed8; }
+
     @keyframes slide-up {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }

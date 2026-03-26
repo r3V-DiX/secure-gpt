@@ -78,7 +78,7 @@ export function extractText(el: HTMLElement): string {
 function isVisible(el: HTMLElement): boolean {
   const rect = el.getBoundingClientRect()
   const style = window.getComputedStyle(el)
-  
+
   return (
     rect.width > 0 &&
     rect.height > 0 &&
@@ -90,7 +90,7 @@ function isVisible(el: HTMLElement): boolean {
 
 // ── Banner injection helpers ──────────────────
 export function getInputContainer(): HTMLElement | null {
-  const input = getInputElement()
+  const input = findMainEditor()
   if (!input) return null
   // Walk up to find a suitable container
   return (

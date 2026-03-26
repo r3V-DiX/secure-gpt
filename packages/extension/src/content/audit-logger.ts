@@ -24,49 +24,74 @@ async function sha256(text: string): Promise<string> {
     .join('')
 }
 
+// Guard: check if the extension runtime is still valid before
+// making any chrome.storage / chrome.runtime calls.
+function isExtensionContextValid(): boolean {
+  try {
+    return !!chrome.runtime?.id
+  } catch {
+    return false
+  }
+}
+
 export async function logDetectionEvent(
   result: DetectionResult,
   action: PolicyAction,
   acknowledged = false
 ): Promise<void> {
-  // Only queue if logged in — background will retry if session expires mid-queue
-  const isLoggedIn = await authStorage.isLoggedIn()
-  if (!isLoggedIn) return
-
-  const topEntity = result.entities[0]
-  if (!topEntity) return
-
-  const platform = DOMAIN_TO_PLATFORM[window.location.hostname] ?? 'unknown'
-
-  // Hash the matched value — NEVER log raw text
-  const snippetHash = await sha256(topEntity.value)
-
-  // Collect all entity types and severities across detected entities
-  const entityTypes = [...new Set(result.entities.map((e) => e.type))]
-  const severities = [...new Set(result.entities.map((e) => e.severity.toUpperCase()))]
-
-  const event: AuditLog = {
-    eventId: uuidv4(),
-    timestamp: new Date().toISOString(),
-    actionTaken: action,
-    categoryTriggered: topEntity.category,
-    detectionType: topEntity.type,
-    detectionTier: result.tier,
-    llmPlatform: platform,
-    domain: window.location.hostname,
-    matchCount: result.entities.length,
-    snippetHash,
-    entityTypes,
-    severities,
-    extensionVersion: EXTENSION_VERSION,
-    osPlatform: navigator.platform,
-    browser: getBrowserName(),
-    acknowledged,
-    latencyMs: result.processingTimeMs,
+  // Bail out silently if extension was reloaded and context is gone
+  if (!isExtensionContextValid()) {
+    console.warn('[SecureGPT] Skipping log — extension context invalidated')
+    return
   }
 
-  // Send to background worker for batching and API submission
-  chrome.runtime.sendMessage({ type: 'QUEUE_LOG', event })
+  try {
+    // Only queue if logged in — background will retry if session expires mid-queue
+    const isLoggedIn = await authStorage.isLoggedIn()
+    if (!isLoggedIn) return
+
+    const topEntity = result.entities[0]
+    if (!topEntity) return
+
+    const platform = DOMAIN_TO_PLATFORM[window.location.hostname] ?? 'unknown'
+
+    // Hash the matched value — NEVER log raw text
+    const snippetHash = await sha256(topEntity.value)
+
+    // Collect all entity types and severities across detected entities
+    const entityTypes = [...new Set(result.entities.map((e) => e.type))]
+    const severities = [...new Set(result.entities.map((e) => e.severity.toUpperCase()))]
+
+    const event: AuditLog = {
+      eventId: uuidv4(),
+      timestamp: new Date().toISOString(),
+      actionTaken: action,
+      categoryTriggered: topEntity.category,
+      detectionType: topEntity.type,
+      detectionTier: result.tier,
+      llmPlatform: platform,
+      domain: window.location.hostname,
+      matchCount: result.entities.length,
+      snippetHash,
+      entityTypes,
+      severities,
+      extensionVersion: EXTENSION_VERSION,
+      osPlatform: navigator.platform,
+      browser: getBrowserName(),
+      acknowledged,
+      latencyMs: result.processingTimeMs,
+    }
+
+    // Send to background worker for batching and API submission
+    chrome.runtime.sendMessage({ type: 'QUEUE_LOG', event })
+  } catch (err) {
+    const message = (err as Error)?.message ?? ''
+    if (message.includes('Extension context invalidated')) {
+      console.warn('[SecureGPT] Skipping log — extension context lost mid-flight')
+    } else {
+      console.error('[SecureGPT] logDetectionEvent error:', err)
+    }
+  }
 }
 
 function getBrowserName(): string {
