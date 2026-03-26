@@ -8,8 +8,10 @@ import { policyStorage, stateStorage } from '@/lib/storage/storage'
 import { DEFAULT_EXTENSION_CONFIG } from '@/config/defaults.config'
 
 async function init() {
+  console.log('[SecureGPT] Initializing content script...')
   // Check if extension is active
   const isActive = await stateStorage.isActive()
+  console.log('[SecureGPT] Extension active:', isActive)
   if (!isActive) return
 
   // Load policy — fall back to defaults

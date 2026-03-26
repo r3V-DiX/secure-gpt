@@ -34,7 +34,7 @@ describe('detectPII — pipeline', () => {
 
   it('detects Aadhaar number', async () => {
     const result = await detectPII(
-      'My Aadhaar number is 2234 5678 9012',
+      'My Aadhaar number is 7592 2902 8107',
       DEFAULT_PII_CONFIG
     )
     expect(result.hasFindings).toBe(true)
@@ -129,9 +129,9 @@ describe('detectPII — pipeline', () => {
   })
 
   it('detects Aadhaar with OCR noise (character mapping)', async () => {
-    // 2234 5678 9012 with O instead of 0
+    // 7592 2902 8107 with O instead of 0
     const result = await detectPII(
-      'Aadhaar: 2234 5678 9O12',
+      'Aadhaar: 7592 2902 81O7',
       DEFAULT_PII_CONFIG
     )
     expect(result.hasFindings).toBe(true)

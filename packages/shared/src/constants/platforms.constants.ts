@@ -22,8 +22,8 @@ export const PLATFORM_LABELS: Record<LLMPlatform, string> = {
   'meta-ai': 'Meta AI',
 }
 
-export const PLATFORM_DOMAINS: Record<LLMPlatform, string> = {
-  chatgpt: 'chat.openai.com',
+export const PLATFORM_DOMAINS: Record<LLMPlatform, string | string[]> = {
+  chatgpt: ['chat.openai.com', 'chatgpt.com'],
   gemini: 'gemini.google.com',
   copilot: 'copilot.microsoft.com',
   claude: 'claude.ai',
@@ -35,11 +35,17 @@ export const PLATFORM_DOMAINS: Record<LLMPlatform, string> = {
 export const DOMAIN_TO_PLATFORM: Record<string, LLMPlatform> = Object.entries(
   PLATFORM_DOMAINS
 ).reduce(
-  (acc, [platform, domain]) => ({
-    ...acc,
-    [domain]: platform as LLMPlatform,
-  }),
-  {}
+  (acc, [platform, domain]) => {
+    if (Array.isArray(domain)) {
+      domain.forEach(d => {
+        acc[d] = platform as LLMPlatform
+      })
+    } else {
+      acc[domain] = platform as LLMPlatform
+    }
+    return acc
+  },
+  {} as Record<string, LLMPlatform>
 )
 
 export const ALL_PLATFORMS = Object.keys(LLM_PLATFORMS) as LLMPlatform[]

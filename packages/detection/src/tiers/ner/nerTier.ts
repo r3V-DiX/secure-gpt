@@ -159,6 +159,7 @@ export class NERTier extends BaseTier {
         entities.push({
           id: crypto.randomUUID(),
           type: span.type,
+          label: this.formatLabel(span.type),
           category,
           value: span.value,
           maskedValue: '[REDACTED]',
@@ -245,5 +246,12 @@ export class NERTier extends BaseTier {
     const confidential = ['PASSWORD', 'PIN', 'APIKEY', 'SECRETKEY']
     if (confidential.includes(label)) return 'CONFIDENTIAL'
     return 'PII'
+  }
+}
+   return type
+      .toLowerCase()
+      .split('_')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
   }
 }

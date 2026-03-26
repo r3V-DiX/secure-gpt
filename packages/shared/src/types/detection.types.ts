@@ -11,6 +11,7 @@ export type Severity = 'low' | 'medium' | 'high' | 'critical'
 export interface PIIEntity {
   id: string
   type: string                  // e.g. 'credit_card', 'email', 'pan_card'
+  label: string                 // e.g. 'Credit / Debit Card Number'
   category: PIICategory         // FINANCIAL | PII | CONFIDENTIAL | IP
   value: string                 // the actual matched text
   maskedValue: string           // e.g. [EMAIL-REDACTED]

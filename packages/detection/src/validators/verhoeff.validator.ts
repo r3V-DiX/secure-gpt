@@ -29,11 +29,20 @@ const PERMUTATION_TABLE: number[][] = [
 const INVERSE_TABLE: number[] = [0, 4, 3, 2, 1, 5, 6, 7, 8, 9]
 
 export function verhoeffCheck(number: string): boolean {
-  const digits = number.replace(/[\s\-]/g, '')
-  if (!/^\d{12}$/.test(digits)) return false
+  // Normalize OCR misreads
+  const cleaned = number
+    .replace(/[\s-]/g, '')
+    .toUpperCase()
+    .replace(/O/g, '0')
+    .replace(/I/g, '1')
+    .replace(/B/g, '8')
+    .replace(/S/g, '5')
+    .replace(/Z/g, '2')
+
+  if (!/^\d{12}$/.test(cleaned)) return false
 
   let c = 0
-  const reversed = digits.split('').reverse()
+  const reversed = cleaned.split('').reverse()
 
   for (let i = 0; i < reversed.length; i++) {
     const digit = parseInt(reversed[i]!, 10)

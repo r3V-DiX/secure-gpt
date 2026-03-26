@@ -88,6 +88,7 @@ export class RegexTier extends BaseTier {
         entities.push({
           id: uuidv4(),
           type: rule.type,
+          label: rule.label,
           category: rule.category,
           value,
           maskedValue,

@@ -6,10 +6,12 @@
 const VALID_FOURTH_CHAR = new Set(['C', 'P', 'H', 'F', 'A', 'T', 'B', 'L', 'J', 'G'])
 
 export function panCheck(pan: string): boolean {
-  const cleaned = pan.trim().toUpperCase()
+  // Remove spaces and normalize to uppercase
+  const cleaned = pan.replace(/\s+/g, '').toUpperCase()
 
-  // Must match format exactly: 5 letters, 4 digits, 1 letter
-  if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleaned)) return false
+  // Must match format: 5 letters, 4 digits (allowing OCR misreads), 1 letter
+  // We allow O=0, I=1, S=5
+  if (!/^[A-Z]{5}[0-9OIS]{4}[A-Z]{1}$/.test(cleaned)) return false
 
   // 4th character must be a valid entity type
   const fourthChar = cleaned[3]

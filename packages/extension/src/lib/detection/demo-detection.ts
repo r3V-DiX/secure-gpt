@@ -39,7 +39,7 @@ const DEMO_RULES: DemoRule[] = [
     type: 'pan_card',
     category: 'FINANCIAL',
     label: 'Indian PAN Card',
-    pattern: /\b([A-Z]{5}[0-9]{4}[A-Z])\b/g,
+    pattern: /\b([A-Z]{3}[PCHFATBLJG][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi,
     severity: 'critical',
     maskedValue: '[PAN-REDACTED]',
   },
@@ -188,6 +188,7 @@ export async function detectPIIDemo(
       entities.push({
         id: uuidv4(),
         type: rule.type,
+        label: rule.label,
         category: rule.category,
         value,
         maskedValue: rule.maskedValue,

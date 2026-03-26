@@ -23,9 +23,10 @@ export const financialRules: DetectionRule[] = [
     category: 'FINANCIAL',
     type: 'pan_card',
     label: 'Indian PAN Card Number',
-    // Format: 5 letters, 4 digits, 1 letter. 4th char: [PCHFATLJGE]
+    // Format: 5 letters, 4 digits, 1 letter. 4th char: [PCHFATBLJG]
     // Allowing common OCR misreads (O=0, I=1, S=5) in numeric part
-    pattern: /\b([A-Z]{3}[PCHFATLJGE][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi,
+    pattern: /\b([A-Z]{3}[PCHFATBLJG][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi,
+    validatorId: 'pan',
     severity: 'critical',
     enabled: true,
     description: 'Indian Permanent Account Number (PAN)',
