@@ -18,34 +18,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
-    console.log('[AuthContext] refresh() called')
     try {
       const me = await apiGet<AuthUser>('/auth/me')
-      console.log('[AuthContext] /auth/me success:', me)
       setUser(me)
-    } catch (err) {
-      console.warn('[AuthContext] /auth/me failed:', err)
+    } catch {
       setUser(null)
     }
   }, [])
 
   useEffect(() => {
-    console.log('[AuthContext] Initial auth check starting...')
-    refresh().finally(() => {
-      console.log('[AuthContext] Initial auth check done. loading → false')
-      setLoading(false)
-    })
+    refresh().finally(() => setLoading(false))
   }, [refresh])
 
   const logout = async () => {
-    console.log('[AuthContext] logout() called')
     await apiPost('/auth/logout')
-    console.log('[AuthContext] logout API success, clearing user')
     setUser(null)
     window.location.href = '/login'
   }
-
-  console.log('[AuthContext] Render — user:', user?.email ?? 'null', '| loading:', loading)
 
   return (
     <AuthContext.Provider value={{ user, loading, logout, refresh }}>
