@@ -1,6 +1,7 @@
 {
   "name": "@securegpt/detection",
   "version": "1.0.0",
+  "private": true,
   "description": "SecureGPT detection engine — regex, NER, OCR tiers",
   "main": "./src/pipeline.ts",
   "types": "./src/pipeline.ts",

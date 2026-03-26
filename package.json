@@ -3,24 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/*",
-    "packages/dashboard"
+    "packages/*"
   ],
   "scripts": {
     "dev:extension": "npm run dev --workspace=@securegpt/extension",
-    "dev:dashboard": "npm run dev --workspace=@securegpt/dashboard",
+    "dev:dashboard": "npm run dev --workspace=secure-gpt-dashboard",
     "build:extension": "npm run build --workspace=@securegpt/extension",
-    "build:dashboard": "npm run build --workspace=@securegpt/dashboard",
+    "build:dashboard": "npm run build --workspace=secure-gpt-dashboard",
     "test:all": "npm run test --workspaces",
     "test:extension": "npm run test --workspace=@securegpt/extension",
     "test:detection": "npm run test --workspace=@securegpt/detection",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "eslint packages --ext .ts,.tsx"
+    "lint": "eslint ."
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.57.0",
+    "eslint": "^9.16.0",
+    "typescript-eslint": "^8.18.0",
+    "jiti": "^2.6.1",
     "prettier": "^3.2.5",
     "typescript": "^5.4.5"
   }
