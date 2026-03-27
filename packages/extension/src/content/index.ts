@@ -4,18 +4,21 @@
 // ─────────────────────────────────────────────
 
 import { setupInterceptor } from './interceptor'
-import { policyStorage, stateStorage } from '@/lib/storage/storage'
 import { DEFAULT_EXTENSION_CONFIG } from '@/config/defaults.config'
 
 async function init() {
   console.log('[SecureGPT] Initializing content script...')
   // Check if extension is active
-  const isActive = await stateStorage.isActive()
+  const isActive = await new Promise<boolean>((resolve) => {
+    chrome.runtime.sendMessage({ type: 'GET_STATE' }, (res) => resolve(res?.active ?? true))
+  })
   console.log('[SecureGPT] Extension active:', isActive)
   if (!isActive) return
 
   // Load policy — fall back to defaults
-  const policy = (await policyStorage.getPolicy()) ?? DEFAULT_EXTENSION_CONFIG
+  const policy = await new Promise<any>((resolve) => {
+    chrome.runtime.sendMessage({ type: 'GET_POLICY' }, (res) => resolve(res?.policy ?? DEFAULT_EXTENSION_CONFIG))
+  })
 
   // Start intercepting submit events
   setupInterceptor(policy)

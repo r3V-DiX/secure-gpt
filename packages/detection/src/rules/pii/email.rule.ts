@@ -79,7 +79,7 @@ export const piiRules: DetectionRule[] = [
     category: 'PII',
     type: 'passport',
     label: 'Passport MRZ (Line 1)',
-    pattern: /(P[<{([]?[A-Z<{([]]{40,44})/gi,
+    pattern: /(P[<{({\[\]]?[A-Z<{({\[\]]{40,44})/gi,
     severity: 'critical',
     enabled: true,
     description: 'Passport Machine Readable Zone - Line 1',

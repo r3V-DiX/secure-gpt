@@ -31,32 +31,41 @@ export async function queueLog(event: AuditLog): Promise<void> {
 
 export async function flushLogs(): Promise<void> {
   const queue = await getQueue()
-  if (queue.length === 0) return
+  if (queue.length === 0) {
+    console.log('[SecureGPT] Log queue is empty, skipping flush')
+    return
+  }
 
   // Check we have a cached user — if not, session likely expired
   const isLoggedIn = await authStorage.isLoggedIn()
-  if (!isLoggedIn) return // keep in queue until re-auth
+  if (!isLoggedIn) {
+    console.warn('[SecureGPT] Not logged in, skipping log flush')
+    return
+  }
 
   const batch = queue.splice(0, LOG_BATCH_MAX_SIZE)
+  console.log(`[SecureGPT] Attempting to flush ${batch.length} logs to ${API_ENDPOINTS.EXTENSION_LOG}...`)
 
   try {
     // apiClient has withCredentials: true and X-Extension-Request: true already set
     // Backend reads user_id from session — we just send events
-    await apiClient.post(
+    const response = await apiClient.post(
       API_ENDPOINTS.EXTENSION_LOG,
       { events: batch },
       { timeout: 10000 }
     )
 
+    console.log('[SecureGPT] Log flush success:', response.data)
+
     // Save remaining queue
     await saveQueue(queue)
-    console.log(`[SecureGPT] Flushed ${batch.length} log events`)
+    console.log(`[SecureGPT] Successfully flushed ${batch.length} log events`)
 
-  } catch (err) {
+  } catch (err: any) {
     // Backend unreachable or session expired — put batch back
     const remaining = [...batch, ...queue]
     await saveQueue(remaining)
-    console.warn('[SecureGPT] Log flush failed — queued for retry:', err)
+    console.error('[SecureGPT] Log flush failed:', err.message, err.response?.data)
   }
 }
 

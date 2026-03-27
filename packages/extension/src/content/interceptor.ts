@@ -2,14 +2,12 @@
 // Interceptor — hooks into LLM page submit events
 // All detections go through the ShieldModal — user decides action
 
-import { detectPIIDemo as detectPII } from '@/lib/detection/demo-detection'
 import { findEditableRoot, findMainEditor, extractText } from './dom-utils'
 import { logDetectionEvent } from './audit-logger'
 import { showBanner, removeBanner } from './banners'
 import { showShieldModal } from './modal-manager'
 import { applyMasking } from '@/features/actions/services/masking.service'
-import { stateStorage } from '@/lib/storage/storage'
-import type { PIIConfig } from '@securegpt/shared/types'
+import type { PIIConfig, DetectionResult } from '@securegpt/shared/types'
 
 let currentPolicy: PIIConfig
 let isRunning = false
@@ -101,7 +99,16 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
   }
 
   try {
-    const isActive = await stateStorage.isActive()
+    const isActive = await new Promise<boolean>((resolve) => {
+      chrome.runtime.sendMessage({ type: 'GET_STATE' }, (res) => {
+        if (chrome.runtime.lastError) {
+          resolve(true) // fallback to true if background is unreachable
+        } else {
+          resolve(res?.active ?? true)
+        }
+      })
+    })
+
     if (!isActive) {
       isRunning = false
       resubmit(el)
@@ -118,7 +125,21 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
       return
     }
 
-    const result = await detectPII(text, currentPolicy)
+    // --- Delegate detection to background script ---
+    console.log('[SecureGPT] Requesting detection from background...')
+    const result = await new Promise<DetectionResult>((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: 'DETECT_PII', text, config: currentPolicy },
+        (res) => {
+          if (chrome.runtime.lastError) {
+            console.error('[SecureGPT] Background detection error:', chrome.runtime.lastError)
+            resolve({ hasFindings: false, entities: [], tier: 'regex', processingTimeMs: 0, inputLength: text.length })
+          } else {
+            resolve(res)
+          }
+        }
+      )
+    })
     console.log('[SecureGPT] Detection result:', result)
 
     // No sensitive data found — let it through
@@ -136,15 +157,13 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
     // ── BLOCK: hard stop, banner only, no modal ───
     if (action === 'BLOCK') {
       showBanner('block', topEntity.category, result.entities.length)
-      await logDetectionEvent(result, action)
-      await stateStorage.incrementStat('block')
+      chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
       isRunning = false
       return
     }
 
     // ── ALLOW: silent log + send ──────────────────
     if (action === 'ALLOW') {
-      await logDetectionEvent(result, action)
       isRunning = false
       resubmit(el)
       return
@@ -173,16 +192,18 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
           // Mask & Send
           const maskedText = applyMasking(text, result.entities)
           setInputValue(el, maskedText)
-          await logDetectionEvent(result, 'MASK', acknowledged)
-          await stateStorage.incrementStat('mask')
+          
+          chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
           showBanner('mask', topEntity.category, result.entities.length)
+          
+          // Small delay before resubmit to let modern frameworks (React/ProseMirror) 
+          // sync the DOM change into their internal state.
+          setTimeout(() => resubmit(el), 100)
         } else {
           // Send Directly (acknowledge & send anyway)
-          await logDetectionEvent(result, action, acknowledged)
-          await stateStorage.incrementStat('warn')
+          chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
+          resubmit(el)
         }
-
-        resubmit(el)
       }
     )
 
@@ -200,7 +221,34 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
 
 function setInputValue(el: HTMLElement, text: string): void {
   if (el.getAttribute('contenteditable')) {
-    el.innerText = text
+    // For modern LLM inputs (React/ProseMirror), simple innerText update 
+    // doesn't trigger internal state change. execCommand('insertText') is more reliable.
+    el.focus()
+    
+    // Select all existing text
+    const selection = window.getSelection()
+    if (selection) {
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      selection.removeAllRanges()
+      selection.addRange(range)
+    }
+    
+    // Dispatch beforeinput for modern editors
+    el.dispatchEvent(new InputEvent('beforeinput', {
+      bubbles: true,
+      cancelable: true,
+      inputType: 'insertText',
+      data: text
+    }))
+
+    // Replace with masked text
+    const success = document.execCommand('insertText', false, text)
+    
+    // Fallback if execCommand failed
+    if (!success) {
+      el.innerText = text
+    }
   } else {
     (el as HTMLTextAreaElement).value = text
   }

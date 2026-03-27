@@ -39,6 +39,7 @@ export async function logDetectionEvent(
   action: PolicyAction,
   acknowledged = false
 ): Promise<void> {
+  console.log('[SecureGPT] logDetectionEvent called with result:', result.hasFindings, 'action:', action)
   // Bail out silently if extension was reloaded and context is gone
   if (!isExtensionContextValid()) {
     console.warn('[SecureGPT] Skipping log — extension context invalidated')
@@ -48,10 +49,17 @@ export async function logDetectionEvent(
   try {
     // Only queue if logged in — background will retry if session expires mid-queue
     const isLoggedIn = await authStorage.isLoggedIn()
-    if (!isLoggedIn) return
+    console.log('[SecureGPT] isLoggedIn for logging:', isLoggedIn)
+    if (!isLoggedIn) {
+      console.warn('[SecureGPT] Not logged in, skipping log event queueing')
+      return
+    }
 
     const topEntity = result.entities[0]
-    if (!topEntity) return
+    if (!topEntity) {
+      console.warn('[SecureGPT] No topEntity for logDetectionEvent')
+      return
+    }
 
     const platform = DOMAIN_TO_PLATFORM[window.location.hostname] ?? 'unknown'
 
@@ -82,8 +90,15 @@ export async function logDetectionEvent(
       latencyMs: result.processingTimeMs,
     }
 
+    console.log('[SecureGPT] Sending QUEUE_LOG message to background:', event.eventId)
     // Send to background worker for batching and API submission
-    chrome.runtime.sendMessage({ type: 'QUEUE_LOG', event })
+    chrome.runtime.sendMessage({ type: 'QUEUE_LOG', event }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('[SecureGPT] Failed to send QUEUE_LOG message:', chrome.runtime.lastError)
+      } else {
+        console.log('[SecureGPT] QUEUE_LOG message acknowledged by background')
+      }
+    })
   } catch (err) {
     const message = (err as Error)?.message ?? ''
     if (message.includes('Extension context invalidated')) {

@@ -85,26 +85,26 @@ export const localStorageExt = {
 // ── Auth helpers ─────────────────────────────
 export const authStorage = {
   async getAuth(): Promise<StoredAuth | null> {
-    return syncStorage.get('auth')
+    return localStorageExt.get('auth')
   },
 
   async setAuth(auth: StoredAuth): Promise<void> {
-    return syncStorage.set('auth', auth)
+    return localStorageExt.set('auth', auth)
   },
 
   async clearAuth(): Promise<void> {
-    return syncStorage.remove('auth')
+    return localStorageExt.remove('auth')
   },
 
   // Convenience — returns user or null
   async getUser(): Promise<User | null> {
-    const auth = await syncStorage.get('auth')
+    const auth = await localStorageExt.get<StoredAuth>('auth')
     return auth?.user ?? null
   },
 
   // Check if we have a cached user (doesn't verify session is still valid)
   async isLoggedIn(): Promise<boolean> {
-    const auth = await syncStorage.get('auth')
+    const auth = await localStorageExt.get('auth')
     return auth !== null
   },
 }
@@ -112,41 +112,41 @@ export const authStorage = {
 // ── Policy helpers ────────────────────────────
 export const policyStorage = {
   async getPolicy(): Promise<PIIConfig | null> {
-    return syncStorage.get('policy')
+    return localStorageExt.get('policy')
   },
 
   async setPolicy(policy: PIIConfig, version: number): Promise<void> {
-    await syncStorage.set('policy', policy)
-    await syncStorage.set('policyVersion', version)
-    await syncStorage.set('policyLastSyncedAt', new Date().toISOString())
+    await localStorageExt.set('policy', policy)
+    await localStorageExt.set('policyVersion', version)
+    await localStorageExt.set('policyLastSyncedAt', new Date().toISOString())
   },
 
   async getPolicyVersion(): Promise<number> {
-    return (await syncStorage.get('policyVersion')) ?? 0
+    return (await localStorageExt.get<number>('policyVersion')) ?? 0
   },
 }
 
 // ── Extension state helpers ───────────────────
 export const stateStorage = {
   async isActive(): Promise<boolean> {
-    const active = await syncStorage.get('isActive')
+    const active = await localStorageExt.get<boolean>('isActive')
     if (active === null) return true // default to active
 
-    const pausedUntil = await syncStorage.get('pausedUntil')
+    const pausedUntil = await localStorageExt.get<string>('pausedUntil')
     if (pausedUntil && new Date(pausedUntil) > new Date()) return false
 
     return active
   },
 
   async setActive(active: boolean): Promise<void> {
-    await syncStorage.set('isActive', active)
-    if (active) await syncStorage.remove('pausedUntil')
+    await localStorageExt.set('isActive', active)
+    if (active) await localStorageExt.remove('pausedUntil')
   },
 
   async pauseFor(minutes: number): Promise<void> {
     const until = new Date(Date.now() + minutes * 60 * 1000).toISOString()
-    await syncStorage.set('pausedUntil', until)
-    await syncStorage.set('isActive', false)
+    await localStorageExt.set('pausedUntil', until)
+    await localStorageExt.set('isActive', false)
   },
 
   async incrementStat(action: 'block' | 'mask' | 'warn'): Promise<void> {
@@ -156,21 +156,21 @@ export const stateStorage = {
       warn: 'sessionWarnCount',
     } as const
     const key = keyMap[action]
-    const current = (await syncStorage.get(key)) ?? 0
-    await syncStorage.set(key, (current as number) + 1)
+    const current = (await localStorageExt.get<number>(key)) ?? 0
+    await localStorageExt.set(key, current + 1)
   },
 
   async getSessionStats() {
     return {
-      blockCount: (await syncStorage.get('sessionBlockCount')) ?? 0,
-      maskCount: (await syncStorage.get('sessionMaskCount')) ?? 0,
-      warnCount: (await syncStorage.get('sessionWarnCount')) ?? 0,
+      blockCount: (await localStorageExt.get<number>('sessionBlockCount')) ?? 0,
+      maskCount: (await localStorageExt.get<number>('sessionMaskCount')) ?? 0,
+      warnCount: (await localStorageExt.get<number>('sessionWarnCount')) ?? 0,
     }
   },
 
   async resetSessionStats(): Promise<void> {
-    await syncStorage.set('sessionBlockCount', 0)
-    await syncStorage.set('sessionMaskCount', 0)
-    await syncStorage.set('sessionWarnCount', 0)
+    await localStorageExt.set('sessionBlockCount', 0)
+    await localStorageExt.set('sessionMaskCount', 0)
+    await localStorageExt.set('sessionWarnCount', 0)
   },
 }

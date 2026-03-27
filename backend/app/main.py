@@ -65,6 +65,20 @@ async def rate_limit_handler(request, exc):
     )
 
 # ─── Middleware ───────────────────────────────────────────────────────────────
+
+# Custom CORS handler for Chrome Extensions in development
+@app.middleware("http")
+async def extension_cors_interceptor(request, call_next):
+    origin = request.headers.get("origin")
+    if settings.app_env == "development" and origin and origin.startswith("chrome-extension://"):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+    return await call_next(request)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,

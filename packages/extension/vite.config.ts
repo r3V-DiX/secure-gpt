@@ -18,7 +18,7 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, 'src/popup/index.html'),
         background: resolve(__dirname, 'src/background/index.ts'),
-        offscreen: resolve(__dirname, 'src/offscreen/offscreen.ts'),
+        offscreen: resolve(__dirname, 'src/offscreen/offscreen.html'),
       },
       output: {
         entryFileNames: '[name]/index.js',

@@ -12,7 +12,7 @@ import { normalizeText } from '@securegpt/shared/utils/detection-helpers'
 
 export class OCRTier extends BaseTier {
   readonly name = 'ocr' as const
-  readonly enabled = true
+  readonly enabled = false
 
   override async initialize(): Promise<void> {
     await getOcrWorker()

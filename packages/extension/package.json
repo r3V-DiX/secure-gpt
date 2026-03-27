@@ -2,6 +2,7 @@
   "name": "@securegpt/extension",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "SecureGPT Chrome Extension — DLP for LLM platforms",
   "scripts": {
     "dev": "vite build --watch --mode development",
@@ -13,16 +14,17 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
-    "@securegpt/shared": "*",
     "@securegpt/detection": "*",
+    "@securegpt/shared": "*",
+    "axios": "^1.7.2",
+    "clsx": "^2.1.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "axios": "^1.7.2",
-    "uuid": "^9.0.1",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
     "@types/chrome": "^0.0.268",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

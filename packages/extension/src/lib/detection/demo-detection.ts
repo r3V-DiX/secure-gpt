@@ -90,6 +90,15 @@ const DEMO_RULES: DemoRule[] = [
     severity: 'high',
     maskedValue: '[SSN-REDACTED]',
   },
+  {
+    id: 'demo.passport_mrz_l1',
+    type: 'passport',
+    category: 'PII',
+    label: 'Passport MRZ (Line 1)',
+    pattern: /(P[<{({\[\]]?[A-Z<{({\[\]]{40,44})/gi,
+    severity: 'critical',
+    maskedValue: '[PASSPORT-REDACTED]',
+  },
 
   // ── Confidential ─────────────────────────────────────────────────────────
   {

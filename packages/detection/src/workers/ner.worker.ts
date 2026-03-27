@@ -7,47 +7,108 @@
 import * as ort from 'onnxruntime-web';
 
 const LABEL_MAP: Record<number, string> = {
-  0: 'ACCOUNTNAME', 1: 'ACCOUNTNUMBER', 2: 'AGE', 3: 'AMOUNT', 4: 'BIC',
-  5: 'BITCOINADDRESS', 6: 'BUILDINGNUMBER', 7: 'CITY', 8: 'COMPANYNAME',
-  9: 'COUNTY', 10: 'CREDITCARDCVV', 11: 'CREDITCARDISSUER', 12: 'CREDITCARDNUMBER',
-  13: 'CURRENCY', 14: 'CURRENCYCODE', 15: 'CURRENCYNAME', 16: 'CURRENCYSYMBOL',
-  17: 'DATE', 18: 'DOB', 19: 'EMAIL', 20: 'ETHEREUMADDRESS', 21: 'EYECOLOR',
-  22: 'FIRSTNAME', 23: 'GENDER', 24: 'HEIGHT', 25: 'IBAN', 26: 'IP',
-  27: 'IPV4', 28: 'IPV6', 29: 'JOBAREA', 30: 'JOBTITLE', 31: 'JOBTYPE',
-  32: 'LASTNAME', 33: 'LITECOINADDRESS', 34: 'MAC', 35: 'MASKEDNUMBER',
-  36: 'MIDDLENAME', 37: 'NEARBYGPSCOORDINATE', 38: 'O', 39: 'ORDINALDIRECTION',
-  40: 'PASSWORD', 41: 'PHONEIMEI', 42: 'PHONENUMBER', 43: 'PIN', 44: 'PREFIX',
-  45: 'SECONDARYADDRESS', 46: 'SEX', 47: 'SSN', 48: 'STATE', 49: 'STREET',
-  50: 'TIME', 51: 'URL', 52: 'USERAGENT', 53: 'USERNAME', 54: 'VEHICLEVIN',
-  55: 'VEHICLEVRM', 56: 'ZIPCODE',
+  0: "B-BOD", 1: "B-BUILDING", 2: "B-CITY", 3: "B-COUNTRY", 4: "B-DATE",
+  5: "B-DRIVERLICENSE", 6: "B-EMAIL", 7: "B-GEOCOORD", 8: "B-GIVENNAME1",
+  9: "B-GIVENNAME2", 10: "B-IDCARD", 11: "B-IP", 12: "B-LASTNAME1",
+  13: "B-LASTNAME2", 14: "B-LASTNAME3", 15: "B-PASS", 16: "B-PASSPORT",
+  17: "B-POSTCODE", 18: "B-SECADDRESS", 19: "B-SEX", 20: "B-SOCIALNUMBER",
+  21: "B-STATE", 22: "B-STREET", 23: "B-TEL", 24: "B-TIME", 25: "B-TITLE",
+  26: "B-USERNAME", 27: "I-BOD", 28: "I-BUILDING", 29: "I-CITY", 30: "I-COUNTRY",
+  31: "I-DATE", 32: "I-DRIVERLICENSE", 33: "I-EMAIL", 34: "I-GEOCOORD",
+  35: "I-GIVENNAME1", 36: "I-GIVENNAME2", 37: "I-IDCARD", 38: "I-IP",
+  39: "I-LASTNAME1", 40: "I-LASTNAME2", 41: "I-LASTNAME3", 42: "I-PASS",
+  43: "I-PASSPORT", 44: "I-POSTCODE", 45: "I-SECADDRESS", 46: "I-SEX",
+  47: "I-SOCIALNUMBER", 48: "I-STATE", 49: "I-STREET", 50: "I-TEL",
+  51: "I-TIME", 52: "I-TITLE", 53: "I-USERNAME", 54: "O"
 };
 
 let session: ort.InferenceSession | null = null;
-let maxSeqLen = 128; // Can receive via init message
+const maxSeqLen = 128; // Can receive via init message
+
+// Global error handler
+self.onerror = (message, source, lineno, colno, error) => {
+  console.error('[NERWorker] Uncaught error:', message, error);
+  self.postMessage({ type: 'ERROR', error: message });
+};
+
+self.onunhandledrejection = (event) => {
+  console.error('[NERWorker] Unhandled rejection:', event.reason);
+  self.postMessage({ type: 'ERROR', error: event.reason?.message || 'Unhandled rejection' });
+};
 
 async function initSession() {
+  console.log('[NERWorker] Initializing session...');
+  
+  // Extension specific config
+  // Note: ONNX Runtime Web 1.24+ requires explicit numThreads=1 for most extension contexts
   ort.env.wasm.numThreads = 1;
-  ort.env.wasm.simd = true;
+  ort.env.wasm.simd = true; // Use SIMD if available
+  
+  // Ensure we are using the correct base path for the extension
+  // chrome-extension://<id>/wasm/
+  const base = self.location.origin;
+  ort.env.wasm.wasmPaths = `${base}/wasm/`;
+  
+  console.log('[NERWorker] Configured WASM paths:', ort.env.wasm.wasmPaths);
 
-  let hasWebGPU = false;
-  const nav = navigator as any;
-  if (typeof nav?.gpu?.requestAdapter === 'function') {
-    try {
-      const adapter = await nav.gpu.requestAdapter();
-      hasWebGPU = !!adapter;
-    } catch {
-      hasWebGPU = false;
-    }
+  // Prefer low-power for better compatibility in extensions
+  if (ort.env.webgpu) {
+    ort.env.webgpu.powerPreference = 'low-power';
   }
 
-  const modelUrl = '/models/pii-ner-int8.onnx';
+  let hasWebGPU = false;
   try {
+    const nav = navigator as any;
+    if (nav?.gpu && typeof nav.gpu.requestAdapter === 'function') {
+      const adapter = await nav.gpu.requestAdapter({ powerPreference: 'low-power' });
+      hasWebGPU = !!adapter;
+      console.log('[NERWorker] WebGPU available:', hasWebGPU);
+    }
+  } catch (err) {
+    console.warn('[NERWorker] WebGPU check failed:', (err as Error).message);
+    hasWebGPU = false;
+  }
+
+  // If WebGPU is not available, explicitly tell ONNX to avoid it to stop console noise
+  if (!hasWebGPU && ort.env.webgpu) {
+    // @ts-ignore
+    ort.env.webgpu.disabled = true;
+  }
+
+  const modelUrl = `${base}/models/pii-ner-int8.onnx`;
+  console.log('[NERWorker] Loading model from:', modelUrl);
+  
+  try {
+      const providers = hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'];
+      console.log('[NERWorker] Attempting to create InferenceSession with providers:', providers);
+      
       session = await ort.InferenceSession.create(modelUrl, {
-        executionProviders: hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'],
+        executionProviders: providers,
         graphOptimizationLevel: 'all',
       });
+      
+      console.log('[NERWorker] Session created successfully. EP:', session.executionProviders);
       self.postMessage({ type: 'READY' });
   } catch (err) {
+      console.error('[NERWorker] Session creation failed:', (err as Error).message);
+      
+      // If we tried WebGPU and failed, try falling back to WASM manually
+      if (hasWebGPU) {
+        console.log('[NERWorker] Retrying with WASM provider only...');
+        try {
+          session = await ort.InferenceSession.create(modelUrl, {
+            executionProviders: ['wasm'],
+            graphOptimizationLevel: 'all',
+          });
+          console.log('[NERWorker] Session created successfully (WASM fallback)');
+          self.postMessage({ type: 'READY' });
+          return;
+        } catch (retryErr) {
+          console.error('[NERWorker] WASM fallback also failed:', (retryErr as Error).message);
+        }
+      }
+      
+      // If all failed, tell parent
       self.postMessage({ type: 'ERROR', error: (err as Error).message });
   }
 }
