@@ -1,0 +1,12 @@
+# Core NLP and Model Hub
+transformers
+huggingface_hub
+
+# ONNX Export and Quantization
+optimum[onnxruntime]
+onnx
+onnxruntime
+
+# Backend (Required by transformers/optimum)
+torch
+numpy
