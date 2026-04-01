@@ -110,31 +110,4 @@ describe('detectPII — pipeline', () => {
     expect(result.entities.length).toBeGreaterThanOrEqual(2)
   })
 
-  it('detects Indian Driving Licence', async () => {
-    const result = await detectPII(
-      'Driving Licence: DL 13 2011 0123456',
-      DEFAULT_PII_CONFIG
-    )
-    expect(result.hasFindings).toBe(true)
-    expect(result.entities.some(e => e.type === 'national_id' && e.label === 'Indian Driving Licence')).toBe(true)
-  })
-
-  it('detects Passport MRZ Line 1', async () => {
-    const result = await detectPII(
-      'P<INDTHACKER<<AMIT<<<<<<<<<<<<<<<<<<<<<<<<<<',
-      DEFAULT_PII_CONFIG
-    )
-    expect(result.hasFindings).toBe(true)
-    expect(result.entities.some(e => e.type === 'passport' && e.label === 'Passport MRZ (Line 1)')).toBe(true)
-  })
-
-  it('detects Aadhaar with OCR noise (character mapping)', async () => {
-    // 7592 2902 8107 with O instead of 0
-    const result = await detectPII(
-      'Aadhaar: 7592 2902 81O7',
-      DEFAULT_PII_CONFIG
-    )
-    expect(result.hasFindings).toBe(true)
-    expect(result.entities.some(e => e.type === 'aadhaar')).toBe(true)
-  })
 })

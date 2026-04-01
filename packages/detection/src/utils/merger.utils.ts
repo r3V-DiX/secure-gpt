@@ -6,7 +6,7 @@
 import type { PIIEntity } from '@securegpt/shared/types'
 
 // Tier priority — higher index = more trusted
-const TIER_PRIORITY = { regex: 0, ner: 1, ocr: 2 }
+const TIER_PRIORITY = { ner: 0, regex: 1, ocr: 2 }
 
 export function mergeEntities(
   regexEntities: PIIEntity[],

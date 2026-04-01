@@ -5,7 +5,6 @@
 
 import { BaseTier } from '../base-tier'
 import { getActiveRules } from '../../rules'
-import { buildCustomRules } from '../../rules/custom'
 import { luhnCheck } from '../../validators/luhn.validator'
 import { verhoeffCheck } from '../../validators/verhoeff.validator'
 import { panCheck } from '../../validators/pan.validator'
@@ -31,9 +30,7 @@ export class RegexTier extends BaseTier {
   async run(text: string, config: PIIConfig): Promise<PIIEntity[]> {
     if (!text || text.trim().length === 0) return []
 
-    const staticRules = getActiveRules(config)
-    const customRules = buildCustomRules(config)
-    const allRules = [...staticRules, ...customRules]
+    const allRules = getActiveRules(config)
 
     const entities: PIIEntity[] = []
 

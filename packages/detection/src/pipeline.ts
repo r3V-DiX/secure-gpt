@@ -53,15 +53,25 @@ export async function detectPII(
   // Initialize tiers on first call
   await initializePipeline()
 
-  // Run Regex and NER in parallel (OCR handled separately via image input)
-  const [regexEntities, nerEntities] = await Promise.all([
-    regexTier.enabled
-      ? regexTier.run(text, config)
-      : Promise.resolve<PIIEntity[]>([]),
-    nerTier.enabled
-      ? nerTier.run(text, config)
-      : Promise.resolve<PIIEntity[]>([]),
-  ])
+  // Run Regex first
+  const regexEntities = regexTier.enabled
+    ? await regexTier.run(text, config)
+    : [];
+
+  // Mask the text before passing to NER (Regex results hidden with spaces)
+  let maskedText = text;
+  if (nerTier.enabled && regexEntities.length > 0) {
+    for (const entity of regexEntities) {
+      const length = entity.endIndex - entity.startIndex;
+      const spaces = " ".repeat(length);
+      maskedText = maskedText.substring(0, entity.startIndex) + spaces + maskedText.substring(entity.endIndex);
+    }
+  }
+
+  // Run NER on masked text
+  const nerEntities = nerTier.enabled
+    ? await nerTier.run(maskedText, config)
+    : [];
 
   // OCR runs only on image input — text pipeline skips it
   const ocrEntities: PIIEntity[] = []
@@ -100,11 +110,23 @@ export async function detectPIIFromImage(
     return buildResult([], 'ocr', startTime, '')
   }
 
-  // 2. Run Regex and NER on extracted text
-  const [regexEntities, nerEntities] = await Promise.all([
-    regexTier.run(rawText, config),
-    nerTier.run(rawText, config),
-  ])
+  // 2. Run Regex and NER sequentially on extracted text with masking
+  const regexEntities = regexTier.enabled
+    ? await regexTier.run(rawText, config)
+    : await Promise.resolve<PIIEntity[]>([]);
+
+  let maskedRawText = rawText;
+  if (nerTier.enabled && regexEntities.length > 0) {
+    for (const entity of regexEntities) {
+      const length = entity.endIndex - entity.startIndex;
+      const spaces = " ".repeat(length);
+      maskedRawText = maskedRawText.substring(0, entity.startIndex) + spaces + maskedRawText.substring(entity.endIndex);
+    }
+  }
+
+  const nerEntities = nerTier.enabled
+    ? await nerTier.run(maskedRawText, config)
+    : await Promise.resolve<PIIEntity[]>([]);
 
   // 3. Merge results and map to BBOXes
   const merged = mergeEntities(regexEntities, nerEntities, [])
