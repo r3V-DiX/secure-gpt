@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────
 // DOM Utils
-// Platform-specific input selectors
+// Platform-specific input selectors + image paste helpers
 // ─────────────────────────────────────────────
 
 // Each LLM platform uses different DOM structures
@@ -120,4 +120,126 @@ export function injectBanner(banner: HTMLElement): void {
 
 export function removeAllBanners(): void {
   document.querySelectorAll('[data-securegpt-banner]').forEach((el) => el.remove())
+}
+
+// ── Image paste re-injection ──────────────────
+
+/**
+ * Shared bypass set — elements added here will be ignored by all
+ * interceptors in the next tick, preventing infinite loops when
+ * the extension re-dispatches a masked asset.
+ */
+export const bypassSet = new WeakSet<Element>()
+
+/**
+ * Helper: convert a data URL to a Blob.
+ * Tries fetch() first (fastest); falls back to manual base64 decoding
+ * if Content Security Policy blocks fetch of a data URL.
+ */
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  try {
+    const res = await fetch(dataUrl)
+    return await res.blob()
+  } catch {
+    const [header, base64] = dataUrl.split(',')
+    const mimeType = header?.split(':')?.[1]?.split(';')?.[0] ?? 'image/png'
+    const bytes = atob(base64 ?? '')
+    const arr = new Uint8Array(bytes.length)
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i)
+    return new Blob([arr], { type: mimeType })
+  }
+}
+
+/**
+ * Re-inject a (possibly redacted) image into the LLM chat box by dispatching
+ * a synthetic ClipboardEvent with the image File attached.
+ */
+export async function dispatchImagePaste(el: HTMLElement, dataUrl: string): Promise<void> {
+  bypassSet.add(el)
+  el.focus()
+  const blob = await dataUrlToBlob(dataUrl)
+  const file = new File([blob], 'masked_image.png', { type: blob.type })
+  const dt = new DataTransfer()
+  dt.items.add(file)
+  el.dispatchEvent(
+    new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true, composed: true })
+  )
+  setTimeout(() => bypassSet.delete(el), 1500)
+}
+
+/**
+ * Re-inject a redacted non-image file (e.g. a PDF) the same way.
+ */
+export async function dispatchFilePaste(
+  el: HTMLElement,
+  dataUrl: string,
+  fileName: string,
+  mimeType: string
+): Promise<void> {
+  bypassSet.add(el)
+  el.focus()
+  const blob = await dataUrlToBlob(dataUrl)
+  const file = new File([blob], fileName, { type: mimeType })
+  const dt = new DataTransfer()
+  dt.items.add(file)
+  el.dispatchEvent(
+    new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true, composed: true })
+  )
+  setTimeout(() => bypassSet.delete(el), 3500)
+}
+
+/**
+ * Attempts to clear existing image/file attachments from the site's UI.
+ * This is a safeguard to remove the unredacted original upload before we inject the masked one.
+ */
+export async function clearAttachments() {
+  const selectors = [
+    'button[aria-label="Remove attachment"]',
+    'button[aria-label="Remove"]',
+    'button[aria-label="Cancel upload"]',
+    'button[aria-label="Remove image"]',
+    'button[aria-label="Remove file"]',
+    'button[aria-label="Clear"]',
+    '.X-button', 
+    '[class*="remove-button"]',
+    '[class*="CancelButton"]',
+    'button.absolute:has(svg)', // common on chatgpt for the tiny 'x' overlaid on images
+    'button:has(svg[class*="icon-sm"])', 
+  ];
+    
+  let cleared = 0;
+  for (const sel of selectors) {
+    try {
+      const btns = document.querySelectorAll<HTMLElement>(sel);
+      for (const btn of btns) {
+        if (btn.offsetParent !== null) { 
+          btn.click();
+          cleared++;
+        }
+      }
+    } catch (_e) { }
+  }
+    
+  // Heuristic: any button that is a direct sibling of an <img> or <canvas>, or is perfectly positioned over one
+  if (cleared === 0) {
+    const allButtons = document.querySelectorAll('button');
+    for (const btn of Array.from(allButtons) as HTMLElement[]) {
+      // Is this button inside a container that holds an image? (ChatGPT structure)
+      // Usually the container is small (like a thumbnail)
+      const container = btn.parentElement;
+      if (container && container.querySelector('img') || container?.parentElement?.querySelector('img')) {
+        // Exclude huge generic buttons. The remove button is usually a small circle.
+        const rect = btn.getBoundingClientRect();
+        if (rect.width > 0 && rect.width < 50 && rect.height < 50 && btn.offsetParent !== null) {
+          btn.click();
+          cleared++;
+        }
+      }
+    }
+  }
+
+  console.info(`[SecureGPT] clearAttachments: clicked ${cleared} remove/cancel buttons.`);
+  if (cleared > 0) {
+    await new Promise(r => setTimeout(r, 600)); 
+  }
 }

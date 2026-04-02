@@ -7,7 +7,8 @@ export const allFinancialRules: DetectionRule[] = [
     category: 'FINANCIAL' as PIICategory,
     type: 'credit_card',
     label: 'Credit Card Number',
-    pattern: /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b/g,
+    // Visa / MC / Amex / Discover – with optional spaces or hyphens
+    pattern: /\b(\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{1,4})\b/g,
     validatorId: 'luhn',
     requireContext: true,
     triggers: ['cvv', 'expiry', 'card'],

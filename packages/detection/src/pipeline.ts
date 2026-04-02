@@ -162,3 +162,10 @@ function buildResult(
 
 // ─── Re-export types for convenience ──────────
 export type { DetectionResult, PIIEntity, PIIConfig }
+
+// ─── Re-export tier classes for direct use in offscreen document ──────────────
+// The offscreen document needs to instantiate OCRTier directly (Tesseract WASM
+// cannot be proxied via sendMessage in MV3). Export here so consumers can reach
+// them through the single @securegpt/detection alias.
+export { OCRTier } from './tiers/ocr/ocrTier'
+export { RegexTier } from './tiers/regex/regexTier'

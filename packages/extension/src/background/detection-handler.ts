@@ -4,28 +4,40 @@ import { v4 as uuidv4 } from 'uuid'
 import { EXTENSION_VERSION } from '@/config/defaults.config'
 import { queueLog } from './log-batcher'
 import { DOMAIN_TO_PLATFORM } from '@securegpt/shared/constants'
-import { stateStorage } from '@/lib/storage/storage'
+
 
 let creating: Promise<void> | null = null
 
 async function setupOffscreen() {
-  const contexts = await chrome.runtime.getContexts({
-    contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT]
-  })
-  if (contexts.length > 0) return
+  const offscreenUrl = chrome.runtime.getURL('src/offscreen/offscreen.html')
+
+  if (typeof chrome.runtime.getContexts !== 'undefined') {
+    const existing = await chrome.runtime.getContexts({
+      contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+      documentUrls: [offscreenUrl]
+    })
+    if (existing.length > 0) return
+  }
 
   if (creating) {
     await creating
     return
   }
 
-  creating = chrome.offscreen.createDocument({
-    url: 'src/offscreen/offscreen.html', 
-    reasons: [chrome.offscreen.Reason.WORKERS, chrome.offscreen.Reason.LOCAL_STORAGE],
-    justification: 'Running PII detection in WASM/Worker context to bypass Service Worker CSP restrictions'
-  })
-  await creating
-  creating = null
+  try {
+    creating = chrome.offscreen.createDocument({
+      url: offscreenUrl,
+      reasons: [chrome.offscreen.Reason.DOM_PARSER],
+      justification: 'Run Tesseract.js OCR engine in a worker-enabled context'
+    })
+    await creating
+  } catch (err) {
+    if (!String(err).includes('Only a single offscreen document may be created')) {
+      console.error('[Background] Failed to create offscreen document:', err)
+    }
+  } finally {
+    creating = null
+  }
 }
 
 async function sha256(text: string): Promise<string> {
@@ -84,6 +96,63 @@ export async function handleDetectPII(
       processingTimeMs: 0,
       inputLength: text.length
     }
+  }
+}
+
+/**
+ * Proxies image OCR to the offscreen document using the reference ping+forward pattern.
+ * Returns entities enriched with bounding box data for canvas redaction.
+ */
+export async function handleDetectPIIImage(
+  imgUrl: string,
+  config: PIIConfig,
+  sender?: chrome.runtime.MessageSender
+): Promise<DetectionResult> {
+  const empty: DetectionResult = { hasFindings: false, entities: [], tier: 'ocr', processingTimeMs: 0, inputLength: 0 }
+
+  try {
+    console.log('[Background] Proxying OCR request to offscreen document...')
+    await setupOffscreen()
+
+    // Poll until offscreen doc is ready (mirrors reference implementation)
+    let isReady = false
+    for (let i = 0; i < 15; i++) {
+      try {
+        const ping: { ok: boolean } = await chrome.runtime.sendMessage({ action: 'OFFSCREEN_PING' })
+        if (ping?.ok) { isReady = true; break }
+      } catch (_e) {
+        console.debug(`[Background] Offscreen not ready yet (attempt ${i + 1}), waiting…`)
+      }
+      await new Promise((r) => setTimeout(r, 300))
+    }
+
+    if (!isReady) {
+      console.error('[Background] Offscreen document failed to respond to PING after retries.')
+      return empty
+    }
+
+    const response: { ok: boolean; result?: DetectionResult; error?: string } =
+      await chrome.runtime.sendMessage({
+        action: 'OFFSCREEN_RUN_OCR',
+        data: { imageUrl: imgUrl, config }
+      })
+
+    if (!response?.ok || !response.result) {
+      console.error('[Background] Offscreen OCR returned error:', response?.error)
+      return empty
+    }
+
+    const result = response.result
+    console.log('[Background] Image OCR complete, findings:', result.hasFindings)
+
+    if (result.hasFindings) {
+      void logBackgroundDetection(result, imgUrl, config, sender)
+    }
+
+    return result
+  } catch (err) {
+    console.error('[Background] Failed to proxy image OCR:', err)
+    return empty
   }
 }
 

@@ -4,7 +4,7 @@
 
 import { startPolicySync } from './policy-sync'
 import { startLogBatcher, flushLogs, queueLog } from './log-batcher'
-import { handleDetectPII } from './detection-handler'
+import { handleDetectPII, handleDetectPIIImage } from './detection-handler'
 import { stateStorage, authStorage, policyStorage } from '@/lib/storage/storage'
 import { fetchCurrentUser } from '@/features/auth/services/auth.service'
 import type { AuditLog } from '@securegpt/shared/types'
@@ -13,9 +13,21 @@ import type { AuditLog } from '@securegpt/shared/types'
 
 // ── Message handler ───────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Ignore messages meant for the offscreen document (target:'offscreen')
+  if (message.target === 'offscreen') return false
+
+  // Ignore action-based messages forwarded to the offscreen doc by the background proxy
+  // (OFFSCREEN_PING, OFFSCREEN_RUN_OCR) — letting the switch handle them would
+  // send back `{error:'Unknown message type'}` and break the ping handshake.
+  if (message.action && message.action.startsWith('OFFSCREEN_')) return false
+
   switch (message.type) {
     case 'DETECT_PII':
       handleDetectPII(message.text, message.config, sender).then(sendResponse)
+      return true
+
+    case 'DETECT_PII_IMAGE':
+      handleDetectPIIImage(message.imgUrl, message.config, sender).then(sendResponse)
       return true
 
     case 'AUTH_LOST':

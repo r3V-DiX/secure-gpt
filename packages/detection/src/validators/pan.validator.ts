@@ -3,7 +3,7 @@
 // Format: AAAAA0000A
 // ─────────────────────────────────────────────
 
-const VALID_FOURTH_CHAR = new Set(['C', 'P', 'H', 'F', 'A', 'T', 'B', 'L', 'J', 'G'])
+const VALID_FOURTH_CHAR = new Set(['C', 'P', 'H', 'F', 'A', 'T', 'B', 'L', 'J', 'G', 'D'])
 
 export function panCheck(pan: string): boolean {
   // Remove spaces and normalize to uppercase

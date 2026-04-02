@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────
 // Masking Service
 // Replaces detected PII with placeholder tokens
+// and redraws images with sensitive regions blacked out
 // ─────────────────────────────────────────────
 
 import type { PIIEntity } from '@securegpt/shared/types'
@@ -47,4 +48,62 @@ export function previewMasking(
   }
 
   return { original: text, masked, diff }
+}
+
+/**
+ * Applies masking to an image by drawing filled black rectangles over the
+ * bounding boxes of detected entities on an offscreen canvas.
+ * Returns a redacted PNG data URL safe to forward to the LLM platform.
+ *
+ * Each entity must carry a `bboxes` field of shape `{ x0, y0, x1, y1 }[]`
+ * (provided by the OCR tier after `detectPIIFromImage`).
+ *
+ * Privacy: the original image is only held in memory during this call and
+ * is never written to disk or sent over the network.
+ */
+export function applyImageMasking(
+  imageUrl: string,
+  entities: PIIEntity[]
+): Promise<string> {
+  const bboxes = entities.flatMap((e) => (e as PIIEntity & { bboxes?: { x0: number; y0: number; x1: number; y1: number }[] }).bboxes ?? [])
+  console.info(`[SecureGPT Masking] Applying image mask with ${bboxes.length} bounding box(es).`)
+
+  if (bboxes.length === 0) {
+    console.warn('[SecureGPT Masking] No bounding boxes found — returning original image.')
+    return Promise.resolve(imageUrl)
+  }
+
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      console.info(`[SecureGPT Masking] Image loaded (${img.width}×${img.height}). Redacting…`)
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        // Canvas unavailable — fall back to original
+        resolve(imageUrl)
+        return
+      }
+
+      // Draw the original image
+      ctx.drawImage(img, 0, 0)
+
+      // Overlay black redaction boxes (with 2px padding)
+      ctx.fillStyle = 'black'
+      for (const box of bboxes) {
+        const w = box.x1 - box.x0
+        const h = box.y1 - box.y0
+        ctx.fillRect(box.x0 - 2, box.y0 - 2, w + 4, h + 4)
+      }
+
+      resolve(canvas.toDataURL('image/png'))
+    }
+    img.onerror = (err) => {
+      console.error('[SecureGPT Masking] Image load failed:', err)
+      reject(err)
+    }
+    img.src = imageUrl
+  })
 }
