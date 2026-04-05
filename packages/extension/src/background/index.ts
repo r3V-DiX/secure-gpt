@@ -4,7 +4,7 @@
 
 import { startPolicySync } from './policy-sync'
 import { startLogBatcher, flushLogs, queueLog } from './log-batcher'
-import { handleDetectPII, handleDetectPIIImage } from './detection-handler'
+import { handleDetectPII, handleDetectPIIImage, handleDetectPIIPDF, handleRedactPDF } from './detection-handler'
 import { stateStorage, authStorage, policyStorage } from '@/lib/storage/storage'
 import type { AuditLog } from '@securegpt/shared/types'
 
@@ -27,6 +27,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case 'DETECT_PII_IMAGE':
       handleDetectPIIImage(message.imgUrl, message.config, sender).then(sendResponse)
+      return true
+
+    case 'DETECT_PII_PDF':
+      handleDetectPIIPDF(message.pdfData, message.config, sender).then(sendResponse)
+      return true
+
+    case 'REDACT_PDF':
+      handleRedactPDF(message.pdfData, message.entities, message.manualRegions).then(sendResponse)
       return true
 
     case 'AUTH_LOST':

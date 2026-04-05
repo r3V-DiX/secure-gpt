@@ -200,14 +200,32 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
       // The user is blocked from submitting, but we should visually redact the image
       // in their input box so it's not sitting there exposed.
       let hasCleared = false
-      for (const [imgUrl, currEntities] of ocrCache.entries()) {
+      for (const [fileUrl, currEntities] of ocrCache.entries()) {
         if (currEntities.length > 0) {
-          const redactedUrl = await applyImageMasking(imgUrl, currEntities)
+          const isPdf = fileUrl.startsWith('data:application/pdf')
+          let redactedUrl = fileUrl
+
+          if (isPdf) {
+            const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
+              chrome.runtime.sendMessage({ type: 'REDACT_PDF', pdfData: fileUrl, entities: currEntities }, resolve)
+            })
+            if (resp && resp.ok && resp.redactedPdfData) {
+              redactedUrl = resp.redactedPdfData
+            }
+          } else {
+            redactedUrl = await applyImageMasking(fileUrl, currEntities)
+          }
+
           if (!hasCleared) {
             await clearAttachments()
             hasCleared = true
           }
-          await dispatchImagePaste(el, redactedUrl)
+
+          if (isPdf) {
+            await dispatchFilePaste(el, redactedUrl, 'redacted.pdf', 'application/pdf')
+          } else {
+            await dispatchImagePaste(el, redactedUrl)
+          }
         }
       }
       ocrCache.clear()
@@ -249,14 +267,32 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
 
           // Redact and re-inject any sensitive images
           let hasCleared = false
-          for (const [imgUrl, entities] of ocrCache.entries()) {
+          for (const [fileUrl, entities] of ocrCache.entries()) {
             if (entities.length > 0) {
-              const redactedUrl = await applyImageMasking(imgUrl, entities)
+              const isPdf = fileUrl.startsWith('data:application/pdf')
+              let redactedUrl = fileUrl
+
+              if (isPdf) {
+                const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
+                  chrome.runtime.sendMessage({ type: 'REDACT_PDF', pdfData: fileUrl, entities }, resolve)
+                })
+                if (resp && resp.ok && resp.redactedPdfData) {
+                  redactedUrl = resp.redactedPdfData
+                }
+              } else {
+                redactedUrl = await applyImageMasking(fileUrl, entities)
+              }
+
               if (!hasCleared) {
                 await clearAttachments()
                 hasCleared = true
               }
-              await dispatchImagePaste(el, redactedUrl)
+              
+              if (isPdf) {
+                await dispatchFilePaste(el, redactedUrl, 'redacted.pdf', 'application/pdf')
+              } else {
+                await dispatchImagePaste(el, redactedUrl)
+              }
             }
           }
           ocrCache.clear()
@@ -377,13 +413,13 @@ async function handleImagePasteInternal(el: HTMLElement, imgUrl: string): Promis
     })
 
     if (result.hasFindings && result.entities.length > 0) {
-      console.info(`[SecureGPT] OCR found ${result.entities.length} entities in pasted image.`)
-      ocrCache.set(imgUrl, result.entities)
-      // Re-inject original image for now; masked version will be dispatched on "Mask & Send"
-      await dispatchImagePaste(el, imgUrl)
+      console.info(`[SecureGPT] OCR found ${result.entities.length} entities. Auto-redacting...`)
+      
+      const redactedUrl = await applyImageMasking(imgUrl, result.entities)
+      await clearAttachments()
+      await dispatchImagePaste(el, redactedUrl)
     } else {
       console.info('[SecureGPT] Pasted image is clean. Re-injecting…')
-      ocrCache.delete(imgUrl)
       await dispatchImagePaste(el, imgUrl)
     }
   } catch (err) {
@@ -400,12 +436,15 @@ function handleGlobalPaste(ev: ClipboardEvent): void {
   const items = ev.clipboardData?.items
   if (!items) return
 
-  let imageItem: DataTransferItem | null = null
+  let targetItem: DataTransferItem | null = null
   const itemList = Array.from(items as unknown as DataTransferItem[])
   for (const item of itemList) {
-    if (item.type.startsWith('image/')) { imageItem = item; break }
+    if (item.type.startsWith('image/') || item.type === 'application/pdf') { 
+      targetItem = item
+      break 
+    }
   }
-  if (!imageItem) return
+  if (!targetItem) return
 
   const el = findEditableRoot(ev.target) ?? findEditableRoot(document.activeElement)
   if (!el || bypassSet.has(el)) return
@@ -414,22 +453,29 @@ function handleGlobalPaste(ev: ClipboardEvent): void {
   ev.preventDefault()
   ev.stopImmediatePropagation()
 
-  // Extract the image while clipboardData is still in scope
-  const blob = imageItem.getAsFile()
+  // Extract the file while clipboardData is still in scope
+  const blob = targetItem.getAsFile()
   if (!blob) return
-  const reader = new FileReader()
-  reader.onload = () => {
-    const imgUrl = reader.result as string
-    void handleImagePasteInternal(el as HTMLElement, imgUrl)
+  
+  const isPdf = targetItem.type === 'application/pdf' || blob.name.toLowerCase().endsWith('.pdf')
+  
+  if (isPdf) {
+    void handleFileScan(el as HTMLElement, blob)
+  } else {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const imgUrl = reader.result as string
+      void handleImagePasteInternal(el as HTMLElement, imgUrl)
+    }
+    reader.readAsDataURL(blob)
   }
-  reader.readAsDataURL(blob)
 }
 
 // ── File upload interception ──────────────────
 
 async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
   const isImage = file.type.startsWith('image/')
-  const isPdf   = file.type === 'application/pdf'
+  const isPdf   = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
   if (!isImage && !isPdf) return
 
   try {
@@ -458,9 +504,22 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
     })
 
     if (result.hasFindings && result.entities.length > 0) {
-      console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}.`)
-      ocrCache.set(dataUrl, result.entities)
-      await dispatchFilePaste(el, dataUrl, file.name, file.type)
+      console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Auto-redacting...`)
+      
+      let redactedUrl = dataUrl
+      if (isPdf) {
+        const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
+          chrome.runtime.sendMessage({ type: 'REDACT_PDF', pdfData: dataUrl, entities: result.entities }, resolve)
+        })
+        if (resp && resp.ok && resp.redactedPdfData) {
+          redactedUrl = resp.redactedPdfData
+        }
+      } else {
+        redactedUrl = await applyImageMasking(dataUrl, result.entities)
+      }
+
+      await clearAttachments()
+      await dispatchFilePaste(el, redactedUrl, 'redacted_' + file.name, file.type)
     } else {
       console.info(`[SecureGPT] ${file.name} is clean. Forwarding original.`)
       await dispatchFilePaste(el, dataUrl, file.name, file.type)
@@ -480,7 +539,7 @@ function handleGlobalFileChange(ev: Event): void {
 
   const file = target.files[0]
   if (!file) return
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return
+  if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) return
 
   const el = findMainEditor() ?? document.body as HTMLElement
   if (bypassSet.has(el)) return
@@ -498,7 +557,7 @@ function handleGlobalDrop(ev: DragEvent): void {
 
   const file = files[0]
   if (!file) return
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return
+  if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) return
 
   const el = findMainEditor() ?? document.body as HTMLElement
   if (bypassSet.has(el)) return

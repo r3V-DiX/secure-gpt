@@ -61,7 +61,7 @@ export const allFinancialRules: DetectionRule[] = [
     pattern: /\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b/g,
     validatorId: 'pan',
     requireContext: true,
-    triggers: ['pan', 'tax id'],
+    triggers: ['pan', 'tax id', 'permanent account number'],
     severity: 'critical',
     enabled: true,
     description: 'Indian Permanent Account Number (PAN).'

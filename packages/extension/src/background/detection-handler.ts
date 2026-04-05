@@ -156,6 +156,135 @@ export async function handleDetectPIIImage(
   }
 }
 
+export async function handleDetectPIIPDF(
+  pdfData: string,
+  config: PIIConfig,
+  sender?: chrome.runtime.MessageSender
+): Promise<DetectionResult> {
+  const empty: DetectionResult = { hasFindings: false, entities: [], tier: 'regex', processingTimeMs: 0, inputLength: 0 }
+
+  try {
+    console.log('[Background] Proxying PDF extract to offscreen document...')
+    await setupOffscreen()
+
+    let isReady = false
+    for (let i = 0; i < 15; i++) {
+      try {
+        const ping: { ok: boolean } = await chrome.runtime.sendMessage({ action: 'OFFSCREEN_PING' })
+        if (ping?.ok) { isReady = true; break }
+      } catch (_e) {
+        console.debug(`[Background] Offscreen not ready yet (attempt ${i + 1}), waiting…`)
+      }
+      await new Promise((r) => setTimeout(r, 300))
+    }
+
+    if (!isReady) {
+      console.error('[Background] Offscreen document failed to respond to PING after retries.')
+      return empty
+    }
+
+    const response: { ok: boolean; result?: any; error?: string } =
+      await chrome.runtime.sendMessage({
+        action: 'OFFSCREEN_RUN_PDF',
+        data: { pdfData }
+      })
+
+    if (!response?.ok || !response.result) {
+      console.error('[Background] Offscreen PDF returned error:', response?.error)
+      return empty
+    }
+
+    const fullText = response.result.fullText
+    
+    // Once we have full text, just run standard text detection on it
+    return await handleDetectPII(fullText, config, sender)
+  } catch (err) {
+    console.error('[Background] Failed to proxy PDF detection:', err)
+    return empty
+  }
+}
+
+export async function handleRedactPDF(
+  pdfData: string,
+  entities: PIIEntity[],
+  manualRegions: any[] = []
+): Promise<{ ok: boolean; redactedPdfData?: string; error?: string }> {
+  try {
+    console.log('[Background] Sending PDF to backend for secure redaction...')
+    
+    // 1. Get coordinates for text-based entities from the offscreen document
+    const textValues = (entities || [])
+      .filter((e: any) => !e.bboxes || e.bboxes.length === 0)
+      .map((e: any) => e.value)
+
+    let autoRegions: any[] = []
+    if (textValues.length > 0) {
+      console.debug('[Background] Mapping text values to coordinates via offscreen...')
+      const mappingResp = await chrome.runtime.sendMessage({
+        action: 'OFFSCREEN_GET_PDF_REGIONS',
+        data: { values: textValues }
+      })
+      if (mappingResp?.ok) {
+        autoRegions = mappingResp.regions
+      }
+    }
+
+    // 2. Combine all regions
+    const entitiesWithBboxes = (entities || [])
+      .filter((e: any) => e.bboxes && e.bboxes.length > 0)
+      .flatMap((e: any) => e.bboxes.map((b: any) => ({
+        page: 0,
+        x: b.x0,
+        y: b.y0,
+        width: b.x1 - b.x0,
+        height: b.y1 - b.y0
+      })))
+
+    const regions = [
+      ...autoRegions,
+      ...entitiesWithBboxes,
+      ...manualRegions
+    ]
+
+    // Convert base64 data URI to Blob
+    const resp = await fetch(pdfData)
+    const pdfBlob = await resp.blob()
+
+    const formData = new FormData()
+    formData.append('file', pdfBlob, 'document.pdf')
+    
+    // Filter out invalid regions
+    const validRegions = regions.filter(r => r.width > 0 && r.height > 0)
+    console.info(`[Background] Sending ${validRegions.length} redaction regions to backend.`)
+    formData.append('regions', JSON.stringify(validRegions))
+
+    const backendResp = await fetch('http://localhost:8000/api/v1/redact/pdf', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!backendResp.ok) {
+      const errorText = await backendResp.text()
+      throw new Error(`Backend error: ${errorText}`)
+    }
+
+    const redactedBlob = await backendResp.blob()
+    
+    // Convert blob back to data URI
+    const reader = new FileReader()
+    const redactedDataUri = await new Promise<string>((resolve) => {
+      reader.onload = () => resolve(reader.result as string)
+      reader.readAsDataURL(redactedBlob)
+    })
+
+    return { ok: true, redactedPdfData: redactedDataUri }
+
+  } catch (err) {
+    console.error('[Background] Backend Redaction failed:', err)
+    return { ok: false, error: String(err) }
+  }
+}
+
 async function logBackgroundDetection(
   result: DetectionResult, 
   _text: string, 
