@@ -7,7 +7,7 @@
 //   • Cancel        → keeps message in input, does nothing
 // ─────────────────────────────────────────────
 
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button/button'
 import { Badge } from '@/components/ui/badge/badge'
 import { previewMasking } from '@/features/actions/services/masking.service'
@@ -51,7 +51,6 @@ const categoryIcons: Record<PIICategory, string> = {
 
 export function ShieldModal({
   result,
-  config,
   originalText,
   onProceed,
   onCancel,

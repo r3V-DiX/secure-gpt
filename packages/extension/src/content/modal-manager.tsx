@@ -4,7 +4,6 @@
 // Uses a Shadow DOM to isolate styles from the host page
 // ─────────────────────────────────────────────
 
-import React from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { ShieldModal } from '@/features/shield-modal/components/ShieldModal'
 import type { DetectionResult } from '@securegpt/shared/types'

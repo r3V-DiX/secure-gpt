@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { getCurrentUser, isAuthenticated } from '@/features/auth/services/auth.service'
+import { getCurrentUser } from '@/features/auth/services/auth.service'
 import type { User } from '@securegpt/shared/types'
 
 interface AuthContextValue {

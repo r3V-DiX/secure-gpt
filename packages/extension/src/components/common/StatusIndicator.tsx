@@ -3,7 +3,6 @@
 // Shows Active / Paused / Disabled state
 // ─────────────────────────────────────────────
 
-import React from 'react'
 import { clsx } from 'clsx'
 import { Badge } from '../ui/badge/badge'
 

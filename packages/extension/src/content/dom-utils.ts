@@ -194,16 +194,13 @@ export async function dispatchFilePaste(
  */
 export async function clearAttachments() {
   const selectors = [
-    'button[aria-label="Remove attachment"]',
-    'button[aria-label="Remove"]',
-    'button[aria-label="Cancel upload"]',
-    'button[aria-label="Remove image"]',
-    'button[aria-label="Remove file"]',
-    'button[aria-label="Clear"]',
+    'button[aria-label*="Remove"]',
+    'button[aria-label*="Cancel"]',
+    'button[aria-label*="Clear"]',
     '.X-button', 
     '[class*="remove-button"]',
     '[class*="CancelButton"]',
-    'button.absolute:has(svg)', // common on chatgpt for the tiny 'x' overlaid on images
+    'button.absolute:has(svg)', 
     'button:has(svg[class*="icon-sm"])', 
   ];
     
@@ -220,17 +217,31 @@ export async function clearAttachments() {
     } catch (_e) { }
   }
     
-  // Heuristic: any button that is a direct sibling of an <img> or <canvas>, or is perfectly positioned over one
+  // Level 2 Heuristics: Search every button or role="button"
   if (cleared === 0) {
-    const allButtons = document.querySelectorAll('button');
-    for (const btn of Array.from(allButtons) as HTMLElement[]) {
-      // Is this button inside a container that holds an image? (ChatGPT structure)
-      // Usually the container is small (like a thumbnail)
-      const container = btn.parentElement;
-      if (container && container.querySelector('img') || container?.parentElement?.querySelector('img')) {
-        // Exclude huge generic buttons. The remove button is usually a small circle.
-        const rect = btn.getBoundingClientRect();
-        if (rect.width > 0 && rect.width < 50 && rect.height < 50 && btn.offsetParent !== null) {
+    const clickables = document.querySelectorAll('button, [role="button"]');
+    for (const btn of Array.from(clickables) as HTMLElement[]) {
+      // Must be visible and relatively small (icon buttons)
+      const rect = btn.getBoundingClientRect();
+      if (rect.width > 0 && rect.width < 60 && rect.height > 0 && rect.height < 60 && btn.offsetParent !== null) {
+        
+        // Walk upwards to find a container that represents an attachment or image pill
+        const container = btn.closest('[class*="attachment"], [class*="file"], .group, li, div[data-testid*="attachment"]');
+        if (container) {
+          // Does this container hold an image, canvas, or video thumbnail?
+          const hasImage = !!container.querySelector('img, canvas, video, [style*="background-image"]');
+          if (hasImage) {
+            btn.click();
+            cleared++;
+            continue;
+          }
+        }
+
+        // Alternative: If the button ITSELF is positioned right next to an image
+        const previousSib = btn.previousElementSibling;
+        const nextSib = btn.nextElementSibling;
+        if ((previousSib && (previousSib.tagName === 'IMG' || previousSib.tagName === 'CANVAS')) ||
+            (nextSib && (nextSib.tagName === 'IMG' || nextSib.tagName === 'CANVAS'))) {
           btn.click();
           cleared++;
         }

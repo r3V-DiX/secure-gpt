@@ -2,7 +2,6 @@
 // Toggle Component
 // ─────────────────────────────────────────────
 
-import React from 'react'
 import { clsx } from 'clsx'
 
 interface ToggleProps {

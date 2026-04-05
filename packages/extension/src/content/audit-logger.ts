@@ -92,7 +92,7 @@ export async function logDetectionEvent(
 
     console.log('[SecureGPT] Sending QUEUE_LOG message to background:', event.eventId)
     // Send to background worker for batching and API submission
-    chrome.runtime.sendMessage({ type: 'QUEUE_LOG', event }, (response) => {
+    chrome.runtime.sendMessage({ type: 'QUEUE_LOG', event }, (_response) => {
       if (chrome.runtime.lastError) {
         console.error('[SecureGPT] Failed to send QUEUE_LOG message:', chrome.runtime.lastError)
       } else {

@@ -6,7 +6,6 @@ import { startPolicySync } from './policy-sync'
 import { startLogBatcher, flushLogs, queueLog } from './log-batcher'
 import { handleDetectPII, handleDetectPIIImage } from './detection-handler'
 import { stateStorage, authStorage, policyStorage } from '@/lib/storage/storage'
-import { fetchCurrentUser } from '@/features/auth/services/auth.service'
 import type { AuditLog } from '@securegpt/shared/types'
 
 // ... (tab watcher code)

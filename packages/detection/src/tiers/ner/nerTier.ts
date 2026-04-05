@@ -11,7 +11,7 @@ import NERWorkerUrl from '../../workers/ner.worker?worker&url'
 import type { PIIEntity } from '@securegpt/shared/types'
 import type { PIIConfig } from '@securegpt/shared/types'
 import type { PIICategory } from '@securegpt/shared/constants'
-// @ts-expect-error - handled by vite?raw or custom loader
+// Handled by vite?raw or custom loader
 import vocabRaw from './vocab.txt?raw'
 
 const LABEL_MAP: Record<number, string> = {

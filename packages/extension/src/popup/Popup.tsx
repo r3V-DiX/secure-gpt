@@ -1,7 +1,7 @@
 // packages/extension/src/popup/Popup.tsx
 // Simple professional popup — login, status, session stats
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/features/auth/hooks/use-auth'
 import { stateStorage } from '@/lib/storage/storage'
 

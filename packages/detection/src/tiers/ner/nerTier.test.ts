@@ -39,7 +39,7 @@ if (typeof global.crypto === 'undefined') {
 // Mock URL and Worker globally
 global.Worker = MockWorker as any
 global.URL = class {
-  constructor(path: string) {}
+  constructor(_path: string) {}
 } as any
 
 describe('NERTier', () => {
@@ -50,7 +50,7 @@ describe('NERTier', () => {
     // Mock vocabRaw import
     // @ts-ignore
     tier['tokenizer'] = {
-      tokenize: vi.fn((text) => ({
+      tokenize: vi.fn((_text) => ({
         inputIds: new BigInt64Array(128),
         attentionMask: new BigInt64Array(128),
         tokenTypeIds: new BigInt64Array(128),
@@ -77,8 +77,8 @@ describe('NERTier', () => {
     const entities = await tier.run('Contact john.doe@example.com', DEFAULT_PII_CONFIG)
     
     expect(entities.length).toBeGreaterThan(0)
-    expect(entities[0].type).toBe('B-EMAIL')
-    expect(entities[0].category).toBe('PII')
+    expect(entities[0]!.type).toBe('B-EMAIL')
+    expect(entities[0]!.category).toBe('PII')
 
     global.Worker = OriginalWorker
   })

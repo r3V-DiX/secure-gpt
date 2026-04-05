@@ -25,7 +25,7 @@ const BANNER_MESSAGES: Record<BannerType, (category: string, count: number) => s
   loading: (_cat, _n) => `Scanning image for sensitive context... Please wait.`,
 }
 
-let activeBanner: HTMLElement | null = null
+
 let acknowledgeCallback: ((proceed: boolean) => void) | null = null
 
 export function showBanner(
@@ -131,7 +131,6 @@ export function showBanner(
   banner.appendChild(leftSection)
   banner.appendChild(rightSection)
 
-  activeBanner = banner
   injectBanner(banner)
 
   // Auto-dismiss allow banners after 4 seconds
@@ -142,6 +141,5 @@ export function showBanner(
 
 export function removeBanner(): void {
   removeAllBanners()
-  activeBanner = null
   acknowledgeCallback = null
 }

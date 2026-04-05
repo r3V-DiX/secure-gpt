@@ -26,10 +26,10 @@ let session: ort.InferenceSession | null = null;
 const maxSeqLen = 128; // Can receive via init message
 
 // Global error handler
-self.onerror = (message, source, lineno, colno, error) => {
-  console.error('[NERWorker] Uncaught error:', message, error);
-  self.postMessage({ type: 'ERROR', error: message });
-};
+self.addEventListener('error', (event: ErrorEvent) => {
+  console.error('[NERWorker] Uncaught error:', event);
+  self.postMessage({ type: 'ERROR', error: event.message || 'Unknown error' });
+});
 
 self.onunhandledrejection = (event) => {
   console.error('[NERWorker] Unhandled rejection:', event.reason);
@@ -87,7 +87,7 @@ async function initSession() {
         graphOptimizationLevel: 'all',
       });
       
-      console.log('[NERWorker] Session created successfully. EP:', session.executionProviders);
+      console.log('[NERWorker] Session created successfully.');
       self.postMessage({ type: 'READY' });
   } catch (err) {
       console.error('[NERWorker] Session creation failed:', (err as Error).message);
