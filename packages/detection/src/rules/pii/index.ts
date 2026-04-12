@@ -44,9 +44,10 @@ export const allPIIRules: DetectionRule[] = [
     category: 'PII' as PIICategory,
     type: 'national_id',
     label: 'Indian Driving Licence',
-    pattern: /\b[A-Z]{2}[ ]?[0-9]{2}[ -\/]?[0-9]{4}[ -\/]?[0-9]{7}\b/g,
+    // State code (2) + RTO (2) + optional space/sep + year (4) + optional space + seq (7)
+    pattern: /\b[A-Z]{2}[\s]?[0-9]{2}[\s-\/]?(?:[0-9]{4}[\s]?)?[0-9]{7}\b/g,
     requireContext: true,
-    triggers: ['driving licence', 'dl no'],
+    triggers: ['driving licence', 'dl no', 'dl', 'license'],
     severity: 'medium',
     enabled: true,
     description: 'Indian Driving Licence.'
@@ -75,16 +76,18 @@ export const allPIIRules: DetectionRule[] = [
     description: 'RFC 5322 compliant email address pattern.'
   },
   {
-    id: 'pii.phone_in',
+    id: 'pii.phone_global',
     category: 'PII' as PIICategory,
     type: 'phone',
-    label: 'Indian Phone Number',
-    pattern: /(?:(?:\+|0{0,2})91(?:\s*[\ -]\s*)?|[0]?)?[6789]\d{9}\b/g,
+    label: 'Phone Number',
+    // Broad Net: catch anything that looks remotely like a phone number, validate later
+    pattern: /(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{2,4}[-.\s]?\d{3,10}/g,
+    validatorId: 'phone',
     requireContext: true,
-    triggers: ['phone', 'mobile', 'call', 'ph'],
+    triggers: ['phone', 'mobile', 'call', 'ph', 'tel', 'contact'],
     severity: 'high',
     enabled: true,
-    description: 'Indian Mobile Number (+91) starting with 6-9.'
+    description: 'Global phone number detection validated via libphonenumber.'
   },
   {
     id: 'pii.ipv4',

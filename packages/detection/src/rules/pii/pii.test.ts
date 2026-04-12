@@ -39,8 +39,13 @@ describe('PII Rules', () => {
     expect(res.some(e => e.type === 'email')).toBe(true)
   })
 
-  it('phone_in (pii.phone_in)', async () => {
+  it('phone_global (pii.phone_global) - Indian', async () => {
     const res = await tier.run('Call me on +91 9876543210.', DEFAULT_PII_CONFIG)
+    expect(res.some(e => e.type === 'phone')).toBe(true)
+  })
+
+  it('phone_global (pii.phone_global) - US', async () => {
+    const res = await tier.run('Contact me at (555) 123-4567.', DEFAULT_PII_CONFIG)
     expect(res.some(e => e.type === 'phone')).toBe(true)
   })
 

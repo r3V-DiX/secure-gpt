@@ -67,7 +67,7 @@ async def get_current_user(
         await auth_event_service.log_session_expired(
             db,
             request=request,
-            user_id=session.user_id if session else "unknown",
+            user_id=session.user_id if session else None,
             session_id=session_id,
         )
         raise SessionExpired()
@@ -77,7 +77,7 @@ async def get_current_user(
         await auth_event_service.log_fingerprint_mismatch(
             db,
             request=request,
-            user_id=session.user_id if session else "unknown",
+            user_id=session.user_id if session else None,
             session_id=session_id,
         )
         raise FingerprintMismatch()

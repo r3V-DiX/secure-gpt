@@ -5,6 +5,7 @@
 export { luhnCheck } from './luhn.validator'
 export { verhoeffCheck } from './verhoeff.validator'
 export { panCheck, getPANEntityType } from './pan.validator'
+export { phoneCheck } from './phone.validator'
 
 // Validator registry — maps validatorId to function
 export const VALIDATORS: Record<string, (value: string) => boolean> = {
@@ -18,6 +19,10 @@ export const VALIDATORS: Record<string, (value: string) => boolean> = {
   },
   pan: (v) => {
     const { panCheck: check } = require('./pan.validator') as { panCheck: (v: string) => boolean }
+    return check(v)
+  },
+  phone: (v) => {
+    const { phoneCheck: check } = require('./phone.validator') as { phoneCheck: (v: string) => boolean }
     return check(v)
   },
 }

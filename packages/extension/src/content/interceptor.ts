@@ -5,6 +5,7 @@
 import { findEditableRoot, findMainEditor, extractText, bypassSet, dispatchImagePaste, dispatchFilePaste, clearAttachments } from './dom-utils'
 import { showBanner, removeBanner } from './banners'
 import { showShieldModal } from './modal-manager'
+import { logDetectionEvent } from './audit-logger'
 import { applyMasking, applyImageMasking } from '@/features/actions/services/masking.service'
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
 
@@ -196,6 +197,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
     if (action === 'BLOCK') {
       showBanner('block', topEntity.category, result.entities.length)
       chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
+      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'BLOCK', false)
       
       // The user is blocked from submitting, but we should visually redact the image
       // in their input box so it's not sitting there exposed.
@@ -236,6 +238,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
 
     // ── ALLOW: silent log + send ──────────────────
     if (action === 'ALLOW') {
+      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'ALLOW', false)
       isRunning = false
       resubmit(el)
       return
@@ -262,7 +265,8 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
 
         if (masked) {
           // Mask & Send — redact text and any cached images
-          const maskedText = applyMasking(text, mergedEntities)
+          // FIX: only pass text-based result.entities to applyMasking to avoid corruption
+          const maskedText = applyMasking(text, result.entities)
           setInputValue(el, maskedText)
 
           // Redact and re-inject any sensitive images
@@ -298,12 +302,14 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
           ocrCache.clear()
 
           chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
+          void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', false)
           showBanner('mask', topEntity.category, mergedEntities.length)
           setTimeout(() => resubmit(el), 100)
         } else {
           // Send Directly
           ocrCache.clear()
           chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
+          void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'WARN_ALLOW', true)
           resubmit(el)
         }
       }
@@ -413,11 +419,9 @@ async function handleImagePasteInternal(el: HTMLElement, imgUrl: string): Promis
     })
 
     if (result.hasFindings && result.entities.length > 0) {
-      console.info(`[SecureGPT] OCR found ${result.entities.length} entities. Auto-redacting...`)
-      
-      const redactedUrl = await applyImageMasking(imgUrl, result.entities)
-      await clearAttachments()
-      await dispatchImagePaste(el, redactedUrl)
+      console.info(`[SecureGPT] OCR found ${result.entities.length} entities. Caching for submit…`)
+      ocrCache.set(imgUrl, result.entities)
+      await dispatchImagePaste(el, imgUrl)
     } else {
       console.info('[SecureGPT] Pasted image is clean. Re-injecting…')
       await dispatchImagePaste(el, imgUrl)
@@ -504,22 +508,9 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
     })
 
     if (result.hasFindings && result.entities.length > 0) {
-      console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Auto-redacting...`)
-      
-      let redactedUrl = dataUrl
-      if (isPdf) {
-        const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
-          chrome.runtime.sendMessage({ type: 'REDACT_PDF', pdfData: dataUrl, entities: result.entities }, resolve)
-        })
-        if (resp && resp.ok && resp.redactedPdfData) {
-          redactedUrl = resp.redactedPdfData
-        }
-      } else {
-        redactedUrl = await applyImageMasking(dataUrl, result.entities)
-      }
-
-      await clearAttachments()
-      await dispatchFilePaste(el, redactedUrl, 'redacted_' + file.name, file.type)
+      console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Caching for submit…`)
+      ocrCache.set(dataUrl, result.entities)
+      await dispatchFilePaste(el, dataUrl, file.name, file.type)
     } else {
       console.info(`[SecureGPT] ${file.name} is clean. Forwarding original.`)
       await dispatchFilePaste(el, dataUrl, file.name, file.type)

@@ -6,7 +6,7 @@
 import type { PIIEntity } from '@securegpt/shared/types'
 
 // Tier priority — higher index = more trusted
-const TIER_PRIORITY = { ner: 0, regex: 1, ocr: 2 }
+const TIER_PRIORITY = { regex: 0, ner: 1, ocr: 2 }
 
 export function mergeEntities(
   regexEntities: PIIEntity[],
@@ -16,11 +16,8 @@ export function mergeEntities(
   const all = [...regexEntities, ...nerEntities, ...ocrEntities]
   if (all.length === 0) return []
 
-  // Sort by start index, then by tier priority descending
-  const sorted = [...all].sort((a, b) => {
-    if (a.startIndex !== b.startIndex) return a.startIndex - b.startIndex
-    return TIER_PRIORITY[b.tier] - TIER_PRIORITY[a.tier]
-  })
+  // Sort primarily by start index
+  const sorted = [...all].sort((a, b) => a.startIndex - b.startIndex)
 
   const result: PIIEntity[] = []
 
@@ -28,16 +25,20 @@ export function mergeEntities(
     const last = result[result.length - 1]
 
     if (last && entity.startIndex < last.endIndex) {
-      // Overlapping — keep higher tier or higher confidence
+      // Overlapping — keep the one with higher tier priority
       const lastPriority = TIER_PRIORITY[last.tier]
       const currentPriority = TIER_PRIORITY[entity.tier]
 
-      if (
-        currentPriority > lastPriority ||
-        (currentPriority === lastPriority && entity.confidence > last.confidence)
-      ) {
+      if (currentPriority > lastPriority) {
+        // Current entity is from a more trusted tier, replace last
         result[result.length - 1] = entity
+      } else if (currentPriority === lastPriority) {
+        // Same tier, keep the one with higher confidence
+        if (entity.confidence > last.confidence) {
+          result[result.length - 1] = entity
+        }
       }
+      // If currentPriority < lastPriority, we simply ignore the current overlapping entity
     } else {
       result.push(entity)
     }

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@securegpt/shared": "*",
+    "libphonenumber-js": "^1.12.41",
     "onnxruntime-web": "^1.18.0",
     "tesseract.js": "^5.1.0",
     "uuid": "^9.0.1"

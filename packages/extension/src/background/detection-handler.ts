@@ -82,10 +82,6 @@ export async function handleDetectPII(
 
     console.log('[Background] Detection complete, findings:', result.hasFindings)
 
-    if (result.hasFindings) {
-      void logBackgroundDetection(result, text, config, sender)
-    }
-
     return result
   } catch (err) {
     console.error('[Background] Failed to setup offscreen or detect PII:', err)
@@ -144,10 +140,6 @@ export async function handleDetectPIIImage(
 
     const result = response.result
     console.log('[Background] Image OCR complete, findings:', result.hasFindings)
-
-    if (result.hasFindings) {
-      void logBackgroundDetection(result, imgUrl, config, sender)
-    }
 
     return result
   } catch (err) {

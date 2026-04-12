@@ -45,7 +45,7 @@ export const CONTEXT_TRIGGERS: Record<string, string[]> = {
     'surname', 'given name', 'place of birth', 'place of issue',
     'address', 'residence', 'pincode', 'zip code',
     'mobile', 'phone', 'contact',
-    'name',
+    'name', 'no', 'number',
     'diagnosis', 'prescription', 'medical record', 'blood group',
     'abha', 'health id', 'patient', 'hospital',
   ],
