@@ -45,7 +45,7 @@ export const allPIIRules: DetectionRule[] = [
     type: 'national_id',
     label: 'Indian Driving Licence',
     // State code (2) + RTO (2) + optional space/sep + year (4) + optional space + seq (7)
-    pattern: /\b[A-Z]{2}[\s]?[0-9]{2}[\s-\/]?(?:[0-9]{4}[\s]?)?[0-9]{7}\b/g,
+    pattern: /\b[A-Z]{2}[\s]?[0-9]{2}[\s/-]?(?:[0-9]{4}[\s]?)?[0-9]{7}\b/g,
     requireContext: true,
     triggers: ['driving licence', 'dl no', 'dl', 'license'],
     severity: 'medium',

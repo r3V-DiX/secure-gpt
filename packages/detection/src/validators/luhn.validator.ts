@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 
 export function luhnCheck(cardNumber: string): boolean {
-  const digits = cardNumber.replace(/[\s\-]/g, '')
+  const digits = cardNumber.replace(/[\s-]/g, '')
 
   if (!/^\d+$/.test(digits)) return false
   if (digits.length < 13 || digits.length > 19) return false

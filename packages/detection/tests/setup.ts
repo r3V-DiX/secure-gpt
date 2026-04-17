@@ -44,7 +44,7 @@ if (typeof global.Worker === 'undefined') {
 
 // Mock URL and URL.createObjectURL
 if (typeof global.URL === 'undefined' || !global.URL.createObjectURL) {
-  const OriginalURL = global.URL || class { constructor(path: string) {} };
+  const OriginalURL = global.URL || class { constructor(_path: string) {} };
   (global as any).URL = class extends (OriginalURL as any) {
     static createObjectURL = vi.fn(() => 'blob:test')
     static revokeObjectURL = vi.fn()

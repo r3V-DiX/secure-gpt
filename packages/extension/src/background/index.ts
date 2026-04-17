@@ -22,55 +22,55 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   switch (message.type) {
     case 'DETECT_PII':
-      handleDetectPII(message.text, message.config, sender).then(sendResponse)
+      void handleDetectPII(message.text, message.config, sender).then(sendResponse)
       return true
 
     case 'DETECT_PII_IMAGE':
-      handleDetectPIIImage(message.imgUrl, message.config, sender).then(sendResponse)
+      void handleDetectPIIImage(message.imgUrl, message.config, sender).then(sendResponse)
       return true
 
     case 'DETECT_PII_PDF':
-      handleDetectPIIPDF(message.pdfData, message.config, sender).then(sendResponse)
+      void handleDetectPIIPDF(message.pdfData, message.config, sender).then(sendResponse)
       return true
 
     case 'REDACT_PDF':
-      handleRedactPDF(message.pdfData, message.entities, message.manualRegions).then(sendResponse)
+      void handleRedactPDF(message.pdfData, message.entities, message.manualRegions).then(sendResponse)
       return true
 
     case 'AUTH_LOST':
-      authStorage.clearAuth().then(() => sendResponse({ success: true }))
+      void authStorage.clearAuth().then(() => sendResponse({ success: true }))
       return true
 
     case 'QUEUE_LOG':
-      queueLog(message.event as AuditLog).then(() => sendResponse({ success: true }))
+      void queueLog(message.event as AuditLog).then(() => sendResponse({ success: true }))
       return true
 
     case 'GET_STATE':
-      stateStorage.isActive().then((active) => sendResponse({ active }))
+      void stateStorage.isActive().then((active) => sendResponse({ active }))
       return true
 
     case 'GET_POLICY':
-      policyStorage.getPolicy().then((policy) => sendResponse({ policy }))
+      void policyStorage.getPolicy().then((policy) => sendResponse({ policy }))
       return true
 
     case 'INCREMENT_STAT':
-      stateStorage.incrementStat(message.action).then(() => sendResponse({ success: true }))
+      void stateStorage.incrementStat(message.action).then(() => sendResponse({ success: true }))
       return true
 
     case 'PAUSE_EXTENSION':
-      stateStorage.pauseFor(message.minutes).then(() => sendResponse({ success: true }))
+      void stateStorage.pauseFor(message.minutes).then(() => sendResponse({ success: true }))
       return true
 
     case 'RESUME_EXTENSION':
-      stateStorage.setActive(true).then(() => sendResponse({ success: true }))
+      void stateStorage.setActive(true).then(() => sendResponse({ success: true }))
       return true
 
     case 'GET_SESSION_STATS':
-      stateStorage.getSessionStats().then((stats) => sendResponse(stats))
+      void stateStorage.getSessionStats().then((stats) => sendResponse(stats))
       return true
 
     case 'FLUSH_LOGS':
-      flushLogs().then(() => sendResponse({ success: true }))
+      void flushLogs().then(() => sendResponse({ success: true }))
       return true
 
     default:
@@ -84,5 +84,5 @@ chrome.runtime.onSuspend.addListener(() => {
 })
 
 // ── Initialize background tasks ────────────────
-startLogBatcher()
-startPolicySync()
+void startLogBatcher()
+void startPolicySync()

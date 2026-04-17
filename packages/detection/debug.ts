@@ -60,18 +60,27 @@ async function main() {
     }
 
     const output = await session.run(feeds);
-    const logits = output[session.outputNames[0]].data as Float32Array;
+    const outputName = session.outputNames[0];
+    if (!outputName) throw new Error('No output name');
+    const logits = output[outputName]!.data as Float32Array;
     const numLabels = Object.keys(LABEL_MAP).length;
 
     const predictions: number[] = [];
     for (let i = 0; i < 128; i++) {
-      const tokenPredictions = [];
+      const tokenPredictions: { idx: number; val: number }[] = [];
       for (let j = 0; j < numLabels; j++) {
-        tokenPredictions.push({ idx: j, val: logits[i * numLabels + j] });
+        const val = logits[i * numLabels + j];
+        if (val !== undefined) {
+          tokenPredictions.push({ idx: j, val });
+        }
       }
       tokenPredictions.sort((a, b) => b.val - a.val);
       
       const best = tokenPredictions[0];
+      if (!best) {
+        predictions.push(54); // Default to 'O'
+        continue;
+      }
       predictions.push(best.idx);
 
       if (tokens[i] !== '[PAD]' && tokens[i] !== '[CLS]' && tokens[i] !== '[SEP]') {
@@ -86,8 +95,11 @@ async function main() {
     let currentText = '';
     
     for (let i = 0; i < tokens.length; i++) {
-      const label = LABEL_MAP[predictions[i]];
+      const predIdx = predictions[i];
+      if (predIdx === undefined) continue;
+      const label = LABEL_MAP[predIdx];
       const token = tokens[i];
+      if (!token || !label) continue;
       
       if (token === '[PAD]') break;
       if (token === '[CLS]' || token === '[SEP]') continue;

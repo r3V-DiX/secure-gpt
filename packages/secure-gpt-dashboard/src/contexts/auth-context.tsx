@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false))
+    void refresh().finally(() => setLoading(false))
   }, [refresh])
 
   const logout = async () => {

@@ -2,6 +2,7 @@
 // Detection Types
 // ─────────────────────────────────────────────
 
+import type { PIIConfig } from './config.types'
 import type { PIICategory } from '../constants/pii-categories.constants'
 
 export type DetectionTier = 'regex' | 'ner' | 'ocr'
@@ -33,5 +34,5 @@ export interface DetectionResult {
 
 export interface DetectionRequest {
   text: string
-  config: import('./config.types').PIIConfig
+  config: PIIConfig
 }

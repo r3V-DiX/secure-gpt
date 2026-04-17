@@ -9,8 +9,9 @@
       "@securegpt/shared/*": ["../shared/src/*"],
       "@securegpt/detection": ["../detection/src/pipeline.ts"],
       "@/*": ["./src/*"]
-    }
+    },
+    "allowJs": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "include": ["src/**/*", "tests/**/*", "build.mjs"],
+  "exclude": ["node_modules", "dist"]
 }

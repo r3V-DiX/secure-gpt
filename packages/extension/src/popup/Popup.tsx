@@ -1,7 +1,7 @@
 // packages/extension/src/popup/Popup.tsx
 // Simple professional popup — login, status, session stats
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/features/auth/hooks/use-auth'
 import { stateStorage } from '@/lib/storage/storage'
 
@@ -10,6 +10,13 @@ export function Popup() {
   const [isActive, setIsActive] = useState(true)
   const [stats, setStats] = useState({ blockCount: 0, maskCount: 0, warnCount: 0 })
   const [pausing, setPausing] = useState(false)
+
+  const loadState = useCallback(async () => {
+    const active = await stateStorage.isActive()
+    const s = await stateStorage.getSessionStats()
+    setIsActive(active)
+    setStats(s as typeof stats)
+  }, [stats])
 
   useEffect(() => {
     void loadState()
@@ -21,14 +28,7 @@ export function Popup() {
     }
     chrome.runtime.onMessage.addListener(handler)
     return () => chrome.runtime.onMessage.removeListener(handler)
-  }, [])
-
-  async function loadState() {
-    const active = await stateStorage.isActive()
-    const s = await stateStorage.getSessionStats()
-    setIsActive(active)
-    setStats(s as typeof stats)
-  }
+  }, [loadState])
 
   async function handleToggle() {
     if (isActive) {

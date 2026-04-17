@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest'
-import { RegexTier } from '../src/tiers/regex/regexTier'
+import { RegexTier } from '../../src/tiers/regex/regexTier'
 import { DEFAULT_PII_CONFIG } from '@securegpt/shared/types'
 
 const tier = new RegexTier()

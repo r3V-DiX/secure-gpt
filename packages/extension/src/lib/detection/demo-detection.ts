@@ -95,7 +95,7 @@ const DEMO_RULES: DemoRule[] = [
     type: 'passport',
     category: 'PII',
     label: 'Passport MRZ (Line 1)',
-    pattern: /(P[<{({\[\]]?[A-Z<{({\[\]]{40,44})/gi,
+    pattern: /(P[<{({[\]]?[A-Z<{({[\]]{40,44})/gi,
     severity: 'critical',
     maskedValue: '[PASSPORT-REDACTED]',
   },

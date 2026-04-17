@@ -2,27 +2,17 @@
 // Validators — Barrel Export
 // ─────────────────────────────────────────────
 
-export { luhnCheck } from './luhn.validator'
-export { verhoeffCheck } from './verhoeff.validator'
-export { panCheck, getPANEntityType } from './pan.validator'
-export { phoneCheck } from './phone.validator'
+import { luhnCheck } from './luhn.validator'
+import { verhoeffCheck } from './verhoeff.validator'
+import { panCheck, getPANEntityType } from './pan.validator'
+import { phoneCheck } from './phone.validator'
+
+export { luhnCheck, verhoeffCheck, panCheck, getPANEntityType, phoneCheck }
 
 // Validator registry — maps validatorId to function
 export const VALIDATORS: Record<string, (value: string) => boolean> = {
-  luhn: (v) => {
-    const { luhnCheck: check } = require('./luhn.validator') as { luhnCheck: (v: string) => boolean }
-    return check(v)
-  },
-  verhoeff: (v) => {
-    const { verhoeffCheck: check } = require('./verhoeff.validator') as { verhoeffCheck: (v: string) => boolean }
-    return check(v)
-  },
-  pan: (v) => {
-    const { panCheck: check } = require('./pan.validator') as { panCheck: (v: string) => boolean }
-    return check(v)
-  },
-  phone: (v) => {
-    const { phoneCheck: check } = require('./phone.validator') as { phoneCheck: (v: string) => boolean }
-    return check(v)
-  },
+  luhn: luhnCheck,
+  verhoeff: verhoeffCheck,
+  pan: panCheck,
+  phone: phoneCheck,
 }

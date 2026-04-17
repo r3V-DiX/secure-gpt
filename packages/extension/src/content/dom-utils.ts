@@ -164,7 +164,7 @@ export async function dispatchImagePaste(el: HTMLElement, dataUrl: string): Prom
   el.dispatchEvent(
     new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true, composed: true })
   )
-  setTimeout(() => bypassSet.delete(el), 1500)
+  setTimeout(() => bypassSet.delete(el), 50)
 }
 
 /**
@@ -185,7 +185,7 @@ export async function dispatchFilePaste(
   el.dispatchEvent(
     new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true, composed: true })
   )
-  setTimeout(() => bypassSet.delete(el), 3500)
+  setTimeout(() => bypassSet.delete(el), 50)
 }
 
 /**
@@ -200,7 +200,8 @@ export async function clearAttachments() {
     '.X-button', 
     '[class*="remove-button"]',
     '[class*="CancelButton"]',
-    'button.absolute:has(svg)', 
+    // Targeted: small absolute buttons with SVGs (common for thumbnails)
+    'button.absolute:has(svg):not([aria-label*="Send"]):not([aria-label*="Submit"])', 
     'button:has(svg[class*="icon-sm"])', 
   ];
     
@@ -209,6 +210,13 @@ export async function clearAttachments() {
     try {
       const btns = document.querySelectorAll<HTMLElement>(sel);
       for (const btn of btns) {
+        // Guard: skip buttons that look like the Send/Submit button
+        const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+        const testid = (btn.getAttribute('data-testid') || '').toLowerCase();
+        if (aria.includes('send') || aria.includes('submit') || testid.includes('send') || testid.includes('composer-button')) {
+          continue;
+        }
+
         if (btn.offsetParent !== null) { 
           btn.click();
           cleared++;
@@ -221,6 +229,13 @@ export async function clearAttachments() {
   if (cleared === 0) {
     const clickables = document.querySelectorAll('button, [role="button"]');
     for (const btn of Array.from(clickables) as HTMLElement[]) {
+      // Guard: skip buttons that look like the Send/Submit button
+      const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+      const testid = (btn.getAttribute('data-testid') || '').toLowerCase();
+      if (aria.includes('send') || aria.includes('submit') || testid.includes('send') || testid.includes('composer-button')) {
+        continue;
+      }
+
       // Must be visible and relatively small (icon buttons)
       const rect = btn.getBoundingClientRect();
       if (rect.width > 0 && rect.width < 60 && rect.height > 0 && rect.height < 60 && btn.offsetParent !== null) {
