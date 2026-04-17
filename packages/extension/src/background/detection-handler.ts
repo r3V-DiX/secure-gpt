@@ -1,5 +1,5 @@
 // packages/extension/src/background/detection-handler.ts
-import type { PIIConfig, DetectionResult, AuditLog } from '@securegpt/shared/types'
+import type { PIIConfig, DetectionResult, AuditLog, PIIEntity } from '@securegpt/shared/types'
 import { v4 as uuidv4 } from 'uuid'
 import { EXTENSION_VERSION } from '@/config/defaults.config'
 import { queueLog } from './log-batcher'
@@ -52,7 +52,7 @@ async function sha256(text: string): Promise<string> {
 export async function handleDetectPII(
   text: string, 
   config: PIIConfig, 
-  sender?: chrome.runtime.MessageSender
+  _sender?: chrome.runtime.MessageSender
 ): Promise<DetectionResult> {
   try {
     console.log('[Background] Delegating detection to Offscreen Document...')
@@ -102,7 +102,7 @@ export async function handleDetectPII(
 export async function handleDetectPIIImage(
   imgUrl: string,
   config: PIIConfig,
-  sender?: chrome.runtime.MessageSender
+  _sender?: chrome.runtime.MessageSender
 ): Promise<DetectionResult> {
   const empty: DetectionResult = { hasFindings: false, entities: [], tier: 'ocr', processingTimeMs: 0, inputLength: 0 }
 
@@ -277,24 +277,43 @@ export async function handleRedactPDF(
   }
 }
 
-async function logBackgroundDetection(
+const ACTION_PRIORITY: Record<string, number> = {
+  BLOCK: 3,
+  MASK: 2,
+  WARN_ALLOW: 1,
+  ALLOW: 0,
+}
+
+export async function _logBackgroundDetection(
   result: DetectionResult, 
   _text: string, 
   config: PIIConfig,
   sender?: chrome.runtime.MessageSender
 ) {
   try {
-    const topEntity = result.entities[0]
-    if (!topEntity) return
+    if (result.entities.length === 0) return
 
-    const action = config.categories[topEntity.category]?.action ?? 'ALLOW'
+    // Determine the most restrictive action across all detected items
+    let maxPriority = -1
+    let finalAction = 'ALLOW'
+    let topEntity = result.entities[0]!
+
+    for (const entity of result.entities) {
+      const action = config.categories[entity.category]?.action ?? 'ALLOW'
+      const priority = ACTION_PRIORITY[action] ?? 0
+      if (priority > maxPriority) {
+        maxPriority = priority
+        finalAction = action
+        topEntity = entity
+      }
+    }
 
     // Hash the matched value — NEVER log raw text
     const snippetHash = await sha256(topEntity.value)
 
     // Collect all entity types and severities across detected entities
     const entityTypes = [...new Set(result.entities.map((e) => e.type))]
-    const severities = [...new Set(result.entities.map((e) => e.severity.toUpperCase()))]
+    const severities = [...new Set(result.entities.map((e) => e.severity.toUpperCase()))] as any[]
 
     let domain = ''
     let platform = 'unknown'
@@ -312,7 +331,7 @@ async function logBackgroundDetection(
     const event: AuditLog = {
       eventId: uuidv4(),
       timestamp: new Date().toISOString(),
-      actionTaken: action,
+      actionTaken: finalAction as any,
       categoryTriggered: topEntity.category,
       detectionType: topEntity.type,
       detectionTier: result.tier,
@@ -329,7 +348,7 @@ async function logBackgroundDetection(
       latencyMs: result.processingTimeMs,
     }
 
-    console.log('[Background] Queueing log and incrementing stat:', action)
+    console.log('[Background] Queueing log and incrementing stat:', finalAction)
     
     // 1. Queue the audit log
     await queueLog(event)

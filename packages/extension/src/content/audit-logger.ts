@@ -37,6 +37,7 @@ function isExtensionContextValid(): boolean {
 export async function logDetectionEvent(
   result: DetectionResult,
   action: PolicyAction,
+  topEntity: any,
   acknowledged = false
 ): Promise<void> {
   console.log('[SecureGPT] logDetectionEvent called with result:', result.hasFindings, 'action:', action)
@@ -55,7 +56,6 @@ export async function logDetectionEvent(
       return
     }
 
-    const topEntity = result.entities[0]
     if (!topEntity) {
       console.warn('[SecureGPT] No topEntity for logDetectionEvent')
       return
@@ -68,16 +68,16 @@ export async function logDetectionEvent(
 
     // Collect all entity types and severities across detected entities
     const entityTypes = [...new Set(result.entities.map((e) => e.type))]
-    const severities = [...new Set(result.entities.map((e) => e.severity.toUpperCase()))]
+    const severities = [...new Set(result.entities.map((e) => e.severity.toUpperCase()))] as any[]
 
     const event: AuditLog = {
       eventId: uuidv4(),
       timestamp: new Date().toISOString(),
-      actionTaken: action,
+      actionTaken: action as any,
       categoryTriggered: topEntity.category,
       detectionType: topEntity.type,
       detectionTier: result.tier,
-      llmPlatform: platform,
+      llmPlatform: platform as any,
       domain: window.location.hostname,
       matchCount: result.entities.length,
       snippetHash,
