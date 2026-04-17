@@ -40,7 +40,7 @@ export default function AlertsPage() {
       {!loading && summary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {summaryCards.map((s, i) => {
-            const colors = accentMap[s.accent as keyof typeof accentMap]
+            const colors = accentMap[s.accent as keyof typeof accentMap] ?? accentMap.indigo
             return (
               <div key={s.label}
                 className="rounded-2xl p-4 border stagger-1 animate-fade-in"

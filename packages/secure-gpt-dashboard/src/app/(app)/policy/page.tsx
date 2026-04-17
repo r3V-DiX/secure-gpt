@@ -91,7 +91,8 @@ export default function PolicyPage() {
           const cfg = config.categories[cat]
           if (!cfg) return null
           const meta = CATEGORY_META[cat]
-          const actionColors = ACTION_COLORS[cfg.action]
+          const actionColors = ACTION_COLORS[cfg.action] ?? ACTION_COLORS.ALLOW
+          const actionLabel = ACTION_LABEL[cfg.action] ?? cfg.action
           return (
             <div key={cat}
               className="rounded-2xl p-5 border transition-all duration-200 animate-fade-in"
@@ -112,7 +113,7 @@ export default function PolicyPage() {
                       {cfg.enabled && (
                         <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
                           style={{ background: actionColors.bg, borderColor: actionColors.border, color: actionColors.text }}>
-                          {ACTION_LABEL[cfg.action]}
+                          {actionLabel}
                         </span>
                       )}
                     </div>
@@ -142,7 +143,8 @@ export default function PolicyPage() {
                   </p>
                   <div className="flex gap-2 flex-wrap">
                     {ACTIONS.map(action => {
-                      const ac = ACTION_COLORS[action]
+                      const ac = ACTION_COLORS[action] ?? ACTION_COLORS.ALLOW
+                      const label = ACTION_LABEL[action] ?? action
                       const isActive = cfg.action === action
                       return (
                         <button
@@ -154,7 +156,7 @@ export default function PolicyPage() {
                             borderColor: isActive ? ac.border : 'var(--border)',
                             color: isActive ? ac.text : 'var(--text-secondary)',
                           }}>
-                          {ACTION_LABEL[action]}
+                          {label}
                         </button>
                       )
                     })}
