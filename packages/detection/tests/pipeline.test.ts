@@ -5,6 +5,8 @@
 import { describe, it, expect } from 'vitest'
 import { detectPII } from '../src/pipeline'
 import { DEFAULT_PII_CONFIG } from '@securegpt/shared/types'
+import type { PIIConfig } from '@securegpt/shared/types'
+
 
 describe('detectPII — pipeline', () => {
   it('returns no findings for clean text', async () => {
@@ -60,11 +62,19 @@ describe('detectPII — pipeline', () => {
   })
 
   it('respects disabled category', async () => {
-    const config = {
+    const config: PIIConfig = {
       ...DEFAULT_PII_CONFIG,
+      updatedAt: new Date().toISOString(),
       categories: {
         ...DEFAULT_PII_CONFIG.categories,
-        PII: { ...DEFAULT_PII_CONFIG.categories.PII, enabled: false },
+        PII: { 
+          enabled: false,
+          action: 'MASK',
+          customKeywords: [],
+          allowlist: [],
+          fuzzyMatch: false,
+          customRules: [],
+        },
       },
     }
     const result = await detectPII(
@@ -75,13 +85,18 @@ describe('detectPII — pipeline', () => {
   })
 
   it('respects allowlist', async () => {
-    const config = {
+    const config: PIIConfig = {
       ...DEFAULT_PII_CONFIG,
+      updatedAt: new Date(Date.now() + 1000).toISOString(),
       categories: {
         ...DEFAULT_PII_CONFIG.categories,
         PII: {
-          ...DEFAULT_PII_CONFIG.categories.PII,
+          enabled: true,
+          action: 'MASK',
+          customKeywords: [],
           allowlist: ['example.com'],
+          fuzzyMatch: false,
+          customRules: [],
         },
       },
     }
@@ -108,6 +123,39 @@ describe('detectPII — pipeline', () => {
       DEFAULT_PII_CONFIG
     )
     expect(result.entities.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('detects user custom rule PROJ-[0-9]{4}', async () => {
+    const config: PIIConfig = {
+      ...DEFAULT_PII_CONFIG,
+      updatedAt: new Date().toISOString(),
+      categories: {
+        ...DEFAULT_PII_CONFIG.categories,
+        CUSTOM: {
+          enabled: true,
+          action: 'MASK',
+          customKeywords: [],
+          allowlist: [],
+          fuzzyMatch: false,
+          customRules: [
+            {
+              id: 'custom.rule_1',
+              type: 'custom',
+              label: 'Project ID',
+              pattern: 'PROJ-[0-9]{4}',
+              enabled: true,
+              severity: 'high',
+              caseSensitive: false,
+              maskingLabel: 'INTERNAL_ID'
+            }
+          ]
+        }
+      }
+    }
+    const result = await detectPII('My project is PROJ-9999', config)
+    expect(result.hasFindings).toBe(true)
+    expect(result.entities[0]?.value).toBe('PROJ-9999')
+    expect(result.entities[0]?.maskedValue).toBe('[INTERNAL_ID-REDACTED]')
   })
 
 })

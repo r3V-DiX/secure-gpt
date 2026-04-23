@@ -41,6 +41,11 @@ export class RegexTier extends BaseTier {
       let match: RegExpExecArray | null
 
       while ((match = rule.pattern.exec(text)) !== null) {
+        // Prevent infinite loops on zero-length matches
+        if (match.index === rule.pattern.lastIndex) {
+          rule.pattern.lastIndex++
+        }
+
         // Handle patterns that might use capture groups (extracted from MVP)
         const value = match[1] ?? match[0]
 
@@ -77,8 +82,9 @@ export class RegexTier extends BaseTier {
           }
         }
 
-        const maskedValue =
-          DETECTION_TYPE_TO_TOKEN[rule.type] ?? MASKING_TOKENS.GENERIC
+        const maskedValue = rule.maskingLabel
+          ? `[${rule.maskingLabel}-REDACTED]`
+          : (DETECTION_TYPE_TO_TOKEN[rule.type] ?? MASKING_TOKENS.GENERIC)
 
         const start = match.index + (match[0].indexOf(value))
 

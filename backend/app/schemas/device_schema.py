@@ -1,4 +1,4 @@
-# backend/app/schemas/device.schema.py
+# backend/app/schemas/device_schema.py
 # Aligned with actual Device model and devices.py API
 
 from pydantic import BaseModel

@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_POLICY_CONFIG = {
     "version": 1,
     "categories": {
-        "FINANCIAL": {"enabled": True, "action": "BLOCK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False},
-        "PII": {"enabled": True, "action": "MASK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False},
-        "CONFIDENTIAL": {"enabled": True, "action": "BLOCK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False},
-        "IP": {"enabled": True, "action": "WARN_ALLOW", "customKeywords": [], "allowlist": [], "fuzzyMatch": False},
+        "FINANCIAL": {"enabled": True, "action": "BLOCK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False, "customRules": []},
+        "PII": {"enabled": True, "action": "MASK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False, "customRules": []},
+        "CONFIDENTIAL": {"enabled": True, "action": "BLOCK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False, "customRules": []},
+        "IP": {"enabled": True, "action": "WARN_ALLOW", "customKeywords": [], "allowlist": [], "fuzzyMatch": False, "customRules": []},
     },
     "monitoredPlatforms": ["chatgpt", "gemini", "copilot", "claude", "perplexity", "meta-ai"],
     "customDomains": [],

@@ -1,4 +1,4 @@
-# backend/app/schemas/auth.schema.py
+# backend/app/schemas/auth_schema.py
 # ─────────────────────────────────────────────────────────────────────────────
 # Auth schemas — Google OAuth only.
 # Email/password schemas removed. Routes use inline Pydantic models.

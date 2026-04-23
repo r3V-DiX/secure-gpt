@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { fetchCurrentPolicy, savePolicy, DEFAULT_POLICY_CONFIG } from '../services/policy.service'
 import { useToast } from '@/contexts/toast-context'
-import type { Policy, PIIConfig, CategoryConfig } from '@/types'
+import type { Policy, PIIConfig, CategoryConfig, PolicyAction, CustomRule } from '@/types'
 
 export function usePolicy() {
   const { toast } = useToast()
@@ -30,7 +30,7 @@ export function usePolicy() {
 
   const updateCategory = (category: string, updates: Partial<CategoryConfig>) => {
     setConfig(prev => {
-      const existing = prev.categories[category] ?? DEFAULT_POLICY_CONFIG.categories[category]
+      const existing = prev.categories[category]
       if (!existing) return prev
       const updated: CategoryConfig = { ...existing, ...updates }
       return {
@@ -38,6 +38,88 @@ export function usePolicy() {
         categories: {
           ...prev.categories,
           [category]: updated,
+        },
+      }
+    })
+    setIsDirty(true)
+  }
+
+  const addCategory = (name: string, action: PolicyAction) => {
+    const categoryName = name.toUpperCase().replace(/\s+/g, '_')
+    setConfig(prev => ({
+      ...prev,
+      categories: {
+        ...prev.categories,
+        [categoryName]: {
+          enabled: true,
+          action,
+          customKeywords: [],
+          allowlist: [],
+          fuzzyMatch: false,
+          customRules: [],
+        },
+      },
+    }))
+    setIsDirty(true)
+  }
+
+  const deleteCategory = (category: string) => {
+    setConfig(prev => {
+      const { [category]: _, ...rest } = prev.categories
+      return { ...prev, categories: rest }
+    })
+    setIsDirty(true)
+  }
+
+  const addCustomRule = (category: string, rule: Omit<CustomRule, 'id' | 'type'>) => {
+    const id = `custom.${category.toLowerCase()}.${Date.now()}`
+    setConfig(prev => {
+      const cat = prev.categories[category]
+      if (!cat) return prev
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          [category]: {
+            ...cat,
+            customRules: [...(cat.customRules || []), { ...rule, id, type: 'custom' }],
+          },
+        },
+      }
+    })
+    setIsDirty(true)
+  }
+
+  const updateCustomRule = (category: string, ruleId: string, updates: Partial<CustomRule>) => {
+    setConfig(prev => {
+      const cat = prev.categories[category]
+      if (!cat || !cat.customRules) return prev
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          [category]: {
+            ...cat,
+            customRules: cat.customRules.map(r => r.id === ruleId ? { ...r, ...updates } : r),
+          },
+        },
+      }
+    })
+    setIsDirty(true)
+  }
+
+  const deleteCustomRule = (category: string, ruleId: string) => {
+    setConfig(prev => {
+      const cat = prev.categories[category]
+      if (!cat || !cat.customRules) return prev
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          [category]: {
+            ...cat,
+            customRules: cat.customRules.filter(r => r.id !== ruleId),
+          },
         },
       }
     })
@@ -76,5 +158,10 @@ export function usePolicy() {
     }
   }
 
-  return { policy, config, loading, saving, savedAt, error, isDirty, updateCategory, updateField, save, discard }
+  return { 
+    policy, config, loading, saving, savedAt, error, isDirty, 
+    updateCategory, addCategory, deleteCategory,
+    addCustomRule, updateCustomRule, deleteCustomRule,
+    updateField, save, discard 
+  }
 }

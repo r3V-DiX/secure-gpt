@@ -96,12 +96,27 @@ export interface DashboardStats {
 // ── Policy ────────────────────────────────────────────────────────────────────
 export type PolicyAction = 'BLOCK' | 'MASK' | 'WARN_ALLOW' | 'ALLOW'
 
+export interface CustomRule {
+    id: string
+    type: 'custom'
+    label: string
+    pattern: string
+    caseSensitive?: boolean
+    severity: 'low' | 'medium' | 'high' | 'critical'
+    description?: string
+    requireContext?: boolean
+    triggers?: string[]
+    maskingLabel?: string
+    enabled: boolean
+}
+
 export interface CategoryConfig {
     enabled: boolean
     action: PolicyAction
     customKeywords: string[]
     allowlist: string[]
     fuzzyMatch: boolean
+    customRules?: CustomRule[]
 }
 
 export interface PIIConfig {

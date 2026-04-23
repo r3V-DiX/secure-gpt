@@ -2,14 +2,16 @@
 // PII Categories + Policy Actions
 // ─────────────────────────────────────────────
 
-export const PII_CATEGORIES = {
+export const BUILTIN_PII_CATEGORIES = {
   FINANCIAL: 'FINANCIAL',
   PII: 'PII',
   CONFIDENTIAL: 'CONFIDENTIAL',
   IP: 'IP',
 } as const
 
-export type PIICategory = keyof typeof PII_CATEGORIES
+export const PII_CATEGORIES = BUILTIN_PII_CATEGORIES
+
+export type PIICategory = string
 
 export const PII_CATEGORY_LABELS: Record<PIICategory, string> = {
   FINANCIAL: 'Financial Data',

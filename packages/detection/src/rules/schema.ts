@@ -18,4 +18,5 @@ export interface DetectionRule {
   severity: Severity
   enabled: boolean
   description: string
+  maskingLabel?: string
 }

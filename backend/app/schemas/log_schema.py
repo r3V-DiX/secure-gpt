@@ -1,4 +1,4 @@
-# backend/app/schemas/log.schema.py
+# backend/app/schemas/log_schema.py
 # Aligned with actual AuditLog model and camelCase API responses
 
 from pydantic import BaseModel, Field, field_validator

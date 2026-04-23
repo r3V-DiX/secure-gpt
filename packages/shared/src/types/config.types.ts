@@ -5,12 +5,27 @@
 import type { PIICategory, PolicyAction } from '../constants/pii-categories.constants'
 import type { LLMPlatform } from '../constants/platforms.constants'
 
+export interface CustomRule {
+  id: string                // e.g., "custom.rule_123"
+  type: 'custom'
+  label: string             // e.g., "Project X Internal Code"
+  pattern: string           // Regex string
+  caseSensitive?: boolean
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  description?: string
+  requireContext?: boolean
+  triggers?: string[]
+  maskingLabel?: string      // e.g., "INTERNAL_ID" -> [INTERNAL_ID-REDACTED]
+  enabled: boolean
+}
+
 export interface CategoryConfig {
   enabled: boolean
   action: PolicyAction
   customKeywords?: string[]       // org-defined extra keywords for this category
   allowlist?: string[]            // patterns to skip even if matched
   fuzzyMatch?: boolean            // enable fuzzy keyword matching
+  customRules?: CustomRule[]      // <--- New field
 }
 
 export interface PIIConfig {
@@ -33,6 +48,7 @@ export const DEFAULT_PII_CONFIG: PIIConfig = {
       customKeywords: [],
       allowlist: [],
       fuzzyMatch: false,
+      customRules: [],
     },
     PII: {
       enabled: true,
@@ -40,6 +56,7 @@ export const DEFAULT_PII_CONFIG: PIIConfig = {
       customKeywords: [],
       allowlist: [],
       fuzzyMatch: false,
+      customRules: [],
     },
     CONFIDENTIAL: {
       enabled: true,
@@ -47,6 +64,7 @@ export const DEFAULT_PII_CONFIG: PIIConfig = {
       customKeywords: [],
       allowlist: [],
       fuzzyMatch: false,
+      customRules: [],
     },
     IP: {
       enabled: true,
@@ -54,6 +72,7 @@ export const DEFAULT_PII_CONFIG: PIIConfig = {
       customKeywords: [],
       allowlist: [],
       fuzzyMatch: false,
+      customRules: [],
     },
   },
   monitoredPlatforms: [

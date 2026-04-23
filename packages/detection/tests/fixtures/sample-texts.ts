@@ -5,6 +5,8 @@
 import { describe, it, expect } from 'vitest'
 import { RegexTier } from '../../src/tiers/regex/regexTier'
 import { DEFAULT_PII_CONFIG } from '@securegpt/shared/types'
+import type { PIIConfig } from '@securegpt/shared/types'
+
 
 const tier = new RegexTier()
 
@@ -124,13 +126,17 @@ describe('RegexTier — deduplication', () => {
 
 describe('RegexTier — custom keywords', () => {
   it('detects org custom keywords', async () => {
-    const config = {
+    const config: PIIConfig = {
       ...DEFAULT_PII_CONFIG,
       categories: {
         ...DEFAULT_PII_CONFIG.categories,
         CONFIDENTIAL: {
-          ...DEFAULT_PII_CONFIG.categories.CONFIDENTIAL,
+          enabled: true,
+          action: 'BLOCK',
           customKeywords: ['ProjectX', 'OperationBlue'],
+          allowlist: [],
+          fuzzyMatch: false,
+          customRules: [],
         },
       },
     }

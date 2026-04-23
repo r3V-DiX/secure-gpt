@@ -55,7 +55,7 @@ export async function handleDetectPII(
   _sender?: chrome.runtime.MessageSender
 ): Promise<DetectionResult> {
   try {
-    console.log('[Background] Delegating detection to Offscreen Document...')
+    console.log(`[Background] Delegating detection to Offscreen Document (Policy v${config.version})...`)
     await setupOffscreen()
 
     const result = await new Promise<DetectionResult>((resolve) => {

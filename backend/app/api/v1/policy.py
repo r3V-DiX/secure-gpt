@@ -13,18 +13,9 @@ from app.core.response import success, paginated
 from app.core.pagination import Pagination
 from app.core.ratelimit import limiter, LIMIT_POLICY
 from app.models.policy import Policy
+from app.schemas.policy_schema import PolicyCreateRequest, PolicyUpdateRequest
 
 router = APIRouter(prefix="/policy", tags=["policy"])
-
-
-class PolicyCreateRequest(BaseModel):
-    config: dict
-    publishImmediately: bool = True
-
-
-class PolicyUpdateRequest(BaseModel):
-    config: dict
-    publishImmediately: bool = True
 
 
 def _serialize_policy(policy: Policy) -> dict:
@@ -153,7 +144,7 @@ async def create_policy(
     db: DBSession,
     current_user: CurrentUser,
 ):
-    policy = await _create_policy_version(db, current_user.id, body.config, body.publishImmediately)
+    policy = await _create_policy_version(db, current_user.id, body.config.model_dump(), body.publishImmediately)
     await db.commit()
     return success(data=_serialize_policy(policy), message="Policy created successfully")
 
@@ -166,7 +157,7 @@ async def update_policy(
     db: DBSession,
     current_user: CurrentUser,
 ):
-    policy = await _create_policy_version(db, current_user.id, body.config, body.publishImmediately)
+    policy = await _create_policy_version(db, current_user.id, body.config.model_dump(), body.publishImmediately)
     await db.commit()
     return success(data=_serialize_policy(policy), message="Policy updated successfully")
 

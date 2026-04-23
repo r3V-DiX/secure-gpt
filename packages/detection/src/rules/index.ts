@@ -8,7 +8,6 @@ import { allConfidentialRules } from './confidential'
 import { allIPRules } from './ip'
 import type { DetectionRule } from './schema'
 import type { PIIConfig } from '@securegpt/shared/types'
-import type { PIICategory } from '@securegpt/shared/constants'
 
 export { DetectionRule }
 
@@ -20,10 +19,57 @@ export const ALL_RULES: DetectionRule[] = [
   ...allIPRules,
 ]
 
+// Cache for compiled rules
+let ruleCache: { version: string; rules: DetectionRule[] } | null = null
+
 // Filter rules based on org policy config
 export function getActiveRules(config: PIIConfig): DetectionRule[] {
-  return ALL_RULES.filter((rule) => {
-    const categoryConfig = config.categories[rule.category as PIICategory]
+  const cacheKey = config.updatedAt || String(config.version)
+
+  if (ruleCache && ruleCache.version === cacheKey) {
+    return ruleCache.rules
+  }
+
+  // 1. Get static built-in rules
+  const activeStaticRules = ALL_RULES.filter((rule) => {
+    // Lookup with normalized case to handle inconsistencies
+    const categoryName = Object.keys(config.categories).find(
+      (k) => k.toUpperCase() === rule.category.toUpperCase()
+    )
+    const categoryConfig = categoryName ? config.categories[categoryName] : undefined
     return categoryConfig?.enabled && rule.enabled
   })
+
+  // 2. Extract and compile custom rules
+  const customRules: DetectionRule[] = []
+  for (const [categoryName, categoryConfig] of Object.entries(config.categories)) {
+    if (categoryConfig.enabled && categoryConfig.customRules) {
+      const rules: DetectionRule[] = categoryConfig.customRules.map((cr) => {
+        const rule: DetectionRule = {
+          id: cr.id,
+          category: categoryName,
+          type: 'custom',
+          label: cr.label,
+          pattern: new RegExp(cr.pattern, cr.caseSensitive ? 'g' : 'gi'),
+          severity: cr.severity,
+          enabled: true,
+          description: cr.description || '',
+          requireContext: cr.requireContext || false,
+          triggers: cr.triggers || [],
+        }
+        if (cr.maskingLabel) {
+          rule.maskingLabel = cr.maskingLabel
+        }
+        return rule
+      })
+      customRules.push(...rules)
+    }
+  }
+
+  const allActiveRules = [...activeStaticRules, ...customRules]
+
+  // Update Cache
+  ruleCache = { version: cacheKey, rules: allActiveRules }
+
+  return allActiveRules
 }
