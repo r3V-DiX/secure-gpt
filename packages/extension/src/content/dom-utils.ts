@@ -22,12 +22,39 @@ const INPUT_SELECTORS = [
   'div[contenteditable="true"]#searchbox',
   // Perplexity
   'textarea[placeholder*="Ask"]',
+  'textarea[placeholder*="anything"]',
   // Meta AI
   'div[contenteditable="true"][role="textbox"]',
   // Generic fallback
   'textarea[placeholder]',
   'div[contenteditable="true"][role="textbox"]',
 ]
+
+const BUTTON_SELECTORS = [
+  'button[data-testid$="send-button"]',
+  'button[aria-label*="Send"]',
+  'button[aria-label*="Submit"]',
+  'button[aria-label*="Ask"]',
+  'button[aria-label*="Search"]',
+  'button[data-testid*="send"]',
+  'button[data-testid*="submit"]',
+  'button[data-testid*="ask"]',
+  'button[data-testid*="composer-button"]',
+  // Perplexity-specific
+  'button:has(svg path[d*="M13.22"])', // Common icon pattern
+  'button.bg-accentMain', 
+]
+
+/**
+ * Specifically look for the send/submit button.
+ */
+export function findSendButton(): HTMLButtonElement | null {
+  for (const selector of BUTTON_SELECTORS) {
+    const btn = document.querySelector<HTMLButtonElement>(selector)
+    if (btn && isVisible(btn)) return btn
+  }
+  return null
+}
 
 /**
  * From a target (which may be an inner element in contenteditable),

@@ -2,7 +2,7 @@
 // Interceptor — hooks into LLM page submit events
 // All detections go through the ShieldModal — user decides action
 
-import { findEditableRoot, findMainEditor, extractText, bypassSet, dispatchImagePaste, dispatchFilePaste, clearAttachments } from './dom-utils'
+import { findEditableRoot, findMainEditor, findSendButton, extractText, bypassSet, dispatchImagePaste, dispatchFilePaste, clearAttachments } from './dom-utils'
 import { showBanner, removeBanner } from './banners'
 import { showShieldModal } from './modal-manager'
 import { logDetectionEvent } from './audit-logger'
@@ -71,7 +71,11 @@ function handleGlobalClick(e: MouseEvent): void {
   const isSendBtn =
     aria.includes('send') ||
     aria.includes('submit') ||
+    aria.includes('ask') ||
+    aria.includes('search') ||
     testId.includes('send') ||
+    testId.includes('submit') ||
+    testId.includes('ask') ||
     testId.includes('composer-button')
 
   if (isSendBtn) {
@@ -214,7 +218,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
     // ── BLOCK: hard stop, banner only, no modal ───
     if (action === 'BLOCK') {
       showBanner('block', topEntity.category, mergedEntities.length)
-      chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
+      void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
       void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'BLOCK', topEntity, false)
       
       ocrCache.clear()
@@ -240,7 +244,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
 
       // 2. Re-inject all cached assets (redacted versions already in cache)
       await clearAttachments()
-      for (const [fileUrl, _entities] of ocrCache.entries()) {
+      for (const [fileUrl] of ocrCache.entries()) {
         const isPdf = fileUrl.startsWith('data:application/pdf')
         if (isPdf) {
           await dispatchFilePaste(el, fileUrl, 'redacted.pdf', 'application/pdf')
@@ -251,7 +255,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
       ocrCache.clear()
 
       // 3. Log and inform user
-      chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
+      void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
       void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
       showBanner('mask', topEntity.category, mergedEntities.length)
       
@@ -283,7 +287,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
           setInputValue(el, maskedText)
 
           await clearAttachments()
-          for (const [fileUrl, _entities] of ocrCache.entries()) {
+          for (const [fileUrl] of ocrCache.entries()) {
             const isPdf = fileUrl.startsWith('data:application/pdf')
             if (isPdf) {
               await dispatchFilePaste(el, fileUrl, 'redacted.pdf', 'application/pdf')
@@ -293,7 +297,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
           }
           ocrCache.clear()
 
-          chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
+          void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
           void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
           showBanner('mask', topEntity.category, mergedEntities.length)
           
@@ -301,7 +305,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
         } else {
           // Send Directly
           ocrCache.clear()
-          chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
+          void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
           void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'WARN_ALLOW', topEntity, true)
           resubmit(el)
         }
@@ -371,16 +375,14 @@ function resubmit(el: HTMLElement): void {
   setTimeout(() => {
     const text = extractText(el)
     if (text.length > 0) {
-      const btn = document.querySelector<HTMLButtonElement>(
-        'button[data-testid="send-button"], button[aria-label="Send message"], button[aria-label="Submit"]'
-      )
+      const btn = findSendButton()
       btn?.click()
     }
     setTimeout(() => bypassSet.delete(el), 1000)
   }, 200)
 }
 
-function teardown(): void {
+export function teardown(): void {
   document.removeEventListener('keydown', handleGlobalKeyDown, true)
   document.removeEventListener('click', handleGlobalClick, true)
   document.removeEventListener('submit', handleGlobalSubmit, true)

@@ -3,7 +3,7 @@
 // Injected into every LLM page
 // ─────────────────────────────────────────────
 
-import { setupInterceptor } from './interceptor'
+import { setupInterceptor, teardown } from './interceptor'
 import { DEFAULT_EXTENSION_CONFIG } from '@/config/defaults.config'
 
 async function init() {
@@ -35,11 +35,6 @@ async function init() {
       void init()
     }
   })
-}
-
-function teardown() {
-  // Remove all injected banners and listeners
-  document.querySelectorAll('[data-securegpt]').forEach((el) => el.remove())
 }
 
 void init()
