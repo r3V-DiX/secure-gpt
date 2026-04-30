@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const SESSION_COOKIE = 'sgpt_session'
-const PUBLIC_PATHS = ['/callback', '/api']
+const PUBLIC_PATHS = ['/callback', '/api', '/privacy']
+const PUBLIC_EXACT = ['/']
 const AUTH_PATHS = ['/login']
 
 export function proxy(request: NextRequest) {
@@ -14,7 +15,12 @@ export function proxy(request: NextRequest) {
     pathname.match(/\.(png|svg|jpg|ico|webp)$/)
   ) {
     return NextResponse.next()
-  } 
+  }
+
+  // Allow landing page and other exact public routes
+  if (PUBLIC_EXACT.includes(pathname)) {
+    return NextResponse.next()
+  }
 
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
