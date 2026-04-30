@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SecureGPT — LLM Data Protection",
   "version": "1.0.0",
-  "description": "Prevent sensitive data leaks into AI tools. Detects and blocks PII, credentials, and confidential data before it reaches ChatGPT, Gemini, Claude, and more.",
+  "description": "Prevent data leaks into AI tools. Detect and mask PII, secrets, and confidential data in ChatGPT, Gemini, Claude, and more.",
 
   "action": {
     "default_popup": "src/popup/index.html",
