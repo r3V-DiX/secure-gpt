@@ -21,7 +21,7 @@
       "@securegpt/shared": ["./packages/shared/src/index.ts"],
       "@securegpt/shared/*": ["./packages/shared/src/*"],
       "@securegpt/detection": ["./packages/detection/src/pipeline.ts"],
-      "@securegpt/detection/*": ["./packages/detection/src/*"]
+      "@securegpt/detection/*": ["./packages/detection/src/*"] 
     }
   },
   "exclude": ["node_modules", "dist", "build"]
