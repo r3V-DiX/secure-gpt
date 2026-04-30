@@ -49,7 +49,7 @@ USER appuser
 EXPOSE 8000
 
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 
 
 # Health check — matches the /health endpoint in main.py
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
