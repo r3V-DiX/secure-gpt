@@ -14,7 +14,7 @@ COPY packages/shared/package*.json ./packages/shared/
 COPY packages/detection/package*.json ./packages/detection/
 COPY packages/secure-gpt-dashboard/package*.json ./packages/secure-gpt-dashboard/
 
-# Install all workspace dependencies
+# Install all workspace dependencies into root node_modules
 RUN npm ci
 
 
@@ -34,10 +34,8 @@ ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NODE_ENV=$NODE_ENV
 
-# Copy deps from previous stage
+# Copy root node_modules only (workspaces hoists everything here)
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/packages/secure-gpt-dashboard/node_modules ./packages/secure-gpt-dashboard/node_modules
 
 # Copy source for shared packages (dashboard depends on these)
 COPY tsconfig.base.json ./
