@@ -11,7 +11,7 @@
 // 4. Then redirects browser to /callback
 //
 // The backend's GOOGLE_REDIRECT_URI must be:
-// http://localhost:3000/api/auth/google/callback  ← already correct in .env
+// http://localhost:3000/api/auth/google/callback  ← already correct in  .env
 
 import { type NextRequest, NextResponse } from 'next/server'
 
