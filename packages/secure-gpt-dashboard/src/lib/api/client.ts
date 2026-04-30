@@ -8,13 +8,20 @@
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 
 const apiClient: AxiosInstance = axios.create({
-  // Relative base — goes through Next.js rewrite proxy
-  // next.config.mjs: /api/v1/:path* → backend:8000/api/v1/:path*
   baseURL: '/api/v1',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
   timeout: 15_000,
 })
+
+// Public paths where 401 should NOT trigger a redirect to login
+const PUBLIC_PATHS = ['/', '/privacy', '/login']
+
+const isPublicPath = (): boolean => {
+  if (typeof window === 'undefined') return false
+  const path = window.location.pathname
+  return PUBLIC_PATHS.some(p => path === p || path.startsWith(p))
+}
 
 // ── Request interceptor — fingerprint header ──────────────────────────────────
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -33,8 +40,8 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+    if (error.response?.status === 401 && !isPublicPath()) {
+      if (typeof window !== 'undefined') {
         window.location.href = '/login'
       }
     }
