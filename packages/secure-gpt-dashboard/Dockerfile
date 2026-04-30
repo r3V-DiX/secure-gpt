@@ -48,6 +48,10 @@ RUN cd packages/shared && npm run build --if-present
 # Build Next.js dashboard
 RUN cd packages/secure-gpt-dashboard && npm run build
 
+# Debug: verify standalone output exists
+RUN ls -la packages/secure-gpt-dashboard/.next/ && \
+    ls -la packages/secure-gpt-dashboard/.next/standalone/ || echo "Standalone not found!"
+
 
 # ================================
 # Stage 3: Production Runner
@@ -63,10 +67,14 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Copy only what's needed to run the app
-COPY --from=builder /app/packages/secure-gpt-dashboard/public ./public
+# Copy standalone output — server.js lives here
 COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/.next/standalone ./
+
+# Copy static assets
 COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/.next/static ./.next/static
+
+# Copy public folder
+COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/public ./public
 
 USER nextjs
 
