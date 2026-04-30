@@ -55,7 +55,7 @@ jobs:
             type=sha,prefix=prod-
             type=raw,value=prod-${{ github.run_number }}
 
-      - name: 🚀 Build and Push Docker image
+      - name: 🚀 Build and Push Docker image 
         uses: docker/build-push-action@v5
         with:
           # Context is repo root because dashboard depends on packages/shared
