@@ -1,4 +1,4 @@
-name: Build and Push Dashboard (Production)
+name: Build and Push Backend (Production)
 
 on:
   workflow_dispatch:
