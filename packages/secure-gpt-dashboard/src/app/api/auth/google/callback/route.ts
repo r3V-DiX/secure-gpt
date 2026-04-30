@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     maxAge: attrs['max-age'] ? parseInt(attrs['max-age']) : 86400,
     path: '/',
     httpOnly: true,
-    secure: false, // false in dev — middleware can read it
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
   })
 
