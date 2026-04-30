@@ -14,7 +14,7 @@ export function proxy(request: NextRequest) {
     pathname.match(/\.(png|svg|jpg|ico|webp)$/)
   ) {
     return NextResponse.next()
-  }
+  } 
 
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
