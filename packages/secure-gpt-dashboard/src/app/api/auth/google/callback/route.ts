@@ -16,7 +16,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8000'
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000'
 
   // Forward the OAuth code/error params to the backend callback
   const backendCallbackUrl = `${backendUrl}/api/v1/auth/google/callback${request.nextUrl.search}`

@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   turbopack: {
     root: path.resolve(__dirname, "../.."), // ✅ secure-gpt/ monorepo root
     resolveAlias: {
@@ -18,7 +19,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: `${process.env.BACKEND_URL ?? "http://localhost:8000"}/api/v1/:path*`,
+        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/api/v1/:path*`,
       },
     ];
   },

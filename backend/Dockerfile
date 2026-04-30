@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     libffi-dev \
-    # pdf2image needs poppler-utils
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
@@ -30,6 +29,7 @@ FROM python:3.12-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     poppler-utils \
+    dumb-init \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages from builder
@@ -46,14 +46,17 @@ COPY --chown=appuser:appuser . .
 # Switch to non-root
 USER appuser
 
-# Expose the port uvicorn listens on
 EXPOSE 8000
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Health check — matches the /health endpoint in main.py
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
 
-# Start with uvicorn. Use --workers 1 in containers — scale via replicas.
+# dumb-init for proper signal handling + uvicorn with performance flags
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["uvicorn", "app.main:app", \
     "--host", "0.0.0.0", \
     "--port", "8000", \

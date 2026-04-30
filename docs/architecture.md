@@ -527,7 +527,7 @@ Behavior:
 - uses relative `/api/v1` base URL,
 - with credentials enabled,
 - relies on Next rewrite from `next.config.ts`:
-  `/api/v1/* -> ${BACKEND_URL}/api/v1/*`.
+  `/api/v1/* -> ${NEXT_PUBLIC_BACKEND_URL}/api/v1/*`.
 
 Result: browser always communicates same-origin with dashboard, while dashboard proxies backend API.
 

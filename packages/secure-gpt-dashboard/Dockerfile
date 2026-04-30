@@ -1,0 +1,82 @@
+# ================================
+# Stage 1: Dependencies
+# ================================
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+
+# Copy root workspace package files
+COPY package*.json ./
+COPY tsconfig.base.json ./
+
+# Copy package.json files for all workspace packages
+COPY packages/shared/package*.json ./packages/shared/
+COPY packages/detection/package*.json ./packages/detection/
+COPY packages/secure-gpt-dashboard/package*.json ./packages/secure-gpt-dashboard/
+
+# Install all workspace dependencies
+RUN npm ci
+
+
+# ================================
+# Stage 2: Builder
+# ================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Build-time args — NEXT_PUBLIC_* vars are baked in at build time by Next.js
+ARG NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000
+ARG NODE_ENV=production
+
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NODE_ENV=$NODE_ENV
+
+# Copy deps from previous stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=deps /app/packages/secure-gpt-dashboard/node_modules ./packages/secure-gpt-dashboard/node_modules
+
+# Copy source for shared packages (dashboard depends on these)
+COPY tsconfig.base.json ./
+COPY packages/shared ./packages/shared
+COPY packages/secure-gpt-dashboard ./packages/secure-gpt-dashboard
+
+# Build shared package first
+RUN cd packages/shared && npm run build --if-present
+
+# Build Next.js dashboard
+RUN cd packages/secure-gpt-dashboard && npm run build
+
+
+# ================================
+# Stage 3: Production Runner
+# ================================
+FROM node:20-alpine AS production
+
+WORKDIR /app
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Copy only what's needed to run the app
+COPY --from=builder /app/packages/secure-gpt-dashboard/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "server.js"]

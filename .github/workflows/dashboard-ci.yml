@@ -1,0 +1,84 @@
+name: Build and Push Dashboard (Production)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/secure-gpt-dashboard/**'
+      - 'packages/shared/**'
+      - '.github/workflows/dashboard-ci.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'packages/secure-gpt-dashboard/**'
+      - 'packages/shared/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: production
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: 🔑 Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: 🛠️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 📝 Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/secure-gpt-dashboard
+          tags: |
+            type=raw,value=latest
+            type=raw,value=prod-latest
+            type=sha,prefix=prod-
+            type=raw,value=prod-${{ github.run_number }}
+
+      - name: 🚀 Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          # Context is repo root because dashboard depends on packages/shared
+          context: .
+          file: ./packages/secure-gpt-dashboard/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_BACKEND_URL=${{ secrets.PROD_NEXT_PUBLIC_BACKEND_URL }}
+            NEXT_PUBLIC_API_URL=${{ secrets.PROD_NEXT_PUBLIC_API_URL }}
+            NODE_ENV=production
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: ✅ Build Summary
+        run: |
+          echo "### 🎉 Dashboard Build Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.login-ecr.outputs.registry }}/secure-gpt-dashboard\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`prod-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`prod-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`prod-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
