@@ -47,7 +47,7 @@ jobs:
             type=raw,value=prod-latest
             type=sha,prefix=prod-
             type=raw,value=prod-${{ github.run_number }}
-
+ 
       - name: 🚀 Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
