@@ -67,14 +67,14 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Copy standalone output — server.js lives here
+# Copy standalone output — server.js lives at packages/secure-gpt-dashboard/server.js
 COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/.next/standalone ./
 
-# Copy static assets
-COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/.next/static ./.next/static
+# Copy static assets to match the nested path server.js expects
+COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/.next/static ./packages/secure-gpt-dashboard/.next/static
 
-# Copy public folder
-COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/public ./public
+# Copy public folder to match the nested path
+COPY --from=builder --chown=nextjs:nodejs /app/packages/secure-gpt-dashboard/public ./packages/secure-gpt-dashboard/public
 
 USER nextjs
 
@@ -85,4 +85,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "server.js"]
+CMD ["node", "packages/secure-gpt-dashboard/server.js"]
