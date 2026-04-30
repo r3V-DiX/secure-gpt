@@ -5,16 +5,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'packages/secure-gpt-dashboard/**'
-      - 'packages/shared/**'
-      - '.github/workflows/dashboard-ci.yml'
   pull_request:
     branches:
       - main
-    paths:
-      - 'packages/secure-gpt-dashboard/**'
-      - 'packages/shared/**'
 
 jobs:
   build-and-push:
@@ -58,7 +51,6 @@ jobs:
       - name: 🚀 Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
-          # Context is repo root because dashboard depends on packages/shared
           context: .
           file: ./packages/secure-gpt-dashboard/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
