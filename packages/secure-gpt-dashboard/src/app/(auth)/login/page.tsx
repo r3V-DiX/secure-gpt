@@ -112,7 +112,7 @@ export default function LoginPage() {
         </div>
 
         {/* Trust badges */}
-        <div className="flex items-center justify-center gap-4 flex-wrap">
+        <div className="flex items-center justify-center gap-4 flex-wrap mb-6">
           {['End-to-end encrypted', 'PII stays on-device', 'Session-based auth'].map(t => (
             <span key={t} className="flex items-center gap-1 text-[11px] font-medium"
               style={{ color: 'var(--text-tertiary)' }}>
@@ -121,10 +121,22 @@ export default function LoginPage() {
             </span>
           ))}
         </div>
+
+        {/* Links */}
+        <div className="flex flex-col items-center gap-3 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
+          <Link href="/" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
+            ← Back to home
+          </Link>
+          <Link href="/privacy" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </div>
   )
 }
+
+import Link from 'next/link'
 
 function GoogleIcon() {
   return (
