@@ -31,13 +31,7 @@
     }
   ],
 
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting",
-    "offscreen",
-    "tabs"
-  ],
+  "permissions": ["storage", "tabs", "offscreen"],
 
   "host_permissions": [
     "https://*.openai.com/*",
