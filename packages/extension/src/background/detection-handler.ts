@@ -1,15 +1,16 @@
 // packages/extension/src/background/detection-handler.ts
 import type { PIIConfig, DetectionResult, AuditLog, PIIEntity } from '@securegpt/shared/types'
+import { detectPII } from '@securegpt/detection'
 import { v4 as uuidv4 } from 'uuid'
 import { EXTENSION_VERSION } from '@/config/defaults.config'
+import { API_BASE_URL } from '@/config/api.config'
 import { queueLog } from './log-batcher'
 import { DOMAIN_TO_PLATFORM } from '@securegpt/shared/constants'
-
 
 let creating: Promise<void> | null = null
 
 async function setupOffscreen() {
-  const offscreenUrl = chrome.runtime.getURL('src/offscreen/offscreen.html')
+  const offscreenUrl = chrome.runtime.getURL('offscreen/index.html')
 
   if (typeof chrome.runtime.getContexts !== 'undefined') {
     const existing = await chrome.runtime.getContexts({
@@ -49,42 +50,24 @@ async function sha256(text: string): Promise<string> {
     .join('')
 }
 
+// FIX: Run text detection DIRECTLY in the background service worker.
+// Previously this delegated to the offscreen document via chrome.runtime.sendMessage
+// with target:'offscreen' — but the background's own onMessage listener drops all
+// messages with target:'offscreen' before the offscreen doc sees them, causing an
+// eternal hang. Text detection (regex + NER) is pure JS with no DOM dependency,
+// so it runs fine in a service worker. Only OCR (Tesseract) needs the offscreen doc.
 export async function handleDetectPII(
-  text: string, 
-  config: PIIConfig, 
+  text: string,
+  config: PIIConfig,
   _sender?: chrome.runtime.MessageSender
 ): Promise<DetectionResult> {
   try {
-    console.log(`[Background] Delegating detection to Offscreen Document (Policy v${config.version})...`)
-    await setupOffscreen()
-
-    const result = await new Promise<DetectionResult>((resolve) => {
-      chrome.runtime.sendMessage({
-        target: 'offscreen',
-        type: 'DETECT_PII',
-        text,
-        config
-      }, (res) => {
-        if (chrome.runtime.lastError) {
-          console.error('[Background] Offscreen detection error:', chrome.runtime.lastError)
-          resolve({
-            hasFindings: false,
-            entities: [],
-            tier: 'regex',
-            processingTimeMs: 0,
-            inputLength: text.length
-          })
-        } else {
-          resolve(res)
-        }
-      })
-    })
-
+    console.log(`[Background] Running text detection directly (Policy v${config.version})...`)
+    const result = await detectPII(text, config)
     console.log('[Background] Detection complete, findings:', result.hasFindings)
-
     return result
   } catch (err) {
-    console.error('[Background] Failed to setup offscreen or detect PII:', err)
+    console.error('[Background] Text detection failed:', err)
     return {
       hasFindings: false,
       entities: [],
@@ -95,10 +78,6 @@ export async function handleDetectPII(
   }
 }
 
-/**
- * Proxies image OCR to the offscreen document using the reference ping+forward pattern.
- * Returns entities enriched with bounding box data for canvas redaction.
- */
 export async function handleDetectPIIImage(
   imgUrl: string,
   config: PIIConfig,
@@ -110,7 +89,6 @@ export async function handleDetectPIIImage(
     console.log('[Background] Proxying OCR request to offscreen document...')
     await setupOffscreen()
 
-    // Poll until offscreen doc is ready (mirrors reference implementation)
     let isReady = false
     for (let i = 0; i < 15; i++) {
       try {
@@ -140,7 +118,6 @@ export async function handleDetectPIIImage(
 
     const result = response.result
     console.log('[Background] Image OCR complete, findings:', result.hasFindings)
-
     return result
   } catch (err) {
     console.error('[Background] Failed to proxy image OCR:', err)
@@ -187,8 +164,6 @@ export async function handleDetectPIIPDF(
     }
 
     const fullText = response.result.fullText
-    
-    // Once we have full text, just run standard text detection on it
     return await handleDetectPII(fullText, config, sender)
   } catch (err) {
     console.error('[Background] Failed to proxy PDF detection:', err)
@@ -203,8 +178,7 @@ export async function handleRedactPDF(
 ): Promise<{ ok: boolean; redactedPdfData?: string; error?: string }> {
   try {
     console.log('[Background] Sending PDF to backend for secure redaction...')
-    
-    // 1. Get coordinates for text-based entities from the offscreen document
+
     const textValues = (entities || [])
       .filter((e: any) => !e.bboxes || e.bboxes.length === 0)
       .map((e: any) => e.value)
@@ -221,7 +195,6 @@ export async function handleRedactPDF(
       }
     }
 
-    // 2. Combine all regions
     const entitiesWithBboxes = (entities || [])
       .filter((e: any) => e.bboxes && e.bboxes.length > 0)
       .flatMap((e: any) => e.bboxes.map((b: any) => ({
@@ -232,25 +205,19 @@ export async function handleRedactPDF(
         height: b.y1 - b.y0
       })))
 
-    const regions = [
-      ...autoRegions,
-      ...entitiesWithBboxes,
-      ...manualRegions
-    ]
+    const regions = [...autoRegions, ...entitiesWithBboxes, ...manualRegions]
 
-    // Convert base64 data URI to Blob
     const resp = await fetch(pdfData)
     const pdfBlob = await resp.blob()
 
     const formData = new FormData()
     formData.append('file', pdfBlob, 'document.pdf')
-    
-    // Filter out invalid regions
+
     const validRegions = regions.filter(r => r.width > 0 && r.height > 0)
     console.info(`[Background] Sending ${validRegions.length} redaction regions to backend.`)
     formData.append('regions', JSON.stringify(validRegions))
 
-    const backendResp = await fetch('http://localhost:8000/api/v1/redact/pdf', {
+    const backendResp = await fetch(`${API_BASE_URL}/api/v1/redact/pdf`, {
       method: 'POST',
       body: formData
     })
@@ -261,8 +228,6 @@ export async function handleRedactPDF(
     }
 
     const redactedBlob = await backendResp.blob()
-    
-    // Convert blob back to data URI
     const reader = new FileReader()
     const redactedDataUri = await new Promise<string>((resolve) => {
       reader.onload = () => resolve(reader.result as string)
@@ -270,7 +235,6 @@ export async function handleRedactPDF(
     })
 
     return { ok: true, redactedPdfData: redactedDataUri }
-
   } catch (err) {
     console.error('[Background] Backend Redaction failed:', err)
     return { ok: false, error: String(err) }
@@ -285,15 +249,14 @@ const ACTION_PRIORITY: Record<string, number> = {
 }
 
 export async function _logBackgroundDetection(
-  result: DetectionResult, 
-  _text: string, 
+  result: DetectionResult,
+  _text: string,
   config: PIIConfig,
   sender?: chrome.runtime.MessageSender
 ) {
   try {
     if (result.entities.length === 0) return
 
-    // Determine the most restrictive action across all detected items
     let maxPriority = -1
     let finalAction = 'ALLOW'
     let topEntity = result.entities[0]!
@@ -308,10 +271,7 @@ export async function _logBackgroundDetection(
       }
     }
 
-    // Hash the matched value — NEVER log raw text
     const snippetHash = await sha256(topEntity.value)
-
-    // Collect all entity types and severities across detected entities
     const entityTypes = [...new Set(result.entities.map((e) => e.type))]
     const severities = [...new Set(result.entities.map((e) => e.severity.toUpperCase()))] as any[]
 
@@ -324,7 +284,7 @@ export async function _logBackgroundDetection(
         domain = url.hostname
         platform = DOMAIN_TO_PLATFORM[domain] ?? 'unknown'
       } catch {
-        // Ignore URL parse errors
+        // ignore
       }
     }
 
@@ -336,23 +296,20 @@ export async function _logBackgroundDetection(
       detectionType: topEntity.type,
       detectionTier: result.tier,
       llmPlatform: platform as any,
-      domain: domain,
+      domain,
       matchCount: result.entities.length,
       snippetHash,
       entityTypes,
       severities,
       extensionVersion: EXTENSION_VERSION,
-      osPlatform: '', // Optional
-      browser: '',    // Optional
+      osPlatform: '',
+      browser: '',
       acknowledged: false,
       latencyMs: result.processingTimeMs,
     }
 
     console.log('[Background] Queueing log and incrementing stat:', finalAction)
-    
-    // 1. Queue the audit log
     await queueLog(event)
-
   } catch (err) {
     console.error('[Background] Failed to log background detection:', err)
   }

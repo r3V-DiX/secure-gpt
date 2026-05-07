@@ -52,7 +52,7 @@ export const DEFAULT_PII_CONFIG: PIIConfig = {
     },
     PII: {
       enabled: true,
-      action: 'MASK',
+      action: 'WARN_ALLOW', // Changed from 'MASK' — MASK silently redacts without showing ShieldModal
       customKeywords: [],
       allowlist: [],
       fuzzyMatch: false,

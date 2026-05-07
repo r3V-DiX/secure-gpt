@@ -53,19 +53,9 @@ export const allFinancialRules: DetectionRule[] = [
     enabled: true,
     description: 'Indian Financial System Code for bank branches.'
   },
-  {
-    id: 'financial.pan_card',
-    category: 'FINANCIAL' as PIICategory,
-    type: 'pan_card',
-    label: 'Indian PAN Card',
-    pattern: /\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b/g,
-    validatorId: 'pan',
-    requireContext: true,
-    triggers: ['pan', 'tax id', 'permanent account number'],
-    severity: 'critical',
-    enabled: true,
-    description: 'Indian Permanent Account Number (PAN).'
-  },
+  // NOTE: PAN card removed from here — it is PII (identity document), not financial data.
+  // The rule now lives in packages/detection/src/rules/pii/index.ts as 'pii.pan_card'
+  // with action MASK instead of BLOCK, which is the correct behavior for an identity doc.
   {
     id: 'financial.gstin',
     category: 'FINANCIAL' as PIICategory,

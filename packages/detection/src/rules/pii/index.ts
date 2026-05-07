@@ -44,7 +44,6 @@ export const allPIIRules: DetectionRule[] = [
     category: 'PII' as PIICategory,
     type: 'national_id',
     label: 'Indian Driving Licence',
-    // State code (2) + RTO (2) + optional space/sep + year (4) + optional space + seq (7)
     pattern: /\b[A-Z]{2}[\s]?[0-9]{2}[\s/-]?(?:[0-9]{4}[\s]?)?[0-9]{7}\b/g,
     requireContext: true,
     triggers: ['driving licence', 'dl no', 'dl', 'license'],
@@ -64,6 +63,19 @@ export const allPIIRules: DetectionRule[] = [
     enabled: true,
     description: 'Indian Election Commission Voter ID (EPIC Number).'
   },
+  // ── PAN Card ──────────────────────────────────
+  {
+    id: 'pii.pan',
+    category: 'PII' as PIICategory,
+    type: 'national_id',
+    label: 'Indian PAN Card',
+    pattern: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g,
+    validatorId: 'pan',
+    requireContext: false,
+    severity: 'high',
+    enabled: true,
+    description: 'Indian Permanent Account Number (PAN) issued by Income Tax Dept.'
+  },
   {
     id: 'pii.email',
     category: 'PII' as PIICategory,
@@ -80,7 +92,6 @@ export const allPIIRules: DetectionRule[] = [
     category: 'PII' as PIICategory,
     type: 'phone',
     label: 'Phone Number',
-    // Broad Net: catch anything that looks remotely like a phone number, validate later
     pattern: /(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{2,4}[-.\s]?\d{3,10}/g,
     validatorId: 'phone',
     requireContext: true,
