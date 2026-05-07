@@ -1,12 +1,11 @@
 // packages/extension/src/popup/Popup.tsx
-// Simple professional popup — login, status, session stats
-
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/features/auth/hooks/use-auth'
 import { stateStorage } from '@/lib/storage/storage'
+import { DASHBOARD_URL } from '@/config/api.config'
 
 export function Popup() {
-  const { user, loading, isLoggedIn, login, logout } = useAuth()
+  const { user, loading, isLoggedIn, login, logout, reload } = useAuth()
   const [isActive, setIsActive] = useState(true)
   const [stats, setStats] = useState({ blockCount: 0, maskCount: 0, warnCount: 0 })
   const [pausing, setPausing] = useState(false)
@@ -16,19 +15,24 @@ export function Popup() {
     const s = await stateStorage.getSessionStats()
     setIsActive(active)
     setStats(s as typeof stats)
-  }, [stats])
+  }, [])
 
   useEffect(() => {
     void loadState()
 
-    // Listen for auth success from background
+    // Listen for auth events from background
     const handler = (msg: { type: string }) => {
-      if (msg.type === 'AUTH_SUCCESS') void loadState()
-      if (msg.type === 'AUTH_LOST') void loadState()
+      if (msg.type === 'AUTH_SUCCESS') {
+        void reload()
+        void loadState()
+      }
+      if (msg.type === 'AUTH_LOST') {
+        void reload()
+      }
     }
     chrome.runtime.onMessage.addListener(handler)
     return () => chrome.runtime.onMessage.removeListener(handler)
-  }, [loadState])
+  }, [loadState, reload])
 
   async function handleToggle() {
     if (isActive) {
@@ -89,7 +93,6 @@ export function Popup() {
         </div>
       </div>
 
-      {/* Divider */}
       <div style={styles.divider} />
 
       {/* Stats */}
@@ -100,7 +103,6 @@ export function Popup() {
         <StatCard label="Warned" value={stats.warnCount} color="#3b82f6" bg="#eff6ff" />
       </div>
 
-      {/* Divider */}
       <div style={styles.divider} />
 
       {/* Actions */}
@@ -115,7 +117,7 @@ export function Popup() {
         <div style={styles.actionRow}>
           <button
             style={{ ...styles.btn, ...styles.btnGhost, flex: 1 }}
-            onClick={() => chrome.tabs.create({ url: 'http://localhost:3000' })}
+            onClick={() => chrome.tabs.create({ url: DASHBOARD_URL })}
           >
             Dashboard ↗
           </button>
@@ -131,7 +133,7 @@ export function Popup() {
       {/* Footer */}
       <div style={styles.footer}>
         <span style={styles.footerText}>v{chrome.runtime.getManifest().version}</span>
-        <span style={styles.footerText}>securegpt.app</span>
+        <span style={styles.footerText}>securegpt.rkavach.com</span>
       </div>
     </div>
   )
@@ -154,10 +156,10 @@ function LoginView({ onLogin }: { onLogin: () => void }) {
       <div style={styles.loginSub}>Sign in to start protecting your data across AI platforms</div>
       <button style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }} onClick={onLogin}>
         <svg width="16" height="16" viewBox="0 0 24 24" style={{ marginRight: 8 }}>
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
         </svg>
         Sign in with Google
       </button>
@@ -165,240 +167,40 @@ function LoginView({ onLogin }: { onLogin: () => void }) {
   )
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const styles: Record<string, React.CSSProperties> = {
-  wrap: {
-    width: 300,
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    background: '#fff',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  loadingWrap: {
-    width: 300,
-    height: 120,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#fff',
-  },
-  spinner: {
-    width: 20,
-    height: 20,
-    border: '2px solid #e5e7eb',
-    borderTopColor: '#2563eb',
-    borderRadius: '50%',
-    animation: 'spin 0.7s linear infinite',
-  },
-  header: {
-    background: '#1e40af',
-    padding: '12px 14px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  logoRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-  logoIcon: {
-    width: 24,
-    height: 24,
-    background: 'white',
-    borderRadius: 6,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#1e40af',
-  },
-  logoText: {
-    color: 'white',
-    fontSize: 13,
-    fontWeight: 600,
-    letterSpacing: '-0.01em',
-  },
-  statusPill: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 5,
-    padding: '3px 8px',
-    borderRadius: 20,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: '50%',
-  },
-  statusLabel: {
-    fontSize: 11,
-    fontWeight: 500,
-  },
-  userRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    padding: '12px 14px',
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: '50%',
-    border: '1.5px solid #e5e7eb',
-  },
-  avatarFallback: {
-    width: 34,
-    height: 34,
-    borderRadius: '50%',
-    background: '#dbeafe',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#1d4ed8',
-  },
-  userInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  userName: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#111827',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-  userEmail: {
-    fontSize: 11,
-    color: '#6b7280',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-  divider: {
-    height: 1,
-    background: '#f3f4f6',
-    margin: '0 14px',
-  },
-  statsLabel: {
-    fontSize: 10,
-    fontWeight: 600,
-    color: '#9ca3af',
-    letterSpacing: '0.06em',
-    textTransform: 'uppercase',
-    padding: '10px 14px 6px',
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr',
-    gap: 6,
-    padding: '0 14px 10px',
-  },
-  statCard: {
-    borderRadius: 8,
-    padding: '8px 6px',
-    textAlign: 'center',
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 700,
-    lineHeight: 1,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: 500,
-    marginTop: 3,
-    opacity: 0.8,
-  },
-  actions: {
-    padding: '10px 14px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-  },
-  actionRow: {
-    display: 'flex',
-    gap: 6,
-  },
-  btn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: 12,
-    fontWeight: 500,
-    padding: '8px 12px',
-    transition: 'opacity .15s',
-    fontFamily: 'inherit',
-  },
-  btnPrimary: {
-    background: '#2563eb',
-    color: 'white',
-  },
-  btnSecondary: {
-    background: '#f3f4f6',
-    color: '#374151',
-    width: '100%',
-  },
-  btnGhost: {
-    background: '#f9fafb',
-    color: '#374151',
-    border: '1px solid #e5e7eb',
-  },
-  btnDanger: {
-    background: '#fef2f2',
-    color: '#dc2626',
-    border: '1px solid #fecaca',
-  },
-  footer: {
-    padding: '8px 14px',
-    borderTop: '1px solid #f3f4f6',
-    display: 'flex',
-    justifyContent: 'space-between',
-  },
-  footerText: {
-    fontSize: 10,
-    color: '#d1d5db',
-  },
-  loginWrap: {
-    width: 300,
-    padding: '28px 20px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8,
-    background: '#fff',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  },
-  loginIcon: {
-    width: 44,
-    height: 44,
-    background: '#1e40af',
-    borderRadius: 12,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 20,
-    fontWeight: 700,
-    color: 'white',
-    marginBottom: 4,
-  },
-  loginTitle: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: '#111827',
-  },
-  loginSub: {
-    fontSize: 12,
-    color: '#6b7280',
-    textAlign: 'center',
-    lineHeight: 1.5,
-    marginBottom: 8,
-  },
+  wrap: { width: 300, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: '#fff', borderRadius: 12, overflow: 'hidden' },
+  loadingWrap: { width: 300, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' },
+  spinner: { width: 20, height: 20, border: '2px solid #e5e7eb', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 0.7s linear infinite' },
+  header: { background: '#1e40af', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  logoRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  logoIcon: { width: 24, height: 24, background: 'white', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#1e40af' },
+  logoText: { color: 'white', fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em' },
+  statusPill: { display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 20 },
+  statusDot: { width: 6, height: 6, borderRadius: '50%' },
+  statusLabel: { fontSize: 11, fontWeight: 500 },
+  userRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' },
+  avatar: { width: 34, height: 34, borderRadius: '50%', border: '1.5px solid #e5e7eb' },
+  avatarFallback: { width: 34, height: 34, borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#1d4ed8' },
+  userInfo: { flex: 1, minWidth: 0 },
+  userName: { fontSize: 13, fontWeight: 600, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  userEmail: { fontSize: 11, color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  divider: { height: 1, background: '#f3f4f6', margin: '0 14px' },
+  statsLabel: { fontSize: 10, fontWeight: 600, color: '#9ca3af', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '10px 14px 6px' },
+  statsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, padding: '0 14px 10px' },
+  statCard: { borderRadius: 8, padding: '8px 6px', textAlign: 'center' },
+  statValue: { fontSize: 20, fontWeight: 700, lineHeight: 1 },
+  statLabel: { fontSize: 10, fontWeight: 500, marginTop: 3, opacity: 0.8 },
+  actions: { padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 },
+  actionRow: { display: 'flex', gap: 6 },
+  btn: { display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 500, padding: '8px 12px', transition: 'opacity .15s', fontFamily: 'inherit' },
+  btnPrimary: { background: '#2563eb', color: 'white' },
+  btnSecondary: { background: '#f3f4f6', color: '#374151', width: '100%' },
+  btnGhost: { background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb' },
+  btnDanger: { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' },
+  footer: { padding: '8px 14px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between' },
+  footerText: { fontSize: 10, color: '#d1d5db' },
+  loginWrap: { width: 300, padding: '28px 20px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  loginIcon: { width: 44, height: 44, background: '#1e40af', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 4 },
+  loginTitle: { fontSize: 16, fontWeight: 700, color: '#111827' },
+  loginSub: { fontSize: 12, color: '#6b7280', textAlign: 'center', lineHeight: 1.5, marginBottom: 8 },
 }

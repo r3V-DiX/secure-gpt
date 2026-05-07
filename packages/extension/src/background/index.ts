@@ -6,21 +6,57 @@ import { startPolicySync } from './policy-sync'
 import { startLogBatcher, flushLogs, queueLog } from './log-batcher'
 import { handleDetectPII, handleDetectPIIImage, handleDetectPIIPDF, handleRedactPDF } from './detection-handler'
 import { stateStorage, authStorage, policyStorage } from '@/lib/storage/storage'
+import { fetchCurrentUser } from '@/features/auth/services/auth.service'
 import type { AuditLog } from '@securegpt/shared/types'
 
-// ... (tab watcher code)
+// ── Watch for OAuth tab completion ────────────
+// When user completes Google login, the tab redirects to /callback.
+// We detect this, fetch the user, store it, notify the popup.
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL ?? 'http://localhost:3000'
+  const callbackUrl = `${DASHBOARD_URL}/callback`
+
+  if (
+    changeInfo.status === 'complete' &&
+    tab.url?.startsWith(callbackUrl)
+  ) {
+    console.log('[Background] OAuth callback detected — fetching user...')
+    try {
+      const user = await fetchCurrentUser()
+      if (user) {
+        console.log('[Background] Auth success — user:', user.email)
+
+        // Close the OAuth tab automatically
+        chrome.tabs.remove(tabId)
+
+        // Notify popup and content scripts
+        chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS', user }).catch(() => { })
+
+        // Notify all content scripts to re-init interceptor
+        const tabs = await chrome.tabs.query({})
+        for (const t of tabs) {
+          if (t.id) {
+            chrome.tabs.sendMessage(t.id, { type: 'AUTH_SUCCESS' }).catch(() => { })
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Background] Failed to fetch user after OAuth:', err)
+    }
+  }
+})
 
 // ── Message handler ───────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Ignore messages meant for the offscreen document (target:'offscreen')
+  // Ignore messages meant for the offscreen document
   if (message.target === 'offscreen') return false
-
-  // Ignore action-based messages forwarded to the offscreen doc by the background proxy
-  // (OFFSCREEN_PING, OFFSCREEN_RUN_OCR) — letting the switch handle them would
-  // send back `{error:'Unknown message type'}` and break the ping handshake.
   if (message.action && message.action.startsWith('OFFSCREEN_')) return false
 
   switch (message.type) {
+    case 'GET_AUTH_STATE':
+      void authStorage.isLoggedIn().then((isLoggedIn) => sendResponse({ isLoggedIn }))
+      return true
+
     case 'DETECT_PII':
       void handleDetectPII(message.text, message.config, sender).then(sendResponse)
       return true

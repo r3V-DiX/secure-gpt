@@ -1,22 +1,22 @@
 // ─────────────────────────────────────────────
 // API Client — Extension
-// Session-cookie auth. withCredentials: true so the httpOnly cookie
-// is sent automatically on every request.
+// Routes ALL requests through the dashboard proxy (securegpt.rkavach.com)
+// NOT directly to the backend (api.securegpt.rkavach.com).
 //
-// KEY CHANGES from old version:
-//   - No Bearer token header — session cookie handles auth
-//   - withCredentials: true — sends cookie cross-origin to backend
-//   - X-Extension-Request: true — tells backend to skip fingerprint check
-//     for background service worker requests
-//   - 401 handler just clears stored user + notifies popup — no refresh
+// WHY: The session cookie is set on securegpt.rkavach.com (dashboard domain).
+// If we call api.securegpt.rkavach.com directly, the cookie won't be sent
+// (different subdomain) and every request will 401.
+//
+// The dashboard Next.js proxy rewrites /api/v1/* → backend internally,
+// so the cookie origin always matches.
 // ─────────────────────────────────────────────
 
 import axios, { type AxiosInstance, type AxiosError } from 'axios'
 import { authStorage } from '../storage/storage'
-import { API_BASE_URL } from '@/config/api.config'
+import { DASHBOARD_URL } from '@/config/api.config'
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: DASHBOARD_URL,         // ← dashboard proxy, NOT backend directly
   timeout: 10000,
   withCredentials: true,          // send httpOnly session cookie on every request
   headers: {
@@ -33,11 +33,7 @@ apiClient.interceptors.response.use(
     const code = error.response?.data?.error?.code
 
     if (status === 401) {
-      // Session expired, revoked or fingerprint mismatch
-      // Clear stored user and notify background to update popup state
       await authStorage.clearAuth()
-
-      // Notify all extension contexts that auth was lost
       try {
         chrome.runtime.sendMessage({ type: 'AUTH_LOST', code })
       } catch {
@@ -45,7 +41,6 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Always reject with a clean error message
     const message =
       error.response?.data?.error?.message ??
       error.message ??

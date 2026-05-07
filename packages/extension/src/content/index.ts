@@ -8,6 +8,23 @@ import { DEFAULT_EXTENSION_CONFIG } from '@/config/defaults.config'
 
 async function init() {
   console.log('[SecureGPT] Initializing content script...')
+
+  // ── Auth check — do NOT run interceptor if not logged in ──
+  const isLoggedIn = await new Promise<boolean>((resolve) => {
+    chrome.runtime.sendMessage({ type: 'GET_AUTH_STATE' }, (res) => {
+      if (chrome.runtime.lastError) {
+        resolve(false)
+      } else {
+        resolve(res?.isLoggedIn ?? false)
+      }
+    })
+  })
+
+  if (!isLoggedIn) {
+    console.log('[SecureGPT] Not logged in — interceptor not started')
+    return
+  }
+
   // Check if extension is active
   const isActive = await new Promise<boolean>((resolve) => {
     chrome.runtime.sendMessage({ type: 'GET_STATE' }, (res) => resolve(res?.active ?? true))
@@ -33,6 +50,10 @@ async function init() {
     }
     if (message.type === 'EXTENSION_RESUMED') {
       void init()
+    }
+    if (message.type === 'AUTH_LOST') {
+      // User logged out — stop intercepting
+      teardown()
     }
   })
 }

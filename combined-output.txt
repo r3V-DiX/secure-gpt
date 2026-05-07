@@ -1,693 +1,250 @@
-===== backend\app\core\config.py =====
-# backend/app/core/config.py
-# ─────────────────────────────────────────────────────────────────────────────
-# Application configuration loaded from environment variables / .env file.
-# Sensitive fields have NO defaults — app will FAIL FAST at startup if they
-# are missing, rather than silently running with insecure placeholder values.
-# ─────────────────────────────────────────────────────────────────────────────
+===== packages\extension\src\features\auth\services\auth.service.ts =====
+// ─────────────────────────────────────────────
+// Auth Service — Extension
+// Session-cookie based Google OAuth flow.
+//
+// IMPORTANT: All auth calls go through the DASHBOARD proxy (localhost:3000)
+// NOT directly to the backend (localhost:8000).
+// This ensures the session cookie is set on localhost:3000 — the same origin
+// as the dashboard — so both share the same session.
+// ─────────────────────────────────────────────
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
-from functools import lru_cache
+import axios from 'axios'
+import { authStorage } from '@/lib/storage/storage'
+import { API_ENDPOINTS } from '@/config/api.config'
+import type { User } from '@securegpt/shared/types'
 
+// Dashboard URL — all auth flows go through here, NOT the backend directly
+const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL ?? 'http://localhost:3000'
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore",
+// Separate axios client that targets the dashboard proxy
+const dashboardClient = axios.create({
+  baseURL: DASHBOARD_URL,
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+})
+
+// ── Fetch current user from session ──────────
+// Goes through dashboard proxy so the cookie on localhost:3000 is sent.
+export async function fetchCurrentUser(): Promise<User | null> {
+  try {
+    const response = await dashboardClient.get<{ success: boolean; data: User }>(
+      API_ENDPOINTS.AUTH_ME
     )
-
-    # ── Application ────────────────────────────────────────────────────────────
-    # Non-sensitive — safe defaults are fine here
-    app_name: str = "DLP Shield"
-    app_env: str = "development"
-    debug: bool = False
-
-    # SENSITIVE — no default, must be set in .env
-    secret_key: str = Field(..., min_length=32)
-
-    # ── Database ───────────────────────────────────────────────────────────────
-    # SENSITIVE — no default, must be set in .env
-    database_url: str = Field(...)
-
-    # ── Session ────────────────────────────────────────────────────────────────
-    # SENSITIVE — no default, must be set in .env
-    session_secret_key: str = Field(..., min_length=32)
-    session_max_age: int = 86400  # 24 hours in seconds — safe default
-
-    # ── Google OAuth ───────────────────────────────────────────────────────────
-    # SENSITIVE — no default, must be set in .env
-    google_client_id: str = Field(...)
-    google_client_secret: str = Field(...)
-
-    # Non-sensitive — default is fine for local dev
-    google_redirect_uri: str = Field(...)
-    
-    # ── CORS ───────────────────────────────────────────────────────────────────
-    # Non-sensitive — default covers local dev
-    allowed_origins: str = "http://localhost:3000,http://localhost:3001"
-
-    # ── API ────────────────────────────────────────────────────────────────────
-    api_v1_prefix: str = "/api/v1"
-
-    # ── Rate limiting ──────────────────────────────────────────────────────────
-    rate_limit_enabled: bool = True
-
-    # ── Computed properties ────────────────────────────────────────────────────
-    @property
-    def allowed_origins_list(self) -> list[str]:
-        origins = [o.strip() for o in self.allowed_origins.split(",")]
-        
-        # In development, automatically allow any chrome-extension origin
-        # This prevents breakage when developers reload the extension and get a new ID
-        if self.app_env == "development":
-            # We can't use wildcards in allow_origins with allow_credentials=True
-            # But the CORSMiddleware will check against this list.
-            # However, Chrome Extension IDs are fixed unless changed in manifest.
-            # For local dev, common practice is to allow a few or dynamically handle it.
-            # Since we can't easily dynamic-inject here without custom middleware,
-            # we'll rely on the user adding their specific ID to .env if it changes,
-            # but we'll add a helper to ensure it's easy to debug.
-            pass
-            
-        return origins
-
-    @property
-    def is_production(self) -> bool:
-        return self.app_env == "production"
-
-    @property
-    def frontend_url(self) -> str:
-        return self.allowed_origins_list[0]
-
-
-@lru_cache
-def get_settings() -> Settings:
-    return Settings()
-
-
-settings = get_settings()
-
-
-===== backend\app\services\session_service.py =====
-# backend/app/services/session_service.py
-#
-# INDUSTRY STANDARD: Lazy Fingerprint Binding
-#
-# During OAuth callback the session is created server-side (Next.js BFF proxy).
-# At that point we have no access to real browser headers (UA, screen res etc.).
-# Binding a fingerprint here would always mismatch on subsequent browser requests.
-#
-# Solution (used by Auth0, Clerk, Supabase):
-#   1. Create session with fingerprint_hash = None (unbound)
-#   2. On the FIRST real authenticated request from the browser, bind the fingerprint
-#   3. On subsequent requests, validate against the bound fingerprint
-#
-# EXTENSION BYPASS:
-#   Requests from the Chrome extension background service worker carry the
-#   X-Extension-Request: true header. These skip fingerprint binding/validation
-#   entirely because service workers have unstable headers that would cause
-#   constant false FINGERPRINT_MISMATCH revocations.
-#   The session cookie is still fully validated for extension requests.
-
-import secrets
-import logging
-from datetime import datetime, timezone, timedelta
-
-from fastapi import Request, Response
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
-
-from app.models.session import Session
-from app.core.config import settings
-from app.core.fingerprint import (
-    compute_fingerprint,
-    verify_fingerprint,
-    is_extension_request,
-)
-
-logger = logging.getLogger(__name__)
-
-SESSION_COOKIE_NAME = "sgpt_session"
-SESSION_TTL_SECONDS = settings.session_max_age
-
-# Header sent by BFF proxy to signal OAuth callback context
-OAUTH_CALLBACK_HEADER = "x-oauth-callback"
-
-
-async def create_session(
-    db: AsyncSession,
-    request: Request,
-    response: Response,
-    user_id: str,
-) -> Session:
-    """
-    Create a new session.
-
-    If the request comes from the BFF OAuth callback proxy (detected via
-    X-OAuth-Callback header), the fingerprint is left unbound (None).
-    It will be bound lazily on the first real browser request in validate_session().
-
-    For all other session creation paths, fingerprint is bound immediately.
-    Extension requests always leave fingerprint unbound.
-    """
-    session_id = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
-
-    is_oauth_callback = request.headers.get(OAUTH_CALLBACK_HEADER) == "true"
-    is_ext = is_extension_request(request)
-
-    if is_oauth_callback or is_ext:
-        fingerprint_hash = None
-        logger.info(
-            "Session created via %s — fingerprint unbound",
-            "OAuth BFF proxy" if is_oauth_callback else "extension",
-        )
-    else:
-        fingerprint_hash = compute_fingerprint(request)
-        logger.info("Session created directly — fingerprint bound immediately")
-
-    session = Session(
-        id=session_id,
-        user_id=user_id,
-        fingerprint_hash=fingerprint_hash,
-        user_agent=request.headers.get("user-agent"),
-        expires_at=expires_at,
-    )
-    db.add(session)
-    await db.flush()
-
-    is_prod = settings.is_production
-
-    logger.info("=== SETTING COOKIE ===")
-    logger.info("  session_id      : %s...", session_id[:8])
-    logger.info("  fingerprint     : %s", "unbound" if not fingerprint_hash else "bound")
-    logger.info("  secure          : %s", is_prod)
-    logger.info("  samesite        : lax")
-    logger.info("  max_age         : %s", SESSION_TTL_SECONDS)
-
-    response.set_cookie(
-        key=SESSION_COOKIE_NAME,
-        value=session_id,
-        max_age=SESSION_TTL_SECONDS,
-        httponly=True,
-        secure=is_prod,
-        samesite="lax",
-        path="/",
-    )
-
-    logger.info("Session created for user %s", user_id)
-    return session
-
-
-async def get_session(db: AsyncSession, session_id: str) -> Session | None:
-    result = await db.execute(select(Session).where(Session.id == session_id))
-    return result.scalar_one_or_none()
-
-
-async def validate_session(
-    db: AsyncSession,
-    request: Request,
-    session_id: str,
-) -> tuple[Session | None, str | None]:
-    """
-    Validate a session and enforce fingerprint matching.
-
-    EXTENSION BYPASS:
-    Requests from the Chrome extension background service worker (detected via
-    X-Extension-Request header) skip fingerprint validation entirely.
-    The session cookie validity (expiry, revocation) is still fully checked.
-
-    LAZY BINDING:
-    If fingerprint_hash is None (session created via OAuth BFF proxy),
-    we bind it on this first real browser request instead of rejecting.
-    """
-    logger.info("VALIDATE SESSION — id: %s...", session_id[:8] if session_id else "NONE")
-
-    session = await get_session(db, session_id)
-
-    if not session:
-        logger.info("  result: SESSION_NOT_FOUND")
-        return None, "SESSION_NOT_FOUND"
-
-    if session.is_revoked:
-        logger.info("  result: SESSION_REVOKED")
-        return None, "SESSION_REVOKED"
-
-    if session.is_expired:
-        logger.info("  result: SESSION_EXPIRED")
-        return session, "SESSION_EXPIRED"
-
-    # ── Extension bypass — skip fingerprint entirely ───────────────────────
-    if is_extension_request(request):
-        logger.info("  result: VALID (extension request — fingerprint skipped)")
-        await db.execute(
-            update(Session)
-            .where(Session.id == session_id)
-            .values(last_active_at=datetime.now(timezone.utc))
-        )
-        return session, None
-
-    current_fingerprint = compute_fingerprint(request)
-
-    if session.fingerprint_hash is None:
-        # ── Lazy bind: first real browser request after OAuth login ──────────
-        logger.info("  fingerprint: unbound → binding now to first real request")
-        await db.execute(
-            update(Session)
-            .where(Session.id == session_id)
-            .values(
-                fingerprint_hash=current_fingerprint,
-                last_active_at=datetime.now(timezone.utc),
-            )
-        )
-        logger.info("  result: VALID (fingerprint bound)")
-        return session, None
-
-    # ── Normal path: verify fingerprint ──────────────────────────────────────
-    if not verify_fingerprint(request, session.fingerprint_hash):
-        await revoke_session(db, session_id)
-        logger.warning("  result: FINGERPRINT_MISMATCH — session revoked")
-        return session, "FINGERPRINT_MISMATCH"
-
-    # Update last active timestamp
-    await db.execute(
-        update(Session)
-        .where(Session.id == session_id)
-        .values(last_active_at=datetime.now(timezone.utc))
-    )
-
-    logger.info("  result: VALID")
-    return session, None
-
-
-async def revoke_session(db: AsyncSession, session_id: str) -> None:
-    await db.execute(
-        update(Session).where(Session.id == session_id).values(is_revoked=True)
-    )
-    await db.flush()
-
-
-async def revoke_all_user_sessions(db: AsyncSession, user_id: str) -> int:
-    result = await db.execute(
-        update(Session)
-        .where(Session.user_id == user_id, Session.is_revoked == False)  # noqa: E712
-        .values(is_revoked=True)
-    )
-    await db.flush()
-    return result.rowcount
-
-
-def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(
-        key=SESSION_COOKIE_NAME,
-        path="/",
-        secure=settings.is_production,
-        httponly=True,
-        samesite="lax",
-    )
-
-
-def get_session_id_from_request(request: Request) -> str | None:
-    cookie = request.cookies.get(SESSION_COOKIE_NAME)
-    logger.info("GET SESSION FROM COOKIE — found: %s", bool(cookie))
-    return cookie
-
-
-===== backend\app\core\dependencies.py =====
-# backend/app/core/dependencies.py
-# ─────────────────────────────────────────────────────────────────────────────
-# FastAPI dependency injection.
-# Session-based auth — reads cookie, validates against DB, checks fingerprint.
-# No JWT. No localStorage. Pure httpOnly cookie + server-side session.
-# ─────────────────────────────────────────────────────────────────────────────
-
-from typing import Annotated
-
-from fastapi import Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.database import get_db
-from app.core.exceptions import (
-    AuthRequired,
-    SessionExpired,
-    SessionRevoked,
-    FingerprintMismatch,
-    UserInactive,
-    Forbidden,
-)
-from app.models.user import User, UserRole
-# FIX: AuthEventType lives in models/auth_event.py, not auth_event_service
-from app.models.auth_event import AuthEventType
-from app.services.auth_service import get_user_by_id
-from app.services.session_service import (
-    get_session_id_from_request,
-    validate_session,
-)
-from app.services import auth_event_service
-
-DBSession = Annotated[AsyncSession, Depends(get_db)]
-
-
-async def get_current_user(
-    request: Request,
-    db: DBSession,
-) -> User:
-    """
-    Full session validation dependency.
-
-    Flow:
-    1. Read session ID from httpOnly cookie
-    2. Look up session in DB
-    3. Check revoked / expired
-    4. Verify fingerprint (mismatch → revoke + log)
-    5. Load user, check is_active
-    6. Attach user_id to request.state for rate limiter key function
-    """
-    session_id = get_session_id_from_request(request)
-    if not session_id:
-        raise AuthRequired()
-
-    session, error_code = await validate_session(db, request, session_id)
-
-    if error_code == "SESSION_REVOKED":
-        await auth_event_service.log_auth_event(
-            db,
-            event_type=AuthEventType.SESSION_INVALIDATED,
-            success=False,
-            request=request,
-            metadata={"session_id": session_id},
-        )
-        raise SessionRevoked()
-
-    if error_code == "SESSION_EXPIRED":
-        await auth_event_service.log_session_expired(
-            db,
-            request=request,
-            user_id=session.user_id if session else None,
-            session_id=session_id,
-        )
-        raise SessionExpired()
-
-    if error_code == "FINGERPRINT_MISMATCH":
-        # Session already revoked by validate_session — log and raise
-        await auth_event_service.log_fingerprint_mismatch(
-            db,
-            request=request,
-            user_id=session.user_id if session else None,
-            session_id=session_id,
-        )
-        raise FingerprintMismatch()
-
-    if error_code or not session:
-        raise AuthRequired()
-
-    # Load user
-    user = await get_user_by_id(db, session.user_id)
-    if not user:
-        raise AuthRequired("User account not found")
-
-    if not user.is_active:
-        raise UserInactive()
-
-    # Attach to request.state — used by ratelimit key function
-    request.state.user_id = user.id
-
+    const user = response.data.data
+    await authStorage.setAuth({ user })
     return user
+  } catch {
+    await authStorage.clearAuth()
+    return null
+  }
+}
 
+// ── Open Google OAuth in a new tab ────────────
+// Goes through dashboard (/api/v1/auth/google) NOT backend directly.
+// This way the cookie is set on localhost:3000, shared with the dashboard.
+export async function signInWithGoogle(): Promise<void> {
+  await chrome.tabs.create({ url: `${DASHBOARD_URL}/api/v1/auth/google` })
+}
 
-CurrentUser = Annotated[User, Depends(get_current_user)]
+// ── Sign out ──────────────────────────────────
+// Goes through dashboard proxy so the correct cookie is cleared.
+export async function signOut(): Promise<void> {
+  try {
+    await dashboardClient.post(API_ENDPOINTS.AUTH_LOGOUT)
+  } catch {
+    // Even if backend call fails, clear local state
+  } finally {
+    await authStorage.clearAuth()
+  }
+}
 
+// ── Check if user is logged in ────────────────
+export async function isAuthenticated(): Promise<boolean> {
+  return authStorage.isLoggedIn()
+}
 
-def require_roles(*roles: UserRole):
-    """Factory that returns a dependency enforcing one of the given roles."""
+// ── Get locally cached user ───────────────────
+export async function getCurrentUser(): Promise<User | null> {
+  return authStorage.getUser()
+}
 
-    async def _check(current_user: CurrentUser) -> User:
-        if current_user.role not in roles:
-            raise Forbidden()
-        return current_user
+// ── Register device with backend ──────────────
+export async function registerDevice(): Promise<string | null> {
+  try {
+    const response = await dashboardClient.post<{
+      success: boolean
+      data: { id: string }
+    }>(API_ENDPOINTS.DEVICE_REGISTER, {
+      name: `${getBrowserName()} Extension`,
+      hostname: null,
+      osPlatform: navigator.platform,
+      browser: getBrowserName(),
+      extensionVersion: chrome.runtime.getManifest().version,
+    })
+    return response.data.data.id
+  } catch {
+    console.warn('[SecureGPT] Device registration failed')
+    return null
+  }
+}
 
-    return Depends(_check)
-
-
-# Convenience role guards — kept for future admin backend
-RequireSuperAdmin = require_roles(UserRole.SUPER_ADMIN)
-RequireSecurityAdmin = require_roles(UserRole.SUPER_ADMIN, UserRole.SECURITY_ADMIN)
-RequireAuditor = require_roles(
-    UserRole.SUPER_ADMIN, UserRole.SECURITY_ADMIN, UserRole.AUDITOR
-)
-
-
-===== backend\app\main.py =====
-# backend/app/main.py
-# ─────────────────────────────────────────────────────────────────────────────
-# FastAPI application entrypoint.
-# ─────────────────────────────────────────────────────────────────────────────
-
-import logging
-from contextlib import asynccontextmanager
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-
-from app.core.config import settings
-from app.core.database import engine, Base
-from app.core.error_handlers import register_error_handlers
-from app.core.ratelimit import limiter
-from app.core.response import error as make_error
-from app.api.v1.router import api_router
-
-import app.models  # noqa: F401
-
-logging.basicConfig(
-    level=logging.DEBUG if settings.debug else logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("Starting %s [%s]", settings.app_name, settings.app_env)
-    if settings.debug:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables synced (dev mode)")
-    yield
-    await engine.dispose()
-    logger.info("Shutdown complete")
-
-
-app = FastAPI(
-    title=settings.app_name,
-    version="1.0.0",
-    description="DLP Shield — Data Loss Prevention API",
-    docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
-    lifespan=lifespan,
-)
-
-# ─── Rate limiter ─────────────────────────────────────────────────────────────
-app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
-
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request, exc):
-    from fastapi.responses import JSONResponse
-    return JSONResponse(
-        status_code=429,
-        content=make_error(
-            code="RATE_LIMITED",
-            message="Too many requests. Please slow down.",
-            details={"retry_after": str(exc.retry_after) if hasattr(exc, "retry_after") else "60"},
-        ),
-    )
-
-# ─── Middleware ───────────────────────────────────────────────────────────────
-
-# Custom CORS handler for Chrome Extensions in development
-@app.middleware("http")
-async def extension_cors_interceptor(request, call_next):
-    origin = request.headers.get("origin")
-    if settings.app_env == "development" and origin and origin.startswith("chrome-extension://"):
-        response = await call_next(request)
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
-    return await call_next(request)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins_list,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["Content-Disposition"],
-)
-
-# ─── Error handlers ───────────────────────────────────────────────────────────
-register_error_handlers(app)
-
-# ─── Routes ───────────────────────────────────────────────────────────────────
-app.include_router(api_router, prefix=settings.api_v1_prefix)
-
-
-@app.get("/health", tags=["meta"])
-async def health():
-    return {
-        "status": "ok",
-        "app": settings.app_name,
-        "env": settings.app_env,
-        "version": "1.0.0",
-    }
-
-
-===== packages\secure-gpt-dashboard\next.config.ts =====
-import type { NextConfig } from "next";
-import path from "path";
-
-const nextConfig: NextConfig = {
-  output: "standalone",
-  turbopack: {
-    root: path.resolve(__dirname, "../.."), // ✅ secure-gpt/ monorepo root
-    resolveAlias: {
-      tailwindcss: path.join(__dirname, "node_modules", "tailwindcss"),
-    },
-  },
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "lh3.googleusercontent.com" },
-      { protocol: "https", hostname: "avatars.githubusercontent.com" },
-    ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/api/v1/:path*`,
-      },
-    ];
-  },
-};
-
-export default nextConfig;
-
-
-===== packages\secure-gpt-dashboard\src\app\(auth)\callback\page.tsx =====
-"use client"
-// src/app/(auth)/callback/page.tsx
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/contexts/auth-context"
-import { ShieldCheck } from "lucide-react"
-
-export default function CallbackPage() {
-  const { refresh } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    refresh()
-      .then(() => router.replace("/dashboard"))
-      .catch(() => router.replace("/login?error=oauth_failed"))
-  }, [refresh, router])
-
-  return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center gap-5"
-      style={{ background: 'var(--bg-base)' }}
-    >
-      {/* Animated logo */}
-      <div
-        className="size-14 rounded-2xl flex items-center justify-center"
-        style={{
-          background: 'var(--accent-light)',
-          border: '1px solid var(--accent-border)',
-          color: 'var(--accent-text)',
-        }}
-      >
-        <ShieldCheck size={26} />
-      </div>
-
-      {/* Spinner */}
-      <div className="relative size-8">
-        <div
-          className="absolute inset-0 rounded-full animate-spin"
-          style={{
-            border: '2px solid var(--accent-border)',
-            borderTopColor: 'var(--accent)',
-          }}
-        />
-      </div>
-
-      <div className="text-center">
-        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Signing you in…
-        </p>
-        <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
-          Verifying your session
-        </p>
-      </div>
-    </div>
-  )
+function getBrowserName(): string {
+  const ua = navigator.userAgent
+  if (ua.includes('Edg/')) return 'Microsoft Edge'
+  if (ua.includes('Chrome/')) return 'Chrome'
+  return 'Chrome'
 }
 
 
-===== packages\secure-gpt-dashboard\src\contexts\auth-context.tsx =====
-'use client'
+===== packages\extension\src\lib\api\client.ts =====
+// ─────────────────────────────────────────────
+// API Client — Extension
+// Session-cookie auth. withCredentials: true so the httpOnly cookie
+// is sent automatically on every request.
+//
+// KEY CHANGES from old version:
+//   - No Bearer token header — session cookie handles auth
+//   - withCredentials: true — sends cookie cross-origin to backend
+//   - X-Extension-Request: true — tells backend to skip fingerprint check
+//     for background service worker requests
+//   - 401 handler just clears stored user + notifies popup — no refresh
+// ─────────────────────────────────────────────
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { apiGet, apiPost } from '@/lib/api/client'
-import type { AuthUser } from '@/types'
+import axios, { type AxiosInstance, type AxiosError } from 'axios'
+import { authStorage } from '../storage/storage'
+import { API_BASE_URL } from '@/config/api.config'
 
-interface AuthContextValue {
-  user: AuthUser | null
-  loading: boolean
-  logout: () => Promise<void>
-  refresh: () => Promise<void>
+const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  withCredentials: true,          // send httpOnly session cookie on every request
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Extension-Request': 'true', // tells backend to skip fingerprint validation
+  },
+})
+
+// ── Response interceptor — handle session errors ──────────────────────────────
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError<{ error?: { code?: string; message?: string } }>) => {
+    const status = error.response?.status
+    const code = error.response?.data?.error?.code
+
+    if (status === 401) {
+      // Session expired, revoked or fingerprint mismatch
+      // Clear stored user and notify background to update popup state
+      await authStorage.clearAuth()
+
+      // Notify all extension contexts that auth was lost
+      try {
+        chrome.runtime.sendMessage({ type: 'AUTH_LOST', code })
+      } catch {
+        // Ignore — content script may not have runtime access
+      }
+    }
+
+    // Always reject with a clean error message
+    const message =
+      error.response?.data?.error?.message ??
+      error.message ??
+      'An unexpected error occurred'
+
+    return Promise.reject(new Error(message))
+  }
+)
+
+export default apiClient
+
+
+===== packages\extension\src\background\log-batcher.ts =====
+// ─────────────────────────────────────────────
+// Log Batcher
+// Batches audit events and sends to backend
+// Uses session cookie auth — no device_token needed
+// ─────────────────────────────────────────────
+
+import { authStorage, localStorageExt } from '@/lib/storage/storage'
+import { API_ENDPOINTS, LOG_BATCH_INTERVAL_MS, LOG_BATCH_MAX_SIZE } from '@/config/api.config'
+import apiClient from '@/lib/api/client'
+import type { AuditLog } from '@securegpt/shared/types'
+
+const QUEUE_KEY = 'log_queue'
+
+export function startLogBatcher(): void {
+  setInterval(() => {
+    void flushLogs()
+  }, LOG_BATCH_INTERVAL_MS)
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null)
+export async function queueLog(event: AuditLog): Promise<void> {
+  const queue = await getQueue()
+  queue.push(event)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Auto-flush if queue hits max size
+  if (queue.length >= LOG_BATCH_MAX_SIZE) {
+    await flushLogs()
+  } else {
+    await saveQueue(queue)
+  }
+}
 
-  const refresh = useCallback(async () => {
-    try {
-      const me = await apiGet<AuthUser>('/auth/me')
-      setUser(me)
-    } catch {
-      setUser(null)
-    }
-  }, [])
-
-  useEffect(() => {
-    void refresh().finally(() => setLoading(false))
-  }, [refresh])
-
-  const logout = async () => {
-    await apiPost('/auth/logout')
-    setUser(null)
-    window.location.href = '/login'
+export async function flushLogs(): Promise<void> {
+  const queue = await getQueue()
+  if (queue.length === 0) {
+    console.log('[SecureGPT] Log queue is empty, skipping flush')
+    return
   }
 
-  return (
-    <AuthContext.Provider value={{ user, loading, logout, refresh }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  // Check we have a cached user — if not, session likely expired
+  const isLoggedIn = await authStorage.isLoggedIn()
+  if (!isLoggedIn) {
+    console.warn('[SecureGPT] Not logged in, skipping log flush')
+    return
+  }
+
+  const batch = queue.splice(0, LOG_BATCH_MAX_SIZE)
+  console.log(`[SecureGPT] Attempting to flush ${batch.length} logs to ${API_ENDPOINTS.EXTENSION_LOG}...`)
+
+  try {
+    // apiClient has withCredentials: true and X-Extension-Request: true already set
+    // Backend reads user_id from session — we just send events
+    const response = await apiClient.post(
+      API_ENDPOINTS.EXTENSION_LOG,
+      { events: batch },
+      { timeout: 10000 }
+    )
+
+    console.log('[SecureGPT] Log flush success:', response.data)
+
+    // Save remaining queue
+    await saveQueue(queue)
+    console.log(`[SecureGPT] Successfully flushed ${batch.length} log events`)
+
+  } catch (err: any) {
+    // Backend unreachable or session expired — put batch back
+    const remaining = [...batch, ...queue]
+    await saveQueue(remaining)
+    console.error('[SecureGPT] Log flush failed:', err.message, err.response?.data)
+  }
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
-  return ctx
+async function getQueue(): Promise<AuditLog[]> {
+  return (await localStorageExt.get<AuditLog[]>(QUEUE_KEY)) ?? []
 }
+
+async function saveQueue(queue: AuditLog[]): Promise<void> {
+  await localStorageExt.set(QUEUE_KEY, queue)
+}
+
+
+===== packages\extension\.env =====
+VITE_DASHBOARD_URL=https://securegpt.rkavach.com
+VITE_API_BASE_URL=https://api.securegpt.rkavach.com
+
+# NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+# NEXT_PUBLIC_API_URL=http://localhost:3000
 
 
