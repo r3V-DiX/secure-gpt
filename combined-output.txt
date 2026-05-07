@@ -1,986 +1,693 @@
-===== packages\detection\src\rules\index.ts =====
-// ─────────────────────────────────────────────
-// All Rules — Master Barrel
-// ─────────────────────────────────────────────
+===== backend\app\core\config.py =====
+# backend/app/core/config.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Application configuration loaded from environment variables / .env file.
+# Sensitive fields have NO defaults — app will FAIL FAST at startup if they
+# are missing, rather than silently running with insecure placeholder values.
+# ─────────────────────────────────────────────────────────────────────────────
 
-import { allFinancialRules } from './financial'
-import { allPIIRules } from './pii'
-import { allConfidentialRules } from './confidential'
-import { allIPRules } from './ip'
-import type { DetectionRule } from './schema'
-import type { PIIConfig } from '@securegpt/shared/types'
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+from functools import lru_cache
 
-export { DetectionRule }
 
-// All static rules combined
-export const ALL_RULES: DetectionRule[] = [
-  ...allFinancialRules,
-  ...allPIIRules,
-  ...allConfidentialRules,
-  ...allIPRules,
-]
-
-// Cache for compiled rules
-let ruleCache: { version: string; rules: DetectionRule[] } | null = null
-
-// Filter rules based on org policy config
-export function getActiveRules(config: PIIConfig): DetectionRule[] {
-  const cacheKey = config.updatedAt || String(config.version)
-
-  if (ruleCache && ruleCache.version === cacheKey) {
-    return ruleCache.rules
-  }
-
-  // 1. Get static built-in rules
-  const activeStaticRules = ALL_RULES.filter((rule) => {
-    // Lookup with normalized case to handle inconsistencies
-    const categoryName = Object.keys(config.categories).find(
-      (k) => k.toUpperCase() === rule.category.toUpperCase()
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
     )
-    const categoryConfig = categoryName ? config.categories[categoryName] : undefined
-    return categoryConfig?.enabled && rule.enabled
-  })
 
-  // 2. Extract and compile custom rules
-  const customRules: DetectionRule[] = []
-  for (const [categoryName, categoryConfig] of Object.entries(config.categories)) {
-    if (categoryConfig.enabled && categoryConfig.customRules) {
-      const rules: DetectionRule[] = categoryConfig.customRules.map((cr) => {
-        const rule: DetectionRule = {
-          id: cr.id,
-          category: categoryName,
-          type: 'custom',
-          label: cr.label,
-          pattern: new RegExp(cr.pattern, cr.caseSensitive ? 'g' : 'gi'),
-          severity: cr.severity,
-          enabled: true,
-          description: cr.description || '',
-          requireContext: cr.requireContext || false,
-          triggers: cr.triggers || [],
-        }
-        if (cr.maskingLabel) {
-          rule.maskingLabel = cr.maskingLabel
-        }
-        return rule
-      })
-      customRules.push(...rules)
+    # ── Application ────────────────────────────────────────────────────────────
+    # Non-sensitive — safe defaults are fine here
+    app_name: str = "DLP Shield"
+    app_env: str = "development"
+    debug: bool = False
+
+    # SENSITIVE — no default, must be set in .env
+    secret_key: str = Field(..., min_length=32)
+
+    # ── Database ───────────────────────────────────────────────────────────────
+    # SENSITIVE — no default, must be set in .env
+    database_url: str = Field(...)
+
+    # ── Session ────────────────────────────────────────────────────────────────
+    # SENSITIVE — no default, must be set in .env
+    session_secret_key: str = Field(..., min_length=32)
+    session_max_age: int = 86400  # 24 hours in seconds — safe default
+
+    # ── Google OAuth ───────────────────────────────────────────────────────────
+    # SENSITIVE — no default, must be set in .env
+    google_client_id: str = Field(...)
+    google_client_secret: str = Field(...)
+
+    # Non-sensitive — default is fine for local dev
+    google_redirect_uri: str = Field(...)
+    
+    # ── CORS ───────────────────────────────────────────────────────────────────
+    # Non-sensitive — default covers local dev
+    allowed_origins: str = "http://localhost:3000,http://localhost:3001"
+
+    # ── API ────────────────────────────────────────────────────────────────────
+    api_v1_prefix: str = "/api/v1"
+
+    # ── Rate limiting ──────────────────────────────────────────────────────────
+    rate_limit_enabled: bool = True
+
+    # ── Computed properties ────────────────────────────────────────────────────
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        origins = [o.strip() for o in self.allowed_origins.split(",")]
+        
+        # In development, automatically allow any chrome-extension origin
+        # This prevents breakage when developers reload the extension and get a new ID
+        if self.app_env == "development":
+            # We can't use wildcards in allow_origins with allow_credentials=True
+            # But the CORSMiddleware will check against this list.
+            # However, Chrome Extension IDs are fixed unless changed in manifest.
+            # For local dev, common practice is to allow a few or dynamically handle it.
+            # Since we can't easily dynamic-inject here without custom middleware,
+            # we'll rely on the user adding their specific ID to .env if it changes,
+            # but we'll add a helper to ensure it's easy to debug.
+            pass
+            
+        return origins
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
+
+    @property
+    def frontend_url(self) -> str:
+        return self.allowed_origins_list[0]
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
+
+
+===== backend\app\services\session_service.py =====
+# backend/app/services/session_service.py
+#
+# INDUSTRY STANDARD: Lazy Fingerprint Binding
+#
+# During OAuth callback the session is created server-side (Next.js BFF proxy).
+# At that point we have no access to real browser headers (UA, screen res etc.).
+# Binding a fingerprint here would always mismatch on subsequent browser requests.
+#
+# Solution (used by Auth0, Clerk, Supabase):
+#   1. Create session with fingerprint_hash = None (unbound)
+#   2. On the FIRST real authenticated request from the browser, bind the fingerprint
+#   3. On subsequent requests, validate against the bound fingerprint
+#
+# EXTENSION BYPASS:
+#   Requests from the Chrome extension background service worker carry the
+#   X-Extension-Request: true header. These skip fingerprint binding/validation
+#   entirely because service workers have unstable headers that would cause
+#   constant false FINGERPRINT_MISMATCH revocations.
+#   The session cookie is still fully validated for extension requests.
+
+import secrets
+import logging
+from datetime import datetime, timezone, timedelta
+
+from fastapi import Request, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update
+
+from app.models.session import Session
+from app.core.config import settings
+from app.core.fingerprint import (
+    compute_fingerprint,
+    verify_fingerprint,
+    is_extension_request,
+)
+
+logger = logging.getLogger(__name__)
+
+SESSION_COOKIE_NAME = "sgpt_session"
+SESSION_TTL_SECONDS = settings.session_max_age
+
+# Header sent by BFF proxy to signal OAuth callback context
+OAUTH_CALLBACK_HEADER = "x-oauth-callback"
+
+
+async def create_session(
+    db: AsyncSession,
+    request: Request,
+    response: Response,
+    user_id: str,
+) -> Session:
+    """
+    Create a new session.
+
+    If the request comes from the BFF OAuth callback proxy (detected via
+    X-OAuth-Callback header), the fingerprint is left unbound (None).
+    It will be bound lazily on the first real browser request in validate_session().
+
+    For all other session creation paths, fingerprint is bound immediately.
+    Extension requests always leave fingerprint unbound.
+    """
+    session_id = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
+
+    is_oauth_callback = request.headers.get(OAUTH_CALLBACK_HEADER) == "true"
+    is_ext = is_extension_request(request)
+
+    if is_oauth_callback or is_ext:
+        fingerprint_hash = None
+        logger.info(
+            "Session created via %s — fingerprint unbound",
+            "OAuth BFF proxy" if is_oauth_callback else "extension",
+        )
+    else:
+        fingerprint_hash = compute_fingerprint(request)
+        logger.info("Session created directly — fingerprint bound immediately")
+
+    session = Session(
+        id=session_id,
+        user_id=user_id,
+        fingerprint_hash=fingerprint_hash,
+        user_agent=request.headers.get("user-agent"),
+        expires_at=expires_at,
+    )
+    db.add(session)
+    await db.flush()
+
+    is_prod = settings.is_production
+
+    logger.info("=== SETTING COOKIE ===")
+    logger.info("  session_id      : %s...", session_id[:8])
+    logger.info("  fingerprint     : %s", "unbound" if not fingerprint_hash else "bound")
+    logger.info("  secure          : %s", is_prod)
+    logger.info("  samesite        : lax")
+    logger.info("  max_age         : %s", SESSION_TTL_SECONDS)
+
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_id,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=is_prod,
+        samesite="lax",
+        path="/",
+    )
+
+    logger.info("Session created for user %s", user_id)
+    return session
+
+
+async def get_session(db: AsyncSession, session_id: str) -> Session | None:
+    result = await db.execute(select(Session).where(Session.id == session_id))
+    return result.scalar_one_or_none()
+
+
+async def validate_session(
+    db: AsyncSession,
+    request: Request,
+    session_id: str,
+) -> tuple[Session | None, str | None]:
+    """
+    Validate a session and enforce fingerprint matching.
+
+    EXTENSION BYPASS:
+    Requests from the Chrome extension background service worker (detected via
+    X-Extension-Request header) skip fingerprint validation entirely.
+    The session cookie validity (expiry, revocation) is still fully checked.
+
+    LAZY BINDING:
+    If fingerprint_hash is None (session created via OAuth BFF proxy),
+    we bind it on this first real browser request instead of rejecting.
+    """
+    logger.info("VALIDATE SESSION — id: %s...", session_id[:8] if session_id else "NONE")
+
+    session = await get_session(db, session_id)
+
+    if not session:
+        logger.info("  result: SESSION_NOT_FOUND")
+        return None, "SESSION_NOT_FOUND"
+
+    if session.is_revoked:
+        logger.info("  result: SESSION_REVOKED")
+        return None, "SESSION_REVOKED"
+
+    if session.is_expired:
+        logger.info("  result: SESSION_EXPIRED")
+        return session, "SESSION_EXPIRED"
+
+    # ── Extension bypass — skip fingerprint entirely ───────────────────────
+    if is_extension_request(request):
+        logger.info("  result: VALID (extension request — fingerprint skipped)")
+        await db.execute(
+            update(Session)
+            .where(Session.id == session_id)
+            .values(last_active_at=datetime.now(timezone.utc))
+        )
+        return session, None
+
+    current_fingerprint = compute_fingerprint(request)
+
+    if session.fingerprint_hash is None:
+        # ── Lazy bind: first real browser request after OAuth login ──────────
+        logger.info("  fingerprint: unbound → binding now to first real request")
+        await db.execute(
+            update(Session)
+            .where(Session.id == session_id)
+            .values(
+                fingerprint_hash=current_fingerprint,
+                last_active_at=datetime.now(timezone.utc),
+            )
+        )
+        logger.info("  result: VALID (fingerprint bound)")
+        return session, None
+
+    # ── Normal path: verify fingerprint ──────────────────────────────────────
+    if not verify_fingerprint(request, session.fingerprint_hash):
+        await revoke_session(db, session_id)
+        logger.warning("  result: FINGERPRINT_MISMATCH — session revoked")
+        return session, "FINGERPRINT_MISMATCH"
+
+    # Update last active timestamp
+    await db.execute(
+        update(Session)
+        .where(Session.id == session_id)
+        .values(last_active_at=datetime.now(timezone.utc))
+    )
+
+    logger.info("  result: VALID")
+    return session, None
+
+
+async def revoke_session(db: AsyncSession, session_id: str) -> None:
+    await db.execute(
+        update(Session).where(Session.id == session_id).values(is_revoked=True)
+    )
+    await db.flush()
+
+
+async def revoke_all_user_sessions(db: AsyncSession, user_id: str) -> int:
+    result = await db.execute(
+        update(Session)
+        .where(Session.user_id == user_id, Session.is_revoked == False)  # noqa: E712
+        .values(is_revoked=True)
+    )
+    await db.flush()
+    return result.rowcount
+
+
+def clear_session_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        path="/",
+        secure=settings.is_production,
+        httponly=True,
+        samesite="lax",
+    )
+
+
+def get_session_id_from_request(request: Request) -> str | None:
+    cookie = request.cookies.get(SESSION_COOKIE_NAME)
+    logger.info("GET SESSION FROM COOKIE — found: %s", bool(cookie))
+    return cookie
+
+
+===== backend\app\core\dependencies.py =====
+# backend/app/core/dependencies.py
+# ─────────────────────────────────────────────────────────────────────────────
+# FastAPI dependency injection.
+# Session-based auth — reads cookie, validates against DB, checks fingerprint.
+# No JWT. No localStorage. Pure httpOnly cookie + server-side session.
+# ─────────────────────────────────────────────────────────────────────────────
+
+from typing import Annotated
+
+from fastapi import Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.exceptions import (
+    AuthRequired,
+    SessionExpired,
+    SessionRevoked,
+    FingerprintMismatch,
+    UserInactive,
+    Forbidden,
+)
+from app.models.user import User, UserRole
+# FIX: AuthEventType lives in models/auth_event.py, not auth_event_service
+from app.models.auth_event import AuthEventType
+from app.services.auth_service import get_user_by_id
+from app.services.session_service import (
+    get_session_id_from_request,
+    validate_session,
+)
+from app.services import auth_event_service
+
+DBSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+async def get_current_user(
+    request: Request,
+    db: DBSession,
+) -> User:
+    """
+    Full session validation dependency.
+
+    Flow:
+    1. Read session ID from httpOnly cookie
+    2. Look up session in DB
+    3. Check revoked / expired
+    4. Verify fingerprint (mismatch → revoke + log)
+    5. Load user, check is_active
+    6. Attach user_id to request.state for rate limiter key function
+    """
+    session_id = get_session_id_from_request(request)
+    if not session_id:
+        raise AuthRequired()
+
+    session, error_code = await validate_session(db, request, session_id)
+
+    if error_code == "SESSION_REVOKED":
+        await auth_event_service.log_auth_event(
+            db,
+            event_type=AuthEventType.SESSION_INVALIDATED,
+            success=False,
+            request=request,
+            metadata={"session_id": session_id},
+        )
+        raise SessionRevoked()
+
+    if error_code == "SESSION_EXPIRED":
+        await auth_event_service.log_session_expired(
+            db,
+            request=request,
+            user_id=session.user_id if session else None,
+            session_id=session_id,
+        )
+        raise SessionExpired()
+
+    if error_code == "FINGERPRINT_MISMATCH":
+        # Session already revoked by validate_session — log and raise
+        await auth_event_service.log_fingerprint_mismatch(
+            db,
+            request=request,
+            user_id=session.user_id if session else None,
+            session_id=session_id,
+        )
+        raise FingerprintMismatch()
+
+    if error_code or not session:
+        raise AuthRequired()
+
+    # Load user
+    user = await get_user_by_id(db, session.user_id)
+    if not user:
+        raise AuthRequired("User account not found")
+
+    if not user.is_active:
+        raise UserInactive()
+
+    # Attach to request.state — used by ratelimit key function
+    request.state.user_id = user.id
+
+    return user
+
+
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def require_roles(*roles: UserRole):
+    """Factory that returns a dependency enforcing one of the given roles."""
+
+    async def _check(current_user: CurrentUser) -> User:
+        if current_user.role not in roles:
+            raise Forbidden()
+        return current_user
+
+    return Depends(_check)
+
+
+# Convenience role guards — kept for future admin backend
+RequireSuperAdmin = require_roles(UserRole.SUPER_ADMIN)
+RequireSecurityAdmin = require_roles(UserRole.SUPER_ADMIN, UserRole.SECURITY_ADMIN)
+RequireAuditor = require_roles(
+    UserRole.SUPER_ADMIN, UserRole.SECURITY_ADMIN, UserRole.AUDITOR
+)
+
+
+===== backend\app\main.py =====
+# backend/app/main.py
+# ─────────────────────────────────────────────────────────────────────────────
+# FastAPI application entrypoint.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+from app.core.config import settings
+from app.core.database import engine, Base
+from app.core.error_handlers import register_error_handlers
+from app.core.ratelimit import limiter
+from app.core.response import error as make_error
+from app.api.v1.router import api_router
+
+import app.models  # noqa: F401
+
+logging.basicConfig(
+    level=logging.DEBUG if settings.debug else logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting %s [%s]", settings.app_name, settings.app_env)
+    if settings.debug:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables synced (dev mode)")
+    yield
+    await engine.dispose()
+    logger.info("Shutdown complete")
+
+
+app = FastAPI(
+    title=settings.app_name,
+    version="1.0.0",
+    description="DLP Shield — Data Loss Prevention API",
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
+    lifespan=lifespan,
+)
+
+# ─── Rate limiter ─────────────────────────────────────────────────────────────
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=429,
+        content=make_error(
+            code="RATE_LIMITED",
+            message="Too many requests. Please slow down.",
+            details={"retry_after": str(exc.retry_after) if hasattr(exc, "retry_after") else "60"},
+        ),
+    )
+
+# ─── Middleware ───────────────────────────────────────────────────────────────
+
+# Custom CORS handler for Chrome Extensions in development
+@app.middleware("http")
+async def extension_cors_interceptor(request, call_next):
+    origin = request.headers.get("origin")
+    if settings.app_env == "development" and origin and origin.startswith("chrome-extension://"):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+    return await call_next(request)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins_list,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
+)
+
+# ─── Error handlers ───────────────────────────────────────────────────────────
+register_error_handlers(app)
+
+# ─── Routes ───────────────────────────────────────────────────────────────────
+app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+
+@app.get("/health", tags=["meta"])
+async def health():
+    return {
+        "status": "ok",
+        "app": settings.app_name,
+        "env": settings.app_env,
+        "version": "1.0.0",
     }
-  }
 
-  const allActiveRules = [...activeStaticRules, ...customRules]
 
-  // Update Cache
-  ruleCache = { version: cacheKey, rules: allActiveRules }
-
-  return allActiveRules
-}
-
-
-===== packages\shared\src\constants\pii-categories.constants.ts =====
-// ─────────────────────────────────────────────
-// PII Categories + Policy Actions
-// ─────────────────────────────────────────────
-
-export const BUILTIN_PII_CATEGORIES = {
-  FINANCIAL: 'FINANCIAL',
-  PII: 'PII',
-  CONFIDENTIAL: 'CONFIDENTIAL',
-  IP: 'IP',
-} as const
-
-export const PII_CATEGORIES = BUILTIN_PII_CATEGORIES
-
-export type PIICategory = string
-
-export const PII_CATEGORY_LABELS: Record<PIICategory, string> = {
-  FINANCIAL: 'Financial Data',
-  PII: 'Personal Data (PII)',
-  CONFIDENTIAL: 'Confidential Business Data',
-  IP: 'Intellectual Property',
-}
-
-export const PII_CATEGORY_DESCRIPTIONS: Record<PIICategory, string> = {
-  FINANCIAL: 'Credit cards, bank accounts, tax IDs, salary data, financial statements',
-  PII: 'Names, emails, phone numbers, national IDs, addresses, medical info',
-  CONFIDENTIAL: 'Source code, API keys, passwords, internal documents, M&A data',
-  IP: 'Product roadmaps, patent info, trade secrets, proprietary algorithms',
-}
-
-export const PII_CATEGORY_EXAMPLES: Record<PIICategory, string[]> = {
-  FINANCIAL: ['Credit card numbers', 'IBAN / bank account', 'PAN / TIN / GST'],
-  PII: ['Email addresses', 'Aadhaar / SSN / Passport', 'Phone numbers'],
-  CONFIDENTIAL: ['AWS / GitHub API keys', 'Passwords & secrets', 'Source code'],
-  IP: ['Product roadmap', 'Patent applications', 'Trade secrets'],
-}
-
-// ─────────────────────────────────────────────
-// Policy Actions
-// ─────────────────────────────────────────────
-
-export const POLICY_ACTIONS = {
-  BLOCK: 'BLOCK',
-  MASK: 'MASK',
-  WARN_ALLOW: 'WARN_ALLOW',
-  ALLOW: 'ALLOW',
-} as const
-
-export type PolicyAction = keyof typeof POLICY_ACTIONS
-
-export const POLICY_ACTION_LABELS: Record<PolicyAction, string> = {
-  BLOCK: 'Block',
-  MASK: 'Mask & Send',
-  WARN_ALLOW: 'Warn + Allow',
-  ALLOW: 'Allow (Audit)',
-}
-
-export const POLICY_ACTION_DESCRIPTIONS: Record<PolicyAction, string> = {
-  BLOCK: 'Submission is completely prevented. User cannot proceed.',
-  MASK: 'Sensitive tokens replaced with placeholders before sending.',
-  WARN_ALLOW: 'User is warned but can acknowledge and proceed.',
-  ALLOW: 'Content passes through. Logged silently for audit.',
-}
-
-export const POLICY_ACTION_COLORS: Record<PolicyAction, string> = {
-  BLOCK: '#D32F2F',
-  MASK: '#F57C00',
-  WARN_ALLOW: '#E65100',
-  ALLOW: '#1565C0',
-}
-
-// Default actions per category (PRD defaults)
-export const DEFAULT_CATEGORY_ACTIONS: Record<PIICategory, PolicyAction> = {
-  FINANCIAL: 'BLOCK',
-  PII: 'MASK',
-  CONFIDENTIAL: 'BLOCK',
-  IP: 'WARN_ALLOW',
-}
-
-
-===== packages\shared\src\types\policy.types.ts =====
-// ─────────────────────────────────────────────
-// Policy Types
-// ─────────────────────────────────────────────
-
-import type { PIIConfig } from './config.types'
-
-export interface OrgPolicy {
-  id: string
-  orgId: string
-  config: PIIConfig
-  createdBy: string             // admin user id
-  version: number
-  publishedAt: string           // ISO timestamp when pushed to devices
-  isActive: boolean
-}
-
-export interface PolicyUpdatePayload {
-  config: Partial<PIIConfig>
-  publishImmediately: boolean
-}
-
-export interface DevicePolicyResponse {
-  version: number
-  config: PIIConfig
-  updatedAt: string
-}
-
-// MDM pre-configured policy JSON structure
-export interface MDMPolicy {
-  orgId: string
-  orgName: string
-  adminEmail: string
-  backendApiUrl: string
-  deviceToken: string
-  categories: PIIConfig['categories']
-  monitoredPlatforms: PIIConfig['monitoredPlatforms']
-  allowPause: boolean
-  logUserEmail: boolean
-}
-
-
-===== packages\shared\src\types\detection.types.ts =====
-// ─────────────────────────────────────────────
-// Detection Types
-// ─────────────────────────────────────────────
-
-import type { PIIConfig } from './config.types'
-import type { PIICategory } from '../constants/pii-categories.constants'
-
-export type DetectionTier = 'regex' | 'ner' | 'ocr'
-
-export type Severity = 'low' | 'medium' | 'high' | 'critical'
-
-export interface PIIEntity {
-  id: string
-  type: string                  // e.g. 'credit_card', 'email', 'pan_card'
-  label: string                 // e.g. 'Credit / Debit Card Number'
-  category: PIICategory         // FINANCIAL | PII | CONFIDENTIAL | IP
-  value: string                 // the actual matched text
-  maskedValue: string           // e.g. [EMAIL-REDACTED]
-  startIndex: number            // char offset in original text
-  endIndex: number              // char offset in original text
-  confidence: number            // 0.0 - 1.0
-  severity: Severity
-  tier: DetectionTier           // which tier detected it
-  bboxes?: Array<{ x0: number; y0: number; x1: number; y1: number }> // For OCR-based masking
-}
-
-export interface DetectionResult {
-  hasFindings: boolean
-  entities: PIIEntity[]
-  tier: DetectionTier           // highest tier used
-  processingTimeMs: number
-  inputLength: number
-}
-
-export interface DetectionRequest {
-  text: string
-  config: PIIConfig
-}
-
-
-===== packages\shared\src\utils\detection-helpers.ts =====
-// ─────────────────────────────────────────────
-// Detection Helpers
-// Extracted from MVP — shared across tiers
-// ─────────────────────────────────────────────
-
-/**
- * Normalise input text before feeding it to pattern matchers.
- */
-export function normalizeText(text: string): string {
-  return text.trim().replace(/\s+/g, ' ')
-}
-
-/**
- * Extract a fixed-size window of text surrounding a character index.
- */
-export function getSlidingWindow(
-  text: string,
-  index: number,
-  windowSize = 80
-): string {
-  const start = Math.max(0, index - windowSize)
-  const end = Math.min(text.length, index + windowSize)
-  return text.slice(start, end)
-}
-
-/**
- * Known context trigger words for PII categories.
- */
-export const CONTEXT_TRIGGERS: Record<string, string[]> = {
-  financial: [
-    'pan', 'pan card', 'pan number', 'income tax', 'tax id',
-    'account number', 'acct no', 'ifsc', 'bank',
-    'credit card', 'debit card', 'card number', 'cvv', 'expiry',
-    'upi', 'vpa', 'payment id', 'neft', 'rtgs', 'permanent account number',
-    'gst', 'gstin', 'gst number',
-    'ssn', 'social security', 'tax identification',
-    'iban', 'swift', 'bic',
-    'crypto', 'wallet', 'bitcoin', 'ethereum', 'btc', 'eth',
-  ],
-  pii: [
-    'aadhar', 'aadhaar', 'uid', 'unique id',
-    'passport', 'driving licence', 'voter id', 'ration card',
-    'date of birth', 'dob', 'birth date', 'age',
-    'father name', 'mother name', 'guardian',
-    'surname', 'given name', 'place of birth', 'place of issue',
-    'address', 'residence', 'pincode', 'zip code',
-    'mobile', 'phone', 'contact',
-    'name', 'no', 'number',
-    'diagnosis', 'prescription', 'medical record', 'blood group',
-    'abha', 'health id', 'patient', 'hospital',
-  ],
-  confidential: [
-    'password', 'secret', 'api key', 'token', 'auth',
-    'private key', 'access key', 'secret key',
-    'credentials', 'login', 'username',
-  ],
-  ip: [
-    'product roadmap', 'launch date', 'feature plan', 'release schedule',
-    'patent', 'invention', 'prior art', 'claims',
-    'merger', 'acquisition', 'due diligence', 'non-disclosure',
-    'nda', 'proprietary', 'trade secret',
-  ],
-  general: [
-    'confidential', 'internal', 'restricted', 'sensitive',
-    'do not share', 'private', 'personal',
-  ],
-}
-
-/**
- * Simple Verhoeff checksum implementation used for ID validation.
- * Includes OCR character mapping to correct common misreads.
- */
-export function verhoeffCheck(num: string): boolean {
-  // Correct common OCR misreads before validation
-  const cleaned = num
-    .replace(/[\s-]/g, '')
-    .replace(/O/gi, '0')
-    .replace(/I/gi, '1')
-    .replace(/B/gi, '8')
-    .replace(/S/gi, '5')
-    .replace(/Z/gi, '2')
-
-  if (!/^\d{12}$/.test(cleaned)) return false
-
-  const d = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
-    [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
-    [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
-    [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
-    [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
-    [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
-    [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
-    [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
-    [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
-  ]
-  const p = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
-    [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
-    [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
-    [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
-    [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
-    [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
-    [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
-  ]
-
-  const digits = cleaned.split('').reverse().map(Number)
-  let c = 0
-  for (let i = 0; i < digits.length; i++) {
-    const digit = digits[i]
-    if (digit === undefined) continue
-    const pTable = p[i % 8]
-    if (!pTable) continue
-    const pVal = pTable[digit]
-    if (pVal === undefined) continue
-    const dRow = d[c]
-    if (!dRow) continue
-    c = dRow[pVal] ?? 0
-  }
-  return c === 0
-}
-
-/**
- * Check whether a string looks like a base64-encoded image data URL.
- */
-export function isBase64Image(str: string): boolean {
-  return /^data:image\/(png|jpeg|jpg|gif|webp|bmp);base64,/i.test(str)
-}
-
-/**
- * Check whether an HTML fragment contains an <img> tag.
- */
-export function containsImageTag(html: string): boolean {
-  return /<img\s/i.test(html)
-}
-
-/**
- * Converts a Data URL (base64) to a Blob manually.
- * Bypasses fetch() to avoid CSP connect-src violations in content scripts.
- */
-export function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, base64] = dataUrl.split(',')
-  if (!header || !base64) return new Blob([], { type: 'image/png' })
-  
-  const mimeMatch = header.match(/:(.*?);/)
-  const mime = mimeMatch ? mimeMatch[1] : 'image/png'
-  const binary = atob(base64)
-  const array = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) {
-    array[i] = binary.charCodeAt(i)
-  }
-  return new Blob([array.buffer as ArrayBuffer], { type: mime || 'image/png' })
-}
-
-/**
- * Luhn algorithm for credit card number validation.
- */
-export function luhnCheck(num: string): boolean {
-  const digits = num.replace(/\D/g, '').split('').map(Number)
-  let sum = 0
-  let isEven = false
-  for (let i = digits.length - 1; i >= 0; i--) {
-    let d = digits[i]
-    if (d === undefined) continue
-    if (isEven) {
-      d *= 2
-      if (d > 9) d -= 9
-    }
-    sum += d
-    isEven = !isEven
-  }
-  return sum % 10 === 0
-}
-
-
-===== packages\detection\src\pipeline.ts =====
-// ─────────────────────────────────────────────
-// SecureGPT Detection Pipeline
-// Single entry point — extension calls detectPII()
-// ─────────────────────────────────────────────
-
-import { RegexTier } from './tiers/regex/regexTier'
-import { NERTier } from './tiers/ner/nerTier'
-import { OCRTier } from './tiers/ocr/ocrTier'
-import { mergeEntities } from './utils/merger.utils'
-import { applyAllowlist } from './utils/allowlist.utils'
-import type { PIIConfig } from '@securegpt/shared/types'
-import type { DetectionResult, PIIEntity, DetectionTier } from '@securegpt/shared/types'
-
-// ─── Tier instances ───────────────────────────
-const regexTier = new RegexTier()
-const nerTier = new NERTier()
-const ocrTier = new OCRTier()
-
-let initialized = false
-
-// ─── Initialize all enabled tiers once ────────
-async function initializePipeline(): Promise<void> {
-  if (initialized) return
-
-  const initPromises: Promise<void>[] = []
-
-  if (regexTier.enabled) initPromises.push(regexTier.initialize())
-  if (nerTier.enabled) initPromises.push(nerTier.initialize())
-  if (ocrTier.enabled) initPromises.push(ocrTier.initialize())
-
-  await Promise.all(initPromises)
-  initialized = true
-}
-
-// ─── Main export ──────────────────────────────
-// This is the ONLY function the extension imports
-// from this package.
-//
-// Usage:
-//   import { detectPII } from '@securegpt/detection'
-//   const result = await detectPII(text, config)
-
-export async function detectPII(
-  text: string,
-  config: PIIConfig
-): Promise<DetectionResult> {
-  const startTime = performance.now()
-
-  if (!text || text.trim().length === 0) {
-    return buildResult([], 'regex', startTime, text)
-  }
-
-  // Initialize tiers on first call
-  await initializePipeline()
-
-  // Run Regex first
-  const regexEntities = regexTier.enabled
-    ? await regexTier.run(text, config)
-    : [];
-
-  // Mask the text before passing to NER (Regex results hidden with spaces)
-  let maskedText = text;
-  if (nerTier.enabled && regexEntities.length > 0) {
-    for (const entity of regexEntities) {
-      const length = entity.endIndex - entity.startIndex;
-      const spaces = " ".repeat(length);
-      maskedText = maskedText.substring(0, entity.startIndex) + spaces + maskedText.substring(entity.endIndex);
-    }
-  }
-
-  // Run NER on masked text
-  const nerEntities = nerTier.enabled
-    ? await nerTier.run(maskedText, config)
-    : [];
-
-  // OCR runs only on image input — text pipeline skips it
-  const ocrEntities: PIIEntity[] = []
-
-  // Merge results across tiers — higher tiers win on overlap
-  const merged = mergeEntities(regexEntities, nerEntities, ocrEntities)
-
-  // Apply org allowlist
-  const filtered = applyAllowlist(merged, config)
-
-  // Determine highest tier used
-  const tier = getHighestTier(filtered)
-
-  return buildResult(filtered, tier, startTime, text)
-}
-
-// ─── OCR entry point (image input) ────────────
-// Called separately when user pastes an image
-export async function detectPIIFromImage(
-  imageData: string,
-  config: PIIConfig
-): Promise<DetectionResult> {
-  const startTime = performance.now()
-
-  if (!ocrTier.enabled) {
-    return buildResult([], 'ocr', startTime, '')
-  }
-
-  // Initialize tiers
-  await initializePipeline()
-
-  // 1. Extract text via OCR
-  const { rawText, ocrData, severityFloor } = await ocrTier.runOnImage(imageData, config)
-  
-  if (!rawText) {
-    return buildResult([], 'ocr', startTime, '')
-  }
-
-  // 2. Run Regex and NER sequentially on extracted text with masking
-  const regexEntities = regexTier.enabled
-    ? await regexTier.run(rawText, config)
-    : await Promise.resolve<PIIEntity[]>([]);
-
-  let maskedRawText = rawText;
-  if (nerTier.enabled && regexEntities.length > 0) {
-    for (const entity of regexEntities) {
-      const length = entity.endIndex - entity.startIndex;
-      const spaces = " ".repeat(length);
-      maskedRawText = maskedRawText.substring(0, entity.startIndex) + spaces + maskedRawText.substring(entity.endIndex);
-    }
-  }
-
-  const nerEntities = nerTier.enabled
-    ? await nerTier.run(maskedRawText, config)
-    : await Promise.resolve<PIIEntity[]>([]);
-
-  // 3. Merge results and map to BBOXes
-  const merged = mergeEntities(regexEntities, nerEntities, [])
-  const ocrEntities = ocrTier.mapEntitiesToBboxes(merged, ocrData, rawText, severityFloor)
-
-  // Apply allowlist
-  const filtered = applyAllowlist(ocrEntities, config)
-
-  return buildResult(filtered, 'ocr', startTime, rawText)
-}
-
-// ─── Helpers ──────────────────────────────────
-function getHighestTier(entities: PIIEntity[]): DetectionTier {
-  if (entities.some((e) => e.tier === 'ocr')) return 'ocr'
-  if (entities.some((e) => e.tier === 'ner')) return 'ner'
-  return 'regex'
-}
-
-function buildResult(
-  entities: PIIEntity[],
-  tier: DetectionTier,
-  startTime: number,
-  inputText: string
-): DetectionResult {
-  return {
-    hasFindings: entities.length > 0,
-    entities,
-    tier,
-    processingTimeMs: Math.round(performance.now() - startTime),
-    inputLength: inputText.length,
-  }
-}
-
-// ─── Re-export types for convenience ──────────
-export type { DetectionResult, PIIEntity, PIIConfig }
-
-// ─── Re-export tier classes for direct use in offscreen document ──────────────
-// The offscreen document needs to instantiate OCRTier directly (Tesseract WASM
-// cannot be proxied via sendMessage in MV3). Export here so consumers can reach
-// them through the single @securegpt/detection alias.
-export { OCRTier } from './tiers/ocr/ocrTier'
-export { RegexTier } from './tiers/regex/regexTier'
-
-
-===== packages\extension\src\config\defaults.config.ts =====
-// ─────────────────────────────────────────────
-// Default Config
-// Applied when user skips wizard
-// ─────────────────────────────────────────────
-
-import { DEFAULT_PII_CONFIG } from '@securegpt/shared/types'
-import type { PIIConfig } from '@securegpt/shared/types'
-
-export const DEFAULT_EXTENSION_CONFIG: PIIConfig = {
-  ...DEFAULT_PII_CONFIG,
-}
-
-export const EXTENSION_VERSION = '1.0.0'
-
-export const PAUSE_OPTIONS = [
-  { label: '15 minutes', value: 15 },
-  { label: '30 minutes', value: 30 },
-  { label: '1 hour', value: 60 },
-] as const
-
-
-===== packages\extension\src\background\policy-sync.ts =====
-// ─────────────────────────────────────────────
-// Policy Sync
-// Polls backend /api/v1/extension/policy every 30s
-// Uses session cookie auth — no device_token needed
-// ─────────────────────────────────────────────
-
-import { policyStorage, authStorage } from '@/lib/storage/storage'
-import { POLICY_SYNC_INTERVAL_MS, API_ENDPOINTS } from '@/config/api.config'
-import apiClient from '@/lib/api/client'
-import type { PIIConfig } from '@securegpt/shared/types'
-
-let syncIntervalId: ReturnType<typeof setInterval> | null = null
-
-export function startPolicySync(): void {
-  // Run immediately on startup
-  void syncPolicy()
-
-  syncIntervalId = setInterval(() => {
-    void syncPolicy()
-  }, POLICY_SYNC_INTERVAL_MS)
-}
-
-export function stopPolicySync(): void {
-  if (syncIntervalId) {
-    clearInterval(syncIntervalId)
-    syncIntervalId = null
-  }
-}
-
-async function syncPolicy(): Promise<void> {
-  try {
-    const isLoggedIn = await authStorage.isLoggedIn()
-    if (!isLoggedIn) return // not logged in — skip
-
-    const currentVersion = await policyStorage.getPolicyVersion()
-
-    // apiClient has withCredentials: true + X-Extension-Request: true
-    const response = await apiClient.get<{
-      success: boolean
-      data: {
-        version: number
-        config: PIIConfig
-        updatedAt: string
-      }
-    }>(API_ENDPOINTS.EXTENSION_POLICY, { timeout: 8000 })
-
-    const data = response.data.data
-
-    // Only update if new version available
-    if (data.version > currentVersion) {
-      await policyStorage.setPolicy(data.config, data.version)
-      console.log(`[SecureGPT] Policy updated to v${data.version}`)
-
-      // Notify all content scripts about new policy
-      const tabs = await chrome.tabs.query({})
-      for (const tab of tabs) {
-        if (tab.id) {
-          chrome.tabs.sendMessage(tab.id, {
-            type: 'POLICY_UPDATED',
-            policy: data.config,
-          }).catch(() => {
-            // Tab may not have content script — ignore
-          })
-        }
-      }
-    }
-  } catch (err) {
-    // Offline or backend down — use cached policy silently
-    console.warn('[SecureGPT] Policy sync failed — using cached policy')
-  }
-}
-
-
-===== packages\extension\src\contexts\policy-context.tsx =====
-// ─────────────────────────────────────────────
-// Policy Context
-// ─────────────────────────────────────────────
-
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { policyStorage } from '@/lib/storage/storage'
-import { DEFAULT_EXTENSION_CONFIG } from '@/config/defaults.config'
-import type { PIIConfig } from '@securegpt/shared/types'
-
-interface PolicyContextValue {
-  policy: PIIConfig
-  loading: boolean
-  reload: () => Promise<void>
-}
-
-const PolicyContext = createContext<PolicyContextValue>({
-  policy: DEFAULT_EXTENSION_CONFIG,
-  loading: true,
-  reload: async () => {},
-})
-
-export function PolicyProvider({ children }: { children: React.ReactNode }) {
-  const [policy, setPolicy] = useState<PIIConfig>(DEFAULT_EXTENSION_CONFIG)
-  const [loading, setLoading] = useState(true)
-
-  async function reload() {
-    const stored = await policyStorage.getPolicy()
-    setPolicy(stored ?? DEFAULT_EXTENSION_CONFIG)
-    setLoading(false)
-  }
+===== packages\secure-gpt-dashboard\next.config.ts =====
+import type { NextConfig } from "next";
+import path from "path";
+
+const nextConfig: NextConfig = {
+  output: "standalone",
+  turbopack: {
+    root: path.resolve(__dirname, "../.."), // ✅ secure-gpt/ monorepo root
+    resolveAlias: {
+      tailwindcss: path.join(__dirname, "node_modules", "tailwindcss"),
+    },
+  },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "avatars.githubusercontent.com" },
+    ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/api/v1/:path*`,
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+
+
+===== packages\secure-gpt-dashboard\src\app\(auth)\callback\page.tsx =====
+"use client"
+// src/app/(auth)/callback/page.tsx
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { ShieldCheck } from "lucide-react"
+
+export default function CallbackPage() {
+  const { refresh } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    void reload()
-
-    // Listen for policy updates from background
-    const handler = (message: { type: string; policy?: PIIConfig }) => {
-      if (message.type === 'POLICY_UPDATED' && message.policy) {
-        setPolicy(message.policy)
-      }
-    }
-    chrome.runtime.onMessage.addListener(handler)
-    return () => chrome.runtime.onMessage.removeListener(handler)
-  }, [])
+    refresh()
+      .then(() => router.replace("/dashboard"))
+      .catch(() => router.replace("/login?error=oauth_failed"))
+  }, [refresh, router])
 
   return (
-    <PolicyContext.Provider value={{ policy, loading, reload }}>
-      {children}
-    </PolicyContext.Provider>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-5"
+      style={{ background: 'var(--bg-base)' }}
+    >
+      {/* Animated logo */}
+      <div
+        className="size-14 rounded-2xl flex items-center justify-center"
+        style={{
+          background: 'var(--accent-light)',
+          border: '1px solid var(--accent-border)',
+          color: 'var(--accent-text)',
+        }}
+      >
+        <ShieldCheck size={26} />
+      </div>
+
+      {/* Spinner */}
+      <div className="relative size-8">
+        <div
+          className="absolute inset-0 rounded-full animate-spin"
+          style={{
+            border: '2px solid var(--accent-border)',
+            borderTopColor: 'var(--accent)',
+          }}
+        />
+      </div>
+
+      <div className="text-center">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Signing you in…
+        </p>
+        <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+          Verifying your session
+        </p>
+      </div>
+    </div>
   )
 }
 
-export function usePolicyContext() {
-  return useContext(PolicyContext)
+
+===== packages\secure-gpt-dashboard\src\contexts\auth-context.tsx =====
+'use client'
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { apiGet, apiPost } from '@/lib/api/client'
+import type { AuthUser } from '@/types'
+
+interface AuthContextValue {
+  user: AuthUser | null
+  loading: boolean
+  logout: () => Promise<void>
+  refresh: () => Promise<void>
 }
 
+const AuthContext = createContext<AuthContextValue | null>(null)
 
-===== packages\shared\src\constants\policy-actions.constants.ts =====
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [loading, setLoading] = useState(true)
 
-
-===== packages\shared\src\constants\index.ts =====
-// ─────────────────────────────────────────────
-// Constants — Barrel Export
-// ─────────────────────────────────────────────
-
-export * from './pii-categories.constants'
-export * from './platforms.constants'
-export * from './roles.constants'
-export * from './masking-tokens.constants'
-
-
-===== packages\detection\src\rules\schema.ts =====
-// ─────────────────────────────────────────────
-// Detection Rule Schema
-// Every rule in rules/ must implement this interface
-// ─────────────────────────────────────────────
-
-import type { PIICategory } from '@securegpt/shared/constants'
-import type { Severity } from '@securegpt/shared/types'
-
-export interface DetectionRule {
-  id: string                    // unique rule id e.g. 'financial.credit_card'
-  category: PIICategory
-  type: string                  // e.g. 'credit_card', 'email', 'pan_card'
-  label: string                 // human readable label
-  pattern: RegExp               // regex pattern
-  validatorId?: string          // optional: 'luhn' | 'verhoeff' | 'pan'
-  requireContext?: boolean      // if true, only flag when a context trigger is nearby
-  triggers?: string[]           // optional: specific trigger words for this rule
-  severity: Severity
-  enabled: boolean
-  description: string
-  maskingLabel?: string
-}
-
-
-===== packages\detection\src\tiers\index.ts =====
-// ─────────────────────────────────────────────
-// Tiers — Barrel
-// Add new tiers here — pipeline auto picks them up
-// ─────────────────────────────────────────────
-
-import { RegexTier } from './regex/regexTier'
-import { NERTier } from './ner/nerTier'
-import { OCRTier } from './ocr/ocrTier'
-import type { BaseTier } from './base-tier'
-
-// Registry of all tiers in priority order
-// Pipeline runs enabled tiers only
-export const TIER_REGISTRY: BaseTier[] = [
-  new RegexTier(),
-  new NERTier(),
-  new OCRTier(),
-]
-
-export { RegexTier, NERTier, OCRTier }
-export { BaseTier } from './base-tier'
-
-
-===== packages\extension\src\lib\storage\storage.ts =====
-// packages\extension\src\lib\storage\storage.ts
-// Chrome Storage Wrapper
-// Session-cookie auth — StoredAuth stores only the user profile.
-// No tokens, no deviceToken. Session lives in the httpOnly cookie.
-// ─────────────────────────────────────────────
-
-import type { PIIConfig } from '@securegpt/shared/types'
-import type { User } from '@securegpt/shared/types'
-
-// Only the user profile is stored — session cookie handled by browser automatically
-export interface StoredAuth {
-  user: User
-}
-
-export interface ExtensionStorageSchema {
-  // Auth — just the user profile fetched from /auth/me
-  auth: StoredAuth | null
-  // Policy — synced from backend
-  policy: PIIConfig | null
-  policyVersion: number
-  policyLastSyncedAt: string | null
-  // Extension state
-  isActive: boolean
-  pausedUntil: string | null
-  // Session stats
-  sessionBlockCount: number
-  sessionMaskCount: number
-  sessionWarnCount: number
-  // Onboarding
-  wizardCompleted: boolean
-  wizardStep: number
-}
-
-// ── Sync storage (synced across devices) ──────
-export const syncStorage = {
-  async get<K extends keyof ExtensionStorageSchema>(
-    key: K
-  ): Promise<ExtensionStorageSchema[K] | null> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(key, (result) => {
-        resolve((result[key] as ExtensionStorageSchema[K]) ?? null)
-      })
-    })
-  },
-
-  async set<K extends keyof ExtensionStorageSchema>(
-    key: K,
-    value: ExtensionStorageSchema[K]
-  ): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.set({ [key]: value }, resolve)
-    })
-  },
-
-  async remove(key: keyof ExtensionStorageSchema): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.remove(key, resolve)
-    })
-  },
-}
-
-// ── Local storage (device only, larger quota) ─
-export const localStorageExt = {
-  async get<T>(key: string): Promise<T | null> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(key, (result) => {
-        resolve((result[key] as T) ?? null)
-      })
-    })
-  },
-
-  async set<T>(key: string, value: T): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.set({ [key]: value }, resolve)
-    })
-  },
-
-  async remove(key: string): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.remove(key, resolve)
-    })
-  },
-}
-
-// ── Auth helpers ─────────────────────────────
-export const authStorage = {
-  async getAuth(): Promise<StoredAuth | null> {
-    return localStorageExt.get('auth')
-  },
-
-  async setAuth(auth: StoredAuth): Promise<void> {
-    return localStorageExt.set('auth', auth)
-  },
-
-  async clearAuth(): Promise<void> {
-    return localStorageExt.remove('auth')
-  },
-
-  // Convenience — returns user or null
-  async getUser(): Promise<User | null> {
-    const auth = await localStorageExt.get<StoredAuth>('auth')
-    return auth?.user ?? null
-  },
-
-  // Check if we have a cached user (doesn't verify session is still valid)
-  async isLoggedIn(): Promise<boolean> {
-    const auth = await localStorageExt.get('auth')
-    return auth !== null
-  },
-}
-
-// ── Policy helpers ────────────────────────────
-export const policyStorage = {
-  async getPolicy(): Promise<PIIConfig | null> {
-    return localStorageExt.get('policy')
-  },
-
-  async setPolicy(policy: PIIConfig, version: number): Promise<void> {
-    await localStorageExt.set('policy', policy)
-    await localStorageExt.set('policyVersion', version)
-    await localStorageExt.set('policyLastSyncedAt', new Date().toISOString())
-  },
-
-  async getPolicyVersion(): Promise<number> {
-    return (await localStorageExt.get<number>('policyVersion')) ?? 0
-  },
-}
-
-// ── Extension state helpers ───────────────────
-export const stateStorage = {
-  async isActive(): Promise<boolean> {
-    const active = await localStorageExt.get<boolean>('isActive')
-    if (active === null) return true // default to active
-
-    const pausedUntil = await localStorageExt.get<string>('pausedUntil')
-    if (pausedUntil && new Date(pausedUntil) > new Date()) return false
-
-    return active
-  },
-
-  async setActive(active: boolean): Promise<void> {
-    await localStorageExt.set('isActive', active)
-    if (active) await localStorageExt.remove('pausedUntil')
-  },
-
-  async pauseFor(minutes: number): Promise<void> {
-    const until = new Date(Date.now() + minutes * 60 * 1000).toISOString()
-    await localStorageExt.set('pausedUntil', until)
-    await localStorageExt.set('isActive', false)
-  },
-
-  async incrementStat(action: 'block' | 'mask' | 'warn'): Promise<void> {
-    const keyMap = {
-      block: 'sessionBlockCount',
-      mask: 'sessionMaskCount',
-      warn: 'sessionWarnCount',
-    } as const
-    const key = keyMap[action]
-    const current = (await localStorageExt.get<number>(key)) ?? 0
-    await localStorageExt.set(key, current + 1)
-  },
-
-  async getSessionStats() {
-    return {
-      blockCount: (await localStorageExt.get<number>('sessionBlockCount')) ?? 0,
-      maskCount: (await localStorageExt.get<number>('sessionMaskCount')) ?? 0,
-      warnCount: (await localStorageExt.get<number>('sessionWarnCount')) ?? 0,
+  const refresh = useCallback(async () => {
+    try {
+      const me = await apiGet<AuthUser>('/auth/me')
+      setUser(me)
+    } catch {
+      setUser(null)
     }
-  },
+  }, [])
 
-  async resetSessionStats(): Promise<void> {
-    await localStorageExt.set('sessionBlockCount', 0)
-    await localStorageExt.set('sessionMaskCount', 0)
-    await localStorageExt.set('sessionWarnCount', 0)
-  },
+  useEffect(() => {
+    void refresh().finally(() => setLoading(false))
+  }, [refresh])
+
+  const logout = async () => {
+    await apiPost('/auth/logout')
+    setUser(null)
+    window.location.href = '/login'
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, loading, logout, refresh }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
+  return ctx
 }
 
 
