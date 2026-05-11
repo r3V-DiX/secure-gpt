@@ -53,15 +53,8 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <div
-            className="size-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{
-              background: 'var(--accent-light)',
-              border: '1px solid var(--accent-border)',
-              color: 'var(--accent-text)',
-            }}
-          >
-            <ShieldCheck size={20} />
+          <div className="size-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden" style={{ background: '#091a2a' }}>
+            <img src="/rivedix_logo.png" alt="Rivedix Logo" className="w-full h-full object-contain p-1" />
           </div>
           <div>
             <p className="text-base font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
@@ -127,9 +120,14 @@ export default function LoginPage() {
           <Link href="/" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
             ← Back to home
           </Link>
-          <Link href="/privacy" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
-            Privacy Policy
-          </Link>
+          <div className="flex gap-4">
+            <Link href="/privacy" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </div>
     </div>

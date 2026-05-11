@@ -47,8 +47,8 @@ export function Sidebar() {
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-2 pb-5 mb-2 border-b border-[var(--sidebar-border)]">
-        <div className="size-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
-          <Shield size={15} className="text-indigo-300" />
+        <div className="size-8 rounded-xl flex items-center justify-center shadow-lg overflow-hidden shrink-0" style={{ background: '#091a2a' }}>
+          <img src="/rivedix_logo.png" alt="Rivedix Logo" className="w-full h-full object-contain p-0.5" />
         </div>
         <div>
           <span className="text-sm font-bold tracking-tight text-white leading-none">SecureGPT</span>

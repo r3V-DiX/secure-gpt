@@ -102,3 +102,4 @@ lcov.info
 
 eng.traineddata
 commands
+.aider*

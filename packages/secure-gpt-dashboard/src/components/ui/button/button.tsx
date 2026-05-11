@@ -1,5 +1,13 @@
 // src/components/ui/button/button.tsx
-import { clsx } from 'clsx'
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+/**
+ * Utility to merge tailwind classes safely
+ */
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
 type Size = 'sm' | 'md' | 'lg'
@@ -31,7 +39,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={clsx(
+      className={cn(
         'inline-flex items-center justify-center font-semibold border',
         'transition-all duration-150 select-none cursor-pointer',
         'disabled:opacity-50 disabled:cursor-not-allowed',

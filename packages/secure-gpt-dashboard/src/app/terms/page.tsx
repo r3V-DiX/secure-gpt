@@ -1,12 +1,11 @@
 'use client'
-// packages/secure-gpt-dashboard/src/app/privacy/page.tsx
+// packages/secure-gpt-dashboard/src/app/terms/page.tsx
 import Link from 'next/link';
 import { Button } from '@/components/ui/button/button';
 import { useAuth } from '@/contexts/auth-context';
-import { Shield } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
-export default function PrivacyPage() {
+export default function TermsPage() {
   const { user, loading } = useAuth();
 
   return (
@@ -37,42 +36,42 @@ export default function PrivacyPage() {
 
       <main className="flex-1 py-16 px-6">
         <article className="max-w-3xl mx-auto p-8 md:p-12 rounded-2xl border animate-fade-in" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}>
-          <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--text-primary)' }}>Privacy Policy</h1>
+          <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--text-primary)' }}>Terms and Conditions</h1>
           
           <div className="space-y-8" style={{ color: 'var(--text-secondary)' }}>
             <section>
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>1. Introduction</h2>
-              <p>SecureGPT ("we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our browser extension and dashboard.</p>
+              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>1. Acceptance of Terms</h2>
+              <p>By accessing or using SecureGPT, you agree to be bound by these Terms and Conditions. If you do not agree to all of these terms, do not use our service.</p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>2. Data Collection and Processing</h2>
-              <p>SecureGPT is designed with a "privacy-first" architecture. Most data processing occurs locally within your browser:</p>
+              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>2. Use of Service</h2>
+              <p>SecureGPT provides a browser-based Data Loss Prevention (DLP) tool. You agree to use the service only for lawful purposes and in accordance with your organization's security policies.</p>
               <ul className="list-disc pl-5 mt-4 space-y-2">
-                <li><strong>Local Redaction:</strong> Sensitive data (PII, credentials, etc.) is detected and masked locally. Raw sensitive data never leaves your browser.</li>
-                <li><strong>Metadata Logging:</strong> We collect anonymized metadata about blocked events (e.g., "Email detected and masked") to provide audit logs to your enterprise administrator.</li>
-                <li><strong>Account Information:</strong> We store basic information required for account management, such as your work email and organization name.</li>
+                <li>You are responsible for maintaining the security of your account.</li>
+                <li>You must not attempt to circumvent any security features of the extension.</li>
+                <li>You agree not to use the service to transmit any malicious software.</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>3. Use of Information</h2>
-              <p>We use the collected information to:</p>
-              <ul className="list-disc pl-5 mt-4 space-y-2">
-                <li>Provide and maintain the SecureGPT service.</li>
-                <li>Generate compliance reports and audit logs for your organization.</li>
-                <li>Improve our detection algorithms (using anonymized patterns).</li>
-              </ul>
+              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>3. Intellectual Property</h2>
+              <p>The service and its original content, features, and functionality are and will remain the exclusive property of SecureGPT and its licensors.</p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>4. Security</h2>
-              <p>We implement industry-standard security measures to protect your data. However, no method of transmission over the internet is 100% secure.</p>
+              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>4. Limitation of Liability</h2>
+              <p>SecureGPT shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the service.</p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>5. Contact Us</h2>
-              <p>If you have any questions about this Privacy Policy, please contact us at privacy@securegpt.io.</p>
+              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>5. Changes to Terms</h2>
+              <p>We reserve the right to modify or replace these terms at any time. We will provide notice of any significant changes via the dashboard or email.</p>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>6. Contact</h2>
+              <p>For questions about these terms, please contact us at legal@securegpt.io.</p>
             </section>
           </div>
 
@@ -89,7 +88,7 @@ export default function PrivacyPage() {
         <div className="max-w-7xl mx-auto px-6 text-center">
           <div className="flex justify-center gap-6 mb-4 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
             <Link href="/" className="hover:text-[var(--accent)] transition-colors">Home</Link>
-            <Link href="/terms" className="hover:text-[var(--accent)] transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-[var(--accent)] transition-colors">Privacy Policy</Link>
           </div>
           <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
             © 2026 SecureGPT. All rights reserved.
