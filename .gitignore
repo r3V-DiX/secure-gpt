@@ -103,3 +103,4 @@ lcov.info
 eng.traineddata
 commands
 .aider*
+packages/extension/*.zip
