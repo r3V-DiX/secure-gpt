@@ -130,7 +130,7 @@ export const allPIIRules: DetectionRule[] = [
     label: 'Date of Birth',
     pattern: /\b(?:0[1-9]|[12][0-9]|3[01])[-/.](?:0[1-9]|1[012])[-/.](?:19|20)\d\d\b/g,
     requireContext: true,
-    triggers: ['dob', 'birth', 'born'],
+    triggers: ['dob', 'birth', 'born', 'age', 'birthday'],
     severity: 'medium',
     enabled: true,
     description: 'Date patterns triggered when DOB context is nearby.'

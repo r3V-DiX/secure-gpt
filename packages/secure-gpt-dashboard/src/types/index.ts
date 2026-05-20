@@ -56,31 +56,6 @@ export interface AuditLog {
     receivedAt: string
 }
 
-// ── Alert ─────────────────────────────────────────────────────────────────────
-export interface Alert {
-    id: string
-    eventId: string | null
-    actionTaken: ActionType
-    categoryTriggered: string
-    detectionType: string
-    llmPlatform: string
-    domain: string | null
-    matchCount: number
-    entityTypes: string[]
-    severities: SeverityLevel[]
-    topSeverity: SeverityLevel
-    acknowledged: boolean
-    timestamp: string
-    receivedAt: string
-}
-
-export interface AlertSummary {
-    total: number
-    blocked: number
-    warned: number
-    bySeverity: Record<SeverityLevel, number>
-}
-
 // ── Dashboard Stats ───────────────────────────────────────────────────────────
 export interface DashboardStats {
     totalEvents: number
@@ -110,6 +85,11 @@ export interface CustomRule {
     enabled: boolean
 }
 
+export interface RuleOverride {
+    enabled?: boolean
+    action?: PolicyAction
+}
+
 export interface CategoryConfig {
     enabled: boolean
     action: PolicyAction
@@ -117,6 +97,7 @@ export interface CategoryConfig {
     allowlist: string[]
     fuzzyMatch: boolean
     customRules?: CustomRule[]
+    ruleOverrides?: Record<string, RuleOverride>
 }
 
 export interface PIIConfig {

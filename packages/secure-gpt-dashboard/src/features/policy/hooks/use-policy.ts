@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { fetchCurrentPolicy, savePolicy, DEFAULT_POLICY_CONFIG } from '../services/policy.service'
 import { useToast } from '@/contexts/toast-context'
-import type { Policy, PIIConfig, CategoryConfig, PolicyAction, CustomRule } from '@/types'
+import type { Policy, PIIConfig, CategoryConfig, PolicyAction, CustomRule, RuleOverride } from '@/types'
 
 export function usePolicy() {
   const { toast } = useToast()
@@ -108,6 +108,29 @@ export function usePolicy() {
     setIsDirty(true)
   }
 
+  const updateRuleOverride = (category: string, ruleId: string, override: RuleOverride) => {
+    setConfig(prev => {
+      const cat = prev.categories[category]
+      if (!cat) return prev
+      const existing = cat.ruleOverrides ?? {}
+      const current = existing[ruleId] ?? {}
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          [category]: {
+            ...cat,
+            ruleOverrides: {
+              ...existing,
+              [ruleId]: { ...current, ...override },
+            },
+          },
+        },
+      }
+    })
+    setIsDirty(true)
+  }
+
   const deleteCustomRule = (category: string, ruleId: string) => {
     setConfig(prev => {
       const cat = prev.categories[category]
@@ -158,10 +181,11 @@ export function usePolicy() {
     }
   }
 
-  return { 
-    policy, config, loading, saving, savedAt, error, isDirty, 
+  return {
+    policy, config, loading, saving, savedAt, error, isDirty,
     updateCategory, addCategory, deleteCategory,
+    updateRuleOverride,
     addCustomRule, updateCustomRule, deleteCustomRule,
-    updateField, save, discard 
+    updateField, save, discard
   }
 }

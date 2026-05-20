@@ -181,12 +181,13 @@ export class NERTier extends BaseTier {
 
         entities.push({
           id: crypto.randomUUID(),
+          ruleId: `ner.${span.type.toLowerCase()}`,
           type: span.type,
           label: this.formatLabel(span.type),
           category,
           value: span.value,
           maskedValue: '[REDACTED]',
-          confidence: 0.85, // Fallback confidence
+          confidence: 0.85,
           tier: 'ner',
           startIndex: span.start,
           endIndex: span.end,

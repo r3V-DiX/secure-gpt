@@ -1,47 +1,66 @@
 'use client'
-// packages/secure-gpt-dashboard/src/app/page.tsx
 import Link from 'next/link';
 import { Button } from '@/components/ui/button/button';
 import { useAuth } from '@/contexts/auth-context';
-import { 
-  Shield, 
-  Lock, 
-  Zap, 
-  BarChart3, 
-  Globe, 
-  ArrowRight, 
-  CheckCircle2, 
-  EyeOff, 
+import {
+  Zap,
+  BarChart3,
+  Globe,
+  ArrowRight,
+  EyeOff,
   Users,
   ShieldCheck,
   Search,
-  Scan
+  Scan,
+  Mail,
+  ExternalLink,
+  AtSign,
+  Link2,
+  Lock,
+  Shield,
+  AlertTriangle,
+  CheckCircle2,
+  FileKey,
+  Fingerprint,
+  Network,
 } from 'lucide-react';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
+
+const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/securegpt-%E2%80%94-llm-data-prot/cbhlhbhhlcfilggkmcmodmfaeongmbmo';
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col selection:bg-[var(--accent-light)] selection:text-[var(--accent-text)]" style={{ background: 'var(--bg-base)' }}>
-      {/* Navigation */}
-      <nav className="border-b sticky top-0 z-50 backdrop-blur-md" style={{ background: 'color-mix(in srgb, var(--bg-surface) 85%, transparent)', borderColor: 'var(--border)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-base)', fontFamily: 'var(--font-poppins), Poppins, system-ui, sans-serif' }}>
+
+      {/* ── Navigation ── */}
+      <nav className="border-b sticky top-0 z-50 backdrop-blur-md"
+           style={{ background: 'var(--nav-bg)', borderColor: 'var(--border)' }}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-xl flex items-center justify-center shadow-lg overflow-hidden" style={{ background: '#091a2a' }}>
-              <img src="/rivedix_logo.png" alt="Rivedix Logo" className="w-full h-full object-contain p-1" />
+
+          <a href="#hero" className="flex items-center gap-2.5">
+            <div className="size-9 rounded-xl flex items-center justify-center shadow-md overflow-hidden"
+                 style={{ background: 'var(--brand-dark)' }}>
+              <img src="/rivedix_logo.png" alt="SecureGPT" className="w-full h-full object-contain p-1" />
             </div>
-            <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-secondary)]">SecureGPT</span>
-          </div>
-          
+            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              Secure<span style={{ color: 'var(--accent)' }}>GPT</span>
+            </span>
+          </a>
+
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Features</a>
-            <a href="#how-it-works" className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">How it works</a>
-            <a href="#pricing" className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Pricing</a>
+            <a href="#features" className="text-sm font-medium transition-colors" style={{ color: 'var(--text-secondary)' }}
+               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>Features</a>
+            <a href="#how-it-works" className="text-sm font-medium transition-colors" style={{ color: 'var(--text-secondary)' }}
+               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>How it works</a>
+            <a href="#threat-coverage" className="text-sm font-medium transition-colors" style={{ color: 'var(--text-secondary)' }}
+               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>Coverage</a>
           </div>
 
           <div className="flex items-center gap-3">
-            <ThemeToggle className="mr-1" />
             {!loading && user ? (
               <Link href="/dashboard">
                 <Button className="rounded-full px-6">Dashboard</Button>
@@ -49,252 +68,390 @@ export default function LandingPage() {
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" className="hidden sm:inline-flex">Sign In</Button>
+                  <Button variant="ghost" className="hidden sm:inline-flex text-sm font-semibold">Sign In</Button>
                 </Link>
-                <Link href="/login">
-                  <Button className="rounded-full px-6 shadow-md shadow-indigo-500/20">Get Started</Button>
-                </Link>
+                <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
+                  <Button className="rounded-full px-6 text-sm font-semibold"
+                          style={{ boxShadow: '0 4px 14px var(--brand-btn-shadow)' }}>
+                    Get Started Free
+                  </Button>
+                </a>
               </>
             )}
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative pt-24 pb-32 px-6 overflow-hidden">
-          {/* Background Decor */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none opacity-40" aria-hidden="true">
-            <div className="absolute top-[-10%] left-[10%] size-[500px] rounded-full blur-[120px] bg-indigo-200/50" />
-            <div className="absolute bottom-[-10%] right-[10%] size-[400px] rounded-full blur-[100px] bg-blue-100/50" />
+
+        {/* ── Hero ── */}
+        <section id="hero" className="relative pt-20 pb-28 px-6 overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            {/* Grid lines */}
+            <div className="absolute inset-0"
+                 style={{ backgroundImage: 'linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)', backgroundSize: '48px 48px', opacity: 0.55 }} />
+            {/* Fade grid out at the bottom so it blends into page */}
+            <div className="absolute inset-0"
+                 style={{ background: 'linear-gradient(to bottom, transparent 55%, var(--bg-base) 100%)' }} />
+            {/* Colour blobs on top of grid */}
+            <div className="absolute top-[-5%] left-[-5%] w-[600px] h-[600px] rounded-full opacity-30"
+                 style={{ background: `radial-gradient(circle, var(--hero-blob-1) 0%, transparent 70%)` }} />
+            <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full opacity-25"
+                 style={{ background: `radial-gradient(circle, var(--hero-blob-2) 0%, transparent 70%)` }} />
           </div>
 
           <div className="max-w-5xl mx-auto text-center relative z-10 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-8 shadow-sm border" 
-                 style={{ background: 'var(--bg-surface)', color: 'var(--accent-text)', borderColor: 'var(--accent-border)' }}>
-              <Zap size={12} className="fill-current" />
-              <span>v1.0 is now live for enterprise</span>
-            </div>
-            
-            <h1 className="text-6xl md:text-7xl font-extrabold tracking-tight mb-8 text-[var(--text-primary)] leading-[1.1]">
-              Secure Your AI Interactions <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-500">Without Friction</span>
-            </h1>
-            
-            <p className="text-xl max-w-2xl mx-auto mb-12 leading-relaxed text-[var(--text-secondary)]">
-              SecureGPT is the enterprise-grade DLP that intercepts sensitive data like PII, credentials, and secrets in your browser before they ever reach LLM providers.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto rounded-full px-8 h-12 shadow-xl shadow-indigo-500/25 group">
-                  Start Protecting Now
-                  <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Button variant="secondary" size="lg" className="w-full sm:w-auto rounded-full px-8 h-12">
-                Book Enterprise Demo
-              </Button>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-8 border"
+                 style={{ background: 'var(--accent-light)', color: 'var(--accent)', borderColor: 'var(--accent-border)' }}>
+              <Lock size={11} className="fill-current" />
+              Enterprise-grade DLP · Zero cloud exposure · Browser-native
             </div>
 
-            {/* Trusted By - Pro Style */}
-            <div className="mt-24">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-10">Securing modern enterprise workflows</p>
-              <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 opacity-70">
-                {[
-                  { name: 'Example', icon: <ShieldCheck size={18} /> },
-                  { name: 'Example.ai', icon: <Globe size={18} /> },
-                  { name: 'Ex', icon: <Zap size={18} /> },
-                  { name: 'Exa', icon: <Lock size={18} /> },
-                  { name: 'Exam', icon: <BarChart3 size={18} /> }
-                ].map(logo => (
-                  <div key={logo.name} className="flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-2)]/30 backdrop-blur-sm transition-all hover:scale-105 hover:opacity-100 hover:border-[var(--accent-border)] hover:bg-[var(--accent-light)] group cursor-default">
-                    <span className="text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors">{logo.icon}</span>
-                    <span className="text-xl font-bold tracking-tighter text-[var(--text-primary)] group-hover:text-[var(--accent-text)] transition-colors">{logo.name}</span>
-                  </div>
+            <h1 className="text-5xl md:text-[4.25rem] font-extrabold tracking-tight mb-6 leading-[1.1]"
+                style={{ color: 'var(--text-primary)' }}>
+              Your prompts carry secrets. <br />
+              <span style={{ background: 'linear-gradient(135deg, var(--hero-grad-from) 0%, var(--hero-grad-to) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                SecureGPT makes sure they stay that way.
+              </span>
+            </h1>
+
+            <p className="text-lg max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              A browser extension that intercepts every prompt you type into ChatGPT, Claude, or Gemini, strips out PII, API keys, and confidential data locally — and only then lets the message through.
+            </p>
+
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium mb-10 border"
+                 style={{ background: 'var(--danger-light)', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}>
+              <AlertTriangle size={13} />
+              89% of employees unknowingly share sensitive data with AI tools — Cyberhaven 2024
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto rounded-full px-8 h-12 font-semibold group"
+                        style={{ boxShadow: '0 4px 20px var(--brand-btn-shadow)' }}>
+                  <Shield size={16} className="mr-1.5" />
+                  Add to Chrome — Free
+                  <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </a>
+              <a href="mailto:info@rivedix.com?subject=SecureGPT Enterprise Demo" className="w-full sm:w-auto">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto rounded-full px-8 h-12 font-semibold">
+                  Book Enterprise Demo
+                </Button>
+              </a>
+            </div>
+
+            <div className="mt-20">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] mb-8" style={{ color: 'var(--text-tertiary)' }}>
+                Protects your prompts on every major AI platform
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {['ChatGPT', 'Claude', 'Gemini', 'Copilot', 'Perplexity', 'Custom LLMs'].map(name => (
+                  <span key={name} className="px-4 py-2 rounded-full text-sm font-medium border transition-all"
+                        style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}>
+                    {name}
+                  </span>
                 ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section id="features" className="py-32 border-t border-[var(--border)]" style={{ background: 'var(--bg-surface)' }}>
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-20">
-              <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Powerful Data Protection</h2>
-              <p className="text-[var(--text-secondary)] max-w-xl mx-auto">Multiple layers of security designed to catch leaks before they happen, while keeping your team productive.</p>
+        {/* ── Stat strip ── */}
+        <section className="border-y py-10 px-6"
+                 style={{ background: 'var(--brand-dark)', borderColor: 'var(--brand-mid)' }}>
+          <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: '50+',     label: 'Sensitive data types detected' },
+              { value: '< 2ms',   label: 'Local analysis latency' },
+              { value: '0 bytes', label: 'Raw data sent to our servers' },
+              { value: '100%',    label: 'Browser-side redaction' },
+            ].map(stat => (
+              <div key={stat.label}>
+                <p className="text-3xl font-bold mb-1" style={{ color: 'var(--brand-light)' }}>{stat.value}</p>
+                <p className="text-xs font-medium" style={{ color: 'var(--on-dark-mid)' }}>{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Features ── */}
+        <section id="features" className="py-28 px-6" style={{ background: 'var(--bg-surface)' }}>
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--accent)' }}>What SecureGPT does</p>
+              <h2 className="text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Enterprise DLP, Built for the AI Era</h2>
+              <p className="max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
+                Multiple detection layers designed to catch data leaks before they happen — without adding friction for your team.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <FeatureCard 
-                icon={<Search className="text-indigo-500" />}
-                title="Real-time Inspection"
-                desc="Our engine analyzes prompts as you type, using advanced Regex and NER to identify over 50+ types of sensitive data."
-              />
-              <FeatureCard 
-                icon={<EyeOff className="text-emerald-500" />}
-                title="Local-first Masking"
-                desc="Data is redacted right in your browser. Raw PII never hits our servers, ensuring maximum privacy and compliance."
-              />
-              <FeatureCard 
-                icon={<Scan className="text-blue-500" />}
-                title="OCR Analysis"
-                desc="We don't just scan text. SecureGPT analyzes images and file uploads to prevent data leaks in non-textual formats."
-              />
-              <FeatureCard 
-                icon={<BarChart3 className="text-amber-500" />}
-                title="Compliance Auditing"
-                desc="Get detailed visibility into risk patterns across your organization with our comprehensive audit log and analytics."
-              />
-              <FeatureCard 
-                icon={<Globe className="text-purple-500" />}
-                title="Broad Compatibility"
-                desc="SecureGPT works seamlessly with ChatGPT, Gemini, Claude, Copilot, and custom internal LLM applications."
-              />
-              <FeatureCard 
-                icon={<Users className="text-rose-500" />}
-                title="Role-based Policies"
-                desc="Configure granular detection policies tailored to different departments and security requirements."
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FeatureCard icon={<Search size={22} style={{ color: 'var(--accent)' }} />}
+                           iconBg="var(--accent-light)" title="Real-time Prompt Inspection"
+                           desc="Regex, Named Entity Recognition, and entropy analysis run on every keystroke — catching API keys, PII, IBAN numbers, JWTs, and 50+ other sensitive patterns before you hit send." />
+              <FeatureCard icon={<EyeOff size={22} style={{ color: 'var(--success)' }} />}
+                           iconBg="var(--success-light)" title="100% Local Masking"
+                           desc="All detection and redaction happens inside your browser tab. Raw sensitive data never leaves your device — only a safe masked version reaches the AI provider." />
+              <FeatureCard icon={<Scan size={22} style={{ color: 'var(--info)' }} />}
+                           iconBg="var(--info-light)" title="Image & File Scanning"
+                           desc="OCR analysis catches sensitive data hidden in screenshots, PDFs, and file uploads before they're attached to a prompt. No format is left unprotected." />
+              <FeatureCard icon={<BarChart3 size={22} style={{ color: 'var(--warning)' }} />}
+                           iconBg="var(--warning-light)" title="Compliance Audit Logs"
+                           desc="Every detection and policy action is logged with full context — user, platform, data type, and outcome. Meet GDPR, HIPAA, and SOC 2 audit requirements with ease." />
+              <FeatureCard icon={<Globe size={22} style={{ color: 'var(--violet)' }} />}
+                           iconBg="var(--violet-light)" title="Works on Every AI Platform"
+                           desc="Natively intercepts ChatGPT, Claude, Gemini, Microsoft Copilot, Perplexity, and any custom internal LLM interface — no manual configuration required." />
+              <FeatureCard icon={<Users size={22} style={{ color: 'var(--danger)' }} />}
+                           iconBg="var(--danger-light)" title="Admin Policy Control"
+                           desc="Define per-department detection rules and enforcement levels. Admins decide what gets masked, warned, or hard-blocked. Employees keep working without interruption." />
             </div>
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="py-32 px-6 border-t border-[var(--border)]">
+        {/* ── How It Works ── */}
+        <section id="how-it-works" className="py-28 px-6 border-t" style={{ borderColor: 'var(--border)' }}>
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
               <div>
-                <h2 className="text-4xl font-bold mb-8 leading-tight" style={{ color: 'var(--text-primary)' }}>
-                  How SecureGPT <br /> Keeps You Safe
+                <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--accent)' }}>Under the hood</p>
+                <h2 className="text-4xl font-bold mb-10 leading-tight" style={{ color: 'var(--text-primary)' }}>
+                  Three steps.<br />Zero data exposure.
                 </h2>
                 <div className="space-y-8">
-                  <Step 
-                    number="01" 
-                    title="Intercept" 
-                    desc="SecureGPT's browser extension hooks into LLM input fields, catching the prompt before the user clicks send." 
-                  />
-                  <Step 
-                    number="02" 
-                    title="Detect" 
-                    desc="Local analysis tiers (Regex, NER, OCR) identify sensitive entities without sending raw data to the cloud." 
-                  />
-                  <Step 
-                    number="03" 
-                    title="Protect" 
-                    desc="Based on your policy, data is either masked with a placeholder or the request is blocked entirely with a warning." 
-                  />
+                  <Step number="01" title="Intercept the prompt"
+                        desc="SecureGPT hooks directly into LLM input fields on supported platforms, capturing the message before your browser transmits it." />
+                  <Step number="02" title="Detect locally"
+                        desc="A multi-tier analysis pipeline — Regex, NER, entropy checks, and IBAN/JWT validators — runs entirely in your browser tab to flag sensitive entities in real time." />
+                  <Step number="03" title="Enforce your policy"
+                        desc="Based on your organisation's policy, entities are auto-masked with a safe placeholder, surfaced in a warning for user review, or blocked outright. Every action is logged." />
                 </div>
               </div>
+
+              {/* Mock browser UI */}
               <div className="relative">
-                <div className="rounded-3xl border shadow-2xl overflow-hidden bg-[var(--bg-surface)] p-2">
-                   {/* Mock UI Representation */}
-                   <div className="bg-[var(--bg-surface-2)] rounded-2xl p-6 aspect-square flex flex-col gap-4 border border-[var(--border)]">
-                      <div className="h-4 w-1/3 rounded" style={{ background: 'var(--accent-light)' }} />
-                      <div className="h-12 w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--border-2)] p-4 text-xs font-mono text-[var(--text-secondary)]">
-                        Here is my API key: <span className="px-1 rounded border underline" style={{ background: 'var(--danger-light)', color: 'var(--danger)', borderColor: 'var(--danger-border)', textDecorationColor: 'var(--danger)' }}>sk-proj-7a...</span>
+                <div className="rounded-2xl overflow-hidden shadow-2xl border"
+                     style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                  <div className="flex items-center gap-2 px-4 py-3 border-b"
+                       style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+                    <div className="size-3 rounded-full bg-red-400" />
+                    <div className="size-3 rounded-full bg-amber-400" />
+                    <div className="size-3 rounded-full bg-green-400" />
+                    <div className="flex-1 mx-4 px-3 py-1 rounded-md text-[11px] font-mono text-center"
+                         style={{ background: 'var(--bg-surface)', color: 'var(--text-tertiary)', border: '1px solid var(--border)' }}>
+                      chatgpt.com
+                    </div>
+                    <div className="size-4 rounded-full flex items-center justify-center"
+                         style={{ background: 'var(--accent-light)' }}>
+                      <Lock size={8} style={{ color: 'var(--accent)' }} />
+                    </div>
+                  </div>
+
+                  <div className="p-5 flex flex-col gap-4">
+                    <div className="rounded-xl border p-3 text-xs font-mono leading-relaxed"
+                         style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                      Here is my API key for the integration:&nbsp;
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold"
+                            style={{ background: 'var(--danger-light)', color: 'var(--danger)', border: '1px solid var(--danger-border)' }}>
+                        ⚠ sk-proj-7aGx...
+                      </span>
+                      &nbsp;— please use this.
+                    </div>
+
+                    <div className="rounded-xl border p-4 flex gap-3"
+                         style={{ background: 'var(--danger-light)', borderColor: 'var(--danger-border)' }}>
+                      <ShieldCheck size={18} className="shrink-0 mt-0.5" style={{ color: 'var(--danger)' }} />
+                      <div>
+                        <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--danger)' }}>
+                          SecureGPT · API Key Detected
+                        </p>
+                        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--danger)', opacity: 0.85 }}>
+                          Found: OpenAI API Key (98% confidence). Company policy blocks credential sharing with external AI providers. This event is being logged.
+                        </p>
                       </div>
-                      <div className="flex justify-end">
-                        <div className="h-8 w-24 rounded-lg flex items-center justify-center text-[10px] text-white font-bold" style={{ background: 'var(--danger)' }}>BLOCKING...</div>
-                      </div>
-                      <div className="mt-4 p-4 rounded-xl border flex gap-3" style={{ background: 'var(--danger-light)', borderColor: 'var(--danger-border)' }}>
-                         <ShieldCheck className="shrink-0" size={20} style={{ color: 'var(--danger)' }} />
-                         <div>
-                            <p className="text-xs font-bold" style={{ color: 'var(--danger)' }}>Sensitive Data Detected</p>
-                            <p className="text-[10px] mt-1" style={{ color: 'var(--danger)', opacity: 0.8 }}>Found: OpenAI API Key. This action has been blocked per company policy.</p>
-                         </div>
-                      </div>
-                   </div>
-                   {/* Background Glow */}
-                   <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-full blur-3xl opacity-20 bg-indigo-600 rounded-full" />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button className="flex-1 h-9 rounded-lg border text-[11px] font-semibold"
+                              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'transparent' }}>
+                        Edit message
+                      </button>
+                      <button className="flex-1 h-9 rounded-lg text-[11px] font-bold text-white"
+                              style={{ background: 'var(--accent)' }}>
+                        🔒 Mask &amp; Send
+                      </button>
+                      <button className="flex-1 h-9 rounded-lg text-[11px] font-semibold"
+                              style={{ background: 'var(--danger-light)', color: 'var(--danger)' }}>
+                        Block
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute -bottom-4 -right-4 px-3 py-2 rounded-xl shadow-lg border flex items-center gap-2"
+                     style={{ background: 'var(--bg-surface)', borderColor: 'var(--accent-border)' }}>
+                  <Shield size={14} style={{ color: 'var(--accent)' }} />
+                  <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Protected by SecureGPT</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-32 px-6">
-          <div className="max-w-5xl mx-auto rounded-[2.5rem] p-12 md:p-24 text-center relative overflow-hidden text-white" 
-               style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)' }}>
-            <div className="relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Ready to Secure Your AI Future?</h2>
-              <p className="text-xl text-indigo-100/70 max-w-2xl mx-auto mb-12">
-                Join hundreds of enterprises using SecureGPT to enable AI adoption without compromising on security or privacy.
+        {/* ── Threat coverage ── */}
+        <section id="threat-coverage" className="py-28 px-6 border-t"
+                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--accent)' }}>Threat coverage</p>
+              <h2 className="text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>What SecureGPT Catches</h2>
+              <p className="max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
+                Every category of sensitive data that shouldn't be in an AI prompt — detected and masked before it leaves your browser.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/login">
-                  <Button variant="secondary" size="lg" className="rounded-full bg-white text-indigo-900 hover:bg-indigo-50 px-10 h-14 font-bold shadow-xl border-transparent">
-                    Get Started for Free
-                  </Button>
-                </Link>
-                <Link href="#">
-                  <span className="text-sm font-bold border-b border-indigo-200/30 pb-0.5 hover:border-indigo-100 transition-colors">Talk to Sales</span>
-                </Link>
-              </div>
             </div>
-            {/* Background pattern */}
-            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" 
-                 style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              <ThreatCard icon={<FileKey size={20} style={{ color: 'var(--accent)' }} />}
+                          iconBg="var(--accent-light)" category="Credentials & Secrets"
+                          items={['API keys (OpenAI, AWS, GCP…)', 'Private SSH / RSA keys', 'JWT tokens', 'Passwords & tokens', 'OAuth secrets']} />
+              <ThreatCard icon={<Fingerprint size={20} style={{ color: 'var(--success)' }} />}
+                          iconBg="var(--success-light)" category="Personal Identity (PII)"
+                          items={['Full names & emails', 'Phone numbers', 'National ID / SSN', 'Passport numbers', 'Date of birth']} />
+              <ThreatCard icon={<BarChart3 size={20} style={{ color: 'var(--warning)' }} />}
+                          iconBg="var(--warning-light)" category="Financial Data"
+                          items={['Credit / debit card numbers', 'IBAN & SWIFT codes', 'Bank account numbers', 'Tax IDs', 'Investment details']} />
+              <ThreatCard icon={<Network size={20} style={{ color: 'var(--violet)' }} />}
+                          iconBg="var(--violet-light)" category="Corporate IP"
+                          items={['Internal IP addresses', 'Internal hostnames', 'Database connection strings', 'Confidential project names', 'Unreleased product data']} />
+            </div>
           </div>
         </section>
+
+        {/* ── Trust signals ── */}
+        <section className="py-20 px-6 border-t" style={{ borderColor: 'var(--border)' }}>
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <TrustCard icon={<Lock size={18} style={{ color: 'var(--accent)' }} />}
+                         title="Zero cloud exposure"
+                         desc="Detection, masking, and enforcement run entirely inside your browser tab. We never see your raw prompts." />
+              <TrustCard icon={<ShieldCheck size={18} style={{ color: 'var(--success)' }} />}
+                         title="Compliance ready"
+                         desc="Audit logs and policy controls built for GDPR, HIPAA, SOC 2, and internal data governance frameworks." />
+              <TrustCard icon={<AlertTriangle size={18} style={{ color: 'var(--warning)' }} />}
+                         title="Policy enforcement"
+                         desc="Admins set the rules. Employees get clear warnings. Nothing slips through undetected or unlogged." />
+            </div>
+          </div>
+        </section>
+
+        {/* ── CTA ── */}
+        <section className="py-28 px-6">
+          <div className="max-w-5xl mx-auto rounded-3xl p-12 md:p-20 text-center relative overflow-hidden text-white"
+               style={{ background: 'linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-mid) 50%, var(--accent) 100%)' }}>
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 border"
+                   style={{ background: 'var(--on-dark-faint)', borderColor: 'var(--on-dark-border)', color: 'var(--brand-link)' }}>
+                <Shield size={11} />
+                Your team is using AI right now
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-5 tracking-tight">
+                Every unprotected prompt<br />is a potential breach.
+              </h2>
+              <p className="text-lg max-w-xl mx-auto mb-10" style={{ color: 'var(--on-dark-body)' }}>
+                SecureGPT takes 2 minutes to install and immediately starts protecting every message your team sends to AI tools — for free.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+                <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
+                  <Button variant="secondary" size="lg"
+                          className="rounded-full px-10 font-bold border-transparent"
+                          style={{ background: 'var(--on-dark-full)', color: 'var(--brand-dark)', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
+                    <Shield size={16} className="mr-2" style={{ color: 'var(--accent)' }} />
+                    Add to Chrome — It's Free
+                  </Button>
+                </a>
+                <a href="mailto:info@rivedix.com?subject=SecureGPT Enterprise"
+                   className="text-sm font-semibold pb-0.5 transition-colors"
+                   style={{ color: 'var(--brand-link)', borderBottom: '1px solid var(--on-dark-border)' }}>
+                  Talk to our security team →
+                </a>
+              </div>
+            </div>
+            <div className="absolute top-0 left-0 w-full h-full opacity-[0.04] pointer-events-none"
+                 style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '36px 36px' }} />
+          </div>
+        </section>
+
       </main>
 
-      {/* Footer */}
-      <footer className="py-20 border-t" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+      {/* ── Footer ── */}
+      <footer className="py-16 border-t"
+              style={{ background: 'var(--brand-dark)', borderColor: 'var(--brand-mid)' }}>
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-12">
             <div className="col-span-2">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="size-8 rounded-lg flex items-center justify-center shadow-lg overflow-hidden" style={{ background: '#091a2a' }}>
-                  <img src="/rivedix_logo.png" alt="Rivedix Logo" className="w-full h-full object-contain p-0.5" />
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="size-8 rounded-lg flex items-center justify-center overflow-hidden"
+                     style={{ background: 'var(--on-dark-logo)' }}>
+                  <img src="/rivedix_logo.png" alt="SecureGPT" className="w-full h-full object-contain p-0.5" />
                 </div>
-                <span className="text-xl font-bold tracking-tight text-[var(--text-primary)]">SecureGPT</span>
-              </div>              <p className="text-sm text-[var(--text-secondary)] max-w-xs leading-relaxed">
-                Empowering teams to use Generative AI safely with enterprise-grade data loss prevention built for the browser.
+                <span className="text-lg font-bold" style={{ color: 'var(--on-dark-full)' }}>
+                  Secure<span style={{ color: 'var(--brand-light)' }}>GPT</span>
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed mb-5 max-w-xs" style={{ color: 'var(--on-dark-mid)' }}>
+                Browser-native DLP for AI — built by{' '}
+                <a href="https://rivedix.com" target="_blank" rel="noopener noreferrer"
+                   style={{ color: 'var(--brand-link)' }}>Rivedix</a>.
               </p>
+              <a href="mailto:info@rivedix.com"
+                 className="inline-flex items-center gap-2 text-xs"
+                 style={{ color: 'var(--on-dark-muted)' }}>
+                <Mail size={12} />
+                info@rivedix.com
+              </a>
             </div>
-            
+
             <div>
-              <h4 className="font-bold text-sm mb-6 text-[var(--text-primary)]">Product</h4>
-              <ul className="space-y-4 text-sm text-[var(--text-secondary)]">
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">Extension</a></li>
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">Dashboard</a></li>
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">API</a></li>
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">Enterprise</a></li>
+              <h4 className="font-semibold text-sm mb-5" style={{ color: 'var(--on-dark-high)' }}>Product</h4>
+              <ul className="space-y-3 text-sm" style={{ color: 'var(--on-dark-muted)' }}>
+                <li><a href="#features" style={{ color: 'inherit' }}>Features</a></li>
+                <li><a href="#how-it-works" style={{ color: 'inherit' }}>How it works</a></li>
+                <li><a href="#threat-coverage" style={{ color: 'inherit' }}>Threat coverage</a></li>
+                <li><a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-light)' }}>Chrome Extension ↗</a></li>
+                <li><Link href="/dashboard" style={{ color: 'inherit' }}>Dashboard</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold text-sm mb-6 text-[var(--text-primary)]">Company</h4>
-              <ul className="space-y-4 text-sm text-[var(--text-secondary)]">
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">Contact</a></li>
+              <h4 className="font-semibold text-sm mb-5" style={{ color: 'var(--on-dark-high)' }}>Company</h4>
+              <ul className="space-y-3 text-sm" style={{ color: 'var(--on-dark-muted)' }}>
+                <li><a href="https://rivedix.com" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>About Rivedix</a></li>
+                <li><a href="mailto:info@rivedix.com?subject=SecureGPT Enterprise" style={{ color: 'inherit' }}>Enterprise Sales</a></li>
+                <li><a href="mailto:info@rivedix.com" style={{ color: 'inherit' }}>Contact Us</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold text-sm mb-6 text-[var(--text-primary)]">Legal</h4>
-              <ul className="space-y-4 text-sm text-[var(--text-secondary)]">
-                <li><Link href="/privacy" className="hover:text-[var(--accent)] transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-[var(--accent)] transition-colors">Terms of Service</Link></li>
-                <li><a href="#" className="hover:text-[var(--accent)] transition-colors">Cookie Policy</a></li>
+              <h4 className="font-semibold text-sm mb-5" style={{ color: 'var(--on-dark-high)' }}>Legal</h4>
+              <ul className="space-y-3 text-sm" style={{ color: 'var(--on-dark-muted)' }}>
+                <li><Link href="/privacy" style={{ color: 'inherit' }}>Privacy Policy</Link></li>
+                <li><Link href="/terms" style={{ color: 'inherit' }}>Terms of Service</Link></li>
               </ul>
             </div>
           </div>
 
-          <div className="pt-8 border-t border-[var(--border)] flex flex-col md:flex-row items-center justify-between gap-6">
-            <p className="text-xs text-[var(--text-tertiary)] font-medium">
-              © 2026 SecureGPT Inc. All rights reserved.
+          <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-5"
+               style={{ borderColor: 'var(--brand-mid)' }}>
+            <p className="text-xs font-medium" style={{ color: 'var(--on-dark-low)' }}>
+              © {new Date().getFullYear()} Rivedix. All rights reserved.
             </p>
-            <div className="flex gap-6 text-[var(--text-tertiary)]">
-               {/* Social Icons Placeholder */}
-               <div className="size-5 bg-current opacity-20 rounded-full" />
-               <div className="size-5 bg-current opacity-20 rounded-full" />
-               <div className="size-5 bg-current opacity-20 rounded-full" />
+            <div className="flex items-center gap-5">
+              <a href="https://github.com/rivedix" target="_blank" rel="noopener noreferrer" aria-label="GitHub"
+                 style={{ color: 'var(--on-dark-low)' }}><Link2 size={17} /></a>
+              <a href="https://twitter.com/rivedix" target="_blank" rel="noopener noreferrer" aria-label="Twitter"
+                 style={{ color: 'var(--on-dark-low)' }}><AtSign size={17} /></a>
+              <a href="https://linkedin.com/company/rivedix" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"
+                 style={{ color: 'var(--on-dark-low)' }}><ExternalLink size={17} /></a>
             </div>
           </div>
         </div>
@@ -303,25 +460,66 @@ export default function LandingPage() {
   );
 }
 
-function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+function FeatureCard({ icon, iconBg, title, desc }: { icon: React.ReactNode; iconBg: string; title: string; desc: string }) {
   return (
-    <div className="p-8 rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group">
-      <div className="size-12 rounded-2xl flex items-center justify-center mb-6 bg-[var(--bg-surface-2)] group-hover:scale-110 transition-transform duration-300">
+    <div className="p-7 rounded-2xl border transition-all duration-300 group hover:-translate-y-1"
+         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}
+         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent-border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; }}
+         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-card)'; }}>
+      <div className="size-11 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
+           style={{ background: iconBg }}>
         {icon}
       </div>
-      <h3 className="text-xl font-bold mb-4 text-[var(--text-primary)]">{title}</h3>
-      <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{desc}</p>
+      <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
     </div>
   );
 }
 
 function Step({ number, title, desc }: { number: string; title: string; desc: string }) {
   return (
-    <div className="flex gap-6">
-      <div className="text-2xl font-black text-indigo-200/60 tabular-nums leading-none">{number}</div>
+    <div className="flex gap-5">
+      <div className="text-2xl font-black tabular-nums leading-none mt-0.5 w-8 shrink-0"
+           style={{ color: 'var(--accent-border)' }}>
+        {number}
+      </div>
       <div>
-        <h4 className="text-lg font-bold mb-2 text-[var(--text-primary)]">{title}</h4>
-        <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{desc}</p>
+        <h4 className="text-base font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>{title}</h4>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function ThreatCard({ icon, iconBg, category, items }: { icon: React.ReactNode; iconBg: string; category: string; items: string[] }) {
+  return (
+    <div className="p-6 rounded-2xl border" style={{ background: 'var(--bg-base)', borderColor: 'var(--border)' }}>
+      <div className="size-10 rounded-xl flex items-center justify-center mb-4" style={{ background: iconBg }}>
+        {icon}
+      </div>
+      <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{category}</h3>
+      <ul className="space-y-2">
+        {items.map(item => (
+          <li key={item} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <CheckCircle2 size={11} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function TrustCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <div className="p-6 rounded-2xl border flex gap-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+      <div className="size-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+           style={{ background: 'var(--bg-surface-2)' }}>
+        {icon}
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>{title}</h4>
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
       </div>
     </div>
   );

@@ -1,117 +1,167 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 
 /* src/app/globals.css */
 @import "tailwindcss";
 
 
-/* ─── LIGHT THEME (default) ──────────────────────────────────────────────── */
+/* ─── THEME ──────────────────────────────────────────────────────────────── */
+/* Change ONLY --brand-h and --brand-s to retheme the entire site.            */
+/* Examples: 220=blue  180=teal  262=violet  160=green  30=amber              */
 :root {
-  --bg-base:        #faf9f7;
-  --bg-surface:     #ffffff;
-  --bg-surface-2:   #f5f3ef;
-  --bg-surface-3:   #ede9e3;
+  /* ── Two primitives — the only values you need to change ── */
+  --brand-h: 220;
+  --brand-s: 75%;
 
-  --border:         #e5e0d8;
-  --border-2:       #d4cec5;
-  --border-strong:  #b8b0a4;
+  /* ── Accent scale (derived from primitives) ── */
+  --accent:         hsl(var(--brand-h), var(--brand-s), 48%);
+  --accent-hover:   hsl(var(--brand-h), var(--brand-s), 40%);
+  --accent-light:   hsl(var(--brand-h), 60%, 96%);
+  --accent-border:  hsl(var(--brand-h), 55%, 80%);
+  --accent-text:    hsl(var(--brand-h), var(--brand-s), 48%);
+  --accent-glow:    hsla(var(--brand-h), var(--brand-s), 48%, 0.10);
 
-  --text-primary:   #1a1714;
-  --text-secondary: #6b6560;
-  --text-tertiary:  #a09890;
+  /* ── Brand dark scale (for footer, stat strip, CTA) ── */
+  --brand-dark:     hsl(var(--brand-h), 62%, 13%);
+  --brand-mid:      hsl(var(--brand-h), 56%, 22%);
+  --brand-light:    hsl(var(--brand-h), 88%, 68%);
+  --brand-link:     hsl(var(--brand-h), 88%, 79%);
+  --brand-btn-shadow: hsla(var(--brand-h), var(--brand-s), 48%, 0.35);
 
-  --accent:         #4f46e5;
-  --accent-hover:   #4338ca;
-  --accent-light:   rgba(79,70,229,0.08);
-  --accent-border:  rgba(79,70,229,0.20);
-  --accent-text:    #4f46e5;
+  /* ── Hero ── */
+  --hero-blob-1:    hsl(var(--brand-h), 90%, 88%);
+  --hero-blob-2:    hsl(var(--brand-h), 88%, 78%);
+  --hero-grad-from: hsl(var(--brand-h), var(--brand-s), 48%);
+  --hero-grad-to:   hsl(var(--brand-h), 85%, 62%);
 
+  /* ── Surfaces ── */
+  --bg-base:        hsl(var(--brand-h), 55%, 97%);
+  --bg-surface:     hsl(0, 0%, 100%);
+  --bg-surface-2:   hsl(var(--brand-h), 50%, 95%);
+  --bg-surface-3:   hsl(var(--brand-h), 45%, 91%);
+
+  /* ── Borders ── */
+  --border:         hsl(var(--brand-h), 42%, 86%);
+  --border-2:       hsl(var(--brand-h), 42%, 80%);
+  --border-strong:  hsl(var(--brand-h), 45%, 65%);
+
+  /* ── Text ── */
+  --text-primary:   hsl(var(--brand-h), 55%, 11%);
+  --text-secondary: hsl(var(--brand-h), 32%, 36%);
+  --text-tertiary:  hsl(var(--brand-h), 22%, 59%);
+
+  /* ── Nav backdrop ── */
+  --nav-bg:         hsla(0, 0%, 100%, 0.88);
+
+  /* ── On-dark utilities (for dark footer / CTA / stat strip) ── */
+  --on-dark-full:   #ffffff;
+  --on-dark-high:   rgba(255,255,255,0.70);
+  --on-dark-body:   rgba(255,255,255,0.60);
+  --on-dark-mid:    rgba(255,255,255,0.45);
+  --on-dark-muted:  rgba(255,255,255,0.40);
+  --on-dark-low:    rgba(255,255,255,0.30);
+  --on-dark-border: rgba(255,255,255,0.18);
+  --on-dark-faint:  rgba(255,255,255,0.10);
+  --on-dark-logo:   rgba(255,255,255,0.08);
+  --on-dark-dim:    rgba(255,255,255,0.04);
+
+  /* ── Violet (secondary accent, used sparingly for contrast variety) ── */
+  --violet:         hsl(262, 68%, 48%);
+  --violet-light:   hsl(262, 68%, 96%);
+
+  /* ── Semantic status — intentionally NOT brand-derived ── */
   --success:        #059669;
   --success-light:  rgba(5,150,105,0.08);
   --success-border: rgba(5,150,105,0.20);
+  --success-glow:   rgba(5, 150, 105, 0.08);
 
   --warning:        #d97706;
   --warning-light:  rgba(217,119,6,0.08);
-  --warning-border: rgba(217,119,6,0.20);
+  --warning-border: rgba(217,119,6,0.18);
+  --warning-glow:   rgba(217, 119, 6, 0.08);
 
   --danger:         #dc2626;
-  --danger-light:   rgba(220,38,38,0.08);
-  --danger-border:  rgba(220,38,38,0.20);
+  --danger-light:   rgba(220,38,38,0.07);
+  --danger-border:  rgba(220,38,38,0.18);
+  --danger-glow:    rgba(220, 38, 38, 0.08);
 
   --info:           #0284c7;
   --info-light:     rgba(2,132,199,0.08);
   --info-border:    rgba(2,132,199,0.20);
 
-  --sidebar-bg:           #1e1b4b;
-  --sidebar-border:       rgba(255,255,255,0.06);
-  --sidebar-text:         rgba(255,255,255,0.55);
+  /* ── Sidebar ── */
+  --sidebar-bg:           var(--brand-dark);
+  --sidebar-border:       rgba(255,255,255,0.07);
+  --sidebar-text:         rgba(255,255,255,0.50);
   --sidebar-text-active:  #ffffff;
   --sidebar-active-bg:    rgba(255,255,255,0.10);
   --sidebar-hover-bg:     rgba(255,255,255,0.06);
-  --sidebar-accent:       #818cf8;
+  --sidebar-accent:       var(--brand-light);
 
-  --shadow-sm:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md:    0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-lg:    0 8px 32px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06);
-  --shadow-card:  0 1px 3px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-modal: 0 24px 64px rgba(0,0,0,0.14), 0 8px 24px rgba(0,0,0,0.08);
+  /* ── Shadows (tinted with brand hue) ── */
+  --shadow-sm:    0 1px 3px hsla(var(--brand-h),50%,10%,0.06), 0 1px 2px hsla(var(--brand-h),50%,10%,0.04);
+  --shadow-md:    0 4px 12px hsla(var(--brand-h),50%,10%,0.08), 0 2px 4px hsla(var(--brand-h),50%,10%,0.04);
+  --shadow-lg:    0 8px 32px hsla(var(--brand-h),50%,10%,0.10), 0 4px 8px hsla(var(--brand-h),50%,10%,0.06);
+  --shadow-card:  0 1px 3px hsla(var(--brand-h),50%,10%,0.05), 0 0 0 1px hsla(var(--brand-h),50%,10%,0.04);
+  --shadow-modal: 0 24px 64px hsla(var(--brand-h),50%,10%,0.14), 0 8px 24px hsla(var(--brand-h),50%,10%,0.08);
 
-  --modal-backdrop: rgba(15,10,5,0.50);
+  --modal-backdrop: rgba(5,15,35,0.55);
 
-  --skeleton-from:   #f0ece6;
-  --skeleton-to:     #e5e0d8;
-  --scrollbar-track: #f0ece6;
-  --scrollbar-thumb: #c8c0b8;
-
-  --accent-glow:    rgba(79, 70, 229, 0.08);
-  --success-glow:   rgba(5, 150, 105, 0.08);
-  --warning-glow:   rgba(217, 119, 6, 0.08);
-  --danger-glow:    rgba(220, 38, 38, 0.08);
+  --skeleton-from:   hsl(var(--brand-h), 45%, 91%);
+  --skeleton-to:     hsl(var(--brand-h), 42%, 86%);
+  --scrollbar-track: hsl(var(--brand-h), 50%, 95%);
+  --scrollbar-thumb: hsl(var(--brand-h), 38%, 76%);
 }
 
-/* ─── DARK THEME — lighter & warmer than before ──────────────────────────── */
+/* ─── DARK THEME ─────────────────────────────────────────────────────────── */
+/* brand-h / brand-s are inherited from :root — no need to re-declare them.   */
 .dark {
-  --bg-base:        #16181d;
-  --bg-surface:     #1e2128;
-  --bg-surface-2:   #262a33;
-  --bg-surface-3:   #2e333e;
+  --accent:         hsl(var(--brand-h), 70%, 68%);
+  --accent-hover:   hsl(var(--brand-h), 70%, 60%);
+  --accent-light:   hsla(var(--brand-h), 70%, 68%, 0.12);
+  --accent-border:  hsla(var(--brand-h), 70%, 68%, 0.25);
+  --accent-text:    hsl(var(--brand-h), 70%, 68%);
+  --accent-glow:    hsla(var(--brand-h), 70%, 68%, 0.16);
+
+  --bg-base:        hsl(var(--brand-h), 12%, 10%);
+  --bg-surface:     hsl(var(--brand-h), 10%, 13%);
+  --bg-surface-2:   hsl(var(--brand-h), 10%, 16%);
+  --bg-surface-3:   hsl(var(--brand-h), 10%, 19%);
 
   --border:         rgba(255,255,255,0.08);
   --border-2:       rgba(255,255,255,0.13);
   --border-strong:  rgba(255,255,255,0.22);
 
-  --text-primary:   #eef0f4;
-  --text-secondary: #9aa1b0;
-  --text-tertiary:  #646d80;
+  --text-primary:   hsl(var(--brand-h), 20%, 95%);
+  --text-secondary: hsl(var(--brand-h), 10%, 65%);
+  --text-tertiary:  hsl(var(--brand-h), 8%, 44%);
 
-  --accent:         #818cf8;
-  --accent-hover:   #6366f1;
-  --accent-light:   rgba(129,140,248,0.12);
-  --accent-border:  rgba(129,140,248,0.25);
-  --accent-text:    #818cf8;
+  --nav-bg:         hsla(var(--brand-h), 12%, 10%, 0.88);
 
   --success:        #34d399;
   --success-light:  rgba(52,211,153,0.12);
   --success-border: rgba(52,211,153,0.22);
+  --success-glow:   rgba(52, 211, 153, 0.16);
 
   --warning:        #fbbf24;
   --warning-light:  rgba(251,191,36,0.12);
   --warning-border: rgba(251,191,36,0.22);
+  --warning-glow:   rgba(251, 191, 36, 0.16);
 
   --danger:         #f87171;
   --danger-light:   rgba(248,113,113,0.12);
   --danger-border:  rgba(248,113,113,0.22);
+  --danger-glow:    rgba(248, 113, 113, 0.16);
 
   --info:           #38bdf8;
   --info-light:     rgba(56,189,248,0.12);
   --info-border:    rgba(56,189,248,0.22);
 
-  --sidebar-bg:           #13151a;
-  --sidebar-border:       rgba(255,255,255,0.07);
-  --sidebar-text:         rgba(255,255,255,0.45);
-  --sidebar-text-active:  #ffffff;
-  --sidebar-active-bg:    rgba(129,140,248,0.14);
-  --sidebar-hover-bg:     rgba(255,255,255,0.05);
-  --sidebar-accent:       #818cf8;
+  --violet:         hsl(262, 75%, 70%);
+  --violet-light:   hsla(262, 75%, 70%, 0.12);
+
+  --sidebar-bg:     hsl(var(--brand-h), 14%, 7%);
+  --sidebar-active-bg: hsla(var(--brand-h), 70%, 68%, 0.14);
+  --sidebar-accent: hsl(var(--brand-h), 70%, 68%);
 
   --shadow-sm:    0 1px 3px rgba(0,0,0,0.25);
   --shadow-md:    0 4px 12px rgba(0,0,0,0.35);
@@ -121,22 +171,17 @@
 
   --modal-backdrop: rgba(8,9,12,0.72);
 
-  --skeleton-from:   #262a33;
-  --skeleton-to:     #2e333e;
-  --scrollbar-track: #1e2128;
-  --scrollbar-thumb: #363c49;
-
-  --accent-glow:    rgba(129, 140, 248, 0.16);
-  --success-glow:   rgba(52, 211, 153, 0.16);
-  --warning-glow:   rgba(251, 191, 36, 0.16);
-  --danger-glow:    rgba(248, 113, 113, 0.16);
+  --skeleton-from:   hsl(var(--brand-h), 10%, 16%);
+  --skeleton-to:     hsl(var(--brand-h), 10%, 19%);
+  --scrollbar-track: hsl(var(--brand-h), 10%, 13%);
+  --scrollbar-thumb: hsl(var(--brand-h), 8%, 24%);
 }
 
 /* ─── BASE ───────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: 'Poppins', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

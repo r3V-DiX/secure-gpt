@@ -118,6 +118,11 @@ async function handleSSEBlock(block: string): Promise<void> {
   }
 }
 
+// Public one-shot sync — used by SYNC_POLICY message handler
+export async function forcePolicySync(): Promise<void> {
+  await pollOnce()
+}
+
 // ── Fallback alarm ────────────────────────────────────────────────────────────
 
 function scheduleFallbackAlarm(): void {

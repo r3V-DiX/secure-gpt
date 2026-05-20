@@ -3,6 +3,7 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  transpilePackages: ["@securegpt/shared"],
   turbopack: {
     root: path.resolve(__dirname, "../.."), // ✅ secure-gpt/ monorepo root
     resolveAlias: {

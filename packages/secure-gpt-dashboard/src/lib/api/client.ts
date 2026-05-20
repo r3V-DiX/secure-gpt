@@ -36,13 +36,13 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
-// ── Response interceptor — unwrap envelope, redirect on 401 ──────────────────
+// ── Response interceptor — unwrap envelope, signal session expiry on 401 ─────
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
     if (error.response?.status === 401 && !isPublicPath()) {
       if (typeof window !== 'undefined') {
-        window.location.href = '/login'
+        window.dispatchEvent(new CustomEvent('session-expired'))
       }
     }
     const message =

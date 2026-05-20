@@ -19,8 +19,7 @@ export const allConfidentialRules: DetectionRule[] = [
     type: 'aws_key',
     label: 'AWS Secret Key',
     pattern: /(?:aws_secret_access_key|aws_secret_key).*?['"]?[a-zA-Z0-9/+=]{40}['"]?/gi,
-    requireContext: true,
-    triggers: ['secret', 'aws'],
+    requireContext: false,
     severity: 'critical',
     enabled: true,
     description: 'AWS Secret Access Key.'
@@ -54,8 +53,7 @@ export const allConfidentialRules: DetectionRule[] = [
     label: 'JWT Token',
     pattern: /\beyJ[a-zA-Z0-9_=]+?\.[a-zA-Z0-9_=]+?\.[a-zA-Z0-9_+/=-]*\b/g,
     validatorId: 'jwt_parser',
-    requireContext: true,
-    triggers: ['token', 'auth', 'bearer'],
+    requireContext: false,
     severity: 'high',
     enabled: true,
     description: 'Standard JSON Web Token (JWT) base64 pattern.'

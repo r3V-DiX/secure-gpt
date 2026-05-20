@@ -273,7 +273,7 @@ Extension polled `GET /extension/policy` every 30s (later reduced to 10s). Any p
 | 11 | Medium | dom-utils.ts:256 | `clearAttachments` `.group` heuristic clicks unintended buttons | ✅ Fixed |
 | 12 | Medium | interceptor.ts:83 | `bypassSet` element mismatch in `handleGlobalClick` — resubmit loops | ✅ Fixed |
 | 13 | Medium | log-batcher.ts:20 | Log queue race — concurrent read-modify-write drops events | ✅ Fixed |
-| 14 | Medium | background/index.ts:118 | `flushLogs` on suspend is fire-and-forget — recent logs lost | ⚠️ Mitigated |
+| 14 | Medium | background/index.ts:118 | `flushLogs` on suspend is fire-and-forget — recent logs lost | ✅ Fixed |
 | 15 | Medium | interceptor.ts:354 | `innerText` fallback bypasses React state — original text submitted | ✅ Fixed |
 | 16 | Low | interceptor.ts:553 | `preventDefault` on `change` event is a no-op | ✅ Fixed |
 | 17 | Medium | pipeline.ts:22 | `initializePipeline` not concurrency-safe — double initialization | ✅ Fixed |

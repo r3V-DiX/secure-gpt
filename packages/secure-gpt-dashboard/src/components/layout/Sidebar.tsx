@@ -4,20 +4,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { clsx } from 'clsx'
 import {
-  LayoutDashboard, FileText, Bell, ShieldCheck,
-  User, Settings, LogOut, Shield,
+  LayoutDashboard, FileText, ShieldCheck,
+  User, Settings, LogOut,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
-import { useSidebarBadges } from '@/hooks/use-sidebar-badges'
 import { Avatar } from '@/components/shared/Avatar'
-import { ThemeToggleButton } from '@/contexts/theme-context'
 import { useLogoutConfirm } from '@/components/ui/modal/modal'
 import { useToast } from '@/contexts/toast-context'
 
 const NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Event Log', href: '/logs', icon: FileText },
-  { label: 'Alerts', href: '/alerts', icon: Bell },
   { label: 'Policy', href: '/policy', icon: ShieldCheck },
   { label: 'Profile', href: '/profile', icon: User },
   { label: 'Settings', href: '/settings', icon: Settings },
@@ -26,7 +23,6 @@ const NAV = [
 export function Sidebar() {
   const { user, logout } = useAuth()
   const pathname = usePathname()
-  const { alertCount } = useSidebarBadges()
   const confirmLogout = useLogoutConfirm()
   const { toast } = useToast()
 
@@ -64,9 +60,7 @@ export function Sidebar() {
       {/* Nav items */}
       <nav className="flex flex-col gap-0.5 flex-1">
         {NAV.map(({ label, href, icon: Icon }, idx) => {
-          const isAlerts = href === '/alerts'
           const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
-          const showBadge = isAlerts && alertCount && alertCount > 0
 
           return (
             <Link
@@ -91,13 +85,9 @@ export function Sidebar() {
                 )}
               />
               <span className="flex-1">{label}</span>
-              {showBadge ? (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 border border-red-500/30 text-red-400 tabular-nums leading-none">
-                  {alertCount! > 99 ? '99+' : alertCount}
-                </span>
-              ) : active ? (
+              {active && (
                 <span className="size-1.5 rounded-full bg-[var(--sidebar-accent)] animate-pulse-dot" />
-              ) : null}
+              )}
             </Link>
           )
         })}
@@ -105,25 +95,20 @@ export function Sidebar() {
 
       {/* Bottom section */}
       <div className="pt-3 mt-2 border-t border-[var(--sidebar-border)] space-y-1">
-        <ThemeToggleButton />
-
-        {/* User row */}
-        <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-[var(--sidebar-hover-bg)] transition-colors group">
+        {/* User row — click anywhere to sign out */}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-red-500/10 transition-colors group cursor-pointer"
+        >
           <Avatar src={user.avatarUrl} name={user.fullName} email={user.email} size="sm" />
-          <div className="flex flex-col min-w-0 flex-1">
+          <div className="flex flex-col min-w-0 flex-1 text-left">
             <span className="text-[12px] font-semibold text-white/80 truncate group-hover:text-white transition-colors">
               {user.fullName ?? 'User'}
             </span>
             <span className="text-[10px] text-white/30 truncate">{user.email}</span>
           </div>
-          <button
-            onClick={handleLogout}
-            title="Sign out"
-            className="size-6 flex items-center justify-center rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
-          >
-            <LogOut size={11} />
-          </button>
-        </div>
+          <LogOut size={11} className="text-white/25 group-hover:text-red-400 transition-colors shrink-0" />
+        </button>
       </div>
     </aside>
   )

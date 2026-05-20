@@ -1,568 +1,299 @@
 'use client'
-// src/app/(app)/policy/page.tsx
 import { useState } from 'react'
-import { Button } from '@/components/ui/button/button'
 import { usePolicy } from '@/features/policy/hooks/use-policy'
-import type { PolicyAction, CustomRule } from '@/types'
-import { ShieldCheck, Globe, Settings2, CheckCircle, Plus, Trash2, PlusCircle, AlertCircle, X } from 'lucide-react'
+import { CategoryCard } from '@/features/policy/components/CategoryCard'
+import type { PolicyAction } from '@/types'
+import { ShieldCheck, Globe, Settings2, Plus, Save, Undo2, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react'
 import { Modal } from '@/components/ui/modal/modal'
+import { Button } from '@/components/ui/button/button'
+import { ACTION_LABEL, ACTION_COLORS, ACTIONS } from '@/features/policy/components/ActionSelector'
 
-const ACTIONS: PolicyAction[] = ['BLOCK', 'MASK', 'WARN_ALLOW', 'ALLOW']
-const PLATFORMS = ['chatgpt', 'gemini', 'copilot', 'claude', 'perplexity', 'meta-ai']
+const PLATFORMS = [
+  { id: 'chatgpt',    label: 'ChatGPT',    emoji: '🤖' },
+  { id: 'gemini',     label: 'Gemini',     emoji: '✨' },
+  { id: 'copilot',    label: 'Copilot',    emoji: '🪟' },
+  { id: 'claude',     label: 'Claude',     emoji: '🔶' },
+  { id: 'perplexity', label: 'Perplexity', emoji: '🔮' },
+  { id: 'meta-ai',    label: 'Meta AI',    emoji: '🌐' },
+]
 
-const ACTION_LABEL: Record<PolicyAction, string> = {
-  BLOCK: 'Block', MASK: 'Mask', WARN_ALLOW: 'Warn', ALLOW: 'Allow',
-}
+const BUILTIN = new Set(['FINANCIAL', 'PII', 'CONFIDENTIAL', 'IP'])
 
-const ACTION_COLORS: Record<PolicyAction, { bg: string; border: string; text: string }> = {
-  BLOCK:     { bg: 'var(--danger-light)',  border: 'var(--danger-border)',  text: 'var(--danger)' },
-  MASK:      { bg: 'var(--warning-light)', border: 'var(--warning-border)', text: 'var(--warning)' },
-  WARN_ALLOW:{ bg: 'var(--info-light)',    border: 'var(--info-border)',    text: 'var(--info)' },
-  ALLOW:     { bg: 'var(--success-light)', border: 'var(--success-border)', text: 'var(--success)' },
-}
-
-const CATEGORY_META: Record<string, { desc: string; icon: string }> = {
-  FINANCIAL:    { desc: 'Credit cards, bank accounts, tax IDs, financial data', icon: '💳' },
-  PII:          { desc: 'Names, emails, phone numbers, addresses, national IDs', icon: '👤' },
-  CONFIDENTIAL: { desc: 'API keys, credentials, source code, legal documents',  icon: '🔐' },
-  IP:           { desc: 'Patents, roadmaps, trade secrets, internal strategies', icon: '💡' },
-}
-
-export default function PolicyPage() {
-  const { 
-    config, loading, saving, savedAt, error, isDirty, 
-    updateCategory, addCategory, deleteCategory,
-    addCustomRule, updateCustomRule, deleteCustomRule,
-    updateField, save, discard 
-  } = usePolicy()
-
-  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false)
-  const [isAddRuleOpen, setIsAddRuleOpen] = useState<{ category: string } | null>(null)
-  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false)
-
-  const handleDiscard = () => {
-    discard()
-    setIsDiscardModalOpen(false)
-  }
-
-  if (loading) {
-    return (
-      <div className="max-w-[820px] space-y-4 animate-fade-in">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="skeleton h-28 rounded-2xl" />
-        ))}
-      </div>
-    )
-  }
-
-  const categories = Object.keys(config.categories)
-
+// ─── Floating save bar ────────────────────────────────────────────────────────
+function SaveBar({ isDirty, saving, onSave, onDiscard }: {
+  isDirty: boolean; saving: boolean; onSave: () => void; onDiscard: () => void
+}) {
   return (
-    <div className="max-w-[820px] space-y-6 animate-fade-in pb-8">
-
-      {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              Policy Settings
-            </h1>
-            {isDirty && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse-dot"
-                style={{ background: 'var(--warning-light)', color: 'var(--warning)', border: '1px solid var(--warning-border)' }}>
-                Unsaved Changes
-              </span>
-            )}
-          </div>
-          <p className="text-sm mt-0.5 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
-            Configure how SecureGPT handles each data category
-            {savedAt && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold"
-                style={{ color: 'var(--success)' }}>
-                <CheckCircle size={11} />
-                Saved {savedAt.toLocaleTimeString()}
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {isDirty && (
-            <Button variant="ghost" size="sm" onClick={() => setIsDiscardModalOpen(true)}>Discard</Button>
-          )}
-          <Button variant="primary" size="sm" loading={saving} onClick={save} disabled={!isDirty}>
-            {saving ? 'Publishing…' : 'Save Policy'}
-          </Button>
-        </div>
+    <div
+      className="fixed bottom-6 left-1/2 z-50 transition-all duration-300 ease-out"
+      style={{
+        transform: `translateX(-50%) translateY(${isDirty ? '0' : '96px'})`,
+        opacity: isDirty ? 1 : 0,
+        pointerEvents: isDirty ? 'auto' : 'none',
+      }}
+    >
+      <div className="flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-2xl border"
+        style={{
+          background: 'var(--bg-surface)',
+          borderColor: 'var(--border-2)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.25), 0 0 0 1px var(--border)',
+        }}>
+        <span className="size-2 rounded-full shrink-0" style={{ background: 'var(--warning)', boxShadow: '0 0 6px var(--warning)' }} />
+        <p className="text-xs font-medium pr-2" style={{ color: 'var(--text-secondary)' }}>
+          {saving ? 'Publishing policy…' : 'You have unsaved changes'}
+        </p>
+        <button onClick={onDiscard} disabled={saving}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-(--bg-surface-2)"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+          <Undo2 size={11} /> Discard
+        </button>
+        <button onClick={onSave} disabled={saving}
+          className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40"
+          style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 2px 8px var(--accent-glow)' }}>
+          {saving
+            ? <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            : <Save size={11} />}
+          {saving ? 'Saving…' : 'Save & Publish'}
+        </button>
       </div>
-
-      <Modal 
-        open={isDiscardModalOpen} 
-        onClose={() => setIsDiscardModalOpen(false)}
-      >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-              Discard changes?
-            </h3>
-            <button onClick={() => setIsDiscardModalOpen(false)} style={{ color: 'var(--text-tertiary)' }}>
-              <X size={18} />
-            </button>
-          </div>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            You have unsaved modifications to your detection policy. Are you sure you want to discard them? This action cannot be undone.
-          </p>
-          <div className="flex justify-end gap-3 mt-8">
-            <Button variant="ghost" onClick={() => setIsDiscardModalOpen(false)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDiscard}>Discard Changes</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {error && (
-        <div className="p-3 rounded-xl text-sm font-medium"
-          style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', color: 'var(--danger)' }}>
-          {error}
-        </div>
-      )}
-
-      {/* Section label */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ShieldCheck size={14} style={{ color: 'var(--accent-text)' }} />
-          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-            Detection Categories
-          </p>
-        </div>
-        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => setIsAddCategoryOpen(true)}>
-          <Plus size={12} />
-          Add Category
-        </Button>
-      </div>
-
-      {/* Category cards */}
-      <div className="space-y-4">
-        {categories.map((cat, i) => {
-          const cfg = config.categories[cat]
-          if (!cfg) return null
-          const meta = CATEGORY_META[cat] || { desc: 'Custom detection category', icon: '📁' }
-          const actionColors = ACTION_COLORS[cfg.action] ?? ACTION_COLORS.ALLOW
-          const actionLabel = ACTION_LABEL[cfg.action] ?? cfg.action
-          const isBuiltin = !!CATEGORY_META[cat]
-
-          return (
-            <div key={cat}
-              className="rounded-2xl border transition-all duration-300 animate-fade-in overflow-hidden hover:shadow-md hover:border-accent-border"
-              style={{
-                background: 'var(--bg-surface)',
-                borderColor: cfg.enabled ? 'var(--border-2)' : 'var(--border)',
-                boxShadow: cfg.enabled ? 'var(--shadow-md), 0 4px 20px -4px var(--accent-glow)' : 'var(--shadow-card)',
-                opacity: cfg.enabled ? 1 : 0.75,
-                animationDelay: `${i * 60}ms`,
-              }}>
-
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <span className="text-xl leading-none mt-0.5">{meta?.icon}</span>
-                    <div>
-                      <div className="flex items-center gap-2.5 mb-1">
-                        <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{cat}</span>
-                        {cfg.enabled && (
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
-                            style={{ background: actionColors.bg, borderColor: actionColors.border, color: actionColors.text }}>
-                            {actionLabel}
-                          </span>
-                        )}
-                        {!isBuiltin && (
-                          <button 
-                            onClick={() => deleteCategory(cat)}
-                            className="p-1 hover:bg-danger-light rounded-md text-text-tertiary hover:text-danger transition-colors"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        {meta?.desc}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Toggle */}
-                  <button
-                    onClick={() => updateCategory(cat, { enabled: !cfg.enabled })}
-                    className="relative w-11 h-6 rounded-full transition-all duration-300 shrink-0 mt-0.5 cursor-pointer shadow-inner"
-                    style={{ 
-                      background: cfg.enabled ? 'var(--accent)' : 'var(--bg-surface-3)',
-                      boxShadow: cfg.enabled ? '0 0 8px var(--accent-glow)' : 'none'
-                    }}>
-                    <span
-                      className="absolute top-1 left-1 size-4 bg-white rounded-full shadow-md transition-transform duration-300 ease-out"
-                      style={{ transform: cfg.enabled ? 'translateX(20px)' : 'translateX(0)' }}
-                    />
-                  </button>
-                </div>
-
-                {cfg.enabled && (
-                  <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-                    <p className="text-[11px] font-semibold uppercase tracking-widest mb-2.5"
-                      style={{ color: 'var(--text-tertiary)' }}>
-                      Action on detection
-                    </p>
-                    <div className="flex gap-2 flex-wrap">
-                      {ACTIONS.map(action => {
-                        const ac = ACTION_COLORS[action] ?? ACTION_COLORS.ALLOW
-                        const label = ACTION_LABEL[action] ?? action
-                        const isActive = cfg.action === action
-                        return (
-                          <button
-                            key={action}
-                            onClick={() => updateCategory(cat, { action })}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
-                            style={{
-                              background: isActive ? ac.bg : 'var(--bg-surface-2)',
-                              borderColor: isActive ? ac.border : 'var(--border)',
-                              color: isActive ? ac.text : 'var(--text-secondary)',
-                            }}>
-                            {label}
-                          </button>
-                        )
-                      })}
-                    </div>
-
-                    {/* Custom Rules Section */}
-                    <div className="mt-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-widest"
-                          style={{ color: 'var(--text-tertiary)' }}>
-                          Custom Rules
-                        </p>
-                        <button 
-                          onClick={() => setIsAddRuleOpen({ category: cat })}
-                          className="text-[10px] font-bold text-accent hover:underline flex items-center gap-1"
-                        >
-                          <PlusCircle size={10} />
-                          Add Rule
-                        </button>
-                      </div>
-
-                      {(!cfg.customRules || cfg.customRules.length === 0) ? (
-                        <div className="text-[11px] py-3 text-center border-2 border-dashed rounded-xl"
-                          style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}>
-                          No custom rules defined for this category
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {cfg.customRules.map(rule => (
-                            <div key={rule.id} 
-                              className="flex items-center justify-between p-3 rounded-xl border bg-surface-2"
-                              style={{ borderColor: 'var(--border)' }}>
-                              <div>
-                                <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{rule.label}</p>
-                                <code className="text-[10px] opacity-60">{rule.pattern}</code>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-bg-surface-3"
-                                  style={{ color: 'var(--text-secondary)' }}>
-                                  {rule.severity}
-                                </span>
-                                <button 
-                                  onClick={() => deleteCustomRule(cat, rule.id)}
-                                  className="p-1 hover:text-danger transition-colors text-text-tertiary"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Platforms */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Globe size={14} style={{ color: 'var(--accent-text)' }} />
-          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-            Monitored Platforms
-          </p>
-        </div>
-        <div className="rounded-2xl p-5 border"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
-          <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>
-            Select which AI platforms SecureGPT actively monitors
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {PLATFORMS.map(p => {
-              const active = config.monitoredPlatforms.includes(p)
-              return (
-                <button
-                  key={p}
-                  onClick={() => {
-                    const updated = active
-                      ? config.monitoredPlatforms.filter(x => x !== p)
-                      : [...config.monitoredPlatforms, p]
-                    updateField('monitoredPlatforms', updated)
-                  }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all"
-                  style={{
-                    background: active ? 'var(--accent-light)' : 'var(--bg-surface-2)',
-                    borderColor: active ? 'var(--accent-border)' : 'var(--border)',
-                    color: active ? 'var(--accent-text)' : 'var(--text-secondary)',
-                  }}>
-                  {p}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Global options */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Settings2 size={14} style={{ color: 'var(--accent-text)' }} />
-          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-            Global Options
-          </p>
-        </div>
-        <div className="rounded-2xl border overflow-hidden"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
-          {[
-            { key: 'allowPause' as const, label: 'Allow pause', desc: 'Let the extension be temporarily paused by the user' },
-            { key: 'logUserEmail' as const, label: 'Log user email', desc: 'Include your email address in audit logs' },
-          ].map(({ key, label, desc }, i) => (
-            <div key={key}
-              className="flex items-center justify-between gap-4 px-5 py-4"
-              style={{ borderBottom: i === 0 ? '1px solid var(--border)' : undefined }}>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{desc}</p>
-              </div>
-              <button
-                onClick={() => updateField(key, !config[key])}
-                className="relative w-10 h-5 rounded-full transition-all duration-200 shrink-0"
-                style={{ background: config[key] ? 'var(--accent)' : 'var(--bg-surface-3)' }}>
-                <span
-                  className="absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform duration-200"
-                  style={{ transform: config[key] ? 'translateX(20px)' : 'translateX(0)' }}
-                />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Add Category Modal */}
-      <Modal open={isAddCategoryOpen} onClose={() => setIsAddCategoryOpen(false)} size="sm">
-        <AddCategoryContent 
-          onAdd={(name, action) => {
-            addCategory(name, action)
-            setIsAddCategoryOpen(false)
-          }} 
-          onClose={() => setIsAddCategoryOpen(false)} 
-        />
-      </Modal>
-
-      {/* Add Rule Modal */}
-      <Modal open={!!isAddRuleOpen} onClose={() => setIsAddRuleOpen(null)} size="md">
-        {isAddRuleOpen && (
-          <AddRuleContent 
-            category={isAddRuleOpen.category}
-            onAdd={(rule) => {
-              addCustomRule(isAddRuleOpen.category, rule)
-              setIsAddRuleOpen(null)
-            }}
-            onClose={() => setIsAddRuleOpen(null)}
-          />
-        )}
-      </Modal>
     </div>
   )
 }
 
-function AddCategoryContent({ onAdd, onClose }: { onAdd: (name: string, action: PolicyAction) => void, onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [action, setAction] = useState<PolicyAction>('MASK')
+// ─── Page ─────────────────────────────────────────────────────────────────────
+export default function PolicyPage() {
+  const {
+    config, loading, saving, savedAt, error, isDirty,
+    updateCategory, addCategory, deleteCategory,
+    updateRuleOverride,
+    addCustomRule, deleteCustomRule,
+    updateField, save, discard,
+  } = usePolicy()
+
+  const [addOpen, setAddOpen] = useState(false)
+
+  // ── Loading skeleton ──────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="space-y-4 animate-fade-in max-w-4xl">
+        <div className="skeleton h-8 w-48 rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-36 rounded-2xl" />)}
+        </div>
+      </div>
+    )
+  }
+
+  const cats = Object.keys(config.categories)
 
   return (
-    <div className="p-6 space-y-4">
-      <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Add Custom Category</h2>
-      <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Category Name</label>
-        <input 
-          autoFocus
-          className="w-full px-4 py-2.5 rounded-xl border outline-none text-sm transition-all focus:ring-2"
-          style={{ 
-            background: 'var(--bg-surface-2)', 
-            borderColor: 'var(--border)', 
-            color: 'var(--text-primary)',
-            '--tw-ring-color': 'var(--accent)'
-          } as any}
-          placeholder="e.g. Project Code"
+    <>
+      <div className="space-y-7 pb-28 animate-fade-in">
+
+        {/* ── Page header ── */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Policy Settings</h1>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+              Control how SecureGPT responds when it detects sensitive data
+            </p>
+          </div>
+          {savedAt && !isDirty && (
+            <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'var(--success)' }}>
+              <CheckCircle size={13} /> Saved {savedAt.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+
+        {error && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+            style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', color: 'var(--danger)' }}>
+            <AlertCircle size={15} className="shrink-0" /> {error}
+          </div>
+        )}
+
+        {/* ── Detection categories ── */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={15} style={{ color: 'var(--accent-text)' }} />
+              <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Detection Categories</h2>
+              <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                style={{ background: 'var(--bg-surface-2)', color: 'var(--text-tertiary)' }}>
+                {cats.length}
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setAddOpen(true)}>
+              <Plus size={13} className="mr-1" /> New Category
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {cats.map((cat, i) => {
+              const cfg = config.categories[cat]
+              if (!cfg) return null
+              return (
+                <CategoryCard
+                  key={cat}
+                  categoryName={cat}
+                  config={cfg}
+                  isBuiltin={BUILTIN.has(cat)}
+                  animDelay={i * 60}
+                  onToggleEnabled={enabled => updateCategory(cat, { enabled })}
+                  onActionChange={action => updateCategory(cat, { action })}
+                  onRuleOverride={(ruleId, override) => updateRuleOverride(cat, ruleId, override)}
+                  onAddKeyword={kw => updateCategory(cat, { customKeywords: [...(cfg.customKeywords ?? []), kw] })}
+                  onRemoveKeyword={kw => updateCategory(cat, { customKeywords: (cfg.customKeywords ?? []).filter(k => k !== kw) })}
+                  onAddAllowlist={p => updateCategory(cat, { allowlist: [...(cfg.allowlist ?? []), p] })}
+                  onRemoveAllowlist={p => updateCategory(cat, { allowlist: (cfg.allowlist ?? []).filter(k => k !== p) })}
+                  onAddCustomRule={rule => addCustomRule(cat, rule)}
+                  onDeleteCustomRule={ruleId => deleteCustomRule(cat, ruleId)}
+                  onDelete={() => deleteCategory(cat)}
+                />
+              )
+            })}
+          </div>
+        </section>
+
+        {/* ── Platforms ── */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Globe size={15} style={{ color: 'var(--accent-text)' }} />
+            <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Monitored Platforms</h2>
+          </div>
+          <div className="rounded-2xl border p-5"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-tertiary)' }}>
+              SecureGPT will scan your messages on the selected AI platforms before sending.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {PLATFORMS.map(p => {
+                const on = config.monitoredPlatforms.includes(p.id)
+                return (
+                  <button key={p.id}
+                    onClick={() => {
+                      const next = on
+                        ? config.monitoredPlatforms.filter(x => x !== p.id)
+                        : [...config.monitoredPlatforms, p.id]
+                      updateField('monitoredPlatforms', next)
+                    }}
+                    className="flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all"
+                    style={{
+                      background: on ? 'var(--accent-light)' : 'var(--bg-surface-2)',
+                      borderColor: on ? 'var(--accent-border)' : 'var(--border)',
+                    }}>
+                    <span className="text-xl">{p.emoji}</span>
+                    <span className="text-[11px] font-semibold" style={{ color: on ? 'var(--accent-text)' : 'var(--text-secondary)' }}>
+                      {p.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Global options ── */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Settings2 size={15} style={{ color: 'var(--accent-text)' }} />
+            <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>General Settings</h2>
+          </div>
+          <div className="rounded-2xl border overflow-hidden"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
+            {([
+              { key: 'allowPause' as const, label: 'Allow users to pause protection', desc: 'Users can temporarily disable SecureGPT without contacting an admin' },
+              { key: 'logUserEmail' as const, label: 'Include email in audit logs', desc: "Audit entries will contain the user's email address for traceability" },
+            ]).map(({ key, label, desc }, i) => (
+              <div key={key}
+                className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors hover:bg-(--bg-surface-2)"
+                style={{ borderBottom: i === 0 ? '1px solid var(--border)' : undefined }}
+                onClick={() => updateField(key, !config[key])}>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{desc}</p>
+                </div>
+                <div className="relative w-10 h-5 rounded-full transition-all duration-200 shrink-0 pointer-events-none"
+                  style={{ background: config[key] ? 'var(--accent)' : 'var(--bg-surface-3)' }}>
+                  <span className="absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform duration-200"
+                    style={{ transform: config[key] ? 'translateX(20px)' : 'translateX(0)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <SaveBar isDirty={isDirty} saving={saving} onSave={save} onDiscard={discard} />
+
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} size="sm">
+        <AddCategoryModal
+          onAdd={(name, action) => { addCategory(name, action); setAddOpen(false) }}
+          onClose={() => setAddOpen(false)}
+        />
+      </Modal>
+    </>
+  )
+}
+
+// ─── Add category modal ───────────────────────────────────────────────────────
+function AddCategoryModal({ onAdd, onClose }: {
+  onAdd: (name: string, action: PolicyAction) => void
+  onClose: () => void
+}) {
+  const [name, setName] = useState('')
+  const [action, setAction] = useState<PolicyAction>('WARN_ALLOW')
+
+  return (
+    <div className="p-6 space-y-5">
+      <div>
+        <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>New Category</h2>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Create a custom detection category</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Name</label>
+        <input autoFocus
+          className="w-full px-3 py-2.5 rounded-xl border outline-none text-sm"
+          style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          placeholder="e.g. Medical Records"
           value={name}
           onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && name.trim() && onAdd(name, action)}
         />
       </div>
-      <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Default Action</label>
-        <div className="flex gap-2">
+
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>When detected, what should happen?</label>
+        <div className="space-y-2">
           {ACTIONS.map(a => {
-            const isActive = action === a
+            const ac = ACTION_COLORS[a]
+            const active = action === a
+            const desc: Record<PolicyAction, string> = {
+              BLOCK: 'Stop the message from being sent',
+              MASK: 'Replace sensitive text before sending',
+              WARN_ALLOW: 'Warn the user, let them decide',
+              ALLOW: 'Let it pass, log it silently',
+            }
             return (
-              <button
-                key={a}
-                onClick={() => setAction(a)}
-                className="flex-1 py-2 text-xs font-bold rounded-lg border transition-all"
+              <button key={a} onClick={() => setAction(a)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all"
                 style={{
-                  background: isActive ? 'var(--accent)' : 'var(--bg-surface-2)',
-                  borderColor: isActive ? 'var(--accent)' : 'var(--border)',
-                  color: isActive ? 'white' : 'var(--text-secondary)',
-                }}
-              >
-                {ACTION_LABEL[a]}
+                  background: active ? ac.bg : 'var(--bg-surface-2)',
+                  borderColor: active ? ac.border : 'var(--border)',
+                }}>
+                <span className="text-xs font-bold w-12 shrink-0" style={{ color: ac.text }}>{ACTION_LABEL[a]}</span>
+                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{desc[a]}</span>
               </button>
             )
           })}
         </div>
       </div>
-      <div className="flex gap-2 pt-4">
+
+      <div className="flex gap-2">
         <Button variant="ghost" className="flex-1" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" className="flex-1" onClick={() => onAdd(name, action)} disabled={!name.trim()}>Add Category</Button>
-      </div>
-    </div>
-  )
-}
-
-function AddRuleContent({ category, onAdd, onClose }: { category: string, onAdd: (rule: Omit<CustomRule, 'id' | 'type'>) => void, onClose: () => void }) {
-  const [label, setLabel] = useState('')
-  const [pattern, setPattern] = useState('')
-  const [severity, setSeverity] = useState<CustomRule['severity']>('medium')
-  const [caseSensitive, setCaseSensitive] = useState(false)
-  const [maskingLabel, setMaskingLabel] = useState('')
-  const [requireContext, setRequireContext] = useState(false)
-  const [triggersStr, setTriggersStr] = useState('')
-
-  const inputStyle = {
-    background: 'var(--bg-surface-2)',
-    borderColor: 'var(--border)',
-    color: 'var(--text-primary)',
-    '--tw-ring-color': 'var(--accent)'
-  } as any
-
-  return (
-    <div className="p-6 space-y-5">
-      <div>
-        <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Add Custom Rule</h2>
-        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Adding to category: <span className="font-bold" style={{ color: 'var(--accent)' }}>{category}</span></p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2 col-span-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Rule Label</label>
-          <input 
-            autoFocus
-            className="w-full px-4 py-2 rounded-xl border outline-none text-sm transition-all focus:ring-2"
-            style={inputStyle}
-            placeholder="e.g. Employee ID"
-            value={label}
-            onChange={e => setLabel(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2 col-span-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Regex Pattern</label>
-          <input 
-            className="w-full px-4 py-2 rounded-xl border outline-none text-sm font-mono transition-all focus:ring-2"
-            style={inputStyle}
-            placeholder="e.g. EMP-[0-9]{5}"
-            value={pattern}
-            onChange={e => setPattern(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Severity</label>
-          <select 
-            className="w-full px-4 py-2 rounded-xl border outline-none text-sm appearance-none transition-all focus:ring-2"
-            style={inputStyle}
-            value={severity}
-            onChange={e => setSeverity(e.target.value as any)}
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-        </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Masking Label (Optional)</label>
-          <input 
-            className="w-full px-4 py-2 rounded-xl border outline-none text-sm transition-all focus:ring-2"
-            style={inputStyle}
-            placeholder="e.g. EMP_ID"
-            value={maskingLabel}
-            onChange={e => setMaskingLabel(e.target.value)}
-          />
-        </div>
-
-        {/* Triggers configuration */}
-        <div className="col-span-2 space-y-3 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setRequireContext(!requireContext)}
-              className="relative w-10 h-5 rounded-full transition-all duration-200 shrink-0"
-              style={{ background: requireContext ? 'var(--accent)' : 'var(--bg-surface-3)' }}>
-              <span
-                className="absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform duration-200"
-                style={{ transform: requireContext ? 'translateX(20px)' : 'translateX(0)' }}
-              />
-            </button>
-            <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Require Context Triggers</span>
-          </div>
-          {requireContext && (
-            <div className="space-y-2 animate-fade-in">
-              <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Trigger Words (Comma Separated)</label>
-              <input 
-                className="w-full px-4 py-2 rounded-xl border outline-none text-sm transition-all focus:ring-2"
-                style={inputStyle}
-                placeholder="e.g. Employee, Badge, ID"
-                value={triggersStr}
-                onChange={e => setTriggersStr(e.target.value)}
-              />
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setCaseSensitive(!caseSensitive)}
-          className="relative w-10 h-5 rounded-full transition-all duration-200 shrink-0"
-          style={{ background: caseSensitive ? 'var(--accent)' : 'var(--bg-surface-3)' }}>
-          <span
-            className="absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform duration-200"
-            style={{ transform: caseSensitive ? 'translateX(20px)' : 'translateX(0)' }}
-          />
-        </button>
-        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Case Sensitive Pattern</span>
-      </div>
-
-      <div className="flex gap-2 pt-2">
-        <Button variant="ghost" className="flex-1" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" className="flex-1" onClick={() => onAdd({ 
-          label, pattern, severity, caseSensitive, maskingLabel: maskingLabel || undefined,
-          enabled: true, description: '', 
-          requireContext, 
-          triggers: requireContext ? triggersStr.split(',').map(s => s.trim()).filter(Boolean) : []
-        })} disabled={!label.trim() || !pattern.trim() || (requireContext && !triggersStr.trim())}>
-          Add Rule
+        <Button variant="primary" className="flex-1" onClick={() => onAdd(name, action)} disabled={!name.trim()}>
+          Create
         </Button>
       </div>
     </div>

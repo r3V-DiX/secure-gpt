@@ -30,14 +30,17 @@ export function getActiveRules(config: PIIConfig): DetectionRule[] {
     return ruleCache.rules
   }
 
-  // 1. Get static built-in rules
+  // 1. Get static built-in rules, respecting per-rule overrides
   const activeStaticRules = ALL_RULES.filter((rule) => {
-    // Lookup with normalized case to handle inconsistencies
     const categoryName = Object.keys(config.categories).find(
       (k) => k.toUpperCase() === rule.category.toUpperCase()
     )
     const categoryConfig = categoryName ? config.categories[categoryName] : undefined
-    return categoryConfig?.enabled && rule.enabled
+    if (!categoryConfig?.enabled) return false
+
+    // Per-rule enabled override takes precedence over rule.enabled
+    const override = categoryConfig.ruleOverrides?.[rule.id]
+    return override?.enabled !== undefined ? override.enabled : rule.enabled
   })
 
   // 2. Extract and compile custom rules
@@ -68,7 +71,6 @@ export function getActiveRules(config: PIIConfig): DetectionRule[] {
 
   const allActiveRules = [...activeStaticRules, ...customRules]
 
-  // Update Cache
   ruleCache = { version: cacheKey, rules: allActiveRules }
 
   return allActiveRules

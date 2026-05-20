@@ -2,8 +2,8 @@
 // Background Service Worker
 // Manages policy sync, log batching, OAuth tab watching
 
-import { startPolicySync, syncPolicy } from './policy-sync'
-import { startLogBatcher, flushLogs, queueLog } from './log-batcher'
+import { startPolicySync, forcePolicySync } from './policy-sync'
+import { startLogBatcher, flushLogs, queueLog, scheduleRecoveryFlush } from './log-batcher'
 import { handleDetectPII, handleDetectPIIImage, handleDetectPIIPDF, handleRedactPDF } from './detection-handler'
 import { stateStorage, authStorage, policyStorage, localStorageExt } from '@/lib/storage/storage'
 import { fetchCurrentUser } from '@/features/auth/services/auth.service'
@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true
 
     case 'SYNC_POLICY':
-      void syncPolicy().then(async () => {
+      void forcePolicySync().then(async () => {
         const version = await policyStorage.getPolicyVersion()
         const lastSyncedAt = await localStorageExt.get<string>('policyLastSyncedAt')
         sendResponse({ success: true, version, lastSyncedAt })
@@ -124,9 +124,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 })
 
-// ── Flush logs on suspend ─────────────────────
+// ── On suspend: schedule recovery alarm so SW wakes ASAP to drain the queue ──
+// The network request in flushLogs() never completes before the SW is killed,
+// so we just persist the queue (already done by queueLog) and let the alarm
+// wake us back up to send it.
 chrome.runtime.onSuspend.addListener(() => {
-  void flushLogs()
+  scheduleRecoveryFlush()
 })
 
 // ── Initialize background tasks ────────────────

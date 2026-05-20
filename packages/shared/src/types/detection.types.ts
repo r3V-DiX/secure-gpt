@@ -11,6 +11,7 @@ export type Severity = 'low' | 'medium' | 'high' | 'critical'
 
 export interface PIIEntity {
   id: string
+  ruleId: string                // e.g. 'financial.credit_card' or 'custom.PII.1234'
   type: string                  // e.g. 'credit_card', 'email', 'pan_card'
   label: string                 // e.g. 'Credit / Debit Card Number'
   category: PIICategory         // FINANCIAL | PII | CONFIDENTIAL | IP

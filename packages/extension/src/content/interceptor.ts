@@ -115,7 +115,10 @@ function getMostRestrictiveAction(entities: PIIEntity[], policy: PIIConfig): { a
   let topEntity = entities[0]!
 
   for (const entity of entities) {
-    const action = policy.categories[entity.category]?.action ?? 'ALLOW'
+    const catConfig = policy.categories[entity.category]
+    // Per-rule action override takes precedence over the category-level action
+    const ruleAction = catConfig?.ruleOverrides?.[entity.ruleId]?.action
+    const action = ruleAction ?? catConfig?.action ?? 'ALLOW'
     const priority = ACTION_PRIORITY[action] ?? 0
     if (priority > maxPriority) {
       maxPriority = priority

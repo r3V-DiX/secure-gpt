@@ -19,13 +19,20 @@ export interface CustomRule {
   enabled: boolean
 }
 
+// Per built-in rule overrides — keyed by rule id (e.g. 'financial.credit_card')
+export interface RuleOverride {
+  enabled?: boolean
+  action?: PolicyAction            // overrides the category-level action for this rule
+}
+
 export interface CategoryConfig {
   enabled: boolean
   action: PolicyAction
-  customKeywords?: string[]       // org-defined extra keywords for this category
-  allowlist?: string[]            // patterns to skip even if matched
-  fuzzyMatch?: boolean            // enable fuzzy keyword matching
-  customRules?: CustomRule[]      // <--- New field
+  customKeywords?: string[]
+  allowlist?: string[]
+  fuzzyMatch?: boolean
+  customRules?: CustomRule[]
+  ruleOverrides?: Record<string, RuleOverride>  // key = rule id
 }
 
 export interface PIIConfig {

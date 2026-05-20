@@ -21,7 +21,7 @@ export const allIPRules: DetectionRule[] = [
     label: 'M&A Keywords',
     pattern: /\b(?:merger|acquisition|due\s*diligence)\b/gi,
     requireContext: true,
-    triggers: ['project', 'target'],
+    triggers: ['project', 'target', 'deal', 'company', 'corp', 'acquire', 'startup', 'valuation'],
     severity: 'high',
     enabled: true,
     description: 'Mergers, acquisitions, due diligence, and deal values.'

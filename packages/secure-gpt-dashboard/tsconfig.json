@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@securegpt/shared": ["../shared/src/index.ts"],
+      "@securegpt/shared/*": ["../shared/src/*"]
     }
   },
   "include": [
