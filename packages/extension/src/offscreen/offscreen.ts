@@ -1,12 +1,13 @@
 // packages/extension/src/offscreen/offscreen.ts
 // Offscreen document — handles OCR and text PII detection.
 //
-// Message protocol (mirrors reference implementation):
-//   OFFSCREEN_PING      → { ok: true }         (readiness check from background)
-//   OFFSCREEN_RUN_OCR   → { ok, result }        (image OCR via Tesseract, in-process)
-//   target:'offscreen' + type:'DETECT_PII' → DetectionResult   (text detection)
+// Message protocol:
+//   OFFSCREEN_PING              → { ok: true }
+//   OFFSCREEN_RUN_OCR           → { ok, result: DetectionResult }
+//   OFFSCREEN_RUN_PDF           → { ok, result: { numPages, fullText, pages[] } }
+//   OFFSCREEN_GET_PDF_REGIONS   → { ok, regions[] }
 
-import { detectPII, OCRTier, RegexTier } from '@securegpt/detection'
+import { detectPII, OCRTier, RegexTier, NERTier } from '@securegpt/detection'
 import type { PIIConfig, DetectionResult } from '@securegpt/shared/types'
 import * as pdfjs from 'pdfjs-dist'
 
@@ -56,7 +57,7 @@ async function runPdfProcessing(pdfData: string) {
     const page = await pdf.getPage(i)
     const viewport = page.getViewport({ scale: 1.0 })
     const textContent = await page.getTextContent()
-    
+
     const items = textContent.items.map((item: any) => ({
       str: item.str || '',
       x: item.transform?.[4] ?? 0,
@@ -67,7 +68,7 @@ async function runPdfProcessing(pdfData: string) {
 
     const pageText = items.map((it: any) => it.str).join(' ')
     fullText += `--- Page ${i} ---\n` + pageText + '\n'
-    
+
     pages.push({
       pageNumber: i,
       width: viewport.width,
@@ -110,27 +111,25 @@ function getRegionsForValues(values: string[]) {
   return regions
 }
 
-// ── Tier singletons — Tesseract runs directly in this context ─────────────────
+// ── Tier singletons ───────────────────────────────────────────────────────────
 const ocrTier = new OCRTier()
 const regexTier = new RegexTier()
+const nerTier = new NERTier()  // Bug 8 fix: NER was missing from the offscreen OCR path
 
 // ── Message listener ──────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  // Readiness check — background pings this before proxying OCR work
   if (message.action === 'OFFSCREEN_PING') {
     sendResponse({ ok: true })
     return false
   }
 
-  // OCR request — run Tesseract directly in this context, return DetectionResult
   if (message.action === 'OFFSCREEN_RUN_OCR') {
     const { imageUrl, config } = message.data as { imageUrl: string; config: PIIConfig }
     void runImageOcr(imageUrl, config).then(sendResponse)
     return true
   }
 
-  // Text PII detection
   if (message.target === 'offscreen' && message.type === 'DETECT_PII') {
     void handleTextDetection(message.text, message.config).then(sendResponse)
     return true
@@ -146,6 +145,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.action === 'OFFSCREEN_GET_PDF_REGIONS') {
     const { values } = message.data
+    if (lastPdfPages.length === 0) {
+      // Bug 19 fix: surface the empty-state explicitly so the caller knows
+      // regions were not mapped rather than silently getting an empty array.
+      sendResponse({ ok: false, regions: [], error: 'No PDF pages in memory — run OFFSCREEN_RUN_PDF first' })
+      return false
+    }
     const regions = getRegionsForValues(values)
     sendResponse({ ok: true, regions })
     return false
@@ -171,11 +176,27 @@ async function runImageOcr(
       }
     }
 
-    // Find entities in extracted text
-    const foundEntities = await regexTier.run(rawText, config)
+    // Bug 8 fix: run the same regex → NER cascade that detectPIIFromImage uses
+    // so freeform names, addresses, and prose PII are detected in images too.
+    const regexEntities = await regexTier.run(rawText, config)
 
-    // Map entities back to image bounding boxes
-    const mappedEntities = ocrTier.mapEntitiesToBboxes(foundEntities, ocrData, rawText, severityFloor)
+    // Mask regex hits before NER so the model doesn't double-tag them
+    let maskedText = rawText
+    if (regexEntities.length > 0) {
+      for (const entity of regexEntities) {
+        const spaces = ' '.repeat(entity.endIndex - entity.startIndex)
+        maskedText =
+          maskedText.substring(0, entity.startIndex) +
+          spaces +
+          maskedText.substring(entity.endIndex)
+      }
+    }
+
+    const nerEntities = await nerTier.run(maskedText, config)
+
+    // Merge all found entities, then map to image bounding boxes
+    const allEntities = [...regexEntities, ...nerEntities]
+    const mappedEntities = ocrTier.mapEntitiesToBboxes(allEntities, ocrData, rawText, severityFloor)
 
     const result: DetectionResult = {
       hasFindings: mappedEntities.length > 0,

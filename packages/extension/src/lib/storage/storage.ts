@@ -133,7 +133,14 @@ export const stateStorage = {
     if (active === null) return true // default to active
 
     const pausedUntil = await localStorageExt.get<string>('pausedUntil')
-    if (pausedUntil && new Date(pausedUntil) > new Date()) return false
+    if (pausedUntil) {
+      if (new Date(pausedUntil) > new Date()) return false
+      // Bug 4 fix: pause expired — clear it and restore active state so the
+      // extension resumes automatically without requiring a manual Resume click.
+      await localStorageExt.remove('pausedUntil')
+      await localStorageExt.set('isActive', true)
+      return true
+    }
 
     return active
   },

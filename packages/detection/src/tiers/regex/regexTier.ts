@@ -8,6 +8,10 @@ import { getActiveRules } from '../../rules'
 import { luhnCheck } from '../../validators/luhn.validator'
 import { verhoeffCheck } from '../../validators/verhoeff.validator'
 import { panCheck } from '../../validators/pan.validator'
+import { phoneCheck } from '../../validators/phone.validator'
+import { ibanCheck } from '../../validators/iban.validator'
+import { jwtParserCheck } from '../../validators/jwt.validator'
+import { entropyCheck } from '../../validators/entropy.validator'
 import { DETECTION_TYPE_TO_TOKEN, MASKING_TOKENS } from '@securegpt/shared/constants'
 import { getSlidingWindow } from '@securegpt/shared/utils/detection-helpers'
 import type { PIIEntity } from '@securegpt/shared/types'
@@ -19,6 +23,10 @@ const VALIDATORS: Record<string, (value: string) => boolean> = {
   luhn: luhnCheck,
   verhoeff: verhoeffCheck,
   pan: panCheck,
+  phone: phoneCheck,     // Bug 6 fix: was missing — phone matches passed unvalidated
+  mod97: ibanCheck,      // Bug 7 fix: IBAN checksum validation
+  jwt_parser: jwtParserCheck, // Bug 7 fix: JWT structural validation
+  entropy: entropyCheck, // Bug 7 fix: high-entropy string check for API keys
 }
 
 // const ALL_TRIGGERS = Object.values(CONTEXT_TRIGGERS).flat()

@@ -1,6 +1,5 @@
 // packages/extension/src/content/interceptor.ts
 // Interceptor — hooks into LLM page submit events
-// All detections go through the ShieldModal — user decides action
 
 import { findEditableRoot, findMainEditor, findSendButton, extractText, bypassSet, dispatchImagePaste, dispatchFilePaste, clearAttachments } from './dom-utils'
 import { showBanner, removeBanner } from './banners'
@@ -13,14 +12,11 @@ let currentPolicy: PIIConfig
 let isRunning = false
 
 // ── OCR / image state ────────────────────────────────────────────
-// Cache of image data URLs → detected entities, built during paste/upload.
-// Cleared once the user's submission is handled.
 const ocrCache = new Map<string, PIIEntity[]>()
 let pendingOcrCount = 0
 const incPending = () => { pendingOcrCount++ }
 const decPending = () => { pendingOcrCount = Math.max(0, pendingOcrCount - 1) }
 
-// ── Extension context guard ───────────────────
 function isExtensionContextValid(): boolean {
   try {
     return !!chrome.runtime?.id
@@ -79,7 +75,10 @@ function handleGlobalClick(e: MouseEvent): void {
     testId.includes('composer-button')
 
   if (isSendBtn) {
-    const root = findMainEditor()
+    // Use the editor that's currently focused, falling back to the main editor.
+    // We resolve the element here and pass it through so bypassSet uses a
+    // consistent reference — prevents the "different-element" loop (Bug 12).
+    const root = findEditableRoot(document.activeElement) ?? findMainEditor()
     if (!root || bypassSet.has(root)) return
 
     console.log('[SecureGPT] Intercepted Send button click, blocking synchronously')
@@ -135,6 +134,11 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
     return
   }
 
+  // Bug 1 fix: set isRunning synchronously BEFORE any await so concurrent calls
+  // from a second keydown/click during the async GET_STATE round-trip are blocked.
+  if (isRunning) return
+  isRunning = true
+
   try {
     const isActive = await new Promise<boolean>((resolve) => {
       chrome.runtime.sendMessage({ type: 'GET_STATE' }, (res) => {
@@ -151,9 +155,6 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
       resubmit(el)
       return
     }
-
-    if (isRunning) return
-    isRunning = true
 
     // Wait for any in-flight image/PDF OCR to finish before checking text
     if (pendingOcrCount > 0) {
@@ -172,10 +173,8 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
       return
     }
 
-    // --- Delegate detection to background script ---
     console.log('[SecureGPT] Requesting detection from background...')
 
-    // Merge any image entities already detected via OCR cache
     const allOcrEntities = Array.from(ocrCache.values()).flat()
 
     let result: DetectionResult
@@ -194,16 +193,13 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
         )
       })
     } else {
-      // Image only, no text provided
       result = { hasFindings: false, entities: [], tier: 'regex', processingTimeMs: 0, inputLength: 0 }
     }
     console.log('[SecureGPT] Detection result:', result)
 
-    // Merge OCR image entities with text detection results
     const mergedEntities = [...result.entities, ...allOcrEntities]
     const hasFindings = result.hasFindings || allOcrEntities.length > 0
 
-    // No sensitive data found — let it through
     if (!hasFindings) {
       ocrCache.clear()
       isRunning = false
@@ -211,22 +207,20 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
       return
     }
 
-    // Determine the most restrictive action across all detected items
     const { action, topEntity } = getMostRestrictiveAction(mergedEntities, currentPolicy)
     console.log(`[SecureGPT] Primary Action: ${action} triggered by ${topEntity.category}`)
 
-    // ── BLOCK: hard stop, banner only, no modal ───
+    // ── BLOCK ─────────────────────────────────────
     if (action === 'BLOCK') {
       showBanner('block', topEntity.category, mergedEntities.length)
       void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
       void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'BLOCK', topEntity, false)
-      
       ocrCache.clear()
       isRunning = false
       return
     }
 
-    // ── ALLOW: silent log + send ──────────────────
+    // ── ALLOW ─────────────────────────────────────
     if (action === 'ALLOW') {
       void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'ALLOW', topEntity, false)
       isRunning = false
@@ -234,15 +228,13 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
       return
     }
 
-    // ── MASK: automatic redaction WITHOUT modal ───
+    // ── MASK ──────────────────────────────────────
     if (action === 'MASK') {
       console.log('[SecureGPT] Automatic masking triggered')
-      
-      // 1. Redact text
+
       const maskedText = applyMasking(text, result.entities)
       setInputValue(el, maskedText)
 
-      // 2. Re-inject all cached assets (redacted versions already in cache)
       await clearAttachments()
       for (const [fileUrl] of ocrCache.entries()) {
         const isPdf = fileUrl.startsWith('data:application/pdf')
@@ -254,19 +246,16 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
       }
       ocrCache.clear()
 
-      // 3. Log and inform user
       void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
       void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
       showBanner('mask', topEntity.category, mergedEntities.length)
-      
-      // 4. Submit
+
       isRunning = false
       setTimeout(() => resubmit(el), 400)
       return
     }
 
-    // ── WARN_ALLOW: show ShieldModal ──────────────
-    // Only happens if the most restrictive action is strictly WARN_ALLOW
+    // ── WARN_ALLOW ────────────────────────────────
     isRunning = false
 
     showShieldModal(
@@ -282,7 +271,6 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
         }
 
         if (masked) {
-          // Mask & Send — redact text
           const maskedText = applyMasking(text, result.entities)
           setInputValue(el, maskedText)
 
@@ -300,10 +288,9 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
           void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
           void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
           showBanner('mask', topEntity.category, mergedEntities.length)
-          
+
           setTimeout(() => resubmit(el), 400)
         } else {
-          // Send Directly
           ocrCache.clear()
           void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
           void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'WARN_ALLOW', topEntity, true)
@@ -324,13 +311,12 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
   }
 }
 
+// Bug 15 fix: when execCommand fails, use a synthetic paste event so React/ProseMirror
+// processes the replacement through its own event system rather than a raw DOM write.
 function setInputValue(el: HTMLElement, text: string): void {
   if (el.getAttribute('contenteditable')) {
-    // For modern LLM inputs (React/ProseMirror), simple innerText update 
-    // doesn't trigger internal state change. execCommand('insertText') is more reliable.
     el.focus()
-    
-    // Select all existing text
+
     const selection = window.getSelection()
     if (selection) {
       const range = document.createRange()
@@ -338,8 +324,7 @@ function setInputValue(el: HTMLElement, text: string): void {
       selection.removeAllRanges()
       selection.addRange(range)
     }
-    
-    // Dispatch beforeinput for modern editors
+
     el.dispatchEvent(new InputEvent('beforeinput', {
       bubbles: true,
       cancelable: true,
@@ -347,12 +332,20 @@ function setInputValue(el: HTMLElement, text: string): void {
       data: text
     }))
 
-    // Replace with masked text
     const success = document.execCommand('insertText', false, text)
-    
-    // Fallback if execCommand failed
+
     if (!success) {
-      el.innerText = text
+      // Fallback: inject via synthetic paste so React's event system handles the update
+      bypassSet.add(el)
+      const dt = new DataTransfer()
+      dt.setData('text/plain', text)
+      el.dispatchEvent(new ClipboardEvent('paste', {
+        clipboardData: dt,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }))
+      setTimeout(() => bypassSet.delete(el), 50)
     }
   } else {
     (el as HTMLTextAreaElement).value = text
@@ -440,9 +433,9 @@ function handleGlobalPaste(ev: ClipboardEvent): void {
   let targetItem: DataTransferItem | null = null
   const itemList = Array.from(items as unknown as DataTransferItem[])
   for (const item of itemList) {
-    if (item.type.startsWith('image/') || item.type === 'application/pdf') { 
+    if (item.type.startsWith('image/') || item.type === 'application/pdf') {
       targetItem = item
-      break 
+      break
     }
   }
   if (!targetItem) return
@@ -450,16 +443,14 @@ function handleGlobalPaste(ev: ClipboardEvent): void {
   const el = findEditableRoot(ev.target) ?? findEditableRoot(document.activeElement)
   if (!el || bypassSet.has(el)) return
 
-  // Block immediately (must be synchronous)
   ev.preventDefault()
   ev.stopImmediatePropagation()
 
-  // Extract the file while clipboardData is still in scope
   const blob = targetItem.getAsFile()
   if (!blob) return
-  
+
   const isPdf = targetItem.type === 'application/pdf' || blob.name.toLowerCase().endsWith('.pdf')
-  
+
   if (isPdf) {
     void handleFileScan(el as HTMLElement, blob)
   } else {
@@ -476,7 +467,7 @@ function handleGlobalPaste(ev: ClipboardEvent): void {
 
 async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
   const isImage = file.type.startsWith('image/')
-  const isPdf   = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
   if (!isImage && !isPdf) return
 
   try {
@@ -506,7 +497,7 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
 
     if (result.hasFindings && result.entities.length > 0) {
       console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Redacting before upload…`)
-      
+
       let redactedUrl = dataUrl
       if (isPdf) {
         const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
@@ -516,7 +507,6 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
           redactedUrl = resp.redactedPdfData
         } else {
           console.error('[SecureGPT] PDF pre-upload redaction failed')
-          // Stop here to avoid leaking original
           return
         }
       } else {
@@ -550,9 +540,10 @@ function handleGlobalFileChange(ev: Event): void {
   const el = findMainEditor() ?? document.body as HTMLElement
   if (bypassSet.has(el)) return
 
-  ev.preventDefault()
+  // Bug 16 fix: preventDefault on 'change' is a no-op (not cancelable).
+  // Removed the misleading call. File reset via target.value = '' is sufficient.
   ev.stopImmediatePropagation()
-  target.value = '' // Reset so same file can be re-chosen after masking
+  target.value = ''
   void handleFileScan(el, file)
 }
 

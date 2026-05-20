@@ -264,8 +264,14 @@ export class NERTier extends BaseTier {
   }
 
   private mapLabelToCategory(label: string): PIICategory {
-    const fin = ['B-IDCARD', 'I-IDCARD', 'B-PASSPORT', 'I-PASSPORT', 'B-SOCIALNUMBER', 'I-SOCIALNUMBER', 'B-DRIVERLICENSE', 'I-DRIVERLICENSE']
-    if (fin.includes(label)) return 'FINANCIAL'
+    // Identity documents are PII, not FINANCIAL.
+    // Mapping them to FINANCIAL caused: (a) BLOCK when PII policy says WARN,
+    // (b) silent skip when FINANCIAL category was disabled but PII was enabled.
+    const piiIdentity = [
+      'B-IDCARD', 'I-IDCARD', 'B-PASSPORT', 'I-PASSPORT',
+      'B-SOCIALNUMBER', 'I-SOCIALNUMBER', 'B-DRIVERLICENSE', 'I-DRIVERLICENSE'
+    ]
+    if (piiIdentity.includes(label)) return 'PII'
     const confidential = ['B-PASS', 'I-PASS', 'B-SECADDRESS', 'I-SECADDRESS']
     if (confidential.includes(label)) return 'CONFIDENTIAL'
     return 'PII'

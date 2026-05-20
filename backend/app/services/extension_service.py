@@ -3,14 +3,38 @@
 # Extension service — handles log batch ingest and policy sync.
 # ─────────────────────────────────────────────────────────────────────────────
 
+import asyncio
 import logging
 from datetime import datetime, timezone
+from collections import defaultdict
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models.audit_log import AuditLog, ActionType
 from app.models.policy import Policy
+
+# ── SSE subscriber registry ───────────────────────────────────────────────────
+# Maps user_id → set of asyncio.Queue instances (one per connected extension tab).
+# Queues hold serialised policy dicts. Push None to signal the stream to close.
+_policy_subscribers: dict[str, set[asyncio.Queue]] = defaultdict(set)
+
+
+def subscribe_policy(user_id: str) -> asyncio.Queue:
+    q: asyncio.Queue = asyncio.Queue()
+    _policy_subscribers[user_id].add(q)
+    return q
+
+
+def unsubscribe_policy(user_id: str, q: asyncio.Queue) -> None:
+    _policy_subscribers[user_id].discard(q)
+    if not _policy_subscribers[user_id]:
+        del _policy_subscribers[user_id]
+
+
+async def push_policy_update(user_id: str, policy_data: dict) -> None:
+    for q in list(_policy_subscribers.get(user_id, [])):
+        await q.put(policy_data)
 
 logger = logging.getLogger(__name__)
 

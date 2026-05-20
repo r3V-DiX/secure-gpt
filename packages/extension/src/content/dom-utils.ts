@@ -253,24 +253,25 @@ export async function clearAttachments() {
   }
     
   // Level 2 Heuristics: Search every button or role="button"
+  // Bug 11 fix: removed '.group' from the container selector. The Tailwind '.group'
+  // class is used everywhere on LLM platforms (message rows, reaction containers,
+  // sidebar items) — matching it was accidentally clicking copy/edit/reaction buttons
+  // near any image in the page, not just attachment remove buttons.
   if (cleared === 0) {
     const clickables = document.querySelectorAll('button, [role="button"]');
     for (const btn of Array.from(clickables) as HTMLElement[]) {
-      // Guard: skip buttons that look like the Send/Submit button
       const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
       const testid = (btn.getAttribute('data-testid') || '').toLowerCase();
       if (aria.includes('send') || aria.includes('submit') || testid.includes('send') || testid.includes('composer-button')) {
         continue;
       }
 
-      // Must be visible and relatively small (icon buttons)
       const rect = btn.getBoundingClientRect();
       if (rect.width > 0 && rect.width < 60 && rect.height > 0 && rect.height < 60 && btn.offsetParent !== null) {
-        
-        // Walk upwards to find a container that represents an attachment or image pill
-        const container = btn.closest('[class*="attachment"], [class*="file"], .group, li, div[data-testid*="attachment"]');
+
+        // Only look inside semantically meaningful attachment containers
+        const container = btn.closest('[class*="attachment"], [class*="file"], [data-testid*="attachment"], li');
         if (container) {
-          // Does this container hold an image, canvas, or video thumbnail?
           const hasImage = !!container.querySelector('img, canvas, video, [style*="background-image"]');
           if (hasImage) {
             btn.click();
@@ -279,7 +280,6 @@ export async function clearAttachments() {
           }
         }
 
-        // Alternative: If the button ITSELF is positioned right next to an image
         const previousSib = btn.previousElementSibling;
         const nextSib = btn.nextElementSibling;
         if ((previousSib && (previousSib.tagName === 'IMG' || previousSib.tagName === 'CANVAS')) ||

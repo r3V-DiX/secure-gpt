@@ -3,7 +3,8 @@ import type { PIIConfig, DetectionResult, AuditLog, PIIEntity } from '@securegpt
 import { detectPII } from '@securegpt/detection'
 import { v4 as uuidv4 } from 'uuid'
 import { EXTENSION_VERSION } from '@/config/defaults.config'
-import { API_BASE_URL } from '@/config/api.config'
+import { DASHBOARD_URL } from '@/config/api.config'
+import apiClient from '@/lib/api/client'
 import { queueLog } from './log-batcher'
 import { DOMAIN_TO_PLATFORM } from '@securegpt/shared/constants'
 
@@ -50,12 +51,6 @@ async function sha256(text: string): Promise<string> {
     .join('')
 }
 
-// FIX: Run text detection DIRECTLY in the background service worker.
-// Previously this delegated to the offscreen document via chrome.runtime.sendMessage
-// with target:'offscreen' — but the background's own onMessage listener drops all
-// messages with target:'offscreen' before the offscreen doc sees them, causing an
-// eternal hang. Text detection (regex + NER) is pure JS with no DOM dependency,
-// so it runs fine in a service worker. Only OCR (Tesseract) needs the offscreen doc.
 export async function handleDetectPII(
   text: string,
   config: PIIConfig,
@@ -186,12 +181,20 @@ export async function handleRedactPDF(
     let autoRegions: any[] = []
     if (textValues.length > 0) {
       console.debug('[Background] Mapping text values to coordinates via offscreen...')
+
+      // Bug 19 fix: ensure offscreen is alive before requesting region mapping.
+      // If the document was recycled, lastPdfPages would be empty and all
+      // text-based regions would silently come back empty.
+      await setupOffscreen()
+
       const mappingResp = await chrome.runtime.sendMessage({
         action: 'OFFSCREEN_GET_PDF_REGIONS',
         data: { values: textValues }
       })
-      if (mappingResp?.ok) {
+      if (mappingResp?.ok && Array.isArray(mappingResp.regions) && mappingResp.regions.length > 0) {
         autoRegions = mappingResp.regions
+      } else {
+        console.warn('[Background] PDF region mapping returned empty — offscreen state may be stale')
       }
     }
 
@@ -206,28 +209,31 @@ export async function handleRedactPDF(
       })))
 
     const regions = [...autoRegions, ...entitiesWithBboxes, ...manualRegions]
+    const validRegions = regions.filter(r => r.width > 0 && r.height > 0)
 
+    // Bug 5 fix: was using raw fetch() pointing directly to API_BASE_URL with no
+    // credentials. The session cookie lives on the dashboard domain so direct backend
+    // calls always 401 in production. Use apiClient (Axios, withCredentials: true,
+    // proxied through the dashboard URL) to match every other API call in this file.
     const resp = await fetch(pdfData)
     const pdfBlob = await resp.blob()
 
     const formData = new FormData()
     formData.append('file', pdfBlob, 'document.pdf')
-
-    const validRegions = regions.filter(r => r.width > 0 && r.height > 0)
     console.info(`[Background] Sending ${validRegions.length} redaction regions to backend.`)
     formData.append('regions', JSON.stringify(validRegions))
 
-    const backendResp = await fetch(`${API_BASE_URL}/api/v1/redact/pdf`, {
-      method: 'POST',
-      body: formData
-    })
+    const backendResp = await apiClient.post<Blob>(
+      `${DASHBOARD_URL}/api/v1/redact/pdf`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        responseType: 'blob',
+        timeout: 30000,
+      }
+    )
 
-    if (!backendResp.ok) {
-      const errorText = await backendResp.text()
-      throw new Error(`Backend error: ${errorText}`)
-    }
-
-    const redactedBlob = await backendResp.blob()
+    const redactedBlob = backendResp.data
     const reader = new FileReader()
     const redactedDataUri = await new Promise<string>((resolve) => {
       reader.onload = () => resolve(reader.result as string)

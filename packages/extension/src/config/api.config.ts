@@ -17,6 +17,5 @@ export const API_ENDPOINTS = {
   EXTENSION_LOG: '/api/v1/extension/log',
 } as const
 
-export const POLICY_SYNC_INTERVAL_MS = 30 * 1000
 export const LOG_BATCH_INTERVAL_MS = 3 * 1000
 export const LOG_BATCH_MAX_SIZE = 50

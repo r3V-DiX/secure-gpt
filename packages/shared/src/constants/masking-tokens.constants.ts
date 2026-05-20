@@ -39,6 +39,14 @@ export const MASKING_TOKENS = {
 
   // Generic fallback
   GENERIC: '[REDACTED]',
+
+  // Indian-specific financial identifiers
+  UPI_ID: '[UPI-ID-REDACTED]',
+  GST_NUMBER: '[GST-REDACTED]',
+  IFSC_CODE: '[IFSC-REDACTED]',
+
+  // Network
+  IP_ADDRESS: '[IP-REDACTED]',
 } as const
 
 export type MaskingToken = (typeof MASKING_TOKENS)[keyof typeof MASKING_TOKENS]
@@ -71,4 +79,8 @@ export const DETECTION_TYPE_TO_TOKEN: Record<string, MaskingToken> = {
   source_code: MASKING_TOKENS.SOURCE_CODE,
   credentials: MASKING_TOKENS.CREDENTIALS,
   proprietary: MASKING_TOKENS.PROPRIETARY,
+  upi_id: MASKING_TOKENS.UPI_ID,
+  gst_number: MASKING_TOKENS.GST_NUMBER,
+  ifsc_code: MASKING_TOKENS.IFSC_CODE,
+  ip_address: MASKING_TOKENS.IP_ADDRESS,
 }

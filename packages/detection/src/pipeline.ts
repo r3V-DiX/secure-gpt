@@ -16,30 +16,25 @@ const regexTier = new RegexTier()
 const nerTier = new NERTier()
 const ocrTier = new OCRTier()
 
-let initialized = false
+// Bug 17 fix: replace the plain boolean with a shared promise so concurrent
+// callers all await the same initialization rather than each spawning their own.
+let initPromise: Promise<void> | null = null
 
-// ─── Initialize all enabled tiers once ────────
 async function initializePipeline(): Promise<void> {
-  if (initialized) return
+  if (initPromise) return initPromise
 
-  const initPromises: Promise<void>[] = []
+  initPromise = (async () => {
+    const tasks: Promise<void>[] = []
+    if (regexTier.enabled) tasks.push(regexTier.initialize())
+    if (nerTier.enabled) tasks.push(nerTier.initialize())
+    if (ocrTier.enabled) tasks.push(ocrTier.initialize())
+    await Promise.all(tasks)
+  })()
 
-  if (regexTier.enabled) initPromises.push(regexTier.initialize())
-  if (nerTier.enabled) initPromises.push(nerTier.initialize())
-  if (ocrTier.enabled) initPromises.push(ocrTier.initialize())
-
-  await Promise.all(initPromises)
-  initialized = true
+  return initPromise
 }
 
 // ─── Main export ──────────────────────────────
-// This is the ONLY function the extension imports
-// from this package.
-//
-// Usage:
-//   import { detectPII } from '@securegpt/detection'
-//   const result = await detectPII(text, config)
-
 export async function detectPII(
   text: string,
   config: PIIConfig
@@ -50,46 +45,35 @@ export async function detectPII(
     return buildResult([], 'regex', startTime, text)
   }
 
-  // Initialize tiers on first call
   await initializePipeline()
 
-  // Run Regex first
   const regexEntities = regexTier.enabled
     ? await regexTier.run(text, config)
-    : [];
+    : []
 
-  // Mask the text before passing to NER (Regex results hidden with spaces)
-  let maskedText = text;
+  let maskedText = text
   if (nerTier.enabled && regexEntities.length > 0) {
     for (const entity of regexEntities) {
-      const length = entity.endIndex - entity.startIndex;
-      const spaces = " ".repeat(length);
-      maskedText = maskedText.substring(0, entity.startIndex) + spaces + maskedText.substring(entity.endIndex);
+      const length = entity.endIndex - entity.startIndex
+      const spaces = ' '.repeat(length)
+      maskedText = maskedText.substring(0, entity.startIndex) + spaces + maskedText.substring(entity.endIndex)
     }
   }
 
-  // Run NER on masked text
   const nerEntities = nerTier.enabled
     ? await nerTier.run(maskedText, config)
-    : [];
+    : []
 
-  // OCR runs only on image input — text pipeline skips it
   const ocrEntities: PIIEntity[] = []
 
-  // Merge results across tiers — higher tiers win on overlap
   const merged = mergeEntities(regexEntities, nerEntities, ocrEntities)
-
-  // Apply org allowlist
   const filtered = applyAllowlist(merged, config)
-
-  // Determine highest tier used
   const tier = getHighestTier(filtered)
 
   return buildResult(filtered, tier, startTime, text)
 }
 
 // ─── OCR entry point (image input) ────────────
-// Called separately when user pastes an image
 export async function detectPIIFromImage(
   imageData: string,
   config: PIIConfig
@@ -100,39 +84,34 @@ export async function detectPIIFromImage(
     return buildResult([], 'ocr', startTime, '')
   }
 
-  // Initialize tiers
   await initializePipeline()
 
-  // 1. Extract text via OCR
   const { rawText, ocrData, severityFloor } = await ocrTier.runOnImage(imageData, config)
-  
+
   if (!rawText) {
     return buildResult([], 'ocr', startTime, '')
   }
 
-  // 2. Run Regex and NER sequentially on extracted text with masking
   const regexEntities = regexTier.enabled
     ? await regexTier.run(rawText, config)
-    : await Promise.resolve<PIIEntity[]>([]);
+    : await Promise.resolve<PIIEntity[]>([])
 
-  let maskedRawText = rawText;
+  let maskedRawText = rawText
   if (nerTier.enabled && regexEntities.length > 0) {
     for (const entity of regexEntities) {
-      const length = entity.endIndex - entity.startIndex;
-      const spaces = " ".repeat(length);
-      maskedRawText = maskedRawText.substring(0, entity.startIndex) + spaces + maskedRawText.substring(entity.endIndex);
+      const length = entity.endIndex - entity.startIndex
+      const spaces = ' '.repeat(length)
+      maskedRawText = maskedRawText.substring(0, entity.startIndex) + spaces + maskedRawText.substring(entity.endIndex)
     }
   }
 
   const nerEntities = nerTier.enabled
     ? await nerTier.run(maskedRawText, config)
-    : await Promise.resolve<PIIEntity[]>([]);
+    : await Promise.resolve<PIIEntity[]>([])
 
-  // 3. Merge results and map to BBOXes
   const merged = mergeEntities(regexEntities, nerEntities, [])
   const ocrEntities = ocrTier.mapEntitiesToBboxes(merged, ocrData, rawText, severityFloor)
 
-  // Apply allowlist
   const filtered = applyAllowlist(ocrEntities, config)
 
   return buildResult(filtered, 'ocr', startTime, rawText)
@@ -160,12 +139,10 @@ function buildResult(
   }
 }
 
-// ─── Re-export types for convenience ──────────
+// ─── Re-export types ──────────────────────────
 export type { DetectionResult, PIIEntity, PIIConfig }
 
-// ─── Re-export tier classes for direct use in offscreen document ──────────────
-// The offscreen document needs to instantiate OCRTier directly (Tesseract WASM
-// cannot be proxied via sendMessage in MV3). Export here so consumers can reach
-// them through the single @securegpt/detection alias.
+// ─── Re-export tier classes for offscreen document use ────────────────────────
 export { OCRTier } from './tiers/ocr/ocrTier'
 export { RegexTier } from './tiers/regex/regexTier'
+export { NERTier } from './tiers/ner/nerTier'  // Bug 8 fix: needed by offscreen OCR path

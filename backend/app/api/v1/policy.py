@@ -14,6 +14,7 @@ from app.core.pagination import Pagination
 from app.core.ratelimit import limiter, LIMIT_POLICY
 from app.models.policy import Policy
 from app.schemas.policy_schema import PolicyCreateRequest, PolicyUpdateRequest
+from app.services.extension_service import push_policy_update, get_policy_for_extension
 
 router = APIRouter(prefix="/policy", tags=["policy"])
 
@@ -146,6 +147,12 @@ async def create_policy(
 ):
     policy = await _create_policy_version(db, current_user.id, body.config.model_dump(), body.publishImmediately)
     await db.commit()
+    # Push to any connected extension SSE streams for this user
+    await push_policy_update(current_user.id, {
+        "version": policy.version,
+        "config": policy.config,
+        "updatedAt": policy.updated_at.isoformat(),
+    })
     return success(data=_serialize_policy(policy), message="Policy created successfully")
 
 
@@ -159,6 +166,12 @@ async def update_policy(
 ):
     policy = await _create_policy_version(db, current_user.id, body.config.model_dump(), body.publishImmediately)
     await db.commit()
+    # Push to any connected extension SSE streams for this user
+    await push_policy_update(current_user.id, {
+        "version": policy.version,
+        "config": policy.config,
+        "updatedAt": policy.updated_at.isoformat(),
+    })
     return success(data=_serialize_policy(policy), message="Policy updated successfully")
 
 
