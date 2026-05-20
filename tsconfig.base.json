@@ -18,8 +18,9 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "paths": {
-      "@securegpt/shared": ["./packages/shared/src/index.ts"],
-      "@securegpt/shared/*": ["./packages/shared/src/*"],
+      "@securegpt/shared/types": ["./packages/shared/src/types/index.ts"],
+      "@securegpt/shared/constants": ["./packages/shared/src/constants/index.ts"],
+      "@securegpt/shared/utils/*": ["./packages/shared/src/utils/*"],
       "@securegpt/detection": ["./packages/detection/src/pipeline.ts"],
       "@securegpt/detection/*": ["./packages/detection/src/*"] 
     }
