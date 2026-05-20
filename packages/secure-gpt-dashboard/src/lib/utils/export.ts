@@ -9,10 +9,17 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
  * Uses fetch with credentials:include so the session cookie is sent.
  * Creates a temporary blob URL and clicks it — no page navigation.
  */
-export async function downloadLogsCsv(): Promise<void> {
-    const url = `${BASE_URL}/api/v1/logs/export`
+export async function downloadLogsCsv(filters: Record<string, string | number | undefined> = {}): Promise<void> {
+    const url = new URL(`${BASE_URL}/api/v1/logs/export`)
+    
+    // Add filters as query params
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+            url.searchParams.append(key, String(value))
+        }
+    })
 
-    const response = await fetch(url, {
+    const response = await fetch(url.toString(), {
         method: 'GET',
         credentials: 'include',   // ← sends the sgpt_session cookie
         headers: {

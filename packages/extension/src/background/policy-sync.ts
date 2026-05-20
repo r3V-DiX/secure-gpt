@@ -5,29 +5,34 @@
 // ─────────────────────────────────────────────
 
 import { policyStorage, authStorage } from '@/lib/storage/storage'
-import { POLICY_SYNC_INTERVAL_MS, API_ENDPOINTS } from '@/config/api.config'
+import { API_ENDPOINTS } from '@/config/api.config'
 import apiClient from '@/lib/api/client'
 import type { PIIConfig } from '@securegpt/shared/types'
 
-let syncIntervalId: ReturnType<typeof setInterval> | null = null
+const POLICY_SYNC_ALARM_NAME = 'securegpt_policy_sync_alarm'
 
 export function startPolicySync(): void {
   // Run immediately on startup
   void syncPolicy()
 
-  syncIntervalId = setInterval(() => {
-    void syncPolicy()
-  }, POLICY_SYNC_INTERVAL_MS)
+  // Register background alarm (1 minute frequency)
+  chrome.alarms.create(POLICY_SYNC_ALARM_NAME, {
+    periodInMinutes: 1.0
+  })
+
+  // Set up alarm listener
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === POLICY_SYNC_ALARM_NAME) {
+      void syncPolicy()
+    }
+  })
 }
 
 export function stopPolicySync(): void {
-  if (syncIntervalId) {
-    clearInterval(syncIntervalId)
-    syncIntervalId = null
-  }
+  void chrome.alarms.clear(POLICY_SYNC_ALARM_NAME)
 }
 
-async function syncPolicy(): Promise<void> {
+export async function syncPolicy(): Promise<void> {
   try {
     const isLoggedIn = await authStorage.isLoggedIn()
     if (!isLoggedIn) return // not logged in — skip

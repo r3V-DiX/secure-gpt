@@ -1,7 +1,7 @@
 // packages/extension/src/popup/Popup.tsx
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/features/auth/hooks/use-auth'
-import { stateStorage } from '@/lib/storage/storage'
+import { stateStorage, policyStorage, localStorageExt } from '@/lib/storage/storage'
 import { DASHBOARD_URL } from '@/config/api.config'
 
 export function Popup() {
@@ -9,12 +9,33 @@ export function Popup() {
   const [isActive, setIsActive] = useState(true)
   const [stats, setStats] = useState({ blockCount: 0, maskCount: 0, warnCount: 0 })
   const [pausing, setPausing] = useState(false)
+  const [policyVersion, setPolicyVersion] = useState<number | null>(null)
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const loadState = useCallback(async () => {
     const active = await stateStorage.isActive()
     const s = await stateStorage.getSessionStats()
     setIsActive(active)
     setStats(s as typeof stats)
+
+    const version = await policyStorage.getPolicyVersion()
+    const syncedAt = await localStorageExt.get<string>('policyLastSyncedAt')
+    setPolicyVersion(version)
+    setLastSyncedAt(syncedAt)
+  }, [])
+
+  const handleSync = useCallback(async () => {
+    setIsSyncing(true)
+    chrome.runtime.sendMessage({ type: 'SYNC_POLICY' }, (res) => {
+      if (res?.success) {
+        setPolicyVersion(res.version ?? 0)
+        setLastSyncedAt(res.lastSyncedAt ?? null)
+      } else {
+        console.error('[Popup] On-demand sync failed:', res?.error)
+      }
+      setIsSyncing(false)
+    })
   }, [])
 
   useEffect(() => {
@@ -101,6 +122,47 @@ export function Popup() {
         <StatCard label="Blocked" value={stats.blockCount} color="#ef4444" bg="#fef2f2" />
         <StatCard label="Masked" value={stats.maskCount} color="#f59e0b" bg="#fffbeb" />
         <StatCard label="Warned" value={stats.warnCount} color="#3b82f6" bg="#eff6ff" />
+      </div>
+
+      <div style={styles.divider} />
+
+      {/* Policy Sync Section */}
+      <div style={styles.syncSection}>
+        <div style={styles.syncHeaderRow}>
+          <span style={styles.syncSectionLabel}>Security Policy</span>
+          <button 
+            style={{ 
+              ...styles.syncBtn, 
+              opacity: isSyncing ? 0.5 : 1, 
+              cursor: isSyncing ? 'not-allowed' : 'pointer' 
+            }}
+            onClick={handleSync}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <span className="spin-animation" style={styles.syncSpinnerInline} />
+            ) : (
+              <span>Sync Now ↻</span>
+            )}
+          </button>
+        </div>
+
+        <div style={styles.syncStatusCard}>
+          <div style={styles.syncStatusRow}>
+            <div style={styles.syncInfoLabel}>Enforced Version</div>
+            <div style={styles.syncVersionBadge}>v{policyVersion ?? 1}</div>
+          </div>
+          <div style={styles.syncStatusRow}>
+            <div style={styles.syncInfoLabel}>Last Synced</div>
+            <div style={styles.syncTimestamp}>
+              {lastSyncedAt ? new Date(lastSyncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Never'}
+            </div>
+          </div>
+          <div style={styles.syncStatusIndicatorRow}>
+            <div style={{ ...styles.syncStatusDot, background: '#22c55e' }} />
+            <span style={styles.syncStatusText}>Active & protecting local inputs</span>
+          </div>
+        </div>
       </div>
 
       <div style={styles.divider} />
@@ -203,4 +265,17 @@ const styles: Record<string, React.CSSProperties> = {
   loginIcon: { width: 44, height: 44, background: '#1e40af', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 4 },
   loginTitle: { fontSize: 16, fontWeight: 700, color: '#111827' },
   loginSub: { fontSize: 12, color: '#6b7280', textAlign: 'center', lineHeight: 1.5, marginBottom: 8 },
+  syncSection: { padding: '10px 14px' },
+  syncHeaderRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  syncSectionLabel: { fontSize: 10, fontWeight: 600, color: '#9ca3af', letterSpacing: '0.06em', textTransform: 'uppercase' },
+  syncBtn: { background: 'transparent', border: 'none', color: '#2563eb', fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, transition: 'background .15s', cursor: 'pointer', outline: 'none' },
+  syncStatusCard: { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px' },
+  syncStatusRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  syncInfoLabel: { fontSize: 11, color: '#64748b', fontWeight: 500 },
+  syncVersionBadge: { background: '#dbeafe', color: '#1d4ed8', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 },
+  syncTimestamp: { fontSize: 11, color: '#334155', fontWeight: 600 },
+  syncStatusIndicatorRow: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 6, borderTop: '1px solid #f1f5f9' },
+  syncStatusDot: { width: 5, height: 5, borderRadius: '50%' },
+  syncStatusText: { fontSize: 10, color: '#475569', fontWeight: 500 },
+  syncSpinnerInline: { display: 'inline-block', width: 8, height: 8, border: '1.5px solid #d1d5db', borderTopColor: '#2563eb', borderRadius: '50%' },
 }

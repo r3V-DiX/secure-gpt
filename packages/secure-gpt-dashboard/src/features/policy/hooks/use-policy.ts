@@ -140,7 +140,7 @@ export function usePolicy() {
       setConfig(updated.config)
       setSavedAt(new Date())
       setIsDirty(false)
-      toast.success('Policy saved successfully')
+      toast.success(`Policy v${updated.version} saved successfully`)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to save policy'
       setError(msg)

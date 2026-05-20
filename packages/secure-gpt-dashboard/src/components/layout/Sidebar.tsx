@@ -74,14 +74,14 @@ export function Sidebar() {
               href={href}
               style={{ animationDelay: `${idx * 40}ms` }}
               className={clsx(
-                'animate-slide-in group flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 relative',
+                'animate-slide-in group flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative',
                 active
-                  ? 'bg-[var(--sidebar-active-bg)] text-[var(--sidebar-text-active)]'
-                  : 'text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover-bg)] hover:text-[var(--sidebar-text-active)]',
+                  ? 'bg-[var(--sidebar-active-bg)] text-[var(--sidebar-text-active)] shadow-[0_4px_12px_rgba(129,140,248,0.15)] border border-white/5'
+                  : 'text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover-bg)] hover:text-[var(--sidebar-text-active)] hover:translate-x-1',
               )}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[var(--sidebar-accent)] rounded-full" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-to-b from-[var(--sidebar-accent)] to-indigo-400 rounded-r-md shadow-[0_0_8px_var(--sidebar-accent)]" />
               )}
               <Icon
                 size={14}

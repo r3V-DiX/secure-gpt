@@ -2,10 +2,10 @@
 // Background Service Worker
 // Manages policy sync, log batching, OAuth tab watching
 
-import { startPolicySync } from './policy-sync'
+import { startPolicySync, syncPolicy } from './policy-sync'
 import { startLogBatcher, flushLogs, queueLog } from './log-batcher'
 import { handleDetectPII, handleDetectPIIImage, handleDetectPIIPDF, handleRedactPDF } from './detection-handler'
-import { stateStorage, authStorage, policyStorage } from '@/lib/storage/storage'
+import { stateStorage, authStorage, policyStorage, localStorageExt } from '@/lib/storage/storage'
 import { fetchCurrentUser } from '@/features/auth/services/auth.service'
 import type { AuditLog } from '@securegpt/shared/types'
 
@@ -87,6 +87,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case 'GET_POLICY':
       void policyStorage.getPolicy().then((policy) => sendResponse({ policy }))
+      return true
+
+    case 'SYNC_POLICY':
+      void syncPolicy().then(async () => {
+        const version = await policyStorage.getPolicyVersion()
+        const lastSyncedAt = await localStorageExt.get<string>('policyLastSyncedAt')
+        sendResponse({ success: true, version, lastSyncedAt })
+      }).catch((err) => {
+        sendResponse({ success: false, error: String(err) })
+      })
       return true
 
     case 'INCREMENT_STAT':

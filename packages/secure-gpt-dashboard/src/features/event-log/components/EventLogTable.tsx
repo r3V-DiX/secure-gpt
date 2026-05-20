@@ -14,14 +14,14 @@ interface EventLogTableProps {
 export function EventLogTable({ data, pagination, loading, onPageChange }: EventLogTableProps) {
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border overflow-hidden"
+      <div className="rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-lg"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}>
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               {['Action', 'Category', 'Detection', 'Platform', 'Entities', 'Time'].map(h => (
                 <th key={h}
-                  className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest whitespace-nowrap"
+                  className="px-4 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"
                   style={{ background: 'var(--bg-surface-2)', color: 'var(--text-tertiary)' }}>
                   {h}
                 </th>
@@ -52,12 +52,12 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                 )
                 : data.map((log, i) => (
                   <tr key={log.id}
-                    style={{ borderBottom: '1px solid var(--border)', animationDelay: `${i * 20}ms` }}
-                    className="animate-fade-in transition-colors hover:bg-[var(--bg-surface-2)]">
+                    style={{ borderBottom: '1px solid var(--border)', animationDelay: `${i * 15}ms` }}
+                    className="animate-fade-in transition-all duration-150 hover:bg-[var(--bg-surface-2)]/60 cursor-default">
                     <td className="px-4 py-3">
                       <Badge variant={actionVariant(log.actionTaken)}>{log.actionTaken}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                    <td className="px-4 py-3 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                       {log.categoryTriggered}
                     </td>
                     <td className="px-4 py-3">

@@ -14,42 +14,54 @@ interface StatCardProps {
   trendLabel?: string
 }
 
-const accentTokens: Record<Accent, { icon: string; value: string; bg: string; border: string }> = {
+const accentTokens: Record<Accent, { icon: string; value: string; bg: string; border: string; glow: string; iconBg: string }> = {
   indigo: {
     icon: 'text-indigo-500 dark:text-indigo-400',
     value: 'text-indigo-600 dark:text-indigo-400',
-    bg: 'bg-indigo-50 dark:bg-indigo-500/10',
-    border: 'border-indigo-100 dark:border-indigo-500/20',
+    bg: 'from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-transparent',
+    border: 'border-indigo-100/80 dark:border-indigo-500/15',
+    glow: 'hover:shadow-[0_8px_30px_-4px_rgba(79,70,229,0.12)] hover:border-indigo-300 dark:hover:border-indigo-500/40',
+    iconBg: 'bg-indigo-50 dark:bg-indigo-500/10',
   },
   blue: {
     icon: 'text-sky-500 dark:text-sky-400',
     value: 'text-sky-600 dark:text-sky-400',
-    bg: 'bg-sky-50 dark:bg-sky-500/10',
-    border: 'border-sky-100 dark:border-sky-500/20',
+    bg: 'from-sky-50/50 to-white dark:from-sky-950/20 dark:to-transparent',
+    border: 'border-sky-100/80 dark:border-sky-500/15',
+    glow: 'hover:shadow-[0_8px_30px_-4px_rgba(14,165,233,0.12)] hover:border-sky-300 dark:hover:border-sky-500/40',
+    iconBg: 'bg-sky-50 dark:bg-sky-500/10',
   },
   green: {
     icon: 'text-emerald-500 dark:text-emerald-400',
     value: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
-    border: 'border-emerald-100 dark:border-emerald-500/20',
+    bg: 'from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-transparent',
+    border: 'border-emerald-100/80 dark:border-emerald-500/15',
+    glow: 'hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.12)] hover:border-emerald-300 dark:hover:border-emerald-500/40',
+    iconBg: 'bg-emerald-50 dark:bg-emerald-500/10',
   },
   amber: {
     icon: 'text-amber-500 dark:text-amber-400',
     value: 'text-amber-600 dark:text-amber-400',
-    bg: 'bg-amber-50 dark:bg-amber-500/10',
-    border: 'border-amber-100 dark:border-amber-500/20',
+    bg: 'from-amber-50/50 to-white dark:from-amber-950/20 dark:to-transparent',
+    border: 'border-amber-100/80 dark:border-amber-500/15',
+    glow: 'hover:shadow-[0_8px_30px_-4px_rgba(245,158,11,0.12)] hover:border-amber-300 dark:hover:border-amber-500/40',
+    iconBg: 'bg-amber-50 dark:bg-amber-500/10',
   },
   red: {
     icon: 'text-red-500 dark:text-red-400',
     value: 'text-red-600 dark:text-red-400',
-    bg: 'bg-red-50 dark:bg-red-500/10',
-    border: 'border-red-100 dark:border-red-500/20',
+    bg: 'from-red-50/50 to-white dark:from-red-950/20 dark:to-transparent',
+    border: 'border-red-100/80 dark:border-red-500/15',
+    glow: 'hover:shadow-[0_8px_30px_-4px_rgba(239,68,68,0.12)] hover:border-red-300 dark:hover:border-red-500/40',
+    iconBg: 'bg-red-50 dark:bg-red-500/10',
   },
   purple: {
     icon: 'text-violet-500 dark:text-violet-400',
     value: 'text-violet-600 dark:text-violet-400',
-    bg: 'bg-violet-50 dark:bg-violet-500/10',
-    border: 'border-violet-100 dark:border-violet-500/20',
+    bg: 'from-violet-50/50 to-white dark:from-violet-950/20 dark:to-transparent',
+    border: 'border-violet-100/80 dark:border-violet-500/15',
+    glow: 'hover:shadow-[0_8px_30px_-4px_rgba(139,92,246,0.12)] hover:border-violet-300 dark:hover:border-violet-500/40',
+    iconBg: 'bg-violet-50 dark:bg-violet-500/10',
   },
 }
 
@@ -71,7 +83,7 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
   const hasTrend = trend !== undefined
 
   return (
-    <div className="card p-5 flex flex-col gap-3 hover:shadow-md transition-all duration-200 group cursor-default">
+    <div className={`card p-5 flex flex-col gap-3 bg-gradient-to-br ${tokens.bg} border ${tokens.border} ${tokens.glow} transition-all duration-300 group cursor-default`}>
       {/* Top row */}
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-widest"
@@ -79,7 +91,7 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
           {label}
         </span>
         {icon && (
-          <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${tokens.bg} ${tokens.border} ${tokens.icon}`}>
+          <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${tokens.iconBg} ${tokens.border} ${tokens.icon}`}>
             {icon}
           </div>
         )}

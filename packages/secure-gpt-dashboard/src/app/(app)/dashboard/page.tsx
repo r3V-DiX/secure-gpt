@@ -4,6 +4,16 @@ import { Activity, ShieldCheck, Ban, AlertTriangle, Clock, TrendingUp } from 'lu
 import { useDashboard } from '@/features/dashboard/hooks/use-dashboard'
 import { useAuth } from '@/contexts/auth-context'
 import { StatCard } from '@/components/shared/StatCard'
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Cell
+} from 'recharts'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -234,7 +244,62 @@ export default function DashboardPage() {
           ) : stats?.eventsByDay.length === 0 ? (
             <EmptyState label="No events in period" />
           ) : (
-            <MiniBarChart data={stats?.eventsByDay ?? []} />
+            <div className="h-32 -mx-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats?.eventsByDay ?? []}>
+                  <Tooltip
+                    cursor={{ fill: 'var(--bg-surface-2)', opacity: 0.4 }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="px-3 py-2 rounded-xl border shadow-xl backdrop-blur-md"
+                            style={{ 
+                              background: 'var(--bg-surface)', 
+                              borderColor: 'var(--border-2)',
+                              boxShadow: 'var(--shadow-lg)'
+                            }}>
+                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-tertiary)' }}>
+                              {new Date(payload[0].payload.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </p>
+                            <p className="text-sm font-bold" style={{ color: 'var(--accent-text)' }}>
+                              {payload[0].value} <span className="text-[10px] font-medium text-[var(--text-secondary)]">events</span>
+                            </p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    radius={[4, 4, 0, 0]}
+                    animationDuration={1500}
+                  >
+                    {(stats?.eventsByDay ?? []).map((entry, index) => {
+                      const max = Math.max(...(stats?.eventsByDay.map(d => d.count) ?? [1]))
+                      return (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.count === max ? 'var(--accent)' : 'var(--accent-light)'}
+                          stroke={entry.count === max ? 'var(--accent)' : 'var(--accent-border)'}
+                          strokeWidth={1}
+                        />
+                      )
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="flex justify-between mt-2 px-2">
+                {([stats?.eventsByDay[0], stats?.eventsByDay[Math.floor(stats?.eventsByDay.length / 2)], stats?.eventsByDay[stats?.eventsByDay.length - 1]])
+                  .filter((d): d is { date: string; count: number } => d !== undefined)
+                  .map((d, i) => (
+                    <span key={i} className="text-[9px] font-mono font-medium"
+                      style={{ color: 'var(--text-tertiary)' }}>
+                      {new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                  ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -277,62 +342,6 @@ export default function DashboardPage() {
 
 /* ── Sub-components ──────────────────────────────────────────────────────── */
 
-function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
-  const max = Math.max(...data.map(d => d.count), 1)
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-end gap-0.5 h-28">
-        {data.map((d, i) => {
-          const heightPct = Math.max(4, (d.count / max) * 100)
-          return (
-            <div
-              key={d.date}
-              className="relative flex-1 min-w-0 group cursor-default"
-              style={{ height: '100%', display: 'flex', alignItems: 'flex-end' }}
-            >
-              <div
-                title={`${d.date}: ${d.count}`}
-                className="w-full rounded-t-sm transition-all duration-300"
-                style={{
-                  height: `${heightPct}%`,
-                  background: d.count === max
-                    ? 'linear-gradient(180deg, var(--accent) 0%, #818cf8 100%)'
-                    : 'var(--accent-light)',
-                  border: '1px solid var(--accent-border)',
-                  borderBottom: 'none',
-                  animationDelay: `${i * 20}ms`,
-                }}
-              />
-              {/* Tooltip */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 rounded-lg text-[10px] font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-2)',
-                  color: 'var(--text-primary)',
-                }}>
-                {d.count}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* X-axis labels — show first, middle, last */}
-      <div className="flex justify-between">
-        {([data[0], data[Math.floor(data.length / 2)], data[data.length - 1]] as Array<{ date: string; count: number } | undefined>)
-          .filter((d): d is { date: string; count: number } => d !== undefined)
-          .map((d, i) => (
-            <span key={i} className="text-[9px] font-mono"
-              style={{ color: 'var(--text-tertiary)' }}>
-              {new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-            </span>
-          ))}
-      </div>
-    </div>
-  )
-}
-
 function QuickStat({
   label, value, sub, accent,
 }: {
@@ -342,22 +351,21 @@ function QuickStat({
   accent: 'green' | 'red' | 'indigo'
 }) {
   const colors = {
-    green:  { bg: 'var(--success-light)',  border: 'var(--success-border)',  text: 'var(--success)' },
-    red:    { bg: 'var(--danger-light)',   border: 'var(--danger-border)',   text: 'var(--danger)' },
-    indigo: { bg: 'var(--accent-light)',   border: 'var(--accent-border)',   text: 'var(--accent-text)' },
+    green:  { bg: 'from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-transparent', border: 'border-emerald-100/80 dark:border-emerald-500/15', text: 'text-emerald-600 dark:text-emerald-400', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.08)] hover:border-emerald-300 dark:hover:border-emerald-500/30' },
+    red:    { bg: 'from-red-50/50 to-white dark:from-red-950/20 dark:to-transparent', border: 'border-red-100/80 dark:border-red-500/15', text: 'text-red-600 dark:text-red-400', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(239,68,68,0.08)] hover:border-red-300 dark:hover:border-red-500/30' },
+    indigo: { bg: 'from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-transparent', border: 'border-indigo-100/80 dark:border-indigo-500/15', text: 'text-indigo-600 dark:text-indigo-400', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(79,70,229,0.08)] hover:border-indigo-300 dark:hover:border-indigo-500/30' },
   }[accent]
 
   return (
-    <div className="rounded-2xl p-4 border"
-      style={{ background: colors.bg, borderColor: colors.border }}>
-      <p className="text-[11px] font-semibold uppercase tracking-widest mb-2"
-        style={{ color: colors.text, opacity: 0.7 }}>
+    <div className={`rounded-2xl p-4 border bg-gradient-to-br ${colors.bg} ${colors.border} ${colors.glow} transition-all duration-300 group`}>
+      <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
+        style={{ color: 'var(--text-tertiary)' }}>
         {label}
       </p>
-      <p className="text-2xl font-bold tracking-tight" style={{ color: colors.text }}>
+      <p className={`text-2xl font-bold tracking-tight leading-none group-hover:scale-[1.01] transition-transform duration-200 ${colors.text}`}>
         {value}
       </p>
-      <p className="text-xs mt-1" style={{ color: colors.text, opacity: 0.6 }}>
+      <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
         {sub}
       </p>
     </div>

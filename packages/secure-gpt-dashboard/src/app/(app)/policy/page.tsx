@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button/button'
 import { usePolicy } from '@/features/policy/hooks/use-policy'
 import type { PolicyAction, CustomRule } from '@/types'
-import { ShieldCheck, Globe, Settings2, CheckCircle, Plus, Trash2, PlusCircle, AlertCircle } from 'lucide-react'
+import { ShieldCheck, Globe, Settings2, CheckCircle, Plus, Trash2, PlusCircle, AlertCircle, X } from 'lucide-react'
 import { Modal } from '@/components/ui/modal/modal'
 
 const ACTIONS: PolicyAction[] = ['BLOCK', 'MASK', 'WARN_ALLOW', 'ALLOW']
@@ -38,6 +38,12 @@ export default function PolicyPage() {
 
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false)
   const [isAddRuleOpen, setIsAddRuleOpen] = useState<{ category: string } | null>(null)
+  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false)
+
+  const handleDiscard = () => {
+    discard()
+    setIsDiscardModalOpen(false)
+  }
 
   if (loading) {
     return (
@@ -57,9 +63,17 @@ export default function PolicyPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            Policy Settings
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              Policy Settings
+            </h1>
+            {isDirty && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse-dot"
+                style={{ background: 'var(--warning-light)', color: 'var(--warning)', border: '1px solid var(--warning-border)' }}>
+                Unsaved Changes
+              </span>
+            )}
+          </div>
           <p className="text-sm mt-0.5 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
             Configure how SecureGPT handles each data category
             {savedAt && (
@@ -73,13 +87,36 @@ export default function PolicyPage() {
         </div>
         <div className="flex gap-2">
           {isDirty && (
-            <Button variant="ghost" size="sm" onClick={discard}>Discard</Button>
+            <Button variant="ghost" size="sm" onClick={() => setIsDiscardModalOpen(true)}>Discard</Button>
           )}
           <Button variant="primary" size="sm" loading={saving} onClick={save} disabled={!isDirty}>
-            {saving ? 'Saving…' : 'Save Policy'}
+            {saving ? 'Publishing…' : 'Save Policy'}
           </Button>
         </div>
       </div>
+
+      <Modal 
+        open={isDiscardModalOpen} 
+        onClose={() => setIsDiscardModalOpen(false)}
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+              Discard changes?
+            </h3>
+            <button onClick={() => setIsDiscardModalOpen(false)} style={{ color: 'var(--text-tertiary)' }}>
+              <X size={18} />
+            </button>
+          </div>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            You have unsaved modifications to your detection policy. Are you sure you want to discard them? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-3 mt-8">
+            <Button variant="ghost" onClick={() => setIsDiscardModalOpen(false)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDiscard}>Discard Changes</Button>
+          </div>
+        </div>
+      </Modal>
 
       {error && (
         <div className="p-3 rounded-xl text-sm font-medium"
@@ -114,12 +151,12 @@ export default function PolicyPage() {
 
           return (
             <div key={cat}
-              className="rounded-2xl border transition-all duration-200 animate-fade-in overflow-hidden"
+              className="rounded-2xl border transition-all duration-300 animate-fade-in overflow-hidden hover:shadow-md hover:border-accent-border"
               style={{
                 background: 'var(--bg-surface)',
                 borderColor: cfg.enabled ? 'var(--border-2)' : 'var(--border)',
-                boxShadow: 'var(--shadow-card)',
-                opacity: cfg.enabled ? 1 : 0.8,
+                boxShadow: cfg.enabled ? 'var(--shadow-md), 0 4px 20px -4px var(--accent-glow)' : 'var(--shadow-card)',
+                opacity: cfg.enabled ? 1 : 0.75,
                 animationDelay: `${i * 60}ms`,
               }}>
 
@@ -154,10 +191,13 @@ export default function PolicyPage() {
                   {/* Toggle */}
                   <button
                     onClick={() => updateCategory(cat, { enabled: !cfg.enabled })}
-                    className="relative w-10 h-5 rounded-full transition-all duration-200 shrink-0 mt-0.5"
-                    style={{ background: cfg.enabled ? 'var(--accent)' : 'var(--bg-surface-3)' }}>
+                    className="relative w-11 h-6 rounded-full transition-all duration-300 shrink-0 mt-0.5 cursor-pointer shadow-inner"
+                    style={{ 
+                      background: cfg.enabled ? 'var(--accent)' : 'var(--bg-surface-3)',
+                      boxShadow: cfg.enabled ? '0 0 8px var(--accent-glow)' : 'none'
+                    }}>
                     <span
-                      className="absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform duration-200"
+                      className="absolute top-1 left-1 size-4 bg-white rounded-full shadow-md transition-transform duration-300 ease-out"
                       style={{ transform: cfg.enabled ? 'translateX(20px)' : 'translateX(0)' }}
                     />
                   </button>

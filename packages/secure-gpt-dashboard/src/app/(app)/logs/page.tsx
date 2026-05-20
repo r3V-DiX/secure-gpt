@@ -1,9 +1,11 @@
 'use client'
 // src/app/(app)/logs/page.tsx
+import { useState } from 'react'
 import { useEventLog } from '@/features/event-log/hooks/use-event-log'
 import { EventLogTable } from '@/features/event-log/components/EventLogTable'
 import { EventLogFilters } from '@/features/event-log/components/EventLogFilters'
-import { Download } from 'lucide-react'
+import { Download, Loader2 } from 'lucide-react'
+import { downloadLogsCsv } from '@/lib/utils/export'
 
 export default function LogsPage() {
   const { 
@@ -11,15 +13,29 @@ export default function LogsPage() {
     pagination, 
     filters, 
     loading, 
-    error, 
+    error: loadError, 
     updateFilters, 
     setPage 
   } = useEventLog()
 
-  const handleExport = () => {
-    // Backend endpoint /api/v1/logs/export returns CSV
-    window.location.href = '/api/v1/logs/export'
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  const handleExport = async () => {
+    setExporting(true)
+    setExportError(null)
+    try {
+      // Pass all filters except pagination
+      const { page, page_size, ...exportFilters } = filters
+      await downloadLogsCsv(exportFilters)
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Export failed')
+    } finally {
+      setExporting(false)
+    }
   }
+
+  const error = loadError || exportError
 
   return (
     <div className="max-w-[1200px] space-y-6 animate-fade-in pb-8">
@@ -36,15 +52,16 @@ export default function LogsPage() {
 
         <button 
           onClick={handleExport}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:brightness-110 active:scale-95"
+          disabled={exporting}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ 
             background: 'var(--accent)', 
             borderColor: 'var(--accent-border)', 
             color: 'white' 
           }}
         >
-          <Download size={13} />
-          Export CSV
+          {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+          {exporting ? 'Exporting...' : 'Export CSV'}
         </button>
       </div>
 

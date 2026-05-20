@@ -67,7 +67,7 @@ export const allPIIRules: DetectionRule[] = [
   {
     id: 'pii.pan',
     category: 'PII' as PIICategory,
-    type: 'national_id',
+    type: 'pan_card',
     label: 'Indian PAN Card',
     pattern: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g,
     validatorId: 'pan',

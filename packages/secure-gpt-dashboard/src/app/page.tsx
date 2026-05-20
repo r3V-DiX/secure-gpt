@@ -97,21 +97,20 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            {/* Trusted By - Logo Placeholders */}
+            {/* Trusted By - Pro Style */}
             <div className="mt-24">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-10">Trusted by modern security teams</p>
-              <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 opacity-60">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-10">Securing modern enterprise workflows</p>
+              <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 opacity-70">
                 {[
-                  { name: 'Example Corp', icon: <Shield size={16} /> },
-                  { name: 'Example Inc', icon: <Globe size={16} /> },
-                  { name: 'Example Tech', icon: <Zap size={16} /> },
-                  { name: 'Example AI', icon: <Users size={16} /> },
-                  { name: 'Example Safe', icon: <Lock size={16} /> }
+                  { name: 'Example', icon: <ShieldCheck size={18} /> },
+                  { name: 'Example.ai', icon: <Globe size={18} /> },
+                  { name: 'Ex', icon: <Zap size={18} /> },
+                  { name: 'Exa', icon: <Lock size={18} /> },
+                  { name: 'Exam', icon: <BarChart3 size={18} /> }
                 ].map(logo => (
-                  <div key={logo.name} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-surface-2)]/50 transition-all hover:opacity-100 grayscale hover:grayscale-0">
-                    <span className="text-[var(--text-secondary)]">{logo.icon}</span>
-                    <span className="text-lg font-bold tracking-tighter text-[var(--text-primary)]">{logo.name}</span>
-                    {/* TODO: Replace with actual logo image: <img src={`/logos/${logo.name.toLowerCase()}.svg`} alt={logo.name} className="h-6" /> */}
+                  <div key={logo.name} className="flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-2)]/30 backdrop-blur-sm transition-all hover:scale-105 hover:opacity-100 hover:border-[var(--accent-border)] hover:bg-[var(--accent-light)] group cursor-default">
+                    <span className="text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors">{logo.icon}</span>
+                    <span className="text-xl font-bold tracking-tighter text-[var(--text-primary)] group-hover:text-[var(--accent-text)] transition-colors">{logo.name}</span>
                   </div>
                 ))}
               </div>
