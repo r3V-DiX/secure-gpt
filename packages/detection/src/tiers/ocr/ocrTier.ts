@@ -51,6 +51,49 @@ function rotateImageCanvas(img: HTMLImageElement, degrees: number): string {
   return canvas.toDataURL('image/png')
 }
 
+function preprocessImageCanvas(img: HTMLImageElement): string {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return img.src
+
+  // Scale up small images for better OCR resolution (under 1000px)
+  const scale = img.width < 1000 || img.height < 1000 ? 2 : 1
+  canvas.width = img.width * scale
+  canvas.height = img.height * scale
+
+  // Disable smoothing for sharp edges during resize
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+  try {
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imgData.data
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i]!
+      const g = data[i + 1]!
+      const b = data[i + 2]!
+
+      // Grayscale conversion using standard luminance weights
+      const grayscale = 0.299 * r + 0.587 * g + 0.114 * b
+
+      // Adaptive Binarization: Threshold at 128
+      const thresholdVal = grayscale > 128 ? 255 : 0
+
+      data[i] = thresholdVal
+      data[i + 1] = thresholdVal
+      data[i + 2] = thresholdVal
+    }
+
+    ctx.putImageData(imgData, 0, 0)
+  } catch (e) {
+    console.warn('[OCRTier] Failed to apply pixel-level preprocessing filters (likely CORS limit):', e)
+  }
+
+  return canvas.toDataURL('image/png')
+}
+
+
 export class OCRTier extends BaseTier {
   readonly name = 'ocr' as const
   readonly enabled = true
@@ -77,8 +120,23 @@ export class OCRTier extends BaseTier {
     if (!worker) return { rawText: '', ocrData: null, isConfidential: false, severityFloor: 'medium' }
 
     try {
+      let processedUrl = imageUrl
+      let activeImageElement: HTMLImageElement | null = null
+
+      if (isBrowser) {
+        try {
+          console.info('[OCRTier] Loading and preprocessing image (grayscale, thresholding, scaling)...')
+          const img = await loadImage(imageUrl)
+          processedUrl = preprocessImageCanvas(img)
+          // Load preprocessed image for any future rotation steps
+          activeImageElement = await loadImage(processedUrl)
+        } catch (prepErr) {
+          console.warn('[OCRTier] Preprocessing failed, falling back to raw image:', prepErr)
+        }
+      }
+
       console.info('[OCRTier] Processing image (First Pass)...')
-      let { data } = await worker.recognize(imageUrl, {}, { blocks: true })
+      let { data } = await worker.recognize(processedUrl, {}, { blocks: true })
       let rawText = normalizeText(data.text)
       
       const { isConfidential, severityFloor } = classifyDocument(rawText)
@@ -88,7 +146,7 @@ export class OCRTier extends BaseTier {
       if (!/\b([A-Z]{3}[PCHFATLJGE][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi.test(rawText)) {
         console.info('[OCRTier] No PAN found. Running Sparse Pass (PSM 11)...')
         await worker.setParameters({ tessedit_pageseg_mode: '11' as any })
-        const { data: sparseData } = await worker.recognize(imageUrl, {}, { blocks: true })
+        const { data: sparseData } = await worker.recognize(processedUrl, {}, { blocks: true })
         
         // Merge sparse text into rawText if it contains PAN-like patterns
         if (/\b([A-Z]{3}[PCHFATLJGE][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi.test(sparseData.text)) {
@@ -110,11 +168,10 @@ export class OCRTier extends BaseTier {
       const firstPassFindings = await regexCheck.run(rawText, config)
 
       // If we are in the browser, let's load the image to check dimensions and rotate if needed
-      if (isBrowser) {
+      if (isBrowser && activeImageElement) {
         try {
-          console.info('[OCRTier] Loading image for orientation and rotation checks…')
-          const img = await loadImage(imageUrl)
-          const isPortrait = img.height > img.width
+          console.info('[OCRTier] Checking orientation and rotation fallbacks...')
+          const isPortrait = activeImageElement.height > activeImageElement.width
           const hasCriticalFinding = firstPassFindings.some(f => f.type === 'aadhaar' || f.type === 'pan_card')
 
           // If the image is portrait (likely rotated landscape ID card) or we didn't find critical PII, try rotations
@@ -124,7 +181,7 @@ export class OCRTier extends BaseTier {
             
             for (const deg of rotations) {
               console.info(`[OCRTier] Testing rotation: ${deg} degrees…`)
-              const rotatedUrl = rotateImageCanvas(img, deg)
+              const rotatedUrl = rotateImageCanvas(activeImageElement, deg)
               const { data: rotatedData } = await worker.recognize(rotatedUrl, {}, { blocks: true })
               const rotatedText = normalizeText(rotatedData.text)
 
