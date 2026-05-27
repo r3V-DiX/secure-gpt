@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Trash2, Plus, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Trash2, Plus, X, Pencil } from 'lucide-react'
 import { ACTION_LABEL, ACTION_COLORS, ACTIONS } from './ActionSelector'
 import { Button } from '@/components/ui/button/button'
 import { Modal } from '@/components/ui/modal/modal'
@@ -125,18 +125,19 @@ function FieldRow({ rule, override, categoryAction, onToggle, onActionChange }: 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Add Custom Rule modal
+// Add/Edit Custom Rule modal
 // ─────────────────────────────────────────────────────────────────────────────
-function AddRuleModal({ category, onAdd, onClose }: {
+function AddEditRuleModal({ category, initialRule, onSave, onClose }: {
   category: string
-  onAdd: (rule: Omit<CustomRule, 'id' | 'type'>) => void
+  initialRule?: CustomRule
+  onSave: (rule: Omit<CustomRule, 'id' | 'type'>) => void
   onClose: () => void
 }) {
-  const [label, setLabel] = useState('')
-  const [pattern, setPattern] = useState('')
-  const [severity, setSeverity] = useState<CustomRule['severity']>('medium')
-  const [caseSensitive, setCaseSensitive] = useState(false)
-  const [maskingLabel, setMaskingLabel] = useState('')
+  const [label, setLabel] = useState(initialRule?.label ?? '')
+  const [pattern, setPattern] = useState(initialRule?.pattern ?? '')
+  const [severity, setSeverity] = useState<CustomRule['severity']>(initialRule?.severity ?? 'medium')
+  const [caseSensitive, setCaseSensitive] = useState(initialRule?.caseSensitive ?? false)
+  const [maskingLabel, setMaskingLabel] = useState(initialRule?.maskingLabel ?? '')
   const [patternError, setPatternError] = useState<string | null>(null)
 
   const inp = {
@@ -150,9 +151,11 @@ function AddRuleModal({ category, onAdd, onClose }: {
   return (
     <div className="p-6 space-y-4">
       <div>
-        <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>New Custom Rule</h2>
+        <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+          {initialRule ? 'Edit Custom Rule' : 'New Custom Rule'}
+        </h2>
         <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-          Detect custom patterns in the <span style={{ color: 'var(--accent-text)' }}>{category}</span> category
+          {initialRule ? 'Modify this custom rule' : `Detect custom patterns in the ${category} category`}
         </p>
       </div>
 
@@ -202,8 +205,8 @@ function AddRuleModal({ category, onAdd, onClose }: {
       <div className="flex gap-2 pt-1">
         <Button variant="ghost" className="flex-1" onClick={onClose}>Cancel</Button>
         <Button variant="primary" className="flex-1" disabled={!canAdd}
-          onClick={() => onAdd({ label, pattern, severity, caseSensitive, enabled: true, description: '', maskingLabel: maskingLabel.trim() || undefined, requireContext: false, triggers: [] })}>
-          Add Rule
+          onClick={() => onSave({ label, pattern, severity, caseSensitive, enabled: true, description: '', maskingLabel: maskingLabel.trim() || undefined, requireContext: false, triggers: [] })}>
+          {initialRule ? 'Save Changes' : 'Add Rule'}
         </Button>
       </div>
     </div>
@@ -226,6 +229,7 @@ interface Props {
   onAddAllowlist: (pattern: string) => void
   onRemoveAllowlist: (pattern: string) => void
   onAddCustomRule: (rule: Omit<CustomRule, 'id' | 'type'>) => void
+  onUpdateCustomRule: (ruleId: string, rule: Omit<CustomRule, 'id' | 'type'>) => void
   onDeleteCustomRule: (ruleId: string) => void
   onDelete: () => void
 }
@@ -235,11 +239,12 @@ export function CategoryCard(props: Props) {
     categoryName, config, isBuiltin, animDelay,
     onToggleEnabled, onActionChange, onRuleOverride,
     onAddKeyword, onRemoveKeyword, onAddAllowlist, onRemoveAllowlist,
-    onAddCustomRule, onDeleteCustomRule, onDelete,
+    onAddCustomRule, onUpdateCustomRule, onDeleteCustomRule, onDelete,
   } = props
 
   const [expanded, setExpanded] = useState(false)
   const [addRuleOpen, setAddRuleOpen] = useState(false)
+  const [editingRule, setEditingRule] = useState<CustomRule | undefined>(undefined)
   const [kwDraft, setKwDraft] = useState('')
   const [allowDraft, setAllowDraft] = useState('')
 
@@ -374,6 +379,11 @@ export function CategoryCard(props: Props) {
                           <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{rule.label}</p>
                           <code className="text-[10px] block truncate" style={{ color: 'var(--text-tertiary)' }}>/{rule.pattern}/</code>
                         </div>
+                        <button onClick={() => { setEditingRule(rule); setAddRuleOpen(true) }}
+                          className="p-1.5 rounded-lg hover:bg-neutral-500/10 transition-colors shrink-0"
+                          style={{ color: 'var(--text-tertiary)' }}>
+                          <Pencil size={12} />
+                        </button>
                         <button onClick={() => onDeleteCustomRule(rule.id)}
                           className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors shrink-0"
                           style={{ color: 'var(--text-tertiary)' }}>
@@ -413,11 +423,20 @@ export function CategoryCard(props: Props) {
         )}
       </div>
 
-      <Modal open={addRuleOpen} onClose={() => setAddRuleOpen(false)} size="sm">
-        <AddRuleModal
+      <Modal open={addRuleOpen} onClose={() => { setAddRuleOpen(false); setEditingRule(undefined) }} size="sm">
+        <AddEditRuleModal
           category={categoryName}
-          onAdd={rule => { onAddCustomRule(rule); setAddRuleOpen(false) }}
-          onClose={() => setAddRuleOpen(false)}
+          initialRule={editingRule}
+          onSave={rule => {
+            if (editingRule) {
+              onUpdateCustomRule(editingRule.id, rule)
+            } else {
+              onAddCustomRule(rule)
+            }
+            setAddRuleOpen(false)
+            setEditingRule(undefined)
+          }}
+          onClose={() => { setAddRuleOpen(false); setEditingRule(undefined) }}
         />
       </Modal>
     </>

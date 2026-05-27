@@ -66,7 +66,7 @@ export default function PolicyPage() {
     config, loading, saving, savedAt, error, isDirty,
     updateCategory, addCategory, deleteCategory,
     updateRuleOverride,
-    addCustomRule, deleteCustomRule,
+    addCustomRule, updateCustomRule, deleteCustomRule,
     updateField, save, discard,
   } = usePolicy()
 
@@ -147,6 +147,7 @@ export default function PolicyPage() {
                   onAddAllowlist={p => updateCategory(cat, { allowlist: [...(cfg.allowlist ?? []), p] })}
                   onRemoveAllowlist={p => updateCategory(cat, { allowlist: (cfg.allowlist ?? []).filter(k => k !== p) })}
                   onAddCustomRule={rule => addCustomRule(cat, rule)}
+                  onUpdateCustomRule={(ruleId, rule) => updateCustomRule(cat, ruleId, rule)}
                   onDeleteCustomRule={ruleId => deleteCustomRule(cat, ruleId)}
                   onDelete={() => deleteCategory(cat)}
                 />
