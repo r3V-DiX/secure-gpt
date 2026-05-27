@@ -10,11 +10,39 @@ export function useDashboard(days = 30) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setLoading(true)
-    fetchDashboardStats(days)
-      .then(setStats)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false))
+    let active = true
+
+    const loadStats = async (isBackground = false) => {
+      if (!isBackground) {
+        setLoading(true)
+      }
+      try {
+        const data = await fetchDashboardStats(days)
+        if (active) {
+          setStats(data)
+        }
+      } catch (e: unknown) {
+        if (active && !isBackground) {
+          setError(e instanceof Error ? e.message : 'Failed to fetch dashboard stats')
+        }
+      } finally {
+        if (active && !isBackground) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadStats(false)
+
+    // Poll every 5 seconds for real-time overview updates
+    const interval = setInterval(() => {
+      void loadStats(true)
+    }, 5000)
+
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
   }, [days])
 
   return { stats, loading, error }

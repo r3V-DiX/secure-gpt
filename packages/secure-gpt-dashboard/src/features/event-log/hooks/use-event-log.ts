@@ -13,21 +13,38 @@ export function useEventLog(initialFilters: LogFilters = {}) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const load = useCallback(async (f: LogFilters) => {
-    setLoading(true)
+  const load = useCallback(async (f: LogFilters, isBackground = false) => {
+    if (!isBackground) {
+      setLoading(true)
+    }
     setError(null)
     try {
       const res = await fetchMyLogs(f)
       setData(res.data)
       setPagination(res.pagination)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load logs')
+      if (!isBackground) {
+        setError(e instanceof Error ? e.message : 'Failed to load logs')
+      }
     } finally {
-      setLoading(false)
+      if (!isBackground) {
+        setLoading(false)
+      }
     }
   }, [])
 
   useEffect(() => { void load(filters) }, [filters, load])
+
+  // Real-time auto-refresh polling (every 5 seconds) when on the first page
+  useEffect(() => {
+    if (filters.page !== 1) return
+
+    const interval = setInterval(() => {
+      void load(filters, true)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [filters, load])
 
   // AFTER
   const updateFilters = (updates: { [K in keyof LogFilters]?: LogFilters[K] | undefined }) =>
