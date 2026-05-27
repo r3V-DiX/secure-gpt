@@ -215,7 +215,16 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
 
     // ── BLOCK ─────────────────────────────────────
     if (action === 'BLOCK') {
-      showBanner('block', topEntity.category, mergedEntities.length)
+      showBanner('block', topEntity.category, mergedEntities.length, undefined, () => {
+        showShieldModal(
+          { ...result, entities: mergedEntities, hasFindings },
+          currentPolicy,
+          text,
+          undefined,
+          true,
+          'Blocked: PII/Confidentiality Leak Detected'
+        )
+      })
       void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
       void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'BLOCK', topEntity, false)
       ocrCache.clear()
@@ -251,7 +260,16 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
 
       void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
       void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
-      showBanner('mask', topEntity.category, mergedEntities.length)
+      showBanner('mask', topEntity.category, mergedEntities.length, undefined, () => {
+        showShieldModal(
+          { ...result, entities: mergedEntities, hasFindings },
+          currentPolicy,
+          text,
+          undefined,
+          true,
+          'Masked: Sensitive Data Redacted'
+        )
+      })
 
       isRunning = false
       setTimeout(() => resubmit(el), 400)
@@ -290,7 +308,16 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
 
           void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
           void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
-          showBanner('mask', topEntity.category, mergedEntities.length)
+          showBanner('mask', topEntity.category, mergedEntities.length, undefined, () => {
+            showShieldModal(
+              { ...result, entities: mergedEntities, hasFindings },
+              currentPolicy,
+              text,
+              undefined,
+              true,
+              'Masked: Sensitive Data Redacted'
+            )
+          })
 
           setTimeout(() => resubmit(el), 400)
         } else {

@@ -20,7 +20,9 @@ export function showShieldModal(
   result: DetectionResult,
   config: PIIConfig,
   originalText: string,
-  onDecision: (proceed: boolean, masked: boolean, acknowledged: boolean) => void
+  onDecision?: (proceed: boolean, masked: boolean, acknowledged: boolean) => void,
+  readOnly = false,
+  readOnlyTitle?: string
 ): void {
   // Remove any existing modal first
   removeShieldModal()
@@ -48,19 +50,21 @@ export function showShieldModal(
       result={result}
       config={config}
       originalText={originalText}
+      readOnly={readOnly}
+      readOnlyTitle={readOnlyTitle}
       onProceed={(acknowledged) => {
         // "Send Directly" — proceed=true, masked=false
-        onDecision(true, false, acknowledged)
+        onDecision?.(true, false, acknowledged)
         removeShieldModal()
       }}
       onCancel={() => {
         // "Cancel" — proceed=false
-        onDecision(false, false, false)
+        onDecision?.(false, false, false)
         removeShieldModal()
       }}
       onMask={() => {
         // "Mask & Send" — proceed=true, masked=true
-        onDecision(true, true, false)
+        onDecision?.(true, true, false)
         removeShieldModal()
       }}
     />

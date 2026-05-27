@@ -32,7 +32,8 @@ export function showBanner(
   type: BannerType,
   category: PIICategory,
   matchCount: number,
-  onAcknowledge?: (proceed: boolean) => void
+  onAcknowledge?: (proceed: boolean) => void,
+  onClick?: () => void
 ): void {
   removeBanner()
 
@@ -79,10 +80,19 @@ export function showBanner(
 
   const leftSection = document.createElement('div')
   leftSection.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1;'
+  const clickCue = onClick ? ' <span style="font-size: 11px; opacity: 0.6; text-decoration: underline;">(click to view findings)</span>' : ''
   leftSection.innerHTML = `
     <span style="font-size: 16px;">${style.icon}</span>
-    <span><strong style="color: ${style.border};">SecureGPT</strong> — ${message}</span>
+    <span><strong style="color: ${style.border};">SecureGPT</strong> — ${message}${clickCue}</span>
   `
+
+  if (onClick) {
+    leftSection.style.cursor = 'pointer'
+    leftSection.addEventListener('click', onClick)
+    leftSection.style.transition = 'opacity 0.15s ease'
+    leftSection.addEventListener('mouseenter', () => { leftSection.style.opacity = '0.85' })
+    leftSection.addEventListener('mouseleave', () => { leftSection.style.opacity = '1' })
+  }
 
   const rightSection = document.createElement('div')
   rightSection.style.cssText = 'display: flex; align-items: center; gap: 8px; flex-shrink: 0;'

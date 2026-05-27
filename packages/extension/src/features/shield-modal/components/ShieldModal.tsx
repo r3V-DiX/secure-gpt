@@ -10,9 +10,11 @@ interface ShieldModalProps {
   result: DetectionResult
   config: PIIConfig
   originalText: string
-  onProceed: (acknowledged: boolean) => void
+  onProceed?: (acknowledged: boolean) => void
   onCancel: () => void
-  onMask: () => void
+  onMask?: () => void
+  readOnly?: boolean
+  readOnlyTitle?: string
 }
 
 const categoryStyles: Record<PIICategory, { bg: string; border: string; text: string; dot: string }> = {
@@ -40,6 +42,8 @@ export function ShieldModal({
   onProceed,
   onCancel,
   onMask,
+  readOnly = false,
+  readOnlyTitle,
 }: ShieldModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
 
@@ -92,10 +96,10 @@ export function ShieldModal({
             <div className="shield-icon-wrap">🛡️</div>
             <div className="flex-1 min-w-0">
               <h2 id="shield-modal-title" className="modal-title">
-                Sensitive data detected
+                {readOnlyTitle ?? 'Sensitive data detected'}
               </h2>
               <p className="modal-subtitle">
-                {totalItems} {totalItems === 1 ? 'item' : 'items'} found · review before sending
+                {totalItems} {totalItems === 1 ? 'item' : 'items'} found · {readOnly ? 'monitored by policy' : 'review before sending'}
               </p>
             </div>
             <button className="close-btn" onClick={onCancel} aria-label="Close">✕</button>
@@ -153,13 +157,23 @@ export function ShieldModal({
 
           {/* ── Footer ── */}
           <div className="modal-footer">
-            <div className="footer-actions">
-              <button className="btn-secondary" onClick={onCancel}>Cancel</button>
-              <button className="btn-ghost" onClick={() => onProceed(true)}>Send anyway</button>
-              <button className="btn-primary btn-full" onClick={onMask}>
-                🔒 Mask &amp; Send
-              </button>
-            </div>
+            {readOnly ? (
+              <div className="footer-actions">
+                <button className="btn-primary btn-full" onClick={onCancel}>
+                  Close
+                </button>
+              </div>
+            ) : (
+              <div className="footer-actions">
+                <button className="btn-secondary" onClick={onCancel}>Cancel</button>
+                {onProceed && <button className="btn-ghost" onClick={() => onProceed(true)}>Send anyway</button>}
+                {onMask && (
+                  <button className="btn-primary btn-full" onClick={onMask}>
+                    🔒 Mask &amp; Send
+                  </button>
+                )}
+              </div>
+            )}
             <p className="footer-note">This action will be logged by SecureGPT</p>
           </div>
 
