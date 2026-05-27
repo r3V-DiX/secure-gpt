@@ -178,13 +178,19 @@ export default function PolicyPage() {
                         : [...config.monitoredPlatforms, p.id]
                       updateField('monitoredPlatforms', next)
                     }}
-                    className="flex flex-col items-center justify-center gap-2 py-3.5 rounded-xl border transition-all hover:border-(--accent-border)"
+                    className="relative flex flex-col items-center justify-center gap-2.5 py-4 rounded-xl border-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                     style={{
                       background: on ? 'var(--accent-light)' : 'var(--bg-surface-2)',
-                      borderColor: on ? 'var(--accent-border)' : 'var(--border)',
+                      borderColor: on ? 'var(--accent)' : 'var(--border)',
+                      boxShadow: on ? '0 0 12px rgba(var(--accent-rgb), 0.15)' : 'none',
+                      opacity: on ? 1 : 0.55,
                     }}>
-                    <img src={p.icon} alt="" className="size-6 object-contain" />
-                    <span className="text-[11px] font-semibold" style={{ color: on ? 'var(--accent-text)' : 'var(--text-secondary)' }}>
+                    {on && (
+                      <span className="absolute top-1.5 right-1.5 size-2 rounded-full"
+                        style={{ background: 'var(--accent)', boxShadow: '0 0 6px var(--accent-glow)' }} />
+                    )}
+                    <img src={p.icon} alt="" className="size-7 object-contain" style={{ filter: on ? 'none' : 'grayscale(30%)' }} />
+                    <span className="text-[11px] font-bold tracking-wide" style={{ color: on ? 'var(--accent-text)' : 'var(--text-secondary)' }}>
                       {p.label}
                     </span>
                   </button>
