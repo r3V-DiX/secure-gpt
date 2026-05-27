@@ -7,7 +7,7 @@ export const allPIIRules: DetectionRule[] = [
     category: 'PII' as PIICategory,
     type: 'aadhaar',
     label: 'Indian Aadhaar Number',
-    pattern: /\b[2-9]{1}[0-9]{3}\s?[0-9]{4}\s?[0-9]{4}\b/g,
+    pattern: /\b[2-9OISZB]{1}[0-9OISZB]{3}[\s-]?[0-9OISZB]{4}[\s-]?[0-9OISZB]{4}\b/gi,
     validatorId: 'verhoeff',
     requireContext: false,
     severity: 'critical',
@@ -62,19 +62,7 @@ export const allPIIRules: DetectionRule[] = [
     enabled: true,
     description: 'Indian Election Commission Voter ID (EPIC Number).'
   },
-  // ── PAN Card ──────────────────────────────────
-  {
-    id: 'pii.pan',
-    category: 'PII' as PIICategory,
-    type: 'pan_card',
-    label: 'Indian PAN Card',
-    pattern: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/gi,
-    validatorId: 'pan',
-    requireContext: false,
-    severity: 'high',
-    enabled: true,
-    description: 'Indian Permanent Account Number (PAN) issued by Income Tax Dept.'
-  },
+
   {
     id: 'pii.email',
     category: 'PII' as PIICategory,
@@ -99,18 +87,7 @@ export const allPIIRules: DetectionRule[] = [
     enabled: true,
     description: 'Global phone number detection validated via libphonenumber.'
   },
-  {
-    id: 'pii.ipv4',
-    category: 'PII' as PIICategory,
-    type: 'ip_address',
-    label: 'IPv4 Address',
-    pattern: /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g,
-    requireContext: true,
-    triggers: ['ip', 'address', 'server'],
-    severity: 'low',
-    enabled: true,
-    description: 'IPv4 network addresses.'
-  },
+
   {
     id: 'pii.abha_id',
     category: 'PII' as PIICategory,

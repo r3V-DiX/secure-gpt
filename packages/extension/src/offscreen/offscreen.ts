@@ -167,7 +167,7 @@ async function runImageOcr(
 ): Promise<{ ok: boolean; result?: DetectionResult; error?: string }> {
   try {
     console.log('[Offscreen] Running OCR on image…')
-    const { rawText, ocrData, severityFloor } = await ocrTier.runOnImage(imageUrl, config)
+    const { rawText, ocrData, severityFloor, rotatedImageUrl } = await ocrTier.runOnImage(imageUrl, config)
 
     if (!rawText) {
       return {
@@ -204,6 +204,7 @@ async function runImageOcr(
       tier: 'ocr',
       processingTimeMs: 0,
       inputLength: rawText.length,
+      rotatedImageUrl
     }
 
     console.log(`[Offscreen] OCR complete — ${rawText.length} chars, ${mappedEntities.length} entities`)

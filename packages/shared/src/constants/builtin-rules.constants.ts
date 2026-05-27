@@ -63,12 +63,12 @@ export const BUILTIN_RULES_CATALOG: BuiltinRuleMeta[] = [
     requireContext: true,
   },
   {
-    id: 'financial.gstin',
+    id: 'financial.pan',
     category: 'FINANCIAL',
-    label: 'GST Number (India)',
-    description: 'Goods and Services Tax Identification Number',
+    label: 'PAN Card (India)',
+    description: 'Permanent Account Number with structural validation',
     severity: 'high',
-    hasValidator: false,
+    hasValidator: true,
     requireContext: false,
   },
 
@@ -118,15 +118,7 @@ export const BUILTIN_RULES_CATALOG: BuiltinRuleMeta[] = [
     hasValidator: false,
     requireContext: true,
   },
-  {
-    id: 'pii.pan',
-    category: 'PII',
-    label: 'PAN Card (India)',
-    description: 'Permanent Account Number with structural validation',
-    severity: 'high',
-    hasValidator: true,
-    requireContext: false,
-  },
+
   {
     id: 'pii.email',
     category: 'PII',
@@ -145,15 +137,7 @@ export const BUILTIN_RULES_CATALOG: BuiltinRuleMeta[] = [
     hasValidator: true,
     requireContext: true,
   },
-  {
-    id: 'pii.ipv4',
-    category: 'PII',
-    label: 'IPv4 Address',
-    description: 'IPv4 addresses (context-gated: requires "ip", "server", "address")',
-    severity: 'low',
-    hasValidator: false,
-    requireContext: true,
-  },
+
   {
     id: 'pii.abha_id',
     category: 'PII',
@@ -254,6 +238,15 @@ export const BUILTIN_RULES_CATALOG: BuiltinRuleMeta[] = [
     label: 'M&A / Deal Intelligence',
     description: 'Merger, acquisition, and due-diligence discussions (context-gated)',
     severity: 'critical',
+    hasValidator: false,
+    requireContext: true,
+  },
+  {
+    id: 'ip.ipv4',
+    category: 'IP',
+    label: 'IPv4 Address',
+    description: 'IPv4 addresses (context-gated: requires "ip", "server", "address")',
+    severity: 'low',
     hasValidator: false,
     requireContext: true,
   },

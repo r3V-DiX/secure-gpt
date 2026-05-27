@@ -31,6 +31,7 @@ export interface DetectionResult {
   tier: DetectionTier           // highest tier used
   processingTimeMs: number
   inputLength: number
+  rotatedImageUrl?: string
 }
 
 export interface DetectionRequest {

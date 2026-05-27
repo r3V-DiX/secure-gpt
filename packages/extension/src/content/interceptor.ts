@@ -411,7 +411,8 @@ async function handleImagePasteInternal(el: HTMLElement, imgUrl: string): Promis
 
     if (result.hasFindings && result.entities.length > 0) {
       console.info(`[SecureGPT] OCR found ${result.entities.length} entities. Redacting before upload…`)
-      const redactedUrl = await applyImageMasking(imgUrl, result.entities)
+      const baseImg = result.rotatedImageUrl || imgUrl
+      const redactedUrl = await applyImageMasking(baseImg, result.entities)
       ocrCache.set(redactedUrl, result.entities)
       await dispatchImagePaste(el, redactedUrl)
     } else {
@@ -513,7 +514,8 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
           return
         }
       } else {
-        redactedUrl = await applyImageMasking(dataUrl, result.entities)
+        const baseImg = result.rotatedImageUrl || dataUrl
+        redactedUrl = await applyImageMasking(baseImg, result.entities)
       }
 
       ocrCache.set(redactedUrl, result.entities)

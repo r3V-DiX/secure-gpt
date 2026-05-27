@@ -25,5 +25,17 @@ export const allIPRules: DetectionRule[] = [
     severity: 'high',
     enabled: true,
     description: 'Mergers, acquisitions, due diligence, and deal values.'
+  },
+  {
+    id: 'ip.ipv4',
+    category: 'IP' as PIICategory,
+    type: 'ip_address',
+    label: 'IPv4 Address',
+    pattern: /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g,
+    requireContext: true,
+    triggers: ['ip', 'address', 'server'],
+    severity: 'low',
+    enabled: true,
+    description: 'IPv4 network addresses.'
   }
 ]

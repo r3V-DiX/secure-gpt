@@ -13,10 +13,16 @@ export function phoneCheck(value: string): boolean {
   if (!value || value.length < 7) return false
   
   try {
-    // We don't provide a default country because we want a "Broad Net"
-    // that catches international formats (+...) as well as local formats
-    // if they match a known pattern.
-    return isValidPhoneNumber(value)
+    // Try international format first
+    if (isValidPhoneNumber(value)) return true
+    
+    // Fallback to local US format
+    if (isValidPhoneNumber(value, 'US')) return true
+    
+    // Fallback to local Indian format
+    if (isValidPhoneNumber(value, 'IN')) return true
+    
+    return false
   } catch {
     return false
   }

@@ -20,7 +20,7 @@ describe('Financial Rules', () => {
   })
 
   it('iban (financial.iban)', async () => {
-    const res = await tier.run('My IBAN account is GB12ABCD345678901234.', DEFAULT_PII_CONFIG)
+    const res = await tier.run('My IBAN account is GB29NWBK60161331926819.', DEFAULT_PII_CONFIG)
     expect(res.some(e => e.type === 'iban')).toBe(true)
   })
 

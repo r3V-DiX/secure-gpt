@@ -18,4 +18,9 @@ describe('IP Rules', () => {
     const res = await tier.run('Target Project Alpha Merger details are highly sensitive', DEFAULT_PII_CONFIG)
     expect(res.some(e => e.type === 'proprietary')).toBe(true)
   })
+
+  it('ipv4 (ip.ipv4)', async () => {
+    const res = await tier.run('Server IP is 192.168.1.1.', DEFAULT_PII_CONFIG)
+    expect(res.some(e => e.type === 'ip_address')).toBe(true)
+  })
 })

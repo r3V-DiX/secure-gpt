@@ -46,7 +46,7 @@ export const allFinancialRules: DetectionRule[] = [
     category: 'FINANCIAL' as PIICategory,
     type: 'iban',
     label: 'IBAN',
-    pattern: /\b[A-Z]{2}[0-9]{2}(?:[ ]?[0-9a-zA-Z]{4}){4,7}\b/gi,
+    pattern: /\b[A-Z]{2}[0-9]{2}(?:\s?[0-9a-zA-Z]){11,30}\b/gi,
     validatorId: 'mod97',
     requireContext: false,
     severity: 'high',
@@ -75,5 +75,17 @@ export const allFinancialRules: DetectionRule[] = [
     severity: 'high',
     enabled: true,
     description: 'Indian Goods and Services Tax Identification Number.'
+  },
+  {
+    id: 'financial.pan',
+    category: 'FINANCIAL' as PIICategory,
+    type: 'pan_card',
+    label: 'Indian PAN Card',
+    pattern: /\b[A-Z]{5}\s*[0-9OIS]{4}\s*[A-Z]\b/gi,
+    validatorId: 'pan',
+    requireContext: false,
+    severity: 'high',
+    enabled: true,
+    description: 'Indian Permanent Account Number (PAN) issued by Income Tax Dept.'
   }
 ]

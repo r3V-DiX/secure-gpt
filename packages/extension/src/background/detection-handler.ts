@@ -11,7 +11,7 @@ import { DOMAIN_TO_PLATFORM } from '@securegpt/shared/constants'
 let creating: Promise<void> | null = null
 
 async function setupOffscreen() {
-  const offscreenUrl = chrome.runtime.getURL('offscreen/index.html')
+  const offscreenUrl = chrome.runtime.getURL('src/offscreen/offscreen.html')
 
   if (typeof chrome.runtime.getContexts !== 'undefined') {
     const existing = await chrome.runtime.getContexts({
