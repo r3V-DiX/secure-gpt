@@ -58,12 +58,7 @@ export async function queueLog(event: AuditLog): Promise<void> {
   return enqueue(async () => {
     const queue = await getQueue()
     queue.push(event)
-
-    if (queue.length >= LOG_BATCH_MAX_SIZE) {
-      await _flush(queue)
-    } else {
-      await saveQueue(queue)
-    }
+    await _flush(queue)
   })
 }
 

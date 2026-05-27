@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button/button'
 import { ACTION_LABEL, ACTION_COLORS, ACTIONS } from '@/features/policy/components/ActionSelector'
 
 const PLATFORMS = [
-  { id: 'chatgpt',    label: 'ChatGPT',    emoji: '🤖' },
-  { id: 'gemini',     label: 'Gemini',     emoji: '✨' },
-  { id: 'copilot',    label: 'Copilot',    emoji: '🪟' },
-  { id: 'claude',     label: 'Claude',     emoji: '🔶' },
-  { id: 'perplexity', label: 'Perplexity', emoji: '🔮' },
-  { id: 'meta-ai',    label: 'Meta AI',    emoji: '🌐' },
+  { id: 'chatgpt',    label: 'ChatGPT',    icon: '/icons/chatgpt.png' },
+  { id: 'gemini',     label: 'Gemini',     icon: '/icons/gemini.png' },
+  { id: 'copilot',    label: 'Copilot',    icon: '/icons/copilot.png' },
+  { id: 'claude',     label: 'Claude',     icon: '/icons/claude.png' },
+  { id: 'perplexity', label: 'Perplexity', icon: '/icons/perplexity.png' },
+  { id: 'meta-ai',    label: 'Meta AI',    icon: '/icons/meta-ai.png' },
 ]
 
 const BUILTIN = new Set(['FINANCIAL', 'PII', 'CONFIDENTIAL', 'IP'])
@@ -177,12 +177,12 @@ export default function PolicyPage() {
                         : [...config.monitoredPlatforms, p.id]
                       updateField('monitoredPlatforms', next)
                     }}
-                    className="flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all"
+                    className="flex flex-col items-center justify-center gap-2 py-3.5 rounded-xl border transition-all hover:border-(--accent-border)"
                     style={{
                       background: on ? 'var(--accent-light)' : 'var(--bg-surface-2)',
                       borderColor: on ? 'var(--accent-border)' : 'var(--border)',
                     }}>
-                    <span className="text-xl">{p.emoji}</span>
+                    <img src={p.icon} alt="" className="size-6 object-contain" />
                     <span className="text-[11px] font-semibold" style={{ color: on ? 'var(--accent-text)' : 'var(--text-secondary)' }}>
                       {p.label}
                     </span>

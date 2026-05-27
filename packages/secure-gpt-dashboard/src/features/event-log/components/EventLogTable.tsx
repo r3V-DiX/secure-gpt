@@ -4,6 +4,15 @@ import { Badge, actionVariant } from '@/components/ui/badge/badge'
 import { Pagination } from '@/components/data-display/pagination'
 import type { AuditLog, Pagination as PaginationType } from '@/types'
 
+const PLATFORM_ICONS: Record<string, string> = {
+  chatgpt: '/icons/chatgpt.png',
+  gemini: '/icons/gemini.png',
+  copilot: '/icons/copilot.png',
+  claude: '/icons/claude.png',
+  perplexity: '/icons/perplexity.png',
+  'meta-ai': '/icons/meta-ai.png',
+}
+
 interface EventLogTableProps {
   data: AuditLog[]
   pagination: PaginationType
@@ -71,7 +80,12 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                       </div>
                     </td>
                     <td className="px-4 py-3 text-xs capitalize" style={{ color: 'var(--text-secondary)' }}>
-                      {log.llmPlatform}
+                      <div className="flex items-center gap-2">
+                        {PLATFORM_ICONS[log.llmPlatform] ? (
+                          <img src={PLATFORM_ICONS[log.llmPlatform]} alt="" className="size-4 shrink-0 object-contain" />
+                        ) : null}
+                        <span>{log.llmPlatform}</span>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
