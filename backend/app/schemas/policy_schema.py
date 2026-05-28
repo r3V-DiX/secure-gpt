@@ -34,6 +34,11 @@ class CustomRule(BaseModel):
         return v
 
 
+class RuleOverride(BaseModel):
+    enabled: bool | None = True
+    action: str | None = None  # BLOCK | MASK | WARN_ALLOW | ALLOW
+
+
 class CategoryConfig(BaseModel):
     enabled: bool
     action: str  # BLOCK | MASK | WARN_ALLOW | ALLOW
@@ -41,6 +46,7 @@ class CategoryConfig(BaseModel):
     allowlist: list[str] = []
     fuzzyMatch: bool = False
     customRules: list[CustomRule] = []
+    ruleOverrides: dict[str, RuleOverride] = {}
 
 
 class PIIConfig(BaseModel):
