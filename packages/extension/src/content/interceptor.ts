@@ -32,12 +32,12 @@ export function setupInterceptor(policy: PIIConfig): void {
 }
 
 function attachGlobalListeners(): void {
-  document.addEventListener('keydown', handleGlobalKeyDown, true)
-  document.addEventListener('click', handleGlobalClick, true)
-  document.addEventListener('submit', handleGlobalSubmit, true)
-  document.addEventListener('paste', handleGlobalPaste, true)
-  document.addEventListener('change', handleGlobalFileChange, true)
-  document.addEventListener('drop', handleGlobalDrop, true)
+  window.addEventListener('keydown', handleGlobalKeyDown, true)
+  window.addEventListener('click', handleGlobalClick, true)
+  window.addEventListener('submit', handleGlobalSubmit, true)
+  window.addEventListener('paste', handleGlobalPaste, true)
+  window.addEventListener('change', handleGlobalFileChange, true)
+  window.addEventListener('drop', handleGlobalDrop, true)
   console.log('[SecureGPT] Global listeners attached (Capturing phase)')
 }
 
@@ -406,12 +406,12 @@ function resubmit(el: HTMLElement): void {
 }
 
 export function teardown(): void {
-  document.removeEventListener('keydown', handleGlobalKeyDown, true)
-  document.removeEventListener('click', handleGlobalClick, true)
-  document.removeEventListener('submit', handleGlobalSubmit, true)
-  document.removeEventListener('paste', handleGlobalPaste, true)
-  document.removeEventListener('change', handleGlobalFileChange, true)
-  document.removeEventListener('drop', handleGlobalDrop, true)
+  window.removeEventListener('keydown', handleGlobalKeyDown, true)
+  window.removeEventListener('click', handleGlobalClick, true)
+  window.removeEventListener('submit', handleGlobalSubmit, true)
+  window.removeEventListener('paste', handleGlobalPaste, true)
+  window.removeEventListener('change', handleGlobalFileChange, true)
+  window.removeEventListener('drop', handleGlobalDrop, true)
   document.querySelectorAll('[data-securegpt]').forEach((el) => el.remove())
 }
 

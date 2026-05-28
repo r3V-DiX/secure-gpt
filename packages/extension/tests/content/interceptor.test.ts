@@ -8,7 +8,7 @@ describe('Interceptor', () => {
   })
 
   it('setupInterceptor attaches global listeners', () => {
-    const addSpy = vi.spyOn(document, 'addEventListener')
+    const addSpy = vi.spyOn(window, 'addEventListener')
     
     setupInterceptor(DEFAULT_PII_CONFIG)
 
