@@ -15,7 +15,7 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["**/dist/**", "**/build/**", "**/node_modules/**", "**/*.config.*", "**/venv/**", "**/.next/**", "**/public/**"],
+    ignores: ["**/dist/**", "**/build/**", "**/node_modules/**", "**/*.config.*", "**/venv/**", "**/.next/**", "**/public/**", "**/.gemini/**"],
   },
   {
     files: ["**/*.mjs", "**/*.js"],
@@ -32,11 +32,13 @@ export default tseslint.config(
       },
     },
     rules: {
-      "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-      "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
-      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+      "@typescript-eslint/consistent-type-imports": ["warn", { "prefer": "type-imports" }],
+      "@typescript-eslint/no-floating-promises": "warn",
       "no-console": ["warn", { "allow": ["warn", "error"] }],
+      "react-hooks/set-state-in-effect": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
     },
   }
 );

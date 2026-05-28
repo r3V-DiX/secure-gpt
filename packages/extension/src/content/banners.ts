@@ -7,7 +7,7 @@ import { injectBanner, removeAllBanners } from './dom-utils'
 import type { PIICategory } from '@securegpt/shared/constants'
 import { PII_CATEGORY_LABELS } from '@securegpt/shared/constants'
 
-type BannerType = 'block' | 'mask' | 'warn' | 'allow' | 'loading'
+type BannerType = 'block' | 'mask' | 'warn' | 'allow' | 'loading' | 'loading_pdf'
 
 const BANNER_STYLES: Record<BannerType, { bg: string; border: string; icon: string }> = {
   block: { bg: '#fff5f5', border: '#D32F2F', icon: '🚫' },
@@ -15,6 +15,7 @@ const BANNER_STYLES: Record<BannerType, { bg: string; border: string; icon: stri
   warn: { bg: '#fff8f0', border: '#E65100', icon: '⚠️' },
   allow: { bg: '#f0f8ff', border: '#1565C0', icon: 'ℹ️' },
   loading: { bg: '#f8f9fa', border: '#78909c', icon: '⏳' },
+  loading_pdf: { bg: '#f8f9fa', border: '#78909c', icon: '⏳' },
 }
 
 const BANNER_MESSAGES: Record<BannerType, (category: string, count: number) => string> = {
@@ -23,6 +24,7 @@ const BANNER_MESSAGES: Record<BannerType, (category: string, count: number) => s
   warn: (cat, n) => `Warning: Potentially sensitive ${cat} content detected (${n} item${n > 1 ? 's' : ''}).`,
   allow: (_cat, _n) => `Data monitored and logged per company policy.`,
   loading: (_cat, _n) => `Scanning image for sensitive context... Please wait.`,
+  loading_pdf: (_cat, _n) => `Scanning and redacting PDF document... Please wait.`,
 }
 
 

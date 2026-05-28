@@ -26,7 +26,7 @@ export default function LogsPage() {
     setExportError(null)
     try {
       // Pass all filters except pagination
-      const { page, page_size, ...exportFilters } = filters
+      const { page: _page, page_size: _page_size, ...exportFilters } = filters
       await downloadLogsCsv(exportFilters)
     } catch (err) {
       setExportError(err instanceof Error ? err.message : 'Export failed')

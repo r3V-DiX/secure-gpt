@@ -7,9 +7,6 @@ import { StatCard } from '@/components/shared/StatCard'
 import { 
   BarChart, 
   Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
   Cell

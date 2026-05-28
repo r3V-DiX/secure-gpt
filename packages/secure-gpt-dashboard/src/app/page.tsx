@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button/button';
 import { useAuth } from '@/contexts/auth-context';
 import {
-  Zap,
   BarChart3,
   Globe,
   ArrowRight,

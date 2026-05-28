@@ -249,7 +249,9 @@ export async function clearAttachments() {
           cleared++;
         }
       }
-    } catch (_e) { }
+    } catch (_e) {
+      // ignore
+    }
   }
     
   // Level 2 Heuristics: Search every button or role="button"

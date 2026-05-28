@@ -7,6 +7,7 @@ import { showShieldModal } from './modal-manager'
 import { logDetectionEvent } from './audit-logger'
 import { applyMasking, applyImageMasking } from '@/features/actions/services/masking.service'
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
+import type { PIICategory } from '@securegpt/shared/constants'
 
 let currentPolicy: PIIConfig
 let isRunning = false
@@ -162,7 +163,7 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
     // Wait for any in-flight image/PDF OCR to finish before checking text
     if (pendingOcrCount > 0) {
       console.log('[SecureGPT] Waiting for pending OCR…')
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 300; i++) {
         await new Promise((r) => setTimeout(r, 100))
         if (pendingOcrCount === 0) break
       }
@@ -504,7 +505,7 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
   try {
     incPending()
     console.info(`[SecureGPT] ${isPdf ? 'PDF' : 'Image'} upload detected, scanning: ${file.name}`)
-    showBanner('loading', 'FINANCIAL' as any, 0)
+    showBanner(isPdf ? 'loading_pdf' : 'loading', 'FINANCIAL' as PIICategory, 0)
 
     const reader = new FileReader()
     const dataUrl = await new Promise<string>((resolve) => {

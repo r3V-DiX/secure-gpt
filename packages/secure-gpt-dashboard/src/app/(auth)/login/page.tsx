@@ -5,8 +5,6 @@
 // http://localhost:3000/api/auth/google/callback
 // That Next.js route plants the cookie on localhost:3000 then redirects to /callback.
 
-import { ShieldCheck } from 'lucide-react'
-
 export default function LoginPage() {
   function handleGoogle() {
     // Goes through Next.js rewrite → backend /api/v1/auth/google

@@ -136,7 +136,7 @@ export class OCRTier extends BaseTier {
       }
 
       console.info('[OCRTier] Processing image (First Pass)...')
-      let { data } = await worker.recognize(processedUrl, {}, { blocks: true })
+      const { data } = await worker.recognize(processedUrl, {}, { blocks: true })
       let rawText = normalizeText(data.text)
       
       const { isConfidential, severityFloor } = classifyDocument(rawText)

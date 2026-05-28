@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button/button';
 import { useAuth } from '@/contexts/auth-context';
-import { Shield, Lock, Eye, Server, FileText, Mail, AlertTriangle, Users, RefreshCw } from 'lucide-react';
+import { Shield, Lock, Eye, Server, FileText, Mail, Users, RefreshCw } from 'lucide-react';
 
 export default function PrivacyPage() {
   const { user, loading } = useAuth();

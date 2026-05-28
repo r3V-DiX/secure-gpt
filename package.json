@@ -10,7 +10,7 @@
     "dev:dashboard": "npm run dev --workspace=secure-gpt-dashboard",
     "build:extension": "npm run build --workspace=@securegpt/extension",
     "build:dashboard": "npm run build --workspace=secure-gpt-dashboard",
-    "test:all": "npm run test --workspaces",
+    "test:all": "npm run test --workspaces --if-present",
     "test:extension": "npm run test --workspace=@securegpt/extension",
     "test:detection": "npm run test --workspace=@securegpt/detection",
     "typecheck": "npm run typecheck --workspaces --if-present",
