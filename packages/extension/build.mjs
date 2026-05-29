@@ -24,16 +24,12 @@ const wasmDir = resolve(dist, 'wasm')
 const ortWasmDir = resolve(__dirname, '../../node_modules/onnxruntime-web/dist')
 mkdirSync(wasmDir, { recursive: true })
 
-// Copy all .wasm and .mjs files from onnxruntime-web/dist
+// Copy required WASM files: base (WASM fallback) + jsep (WebGPU provider)
 const files = [
   'ort-wasm-simd-threaded.wasm',
   'ort-wasm-simd-threaded.mjs',
   'ort-wasm-simd-threaded.jsep.wasm',
   'ort-wasm-simd-threaded.jsep.mjs',
-  'ort-wasm-simd-threaded.jspi.wasm',
-  'ort-wasm-simd-threaded.jspi.mjs',
-  'ort-wasm-simd-threaded.asyncify.wasm',
-  'ort-wasm-simd-threaded.asyncify.mjs'
 ]
 for (const file of files) {
   const src = resolve(ortWasmDir, file)

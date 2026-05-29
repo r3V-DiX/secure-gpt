@@ -27,7 +27,8 @@ export default defineConfig({
         format: 'esm',
       },
     },
-    sourcemap: true,
+    sourcemap: false,
     minify: false,
+    assetsInlineLimit: 0,
   },
 })
