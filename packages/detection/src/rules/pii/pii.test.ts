@@ -40,8 +40,17 @@ describe('PII Rules', () => {
   })
 
   it('phone_global (pii.phone_global) - Indian', async () => {
-    const res = await tier.run('Call me on +91 9876543210.', DEFAULT_PII_CONFIG)
-    expect(res.some(e => e.type === 'phone')).toBe(true)
+    const res1 = await tier.run('Call me on +91 9876543210.', DEFAULT_PII_CONFIG)
+    expect(res1.some(e => e.type === 'phone')).toBe(true)
+
+    const res2 = await tier.run('Call me on 7709357631.', DEFAULT_PII_CONFIG)
+    expect(res2.some(e => e.type === 'phone')).toBe(true)
+
+    const res3 = await tier.run('My number is 7709357631.', DEFAULT_PII_CONFIG)
+    expect(res3.some(e => e.type === 'phone')).toBe(true)
+
+    const res4 = await tier.run('+919876543210', DEFAULT_PII_CONFIG)
+    expect(res4.some(e => e.type === 'phone')).toBe(true)
   })
 
   it('phone_global (pii.phone_global) - US', async () => {

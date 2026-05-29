@@ -82,10 +82,22 @@ export const allPIIRules: DetectionRule[] = [
     pattern: /(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{2,4}[-.\s]?\d{3,10}/g,
     validatorId: 'phone',
     requireContext: true,
-    triggers: ['phone', 'mobile', 'call', 'ph', 'tel', 'contact'],
+    triggers: ['phone', 'mobile', 'call', 'ph', 'tel', 'contact', 'number', 'num', 'cell', 'mob', 'whatsapp'],
     severity: 'high',
     enabled: true,
     description: 'Global phone number detection validated via libphonenumber.'
+  },
+  {
+    id: 'pii.phone_prefixed',
+    category: 'PII' as PIICategory,
+    type: 'phone',
+    label: 'Prefixed Phone Number',
+    pattern: /\+\d{1,3}[-.\s]?\(?\d{2,4}\)?[-.\s]?\d{2,4}[-.\s]?\d{3,10}/g,
+    validatorId: 'phone',
+    requireContext: false,
+    severity: 'high',
+    enabled: true,
+    description: 'Global phone numbers starting with country code prefix (no context required).'
   },
 
   {

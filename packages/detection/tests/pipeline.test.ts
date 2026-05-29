@@ -158,4 +158,20 @@ describe('detectPII — pipeline', () => {
     expect(result.entities[0]?.maskedValue).toBe('[INTERNAL_ID-REDACTED]')
   })
 
+  it('phone detection pipeline tests', async () => {
+    const res1 = await detectPII('Call me on +91 7709357631.', DEFAULT_PII_CONFIG)
+    expect(res1.entities.some(e => e.type === 'phone')).toBe(true)
+    
+    const res2 = await detectPII('Call me on 7709357631.', DEFAULT_PII_CONFIG)
+    expect(res2.entities.some(e => e.type === 'phone')).toBe(true)
+
+    const res3 = await detectPII('7709357631', DEFAULT_PII_CONFIG)
+    expect(res3.entities.some(e => e.type === 'phone')).toBe(false) // requires context
+
+    const res4 = await detectPII('+917709357631', DEFAULT_PII_CONFIG)
+    expect(res4.entities.some(e => e.type === 'phone')).toBe(true) // prefixed requires no context
+
+    const res5 = await detectPII('My number is 7709357631.', DEFAULT_PII_CONFIG)
+    expect(res5.entities.some(e => e.type === 'phone')).toBe(true) // trigger "number" triggers it
+  })
 })
