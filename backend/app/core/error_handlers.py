@@ -48,6 +48,15 @@ def register_error_handlers(app: FastAPI) -> None:
             field = ".".join(str(p) for p in loc if p != "body") or "request"
             field_errors.setdefault(field, []).append(e["msg"])
 
+        body_bytes = await request.body()
+        logger.warning(
+            "Validation failed for %s %s: errors=%s, body=%s",
+            request.method,
+            request.url.path,
+            exc.errors(),
+            body_bytes.decode("utf-8", errors="replace"),
+        )
+
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=error(

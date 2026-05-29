@@ -137,6 +137,15 @@ export const BUILTIN_RULES_CATALOG: BuiltinRuleMeta[] = [
     hasValidator: true,
     requireContext: true,
   },
+  {
+    id: 'pii.phone_prefixed',
+    category: 'PII',
+    label: 'Prefixed Phone Number',
+    description: 'Global phone numbers starting with country code prefix like +91 (no context required)',
+    severity: 'medium',
+    hasValidator: true,
+    requireContext: false,
+  },
 
   {
     id: 'pii.abha_id',

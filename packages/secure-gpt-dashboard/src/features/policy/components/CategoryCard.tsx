@@ -79,7 +79,7 @@ function FieldRow({ rule, override, categoryAction, onToggle, onActionChange }: 
   onToggle: (enabled: boolean) => void
   onActionChange: (a: PolicyAction | null) => void
 }) {
-  const enabled = override?.enabled !== undefined ? override.enabled : true
+  const enabled = override?.enabled ?? true
   const overrideAction = override?.action ?? null
 
   return (
