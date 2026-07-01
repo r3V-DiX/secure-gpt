@@ -104,3 +104,5 @@ eng.traineddata
 commands
 .aider*
 packages/extension/*.zip
+.agents/
+skills-lock.json

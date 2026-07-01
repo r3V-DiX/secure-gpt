@@ -292,7 +292,7 @@ classDiagram
 
 - OCR worker creation uses `tesseract.js` (`tiers/ocr/ocrWorker.ts`), with extension-aware asset paths.
 - `runOnImage`:
-  - first pass OCR,
+  - first pass OCR with automated image loading and preprocessing,
   - optional sparse pass (PSM 11) for PAN recovery,
   - returns text + OCR token data + confidentiality-derived severity floor.
 - `mapEntitiesToBboxes` maps text spans back to OCR words and attaches bbox arrays to entities.
@@ -303,6 +303,23 @@ classDiagram
 
 - tier priority: `regex < ner < ocr`
 - for same-tier overlap: keep higher-confidence entity.
+
+### 4.8 Canvas-Based Image Preprocessing
+
+To combat OCR extraction decay from skewed angles, bad contrast, and small text dimensions, the OCR tier incorporates an active browser-side `<canvas>` preprocessor inside `ocrTier.ts`:
+
+- **Scale Enhancement**: Small images (under 1000px width/height) are dynamically upscaled by `2x` with smoothing disabled to produce sharp character borders.
+- **Grayscale Filter**: Converts pixel data using standard relative luminance weighting:
+  $$\text{Luminance} = 0.299R + 0.587G + 0.114B$$
+- **Binarization (Thresholding)**: Projects grayscaled pixels onto binary black or white values using a threshold of `128` to strip away noise, gradients, and shadows.
+- **Preprocessed Rotations**: Auto-orientation rotates are drawn onto this grayscaled, thresholded canvas to preserve sharp edges for off-angle ID captures.
+
+### 4.9 Model Evaluation Harness (`evaluate.py`)
+
+A standalone python evaluation script (`packages/detection/scripts/evaluate.py`) establishes a local accuracy benchmark for the INT8 quantized ONNX NER model against `packages/detection/dataset/example_data.jsonl`:
+
+- **Subword Token Alignment**: Maps exact character-level labels (`B-[CLASS]` and `I-[CLASS]` spans) directly onto ONNX model subword-level token offset predictions.
+- **Evaluation Statistics**: Reports individual and micro-averaged **Precision**, **Recall**, and **F1-Score** per PII class, allowing quantitative optimization checks for subsequent quantization runs.
 
 ---
 
