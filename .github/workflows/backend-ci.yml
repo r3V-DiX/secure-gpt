@@ -1,13 +1,19 @@
-name: Build and Push Dashboard (Production)
+name: Build and Push Backend (Production)
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - 'secure-gpt/backend/**'
+      - 'secure-gpt/packages/shared/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'secure-gpt/backend/**'
+      - 'secure-gpt/packages/shared/**'
 
 jobs:
   build-and-push:
@@ -41,33 +47,29 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.login-ecr.outputs.registry }}/secure-gpt-dashboard
+          images: ${{ steps.login-ecr.outputs.registry }}/secure-gpt-backend
           tags: |
             type=raw,value=latest
             type=raw,value=prod-latest
             type=sha,prefix=prod-
             type=raw,value=prod-${{ github.run_number }}
-
+ 
       - name: 🚀 Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./packages/secure-gpt-dashboard/Dockerfile
+          context: ./secure-gpt/backend
+          file: ./secure-gpt/backend/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_BACKEND_URL=${{ secrets.PROD_NEXT_PUBLIC_BACKEND_URL }}
-            NEXT_PUBLIC_API_URL=${{ secrets.PROD_NEXT_PUBLIC_API_URL }}
-            NODE_ENV=production
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: ✅ Build Summary
         run: |
-          echo "### 🎉 Dashboard Build Successful" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎉 Backend Build Successful" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ steps.login-ecr.outputs.registry }}/secure-gpt-dashboard\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.login-ecr.outputs.registry }}/secure-gpt-backend\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
           echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
