@@ -1,18 +1,27 @@
-# ─────────────────────────────────────────────
-# SecureGPT — Root .gitignore
-# ─────────────────────────────────────────────
+# ── IDE ──────────────────────────────────────
+.idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.agents/
+.codex/
+.vscode/
 
-# ── Node ────────────────────────────────────
+# Dependencies
 node_modules/
-.npm
+.npm/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .pnp
+.pnp.*
 .pnp.js
 
-# ── Build outputs ────────────────────────────
+# Build and cache outputs
 dist/
 dist-chrome/
 dist-firefox/
@@ -20,28 +29,21 @@ build/
 .next/
 out/
 .turbo/
+coverage/
+lcov.info
+*.tsbuildinfo
 
-# ── Environment files ─────────────────────────
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.*.local
-
-# ── Python ───────────────────────────────────
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+.venv/
 venv/
 env/
-.venv/
 ENV/
 *.egg-info/
-dist/
-build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -50,25 +52,21 @@ htmlcov/
 coverage.xml
 *.egg
 
-# ── ML model files ────────────────────────────
-packages/detection/src/models/**/*.onnx
-packages/detection/src/models/**/*.bin
-packages/extension/public/ocr/eng.traineddata
-packages/extension/public/ocr/eng.traineddata.gz
-packages/extension/public/ocr/tesseract-core.wasm
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+*.pem
 
-# ── Database ─────────────────────────────────
+# Logs and local databases
+*.log
+logs/
 *.db
 *.sqlite
 *.sqlite3
 test.db
 
-# ── Logs ─────────────────────────────────────
-*.log
-logs/
-npm-debug.log*
-
-# ── OS ───────────────────────────────────────
+# OS files
 .DS_Store
 .DS_Store?
 ._*
@@ -77,32 +75,18 @@ npm-debug.log*
 ehthumbs.db
 Thumbs.db
 
-# ── IDE ──────────────────────────────────────
-.vscode/
-.idea/
-*.swp
-*.swo
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-
-# ── TypeScript ───────────────────────────────
-*.tsbuildinfo
-tsconfig.tsbuildinfo
-
-# ── Test coverage ────────────────────────────
-coverage/
-lcov.info
-
-# ── Misc ─────────────────────────────────────
-*.pem
-.vercel
-.netlify
-
-eng.traineddata
-commands
+# Deployment and generated artifacts
+.vercel/
+.netlify/
+*.zip
 .aider*
-packages/extension/*.zip
-.agents/
 skills-lock.json
+
+# Project-specific generated assets
+packages/detection/src/models/**/*.onnx
+packages/detection/src/models/**/*.bin
+packages/extension/public/ocr/eng.traineddata
+packages/extension/public/ocr/eng.traineddata.gz
+packages/extension/public/ocr/tesseract-core.wasm
+packages/extension/*.zip
+eng.traineddata

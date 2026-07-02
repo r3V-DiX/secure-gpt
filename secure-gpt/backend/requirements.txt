@@ -1,0 +1,28 @@
+# backend/requirements.txt
+
+# ── Web framework ──────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+starlette==0.38.6              # Must be >=0.37.2 and <0.39.0 for fastapi==0.115.0
+
+# ── Database ───────────────────────────────────────────────────────────────────
+sqlalchemy==2.0.35
+asyncpg==0.29.0
+alembic==1.13.3
+
+# ── Settings ───────────────────────────────────────────────────────────────────
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# ── Auth / HTTP ────────────────────────────────────────────────────────────────
+httpx==0.27.2                  # Async HTTP client for Google OAuth token exchange
+
+# ── Rate limiting ──────────────────────────────────────────────────────────────
+slowapi==0.1.9
+
+# ── PDF redaction ──────────────────────────────────────────────────────────────
+pdf2image==1.17.0
+Pillow==10.4.0
+
+# ── File upload ───────────────────────────────────────────────────────────────
+python-multipart==0.0.12       # Required for UploadFile / Form parsing in FastAPI
