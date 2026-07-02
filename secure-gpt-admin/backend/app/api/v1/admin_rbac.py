@@ -1,6 +1,7 @@
 # backend/app/api/v1/admin_rbac.py
 
 import logging
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -46,6 +47,10 @@ async def list_users(db: DBSession):
 
     user_data_list = []
     for u in users:
+        # Skip users whose grace period has expired (they are waiting for physical purge)
+        if not u.is_active and u.deactivated_at and (datetime.now(timezone.utc) - u.deactivated_at).days > 45:
+            continue
+
         # Resolve active dynamic roles
         assigned_roles = [
             RoleResponse.model_validate(assign.role)
@@ -62,6 +67,8 @@ async def list_users(db: DBSession):
             "orgId": u.org_id,
             "createdAt": u.created_at,
             "lastLoginAt": u.last_login_at,
+            "deactivatedAt": u.deactivated_at.isoformat() if u.deactivated_at else None,
+            "deactivationReason": u.deactivation_reason,
             "roles": assigned_roles
         })
 
@@ -176,6 +183,19 @@ async def toggle_user_status(
     old_status = target_user.is_active
     new_status = not old_status
     target_user.is_active = new_status
+    if not new_status:
+        target_user.deactivated_at = datetime.now(timezone.utc)
+        target_user.deactivation_reason = "deactivation"
+        target_user.pre_deletion_email_sent = False
+        
+        # Send deactivation confirmation email to the user
+        from app.services.email_service import send_deactivation_email
+        import asyncio
+        asyncio.create_task(send_deactivation_email(target_user.email))
+    else:
+        target_user.deactivated_at = None
+        target_user.deactivation_reason = None
+        target_user.pre_deletion_email_sent = False
 
     action = "user:activate" if new_status else "user:suspend"
 
@@ -457,15 +477,15 @@ async def list_permissions(db: DBSession):
     return success(data=data, message="Permissions list fetched successfully")
 
 
-# ─── SYSTEM AUDIT LOGS ────────────────────────────────────────────────────────
+# ─── SYSTEM/ADMIN MODIFICATION LOGS (NOW SYSTEM LOGS) ─────────────────────────
 
 @router.get(
-    "/audit-logs",
+    "/system-logs",
     response_model=dict,
-    summary="Get all administrative system changes audit logs",
+    summary="Get all administrative system changes logs",
     dependencies=[has_permission("audit:view_all")]
 )
-async def list_audit_logs(db: DBSession):
+async def list_system_logs(db: DBSession):
     stmt = select(AdminAuditLog).order_by(AdminAuditLog.created_at.desc())
     res = await db.execute(stmt)
     logs_list = res.scalars().all()
@@ -494,4 +514,92 @@ async def list_audit_logs(db: DBSession):
             "createdAt": log.created_at
         })
 
+    return success(data=data, message="System logs fetched successfully")
+
+
+# ─── AUTHENTICATION LOGS (NOW AUDIT LOGS) ─────────────────────────────────────
+
+@router.get(
+    "/audit-logs",
+    summary="Get all authentication audit logs (who logged and when)",
+    dependencies=[has_permission("audit:view_all")]
+)
+async def list_audit_logs(db: DBSession):
+    from app.models.auth_event import AuthEvent
+    stmt = (
+        select(AuthEvent)
+        .options(selectinload(AuthEvent.user))
+        .order_by(AuthEvent.created_at.desc())
+    )
+    res = await db.execute(stmt)
+    events = res.scalars().all()
+
+    data = []
+    for event in events:
+        email = event.user.email if event.user else (event.event_metadata.get("email") if event.event_metadata else None)
+        full_name = event.user.full_name if event.user else None
+        data.append({
+            "id": event.id,
+            "userId": event.user_id,
+            "userEmail": email or "System/Unknown",
+            "userName": full_name or "Unknown",
+            "eventType": event.event_type.value,
+            "success": event.success,
+            "userAgent": event.user_agent,
+            "fingerprintHash": event.fingerprint_hash,
+            "metadata": event.event_metadata,
+            "createdAt": event.created_at
+        })
+
     return success(data=data, message="System audit logs fetched successfully")
+
+
+@router.get(
+    "/audit-logs/export",
+    summary="Export authentication audit logs as CSV for training ML model",
+    dependencies=[has_permission("audit:view_all")]
+)
+async def export_audit_logs(db: DBSession):
+    import csv
+    import io
+    from datetime import datetime, timezone
+    from fastapi.responses import StreamingResponse
+    from app.models.auth_event import AuthEvent
+
+    stmt = (
+        select(AuthEvent)
+        .options(selectinload(AuthEvent.user))
+        .order_by(AuthEvent.created_at.desc())
+    )
+    res = await db.execute(stmt)
+    events = res.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "User ID", "User Email", "User Name", "Event Type",
+        "Success", "User Agent", "Fingerprint Hash", "Metadata", "Timestamp"
+    ])
+    for event in events:
+        email = event.user.email if event.user else (event.event_metadata.get("email") if event.event_metadata else None)
+        full_name = event.user.full_name if event.user else None
+        writer.writerow([
+            event.id,
+            event.user_id or "",
+            email or "System/Unknown",
+            full_name or "Unknown",
+            event.event_type.value,
+            event.success,
+            event.user_agent or "",
+            event.fingerprint_hash or "",
+            str(event.event_metadata) if event.event_metadata else "",
+            event.created_at.isoformat()
+        ])
+
+    output.seek(0)
+    filename = f"system_auth_audit_logs_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )

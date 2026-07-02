@@ -5,8 +5,9 @@ import { Download, Loader2, LogOut, ShieldCheck, Database, Info, Lock, Monitor, 
 import { useAuth } from '@/contexts/auth-context'
 import { useProfile } from '@/features/profile/hooks/use-profile'
 import { useToast } from '@/contexts/toast-context'
-import { useLogoutConfirm } from '@/components/ui/modal/modal'
+import { useLogoutConfirm, Modal } from '@/components/ui/modal/modal'
 import { downloadLogsCsv } from '@/lib/utils/export'
+import { apiDelete } from '@/lib/api/client'
 
 export default function SettingsPage() {
   const { user, logout } = useAuth()
@@ -15,6 +16,20 @@ export default function SettingsPage() {
   const confirmLogout = useLogoutConfirm()
   const [exporting, setExporting] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true)
+      await apiDelete('/auth/me')
+      toast.success('Account successfully deleted.')
+      window.location.href = '/login?msg=account_deleted'
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete account')
+      setDeleting(false)
+    }
+  }
 
   async function handleExport() {
     setExporting(true)
@@ -205,6 +220,76 @@ export default function SettingsPage() {
           </p>
         </div>
       </Section>
+
+      {/* Danger Zone */}
+      <div className="rounded-2xl border overflow-hidden mt-6"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--danger-border)', boxShadow: 'var(--shadow-card)' }}>
+        <div className="px-5 py-3 border-b flex items-center gap-2"
+          style={{ borderColor: 'var(--danger-border)', background: 'var(--danger-light)' }}>
+          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--danger)' }}>
+            Danger Zone
+          </p>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Delete Account</h3>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+              Permanently delete your account and all associated data.
+              <strong> Note:</strong> Under compliance guidelines, your account data will be retained for 3 years,
+              and security logs will be permanently deleted after 30 days. This action cannot be undone.
+            </p>
+          </div>
+          <div>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              type="button"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all cursor-pointer hover:opacity-90"
+              style={{ background: 'var(--danger)' }}
+            >
+              Delete Account
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} size="md">
+        <div className="p-6 space-y-5">
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Are you absolutely sure?</h3>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              This will permanently delete your user profile, active sessions, and registered devices.
+            </p>
+            <div className="p-3.5 rounded-xl border text-[11px] space-y-1.5"
+              style={{ background: 'var(--danger-light)', borderColor: 'var(--danger-border)', color: 'var(--danger)' }}>
+              <p className="font-semibold">⚠️ Data Retention & Deletion Policy:</p>
+              <ul className="list-disc pl-4 space-y-0.5">
+                <li>Account and telemetry data will be retained for 3 years for compliance audits.</li>
+                <li>Associated security and access logs will be permanently deleted after 30 days.</li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3">
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              type="button"
+              className="px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer"
+              style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              type="button"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-50 cursor-pointer hover:opacity-90"
+              style={{ background: 'var(--danger)' }}
+            >
+              {deleting ? 'Deleting...' : 'Yes, Delete Account'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

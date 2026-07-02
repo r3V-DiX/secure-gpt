@@ -62,6 +62,12 @@ class UserInactive(AppException):
     message = "Your account has been deactivated"
 
 
+class AccountDeletionPending(AppException):
+    status_code = 403
+    code = "ACCOUNT_DELETION_PENDING"
+    message = "Your account is scheduled for deletion"
+
+
 class Forbidden(AppException):
     status_code = 403
     code = "FORBIDDEN"

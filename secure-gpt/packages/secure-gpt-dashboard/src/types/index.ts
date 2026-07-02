@@ -29,6 +29,8 @@ export interface AuthUser {
     orgId: string | null
     createdAt: string
     lastLoginAt: string | null
+    deactivatedAt?: string | null
+    deactivationReason?: string | null
     roles?: string[]
     permissions?: string[]
 }
@@ -67,6 +69,8 @@ export interface AdminUser {
     orgId: string | null
     createdAt: string
     lastLoginAt: string | null
+    deactivatedAt?: string | null
+    deactivationReason?: string | null
     roles: Role[]
 }
 

@@ -15,12 +15,12 @@ const apiClient: AxiosInstance = axios.create({
 })
 
 // Public paths where 401 should NOT trigger a redirect to login
-const PUBLIC_PATHS = ['/', '/privacy', '/login']
+const PUBLIC_PATH_PREFIXES = ['/privacy', '/terms', '/login', '/callback']
 
 const isPublicPath = (): boolean => {
   if (typeof window === 'undefined') return false
   const path = window.location.pathname
-  return PUBLIC_PATHS.some(p => path === p || path.startsWith(p))
+  return PUBLIC_PATH_PREFIXES.some(p => path === p || path.startsWith(p))
 }
 
 // ── Request interceptor — fingerprint header ──────────────────────────────────

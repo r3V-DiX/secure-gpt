@@ -63,6 +63,7 @@ async def upsert_google_user(
         google_id=google_id,
         role=UserRole.USER,
         last_login_at=datetime.now(timezone.utc),
+        privacy_accepted=True,
     )
     db.add(user)
     await db.flush()

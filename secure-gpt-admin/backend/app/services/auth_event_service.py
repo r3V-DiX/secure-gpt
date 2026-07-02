@@ -37,7 +37,7 @@ async def log_auth_event(
             success=success,
             user_agent=request.headers.get("user-agent"),
             fingerprint_hash=fingerprint,
-            metadata=metadata,
+            event_metadata=metadata,
         )
         db.add(event)
         await db.flush()

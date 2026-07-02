@@ -6,6 +6,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 from typing import Annotated
+from datetime import datetime, timezone
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,7 @@ from app.core.exceptions import (
     SessionRevoked,
     FingerprintMismatch,
     UserInactive,
+    AccountDeletionPending,
     Forbidden,
 )
 from app.models.user import User, UserRole
@@ -91,7 +93,16 @@ async def get_current_user(
         raise AuthRequired("User account not found")
 
     if not user.is_active:
-        raise UserInactive()
+        # Check if they are in the 45-day grace period
+        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
+            path = request.url.path
+            # Allow auth endpoints (me, logout, restore) to bypass the block so they can load/restore the profile
+            if not (path.endswith("/auth/me") or path.endswith("/auth/logout") or path.endswith("/auth/restore")):
+                raise AccountDeletionPending(
+                    details={"email": user.email, "deactivated_at": user.deactivated_at.isoformat()}
+                )
+        else:
+            raise UserInactive()
 
     # Attach to request.state — used by ratelimit key function
     request.state.user_id = user.id

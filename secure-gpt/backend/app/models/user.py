@@ -32,6 +32,7 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_high_risk: Mapped[bool] = mapped_column(Boolean, default=False)
+    privacy_accepted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Organisation FK — nullable, schema only for now
     org_id: Mapped[str | None] = mapped_column(
@@ -48,6 +49,11 @@ class User(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Deactivation & Deletion Hold Policies
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+    deactivation_reason: Mapped[str | None] = mapped_column(String(50), nullable=True, default=None)
+    pre_deletion_email_sent: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Relationships
     organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="users")  # noqa: F821

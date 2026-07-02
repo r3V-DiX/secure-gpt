@@ -13,7 +13,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user && !sessionExpired) router.replace('/login')
+    if (!loading) {
+      if (!user && !sessionExpired) {
+        router.replace('/login')
+      } else if (user && user.deactivatedAt) {
+        router.replace('/restore-account')
+      }
+    }
   }, [user, loading, sessionExpired, router])
 
   if (loading) {

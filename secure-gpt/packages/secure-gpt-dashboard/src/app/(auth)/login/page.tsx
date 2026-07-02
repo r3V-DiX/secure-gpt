@@ -13,10 +13,15 @@ import { useToast } from '@/contexts/toast-context'
 export default function LoginPage() {
   const [devEmail, setDevEmail] = useState('')
   const [devLoading, setDevLoading] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const isDev = process.env.NODE_ENV === 'development'
   const { toast } = useToast()
 
   function handleGoogle() {
+    if (!privacyAccepted) {
+      toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
+      return
+    }
     // Goes through Next.js rewrite → backend /api/v1/auth/google
     // Cookie ends up on localhost:3000 — same origin as dashboard ✓
     window.location.href = '/api/v1/auth/google'
@@ -25,6 +30,10 @@ export default function LoginPage() {
   async function handleDevLogin(e: React.FormEvent) {
     e.preventDefault()
     if (!devEmail) return
+    if (!privacyAccepted) {
+      toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
+      return
+    }
     try {
       setDevLoading(true)
       await apiPost('/auth/dev-login', { email: devEmail })
@@ -96,9 +105,31 @@ export default function LoginPage() {
           Sign in to your security dashboard
         </p>
 
+        {/* Privacy Policy Checkbox */}
+        <div className="flex items-start gap-2.5 mb-6">
+          <input
+            id="privacy-checkbox"
+            type="checkbox"
+            checked={privacyAccepted}
+            onChange={e => setPrivacyAccepted(e.target.checked)}
+            className="mt-0.5 rounded border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+          />
+          <label htmlFor="privacy-checkbox" className="text-xs leading-normal select-none cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
+            I agree to the{' '}
+            <Link href="/privacy" className="underline hover:text-[var(--text-primary)] transition-colors">
+              Privacy Policy
+            </Link>{' '}
+            and{' '}
+            <Link href="/terms" className="underline hover:text-[var(--text-primary)] transition-colors">
+              Terms of Service
+            </Link>.
+          </label>
+        </div>
+
         {/* Google button */}
         <button
           onClick={handleGoogle}
+          disabled={!privacyAccepted}
           type="button"
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150"
           style={{
@@ -106,12 +137,16 @@ export default function LoginPage() {
             border: '1px solid var(--border-2)',
             color: 'var(--text-primary)',
             boxShadow: 'var(--shadow-sm)',
+            opacity: privacyAccepted ? 1 : 0.5,
+            cursor: privacyAccepted ? 'pointer' : 'not-allowed',
           }}
           onMouseEnter={e => {
+            if (!privacyAccepted) return
             (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-strong)'
             ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface-2)'
           }}
           onMouseLeave={e => {
+            if (!privacyAccepted) return
             (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'
             ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface)'
           }}
@@ -137,8 +172,8 @@ export default function LoginPage() {
               />
               <button
                 type="submit"
-                disabled={devLoading || !devEmail}
-                className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all disabled:opacity-50 cursor-pointer"
+                disabled={devLoading || !devEmail || !privacyAccepted}
+                className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {devLoading ? 'Signing in...' : 'Sign in as Test Email'}
               </button>

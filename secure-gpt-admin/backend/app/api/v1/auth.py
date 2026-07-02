@@ -135,8 +135,11 @@ async def google_callback(
     )
 
     if not user.is_active:
-        await log_login_failed(db, request, reason="user_inactive", email=user.email)
-        raise UserInactive()
+        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
+            pass
+        else:
+            await log_login_failed(db, request, reason="user_inactive", email=user.email)
+            raise UserInactive()
 
     # Create session
     session_id = secrets.token_urlsafe(32)
@@ -224,6 +227,8 @@ async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
             "orgId": current_user.org_id,
             "createdAt": current_user.created_at.isoformat(),
             "lastLoginAt": current_user.last_login_at.isoformat() if current_user.last_login_at else None,
+            "deactivatedAt": current_user.deactivated_at.isoformat() if current_user.deactivated_at else None,
+            "deactivationReason": current_user.deactivation_reason,
             "roles": [r.slug for r in roles],
             "permissions": list(permissions),
         },
@@ -242,6 +247,43 @@ async def logout(request: Request, response: Response, db: DBSession, current_us
     clear_session_cookie(response)
     await db.commit()
     return success(message="Logged out successfully")
+
+
+@router.delete("/me", summary="Delete user account")
+async def delete_me(request: Request, response: Response, db: DBSession, current_user: CurrentUser):
+    current_user.is_active = False
+    current_user.deactivated_at = datetime.now(timezone.utc)
+    current_user.deactivation_reason = "deletion"
+    current_user.pre_deletion_email_sent = False
+    
+    # Revoke all active sessions for this user except the current request's session cookie
+    # (actually we clear the cookie, so we can revoke all sessions in DB)
+    from sqlalchemy import update
+    from app.models.session import Session
+    await db.execute(
+        update(Session)
+        .where(Session.user_id == current_user.id)
+        .values(is_revoked=True)
+    )
+    
+    # Send deactivation confirmation email
+    from app.services.email_service import send_deactivation_email
+    import asyncio
+    asyncio.create_task(send_deactivation_email(current_user.email))
+    
+    await db.commit()
+    clear_session_cookie(response)
+    return success(message="Account deactivated. You have 45 days to reactivate it by signing in.")
+
+
+@router.post("/restore", summary="Reactivate deactivated account")
+async def restore_me(request: Request, db: DBSession, current_user: CurrentUser):
+    current_user.is_active = True
+    current_user.deactivated_at = None
+    current_user.deactivation_reason = None
+    current_user.pre_deletion_email_sent = False
+    await db.commit()
+    return success(message="Account successfully reactivated!")
 
 
 from pydantic import BaseModel
@@ -287,7 +329,8 @@ async def dev_login(
             email=email_lower,
             full_name=body.email.split("@")[0].title(),
             role=legacy_role,
-            is_active=True
+            is_active=True,
+            privacy_accepted=True
         )
         db.add(user)
         await db.flush()
@@ -305,7 +348,10 @@ async def dev_login(
 
 
     if not user.is_active:
-        raise UserInactive()
+        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
+            pass
+        else:
+            raise UserInactive()
 
     # Create session
     session_id = secrets.token_urlsafe(32)
@@ -323,6 +369,181 @@ async def dev_login(
     await db.commit()
 
     response = JSONResponse(content={"ok": True, "message": f"Logged in as {user.email}"})
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_id,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="lax",
+        path="/",
+    )
+    return response
+
+
+from pydantic import BaseModel
+
+class OTPRequest(BaseModel):
+    email: str
+
+class OTPVerify(BaseModel):
+    email: str
+    code: str
+
+
+@router.post("/otp/request", summary="Request OTP for admin login")
+async def request_otp(
+    request: Request,
+    body: OTPRequest,
+    db: DBSession,
+):
+    from app.services.auth_service import get_user_by_email
+    from app.models.otp_code import OTPCode
+    from app.services.email_service import send_otp_email
+    from app.core.exceptions import Forbidden
+    from sqlalchemy import select, delete
+    import random
+    import hashlib
+
+    email_lower = body.email.strip().lower()
+    
+    # 1. Fetch user by email
+    user = await get_user_by_email(db, email_lower)
+    if not user:
+        raise Forbidden("Access denied. Admin account not found.")
+
+    # 2. Check if user is admin (role is super_admin or security_admin)
+    from app.models.user import UserRole
+    is_admin = False
+    if user.role in (UserRole.SUPER_ADMIN, UserRole.SECURITY_ADMIN):
+        is_admin = True
+    else:
+        # Check dynamic roles
+        from app.models.rbac import UserRoleAssignment, Role
+        res = await db.execute(
+            select(Role)
+            .join(UserRoleAssignment, UserRoleAssignment.role_id == Role.id)
+            .where(UserRoleAssignment.user_id == user.id, UserRoleAssignment.is_active == True)
+        )
+        roles = res.scalars().all()
+        if any(r.slug in ("super_admin", "security_admin") for r in roles):
+            is_admin = True
+
+    if not is_admin:
+        raise Forbidden("Access denied. Admin privileges required.")
+
+    # 3. Generate a 6-digit OTP
+    otp_val = f"{random.randint(100000, 999999)}"
+    hashed_otp = hashlib.sha256(otp_val.encode()).hexdigest()
+
+    # 4. Expiry time (10 minutes)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    # 5. Delete existing active/expired OTPs for this email to prevent spam
+    await db.execute(delete(OTPCode).where(OTPCode.email == email_lower))
+
+    # 6. Save new OTP to database
+    otp_code_obj = OTPCode(
+        email=email_lower,
+        code=hashed_otp,
+        attempts=0,
+        expires_at=expires_at,
+    )
+    db.add(otp_code_obj)
+    await db.flush()
+
+    # 7. Send email
+    await send_otp_email(email_lower, otp_val)
+
+    await db.commit()
+    return success(message="Verification code sent to your email.")
+
+
+@router.post("/otp/verify", summary="Verify OTP and log in")
+async def verify_otp(
+    request: Request,
+    response: Response,
+    body: OTPVerify,
+    db: DBSession,
+):
+    from app.services.auth_service import get_user_by_email
+    from app.models.otp_code import OTPCode
+    from app.core.exceptions import Forbidden
+    from sqlalchemy import select
+    import hashlib
+
+    email_lower = body.email.strip().lower()
+    
+    # 1. Fetch user by email
+    user = await get_user_by_email(db, email_lower)
+    if not user:
+        raise Forbidden("Access denied. Admin account not found.")
+
+    if not user.is_active:
+        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
+            pass
+        else:
+            raise UserInactive()
+
+    # 2. Fetch OTP record
+    res = await db.execute(
+        select(OTPCode)
+        .where(OTPCode.email == email_lower, OTPCode.used_at == None)
+        .order_by(OTPCode.created_at.desc())
+    )
+    otp_record = res.scalar_one_or_none()
+
+    if not otp_record:
+        raise Forbidden("Invalid or expired verification code.")
+
+    # 3. Check if expired
+    if datetime.now(timezone.utc) > otp_record.expires_at:
+        await db.delete(otp_record)
+        await db.commit()
+        raise Forbidden("Verification code has expired. Please request a new one.")
+
+    # 4. Check max attempts (3)
+    if otp_record.attempts >= 3:
+        await db.delete(otp_record)
+        await db.commit()
+        raise Forbidden("Too many failed attempts. Please request a new verification code.")
+
+    # 5. Check if valid
+    hashed_input = hashlib.sha256(body.code.strip().encode()).hexdigest()
+    if hashed_input != otp_record.code:
+        otp_record.attempts += 1
+        await db.commit()
+        raise Forbidden("Invalid verification code.")
+
+    # 6. Mark OTP as used
+    otp_record.used_at = datetime.now(timezone.utc)
+    
+    # 7. Create session
+    session_id = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
+
+    session = Session(
+        id=session_id,
+        user_id=user.id,
+        fingerprint_hash=None,
+        user_agent=request.headers.get("user-agent"),
+        expires_at=expires_at,
+    )
+    db.add(session)
+    await log_login_success(db, request, user_id=user.id, session_id=session.id)
+    await db.commit()
+
+    # Create response and set cookie
+    response = JSONResponse(content={"success": True, "data": {
+        "id": user.id,
+        "email": user.email,
+        "fullName": user.full_name,
+        "avatarUrl": user.avatar_url,
+        "role": user.role.value,
+        "deactivatedAt": user.deactivated_at.isoformat() if user.deactivated_at else None,
+        "deactivationReason": user.deactivation_reason,
+    }, "message": f"Logged in as {user.email}"})
+
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=session_id,

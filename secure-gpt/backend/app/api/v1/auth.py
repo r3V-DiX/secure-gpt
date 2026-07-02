@@ -15,6 +15,7 @@ import httpx
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse, JSONResponse
+from pydantic import BaseModel
 
 from app.core.config import settings
 from app.core.dependencies import DBSession, CurrentUser
@@ -135,8 +136,11 @@ async def google_callback(
     )
 
     if not user.is_active:
-        await log_login_failed(db, request, reason="user_inactive", email=user.email)
-        raise UserInactive()
+        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
+            pass
+        else:
+            await log_login_failed(db, request, reason="user_inactive", email=user.email)
+            raise UserInactive()
 
     # Create session
     session_id = secrets.token_urlsafe(32)
@@ -224,6 +228,8 @@ async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
             "orgId": current_user.org_id,
             "createdAt": current_user.created_at.isoformat(),
             "lastLoginAt": current_user.last_login_at.isoformat() if current_user.last_login_at else None,
+            "deactivatedAt": current_user.deactivated_at.isoformat() if current_user.deactivated_at else None,
+            "deactivationReason": current_user.deactivation_reason,
             "roles": [r.slug for r in roles],
             "permissions": list(permissions),
         },
@@ -244,7 +250,41 @@ async def logout(request: Request, response: Response, db: DBSession, current_us
     return success(message="Logged out successfully")
 
 
-from pydantic import BaseModel
+@router.delete("/me", summary="Delete user account")
+async def delete_me(request: Request, response: Response, db: DBSession, current_user: CurrentUser):
+    current_user.is_active = False
+    current_user.deactivated_at = datetime.now(timezone.utc)
+    current_user.deactivation_reason = "deletion"
+    current_user.pre_deletion_email_sent = False
+    
+    # Revoke all active sessions for this user except the current request's session cookie
+    # (actually we clear the cookie, so we can revoke all sessions in DB)
+    from sqlalchemy import update
+    from app.models.session import Session
+    await db.execute(
+        update(Session)
+        .where(Session.user_id == current_user.id)
+        .values(is_revoked=True)
+    )
+    
+    # Send deactivation confirmation email
+    from app.services.email_service import send_deactivation_email
+    import asyncio
+    asyncio.create_task(send_deactivation_email(current_user.email))
+    
+    await db.commit()
+    clear_session_cookie(response)
+    return success(message="Account deactivated. You have 45 days to reactivate it by signing in.")
+
+
+@router.post("/restore", summary="Reactivate deactivated account")
+async def restore_me(request: Request, db: DBSession, current_user: CurrentUser):
+    current_user.is_active = True
+    current_user.deactivated_at = None
+    current_user.deactivation_reason = None
+    current_user.pre_deletion_email_sent = False
+    await db.commit()
+    return success(message="Account successfully reactivated!")
 
 
 class DevLoginRequest(BaseModel):
@@ -287,7 +327,8 @@ async def dev_login(
             email=email_lower,
             full_name=body.email.split("@")[0].title(),
             role=legacy_role,
-            is_active=True
+            is_active=True,
+            privacy_accepted=True
         )
         db.add(user)
         await db.flush()
@@ -305,7 +346,10 @@ async def dev_login(
 
 
     if not user.is_active:
-        raise UserInactive()
+        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
+            pass
+        else:
+            raise UserInactive()
 
     # Create session
     session_id = secrets.token_urlsafe(32)

@@ -179,7 +179,7 @@ export function Popup() {
         <div style={styles.actionRow}>
           <button
             style={{ ...styles.btn, ...styles.btnGhost, flex: 1 }}
-            onClick={() => chrome.tabs.create({ url: DASHBOARD_URL })}
+            onClick={() => chrome.tabs.create({ url: `${DASHBOARD_URL}/dashboard` })}
           >
             Dashboard ↗
           </button>

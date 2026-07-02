@@ -16,7 +16,7 @@ const apiClient: AxiosInstance = axios.create({
 
 // Public paths where 401 should NOT trigger a redirect to login
 const PUBLIC_EXACT_PATHS = ['/']
-const PUBLIC_PATH_PREFIXES = ['/privacy', '/login', '/callback']
+const PUBLIC_PATH_PREFIXES = ['/privacy', '/terms', '/login', '/callback']
 
 const isPublicPath = (): boolean => {
   if (typeof window === 'undefined') return false

@@ -26,9 +26,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       if (user) {
         console.log('[Background] Auth success — user:', user.email)
 
-        // Close the OAuth tab automatically
-        chrome.tabs.remove(tabId)
-
         // Notify popup and content scripts
         chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS', user }).catch(() => { })
 

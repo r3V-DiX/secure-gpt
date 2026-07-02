@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const SESSION_COOKIE = 'sgpt_session'
-const PUBLIC_PATHS = ['/callback', '/api', '/privacy']
+const PUBLIC_PATHS = ['/callback', '/api', '/privacy', '/terms']
 const PUBLIC_EXACT = ['/']
 const AUTH_PATHS = ['/login']
 const PUBLIC_FILE_EXTENSIONS = /\.(png|svg|jpg|jpeg|ico|webp|json|webmanifest|txt|xml)$/

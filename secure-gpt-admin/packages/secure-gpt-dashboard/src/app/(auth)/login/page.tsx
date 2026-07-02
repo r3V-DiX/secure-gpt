@@ -13,18 +13,32 @@ import { useToast } from '@/contexts/toast-context'
 export default function LoginPage() {
   const [devEmail, setDevEmail] = useState('')
   const [devLoading, setDevLoading] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const isDev = process.env.NODE_ENV === 'development'
   const { toast } = useToast()
 
+  // OTP Login State
+  const [useOtp, setUseOtp] = useState(false)
+  const [email, setEmail] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  const [otpLoading, setOtpLoading] = useState(false)
+
   function handleGoogle() {
-    // Goes through Next.js rewrite → backend /api/v1/auth/google
-    // Cookie ends up on localhost:3000 — same origin as dashboard ✓
+    if (!privacyAccepted) {
+      toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
+      return
+    }
     window.location.href = '/api/v1/auth/google'
   }
 
   async function handleDevLogin(e: React.FormEvent) {
     e.preventDefault()
     if (!devEmail) return
+    if (!privacyAccepted) {
+      toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
+      return
+    }
     try {
       setDevLoading(true)
       await apiPost('/auth/dev-login', { email: devEmail })
@@ -34,6 +48,40 @@ export default function LoginPage() {
       toast.error(err.message || 'Developer login failed')
     } finally {
       setDevLoading(false)
+    }
+  }
+
+  async function handleRequestOtp(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email) return
+    if (!privacyAccepted) {
+      toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
+      return
+    }
+    try {
+      setOtpLoading(true)
+      await apiPost('/auth/otp/request', { email })
+      toast.success('Verification code sent to your email!')
+      setOtpSent(true)
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send verification code')
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault()
+    if (!otpCode) return
+    try {
+      setOtpLoading(true)
+      const res = await apiPost<any>('/auth/otp/verify', { email, code: otpCode })
+      toast.success('Login successful!')
+      window.location.href = '/callback'
+    } catch (err: any) {
+      toast.error(err.message || 'Invalid verification code')
+    } finally {
+      setOtpLoading(false)
     }
   }
 
@@ -92,36 +140,157 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold tracking-tight mb-1.5" style={{ color: 'var(--text-primary)' }}>
           Welcome back
         </h1>
-        <p className="text-sm mb-8" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
           Sign in to your security dashboard
         </p>
 
-        {/* Google button */}
-        <button
-          onClick={handleGoogle}
-          type="button"
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150"
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-2)',
-            color: 'var(--text-primary)',
-            boxShadow: 'var(--shadow-sm)',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-strong)'
-            ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface-2)'
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'
-            ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface)'
-          }}
-        >
-          <GoogleIcon />
-          Continue with Google
-        </button>
+        {/* Auth method selector */}
+        <div className="flex gap-1.5 p-1 rounded-xl mb-6" style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
+          <button
+            type="button"
+            onClick={() => { setUseOtp(false); setOtpSent(false); }}
+            className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-center"
+            style={{
+              background: !useOtp ? 'var(--bg-surface)' : 'transparent',
+              color: !useOtp ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              border: !useOtp ? '1px solid var(--border-2)' : '1px solid transparent',
+              boxShadow: !useOtp ? 'var(--shadow-sm)' : 'none',
+            }}
+          >
+            Google OAuth
+          </button>
+          <button
+            type="button"
+            onClick={() => setUseOtp(true)}
+            className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-center"
+            style={{
+              background: useOtp ? 'var(--bg-surface)' : 'transparent',
+              color: useOtp ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              border: useOtp ? '1px solid var(--border-2)' : '1px solid transparent',
+              boxShadow: useOtp ? 'var(--shadow-sm)' : 'none',
+            }}
+          >
+            OTP Login
+          </button>
+        </div>
+
+        {/* Privacy Policy Checkbox */}
+        {!otpSent && (
+          <div className="flex items-start gap-2.5 mb-6">
+            <input
+              id="privacy-checkbox"
+              type="checkbox"
+              checked={privacyAccepted}
+              onChange={e => setPrivacyAccepted(e.target.checked)}
+              className="mt-0.5 rounded border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+            />
+            <label htmlFor="privacy-checkbox" className="text-xs leading-normal select-none cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
+              I agree to the{' '}
+              <Link href="/privacy" className="underline hover:text-[var(--text-primary)] transition-colors">
+                Privacy Policy
+              </Link>{' '}
+              and{' '}
+              <Link href="/terms" className="underline hover:text-[var(--text-primary)] transition-colors">
+                Terms of Service
+              </Link>.
+            </label>
+          </div>
+        )}
+
+        {/* Auth forms */}
+        {!useOtp ? (
+          /* Google OAuth Button */
+          <button
+            onClick={handleGoogle}
+            disabled={!privacyAccepted}
+            type="button"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-2)',
+              color: 'var(--text-primary)',
+              boxShadow: 'var(--shadow-sm)',
+              opacity: privacyAccepted ? 1 : 0.5,
+              cursor: privacyAccepted ? 'pointer' : 'not-allowed',
+            }}
+            onMouseEnter={e => {
+              if (!privacyAccepted) return
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-strong)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface-2)'
+            }}
+            onMouseLeave={e => {
+              if (!privacyAccepted) return
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface)'
+            }}
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
+        ) : !otpSent ? (
+          /* OTP Request Form */
+          <form onSubmit={handleRequestOtp} className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Admin Email</label>
+              <input
+                type="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="w-full px-3.5 py-2.5 mt-1.5 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-white focus:ring-[var(--accent)] outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={otpLoading || !email || !privacyAccepted}
+              className="w-full py-3 rounded-xl text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              style={{ background: 'var(--accent)' }}
+            >
+              {otpLoading ? 'Sending...' : 'Request Verification Code'}
+            </button>
+          </form>
+        ) : (
+          /* OTP Verification Form */
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <p className="text-xs leading-normal" style={{ color: 'var(--text-secondary)' }}>
+              A 6-digit verification code has been sent to <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>.
+            </p>
+            <div>
+              <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Verification Code</label>
+              <input
+                type="text"
+                placeholder="e.g. 123456"
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                required
+                maxLength={6}
+                className="w-full px-3.5 py-2.5 mt-1.5 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-white focus:ring-[var(--accent)] text-center tracking-[0.2em] font-bold outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={otpLoading || otpCode.length < 6}
+              className="w-full py-3 rounded-xl text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              style={{ background: 'var(--accent)' }}
+            >
+              {otpLoading ? 'Verifying...' : 'Verify & Sign In'}
+            </button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => { setOtpSent(false); setOtpCode(''); }}
+                className="text-xs underline hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                Change Email / Resend Code
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* Developer login (dev only) */}
-        {isDev && (
+        {isDev && !otpSent && (
           <form onSubmit={handleDevLogin} className="mt-6 pt-6 border-t border-[var(--border)] space-y-3">
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/30">
               Developer Quick-Bypass
@@ -137,8 +306,8 @@ export default function LoginPage() {
               />
               <button
                 type="submit"
-                disabled={devLoading || !devEmail}
-                className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all disabled:opacity-50 cursor-pointer"
+                disabled={devLoading || !devEmail || !privacyAccepted}
+                className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {devLoading ? 'Signing in...' : 'Sign in as Test Email'}
               </button>

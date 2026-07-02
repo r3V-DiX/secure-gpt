@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { clsx } from 'clsx'
 import {
   LayoutDashboard, FileText, ShieldCheck, Shield, Key,
-  User, Settings, LogOut, Users, ClipboardList
+  User, Settings, LogOut, Users, ClipboardList, Database
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { Avatar } from '@/components/shared/Avatar'
@@ -20,6 +20,7 @@ const NAV = [
   { label: 'Roles', href: '/roles', icon: Shield, permission: 'role:view' },
   { label: 'Permissions', href: '/permissions', icon: Key, permission: 'role:view' },
   { label: 'Audit Logs', href: '/audit', icon: ClipboardList, permission: 'audit:view_all' },
+  { label: 'System Logs', href: '/system-logs', icon: Database, permission: 'audit:view_all' },
   { label: 'Profile', href: '/profile', icon: User },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]

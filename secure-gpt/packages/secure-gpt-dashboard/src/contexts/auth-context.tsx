@@ -37,7 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    void refresh().finally(() => setLoading(false))
+    void refresh()
+      .catch(() => undefined)
+      .finally(() => setLoading(false))
   }, [refresh])
 
   // Listen for 401s fired by the axios interceptor
@@ -56,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && !sessionExpired) {
-        void refresh()
+        void refresh().catch(() => undefined)
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)

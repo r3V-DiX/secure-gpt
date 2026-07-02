@@ -5,25 +5,23 @@ import { apiGet } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
 import { Badge } from '@/components/ui/badge/badge'
 import { Button } from '@/components/ui/button/button'
-import { ClipboardList, Eye, EyeOff, Loader2, Download } from 'lucide-react'
-import { downloadAuditLogsCsv } from '@/lib/utils/export'
-import type { SystemAuthLog } from '@/types'
+import { Database, Eye, EyeOff, Loader2 } from 'lucide-react'
+import type { AdminAuditLog } from '@/types'
 
-export default function AuditLogsPage() {
-  const [logs, setLogs] = useState<SystemAuthLog[]>([])
+export default function SystemLogsPage() {
+  const [logs, setLogs] = useState<AdminAuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
-  const [exporting, setExporting] = useState(false)
 
   const { toast } = useToast()
 
   async function loadLogs() {
     try {
       setLoading(true)
-      const data = await apiGet<SystemAuthLog[]>('/admin/audit-logs')
+      const data = await apiGet<AdminAuditLog[]>('/admin/system-logs')
       setLogs(data)
     } catch (err: any) {
-      toast.error(err.message || 'Failed to load system audit logs.')
+      toast.error(err.message || 'Failed to load system logs.')
     } finally {
       setLoading(false)
     }
@@ -37,23 +35,17 @@ export default function AuditLogsPage() {
     setExpandedLogId(prev => (prev === id ? null : id))
   }
 
-  async function handleExport() {
-    try {
-      setExporting(true)
-      await downloadAuditLogsCsv()
-      toast.success('Audit logs exported successfully.')
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to export audit logs.')
-    } finally {
-      setExporting(false)
+  function getRiskVariant(level: string) {
+    switch (level) {
+      case 'CRITICAL': return 'danger'
+      case 'HIGH': return 'warning'
+      case 'MEDIUM': return 'info'
+      default: return 'neutral'
     }
   }
 
-  function getEventVariant(eventType: string) {
-    if (eventType.includes('success')) return 'success'
-    if (eventType.includes('failed') || eventType.includes('mismatch') || eventType.includes('suspicious')) return 'danger'
-    if (eventType.includes('expire') || eventType.includes('invalidate')) return 'warning'
-    return 'neutral'
+  function getStatusVariant(status: string) {
+    return status === 'SUCCESS' ? 'success' : 'danger'
   }
 
   return (
@@ -62,39 +54,26 @@ export default function AuditLogsPage() {
       <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-            <ClipboardList className="text-[var(--accent)] size-5 shrink-0" />
-            System Audit Logs
+            <Database className="text-[var(--accent)] size-5 shrink-0" />
+            System Logs
           </h1>
           <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-            Track who logged in/out, check device fingerprints, monitor suspicious actions, and export data for ML model training.
+            Audit administrative activities, role alterations, policy changes, and configuration updates.
           </p>
         </div>
-        <button
-          onClick={handleExport}
-          disabled={exporting || logs.length === 0}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-          style={{
-            background: 'var(--accent)',
-            borderColor: 'var(--accent-border)',
-            color: 'white',
-          }}
-        >
-          {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-          {exporting ? 'Exporting...' : 'Export CSV'}
-        </button>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Loader2 className="animate-spin text-[var(--accent)] size-8" />
-          <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading authentication audit logs...</span>
+          <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading system logs...</span>
         </div>
       ) : logs.length === 0 ? (
         <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl p-12 text-center flex flex-col items-center gap-2 shadow-lg">
-          <ClipboardList className="size-12" style={{ color: 'var(--text-tertiary)', opacity: 0.6 }} />
-          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No authentication events</h3>
+          <Database className="size-12" style={{ color: 'var(--text-tertiary)', opacity: 0.6 }} />
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No system logs recorded</h3>
           <p className="text-[11px] max-w-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Login history and user sessions will appear here as users authenticate.
+            System actions and settings changes will appear here once administrative configurations occur.
           </p>
         </div>
       ) : (
@@ -104,10 +83,11 @@ export default function AuditLogsPage() {
               <thead>
                 <tr className="border-b border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
                   <th className="py-3 px-4">Timestamp</th>
-                  <th className="py-3 px-4">User</th>
-                  <th className="py-3 px-4">Event Type</th>
+                  <th className="py-3 px-4">Admin User</th>
+                  <th className="py-3 px-4">Action</th>
+                  <th className="py-3 px-4">Module</th>
+                  <th className="py-3 px-4">Risk Level</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Fingerprint Hash</th>
                   <th className="py-3 px-4 text-right">Details</th>
                 </tr>
               </thead>
@@ -121,21 +101,22 @@ export default function AuditLogsPage() {
                           {new Date(log.createdAt).toLocaleString()}
                         </td>
                         <td className="py-3.5 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {log.userName || log.userEmail}
+                          {log.userName || log.userEmail || 'System'}
                           {log.userEmail && log.userName && (
                             <span className="block text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{log.userEmail}</span>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 font-semibold text-[var(--accent-text)] uppercase text-[11px]">
-                          {log.eventType.replace('_', ' ')}
+                        <td className="py-3.5 px-4 font-semibold text-[var(--accent-text)]">
+                          {log.action}
                         </td>
                         <td className="py-3.5 px-4">
-                          <Badge variant={getEventVariant(log.eventType)}>
-                            {log.success ? 'Success' : 'Failed'}
-                          </Badge>
+                          <Badge variant="neutral">{log.module}</Badge>
                         </td>
-                        <td className="py-3.5 px-4 font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                          {log.fingerprintHash ? `${log.fingerprintHash.slice(0, 12)}...` : 'N/A'}
+                        <td className="py-3.5 px-4">
+                          <Badge variant={getRiskVariant(log.riskLevel)}>{log.riskLevel}</Badge>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <Badge variant={getStatusVariant(log.status)}>{log.status}</Badge>
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <Button
@@ -152,7 +133,7 @@ export default function AuditLogsPage() {
                       {/* Expanded state details block */}
                       {isExpanded && (
                         <tr className="bg-white/[0.02]">
-                          <td colSpan={6} className="py-4 px-6 border-b border-[var(--border-2)]">
+                          <td colSpan={7} className="py-4 px-6 border-b border-[var(--border-2)]">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                               {/* Left metadata column */}
                               <div className="space-y-2">
@@ -160,16 +141,30 @@ export default function AuditLogsPage() {
                                   <span className="block font-medium" style={{ color: 'var(--text-tertiary)' }}>Log Entry ID</span>
                                   <span className="font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>{log.id}</span>
                                 </div>
-                                {log.userId && (
+                                {log.description && (
                                   <div>
-                                    <span className="block font-medium" style={{ color: 'var(--text-tertiary)' }}>User ID</span>
-                                    <span className="font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>{log.userId}</span>
+                                    <span className="block font-medium" style={{ color: 'var(--text-tertiary)' }}>Description</span>
+                                    <span style={{ color: 'var(--text-secondary)' }}>{log.description}</span>
                                   </div>
                                 )}
-                                <div className="grid grid-cols-1 gap-2 pt-1.5">
+                                {log.entityId && (
                                   <div>
-                                    <span className="block" style={{ color: 'var(--text-tertiary)' }}>Device Fingerprint (SHA-256)</span>
-                                    <span className="font-mono break-all text-[11px]" style={{ color: 'var(--text-secondary)' }}>{log.fingerprintHash || 'None'}</span>
+                                    <span className="block font-medium" style={{ color: 'var(--text-tertiary)' }}>Target Entity</span>
+                                    <span style={{ color: 'var(--text-secondary)' }}>
+                                      {log.entityType} ({log.entityName || log.entityId})
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="grid grid-cols-2 gap-2 pt-1.5">
+                                  <div>
+                                    <span className="block" style={{ color: 'var(--text-tertiary)' }}>Client IP</span>
+                                    <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>{log.ipAddress || 'Unknown'}</span>
+                                  </div>
+                                  <div>
+                                    <span className="block" style={{ color: 'var(--text-tertiary)' }}>User Roles</span>
+                                    <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+                                      {log.userRoles?.join(', ') || 'none'}
+                                    </span>
                                   </div>
                                 </div>
                                 {log.userAgent && (
@@ -182,20 +177,33 @@ export default function AuditLogsPage() {
                                 )}
                               </div>
 
-                              {/* Right metadata / event properties JSON column */}
+                              {/* Right state diff/JSON column */}
                               <div className="space-y-3 bg-[var(--bg-surface-2)] p-4 rounded-xl border border-[var(--border-2)]">
                                 <h4 className="font-semibold uppercase tracking-wider text-[10px]" style={{ color: 'var(--text-secondary)' }}>
-                                  Event Details & Metadata
+                                  Configuration Changes (State)
                                 </h4>
                                 
-                                {log.metadata ? (
-                                  <div className="font-mono text-[11px]">
-                                    <pre className="bg-gray-100/50 border border-gray-200 text-gray-800 dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-300 p-3 rounded-xl overflow-x-auto max-h-[160px] whitespace-pre-wrap leading-tight">
-                                      {JSON.stringify(log.metadata, null, 2)}
-                                    </pre>
+                                {log.beforeState || log.afterState ? (
+                                  <div className="space-y-3 font-mono text-[11px]">
+                                    {log.beforeState && (
+                                      <div>
+                                        <span className="font-semibold block mb-0.5 text-red-600 dark:text-red-400">Previous state:</span>
+                                        <pre className="bg-gray-100/50 border border-gray-200 text-gray-800 dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-300 p-3 rounded-xl overflow-x-auto max-h-[120px] whitespace-pre-wrap leading-tight">
+                                          {JSON.stringify(log.beforeState, null, 2)}
+                                        </pre>
+                                      </div>
+                                    )}
+                                    {log.afterState && (
+                                      <div>
+                                        <span className="font-semibold block mb-0.5 text-emerald-600 dark:text-emerald-400">Updated state:</span>
+                                        <pre className="bg-gray-100/50 border border-gray-200 text-gray-800 dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-300 p-3 rounded-xl overflow-x-auto max-h-[120px] whitespace-pre-wrap leading-tight">
+                                          {JSON.stringify(log.afterState, null, 2)}
+                                        </pre>
+                                      </div>
+                                    )}
                                   </div>
                                 ) : (
-                                  <span className="italic" style={{ color: 'var(--text-tertiary)' }}>No extra metadata recorded.</span>
+                                  <span className="italic" style={{ color: 'var(--text-tertiary)' }}>No state transitions recorded.</span>
                                 )}
                               </div>
                             </div>

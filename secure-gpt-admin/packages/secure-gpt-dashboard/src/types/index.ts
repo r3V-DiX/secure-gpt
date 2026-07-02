@@ -29,6 +29,8 @@ export interface AuthUser {
     orgId: string | null
     createdAt: string
     lastLoginAt: string | null
+    deactivatedAt?: string | null
+    deactivationReason?: string | null
     roles?: string[]
     permissions?: string[]
 }
@@ -67,6 +69,8 @@ export interface AdminUser {
     orgId: string | null
     createdAt: string
     lastLoginAt: string | null
+    deactivatedAt?: string | null
+    deactivationReason?: string | null
     roles: Role[]
 }
 
@@ -89,6 +93,19 @@ export interface AdminAuditLog {
     status: 'SUCCESS' | 'FAILED' | 'DENIED'
     reason: string | null
     riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+    createdAt: string
+}
+
+export interface SystemAuthLog {
+    id: string
+    userId: string | null
+    userEmail: string
+    userName: string
+    eventType: string
+    success: boolean
+    userAgent: string | null
+    fingerprintHash: string | null
+    metadata: Record<string, any> | null
     createdAt: string
 }
 
