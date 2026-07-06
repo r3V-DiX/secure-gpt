@@ -8,17 +8,31 @@ on:
     paths:
       - 'secure-gpt/backend/**'
       - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt-admin/backend/**'
   pull_request:
     branches:
       - main
     paths:
       - 'secure-gpt/backend/**'
       - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt-admin/backend/**'
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Backend
+            image: secure-gpt-backend
+            context: ./secure-gpt/backend
+            dockerfile: ./secure-gpt/backend/Dockerfile
+          - name: Admin Backend
+            image: securegpt-admin-backend
+            context: ./secure-gpt-admin/backend
+            dockerfile: ./secure-gpt-admin/backend/Dockerfile
 
     permissions:
       contents: read
@@ -47,7 +61,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.login-ecr.outputs.registry }}/secure-gpt-backend
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.image }}
           tags: |
             type=raw,value=latest
             type=raw,value=prod-latest
@@ -57,8 +71,8 @@ jobs:
       - name: 🚀 Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./secure-gpt/backend
-          file: ./secure-gpt/backend/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -67,9 +81,9 @@ jobs:
 
       - name: ✅ Build Summary
         run: |
-          echo "### 🎉 Backend Build Successful" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎉 ${{ matrix.name }} Build Successful" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ steps.login-ecr.outputs.registry }}/secure-gpt-backend\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.login-ecr.outputs.registry }}/${{ matrix.image }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
           echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY

@@ -8,17 +8,41 @@ on:
     paths:
       - 'secure-gpt/packages/secure-gpt-dashboard/**'
       - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt-admin/packages/secure-gpt-dashboard/**'
+      - 'secure-gpt-admin/packages/shared/**'
+      - 'secure-gpt-admin/package*.json'
+      - 'secure-gpt-admin/tsconfig.base.json'
   pull_request:
     branches:
       - main
     paths:
       - 'secure-gpt/packages/secure-gpt-dashboard/**'
       - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt-admin/packages/secure-gpt-dashboard/**'
+      - 'secure-gpt-admin/packages/shared/**'
+      - 'secure-gpt-admin/package*.json'
+      - 'secure-gpt-admin/tsconfig.base.json'
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Dashboard
+            image: secure-gpt-dashboard
+            context: ./secure-gpt
+            dockerfile: ./secure-gpt/packages/secure-gpt-dashboard/Dockerfile
+            backend_url_secret: PROD_NEXT_PUBLIC_BACKEND_URL
+            api_url_secret: PROD_NEXT_PUBLIC_API_URL
+          - name: Admin Frontend
+            image: securegpt-admin-frontend
+            context: ./secure-gpt-admin
+            dockerfile: ./secure-gpt-admin/packages/secure-gpt-dashboard/Dockerfile
+            backend_url_secret: PROD_ADMIN_NEXT_PUBLIC_BACKEND_URL
+            api_url_secret: PROD_ADMIN_NEXT_PUBLIC_API_URL
 
     permissions:
       contents: read
@@ -47,7 +71,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.login-ecr.outputs.registry }}/secure-gpt-dashboard
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.image }}
           tags: |
             type=raw,value=latest
             type=raw,value=prod-latest
@@ -57,23 +81,23 @@ jobs:
       - name: 🚀 Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./secure-gpt
-          file: ./secure-gpt/packages/secure-gpt-dashboard/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_BACKEND_URL=${{ secrets.PROD_NEXT_PUBLIC_BACKEND_URL }}
-            NEXT_PUBLIC_API_URL=${{ secrets.PROD_NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_BACKEND_URL=${{ secrets[matrix.backend_url_secret] }}
+            NEXT_PUBLIC_API_URL=${{ secrets[matrix.api_url_secret] }}
             NODE_ENV=production
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: ✅ Build Summary
         run: |
-          echo "### 🎉 Dashboard Build Successful" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎉 ${{ matrix.name }} Build Successful" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ steps.login-ecr.outputs.registry }}/secure-gpt-dashboard\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.login-ecr.outputs.registry }}/${{ matrix.image }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
           echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
