@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+const normalizedBackendUrl = /^https?:\/\//.test(backendUrl)
+  ? backendUrl
+  : `https://${backendUrl}`;
+
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: ["@securegpt/shared"],
@@ -20,7 +25,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/api/v1/:path*`,
+        destination: `${normalizedBackendUrl}/api/v1/:path*`,
       },
     ];
   },
