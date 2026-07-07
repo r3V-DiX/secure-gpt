@@ -88,5 +88,7 @@ packages/detection/src/models/**/*.bin
 packages/extension/public/ocr/eng.traineddata
 packages/extension/public/ocr/eng.traineddata.gz
 packages/extension/public/ocr/tesseract-core.wasm
+packages/extension/public/models/
 packages/extension/*.zip
 eng.traineddata
+next-env.d.ts
