@@ -10,6 +10,7 @@ on:
       - 'secure-gpt-admin/packages/shared/**'
       - 'secure-gpt-admin/package*.json'
       - 'secure-gpt-admin/tsconfig.base.json'
+      - '.github/workflows/admin-dashboard-ci.yml'
   pull_request:
     branches:
       - main
@@ -18,6 +19,7 @@ on:
       - 'secure-gpt-admin/packages/shared/**'
       - 'secure-gpt-admin/package*.json'
       - 'secure-gpt-admin/tsconfig.base.json'
+      - '.github/workflows/admin-dashboard-ci.yml'
 
 jobs:
   build-and-push:
