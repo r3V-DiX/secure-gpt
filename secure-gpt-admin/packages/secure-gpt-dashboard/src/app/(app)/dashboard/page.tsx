@@ -10,7 +10,7 @@ import {
   Tooltip, 
   ResponsiveContainer,
   Cell
-} from 'recharts'
+} from 'recharts' 
 
 export default function DashboardPage() {
   const { user } = useAuth()
