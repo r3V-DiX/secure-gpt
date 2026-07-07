@@ -1,4 +1,4 @@
-name: Build and Push Backend (Production)
+name: Build and Push Admin Backend (Production)
 
 on:
   workflow_dispatch:
@@ -6,14 +6,14 @@ on:
     branches:
       - main
     paths:
-      - 'secure-gpt/backend/**'
-      - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt-admin/backend/**'
+      - 'secure-gpt-admin/packages/shared/**'
   pull_request:
     branches:
       - main
     paths:
-      - 'secure-gpt/backend/**'
-      - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt-admin/backend/**'
+      - 'secure-gpt-admin/packages/shared/**'
 
 jobs:
   build-and-push:
@@ -23,10 +23,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Backend
-            image: secure-gpt-backend
-            context: ./secure-gpt/backend
-            dockerfile: ./secure-gpt/backend/Dockerfile
+          - name: Admin Backend
+            image: securegpt-admin-backend
+            context: ./secure-gpt-admin/backend
+            dockerfile: ./secure-gpt-admin/backend/Dockerfile
 
     permissions:
       contents: read
@@ -61,7 +61,7 @@ jobs:
             type=raw,value=prod-latest
             type=sha,prefix=prod-
             type=raw,value=prod-${{ github.run_number }}
- 
+
       - name: 🚀 Build and Push Docker image
         uses: docker/build-push-action@v5
         with:

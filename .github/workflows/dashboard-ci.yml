@@ -8,20 +8,12 @@ on:
     paths:
       - 'secure-gpt/packages/secure-gpt-dashboard/**'
       - 'secure-gpt/packages/shared/**'
-      - 'secure-gpt-admin/packages/secure-gpt-dashboard/**'
-      - 'secure-gpt-admin/packages/shared/**'
-      - 'secure-gpt-admin/package*.json'
-      - 'secure-gpt-admin/tsconfig.base.json'
   pull_request:
     branches:
       - main
     paths:
       - 'secure-gpt/packages/secure-gpt-dashboard/**'
       - 'secure-gpt/packages/shared/**'
-      - 'secure-gpt-admin/packages/secure-gpt-dashboard/**'
-      - 'secure-gpt-admin/packages/shared/**'
-      - 'secure-gpt-admin/package*.json'
-      - 'secure-gpt-admin/tsconfig.base.json'
 
 jobs:
   build-and-push:
@@ -37,12 +29,6 @@ jobs:
             dockerfile: ./secure-gpt/packages/secure-gpt-dashboard/Dockerfile
             backend_url_secret: PROD_NEXT_PUBLIC_BACKEND_URL
             api_url_secret: PROD_NEXT_PUBLIC_API_URL
-          - name: Admin Frontend
-            image: securegpt-admin-frontend
-            context: ./secure-gpt-admin
-            dockerfile: ./secure-gpt-admin/packages/secure-gpt-dashboard/Dockerfile
-            backend_url_secret: PROD_ADMIN_NEXT_PUBLIC_BACKEND_URL
-            api_url_secret: PROD_ADMIN_NEXT_PUBLIC_API_URL
 
     permissions:
       contents: read
