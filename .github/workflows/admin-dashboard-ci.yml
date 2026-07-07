@@ -80,6 +80,7 @@ jobs:
             NEXT_PUBLIC_BACKEND_URL=${{ secrets[matrix.backend_url_secret] }}
             NEXT_PUBLIC_API_URL=${{ secrets[matrix.api_url_secret] }}
             NODE_ENV=production
+          no-cache: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
