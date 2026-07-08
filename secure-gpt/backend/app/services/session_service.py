@@ -100,7 +100,7 @@ async def create_session(
         max_age=SESSION_TTL_SECONDS,
         httponly=True,
         secure=is_prod,
-        samesite="lax",
+        samesite="none" if is_prod else "lax",
         path="/",
     )
 
@@ -212,7 +212,7 @@ def clear_session_cookie(response: Response) -> None:
         path="/",
         secure=settings.is_production,
         httponly=True,
-        samesite="lax",
+        samesite="none" if settings.is_production else "lax",
     )
 
 

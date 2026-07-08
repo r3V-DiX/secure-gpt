@@ -186,7 +186,7 @@ async def google_callback(
             max_age=SESSION_TTL_SECONDS,
             httponly=True,
             secure=is_prod,
-            samesite="lax",
+            samesite="none" if is_prod else "lax",
             path="/",
         )
         logger.info("CALLBACK DONE (BFF) — returning 200 with set-cookie")
@@ -204,7 +204,7 @@ async def google_callback(
             max_age=SESSION_TTL_SECONDS,
             httponly=True,
             secure=is_prod,
-            samesite="lax",
+            samesite="none" if is_prod else "lax",
             path="/",
         )
         logger.info("CALLBACK DONE (direct) — redirecting to: %s/callback", frontend_url)
@@ -373,7 +373,7 @@ async def dev_login(
         max_age=SESSION_TTL_SECONDS,
         httponly=True,
         secure=settings.is_production,
-        samesite="lax",
+        samesite="none" if settings.is_production else "lax",
         path="/",
     )
     return response
