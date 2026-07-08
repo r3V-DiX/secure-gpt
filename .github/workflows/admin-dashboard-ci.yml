@@ -56,6 +56,16 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: 🔍 Debug secrets
+        run: |
+          echo "BACKEND_URL length: ${#BACKEND_URL}"
+          echo "BACKEND_URL prefix: ${BACKEND_URL:0:15}..."
+          echo "API_URL length: ${#API_URL}"
+          echo "API_URL prefix: ${API_URL:0:15}..."
+        env:
+          BACKEND_URL: ${{ secrets[matrix.backend_url_secret] }}
+          API_URL: ${{ secrets[matrix.api_url_secret] }}
+
       - name: 🛠️ Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
