@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-const normalizedBackendUrl = /^https?:\/\//.test(backendUrl)
+const normalizedBackendUrl = (/^https?:\/\//.test(backendUrl)
   ? backendUrl
-  : `https://${backendUrl}`;
+  : `https://${backendUrl}`).replace(/\/$/, "");
 
 const nextConfig: NextConfig = {
   output: "standalone",
