@@ -6,7 +6,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, field_validator
+from pydantic import Field
 from functools import lru_cache
 
 
@@ -45,23 +45,8 @@ class Settings(BaseSettings):
     google_redirect_uri: str = Field(...)
     
     # ── CORS ───────────────────────────────────────────────────────────────────
-    # Non-sensitive — default covers local dev
-    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
-
-    @field_validator("allowed_origins", mode="before")
-    @classmethod
-    def parse_origins(cls, v):
-        if isinstance(v, list):
-            return v
-        if isinstance(v, str):
-            v = v.strip()
-            if not v:
-                return ["http://localhost:3000", "http://localhost:3001"]
-            if v.startswith("["):
-                import json
-                return json.loads(v)
-            return [o.strip() for o in v.split(",") if o.strip()]
-        return v
+    # Comma-separated string — parsed to list in allowed_origins_list property
+    allowed_origins: str = "http://localhost:3000,http://localhost:3001"
 
     # ── API ────────────────────────────────────────────────────────────────────
     api_v1_prefix: str = "/api/v1"
@@ -72,7 +57,10 @@ class Settings(BaseSettings):
     # ── Computed properties ────────────────────────────────────────────────────
     @property
     def allowed_origins_list(self) -> list[str]:
-        return self.allowed_origins
+        v = self.allowed_origins.strip()
+        if not v:
+            return ["http://localhost:3000", "http://localhost:3001"]
+        return [o.strip() for o in v.split(",") if o.strip()]
 
     @property
     def is_production(self) -> bool:
