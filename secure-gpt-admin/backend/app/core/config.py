@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     
     # ── CORS ───────────────────────────────────────────────────────────────────
     # Non-sensitive — default covers local dev
-    allowed_origins: str = "http://localhost:3000,http://localhost:3001"
+    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
     # ── API ────────────────────────────────────────────────────────────────────
     api_v1_prefix: str = "/api/v1"
@@ -57,21 +57,7 @@ class Settings(BaseSettings):
     # ── Computed properties ────────────────────────────────────────────────────
     @property
     def allowed_origins_list(self) -> list[str]:
-        origins = [o.strip() for o in self.allowed_origins.split(",")]
-        
-        # In development, automatically allow any chrome-extension origin
-        # This prevents breakage when developers reload the extension and get a new ID
-        if self.app_env == "development":
-            # We can't use wildcards in allow_origins with allow_credentials=True
-            # But the CORSMiddleware will check against this list.
-            # However, Chrome Extension IDs are fixed unless changed in manifest.
-            # For local dev, common practice is to allow a few or dynamically handle it.
-            # Since we can't easily dynamic-inject here without custom middleware,
-            # we'll rely on the user adding their specific ID to .env if it changes,
-            # but we'll add a helper to ensure it's easy to debug.
-            pass
-            
-        return origins
+        return self.allowed_origins
 
     @property
     def is_production(self) -> bool:
