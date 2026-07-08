@@ -12,10 +12,10 @@ interface AuthContextValue {
   refresh: () => Promise<AuthUser>             
   dismissExpired: () => void
 }
-
+ 
 const AuthContext = createContext<AuthContextValue | null>(null) 
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) { 
   const [user, setUser] = useState<AuthUser | null>(null) 
   const [loading, setLoading] = useState(true)
   const [sessionExpired, setSessionExpired] = useState(false)
