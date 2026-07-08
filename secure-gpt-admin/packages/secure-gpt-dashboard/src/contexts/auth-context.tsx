@@ -9,7 +9,7 @@ interface AuthContextValue {
   loading: boolean
   sessionExpired: boolean
   logout: () => Promise<void>
-  refresh: () => Promise<AuthUser>
+  refresh: () => Promise<AuthUser>             
   dismissExpired: () => void
 }
 
