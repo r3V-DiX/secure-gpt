@@ -6,7 +6,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, field_validator
 from functools import lru_cache
 
 
@@ -47,6 +47,21 @@ class Settings(BaseSettings):
     # ── CORS ───────────────────────────────────────────────────────────────────
     # Non-sensitive — default covers local dev
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def parse_origins(cls, v):
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return ["http://localhost:3000", "http://localhost:3001"]
+            if v.startswith("["):
+                import json
+                return json.loads(v)
+            return [o.strip() for o in v.split(",") if o.strip()]
+        return v
 
     # ── API ────────────────────────────────────────────────────────────────────
     api_v1_prefix: str = "/api/v1"
