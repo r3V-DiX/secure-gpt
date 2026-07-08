@@ -14,7 +14,7 @@ import { useToast } from '@/contexts/toast-context'
 
 const NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Event Log', href: '/logs', icon: FileText },
+  { label: 'Event Log', href: '/event-logs', icon: FileText },
   { label: 'Policy', href: '/policy', icon: ShieldCheck },
   { label: 'Profile', href: '/profile', icon: User },
   { label: 'Settings', href: '/settings', icon: Settings },
