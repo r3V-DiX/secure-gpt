@@ -45,6 +45,7 @@ def _serialize_log(log: AuditLog) -> dict:
 
 
 @router.get("", summary="List own logs with filters and pagination")
+@router.get("/", include_in_schema=False)
 @limiter.limit(LIMIT_LOGS)
 async def list_logs(
     request: Request,
