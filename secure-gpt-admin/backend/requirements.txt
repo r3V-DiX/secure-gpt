@@ -16,6 +16,7 @@ pydantic-settings==2.5.2
 
 # ── Auth / HTTP ────────────────────────────────────────────────────────────────
 httpx==0.27.2                  # Async HTTP client for Google OAuth token exchange
+python-dotenv==1.0.1           # Load environment variables
 
 # ── Rate limiting ──────────────────────────────────────────────────────────────
 slowapi==0.1.9
@@ -26,3 +27,5 @@ Pillow==10.4.0
 
 # ── File upload ───────────────────────────────────────────────────────────────
 python-multipart==0.0.12       # Required for UploadFile / Form parsing in FastAPI
+
+python-dotenv
