@@ -64,6 +64,7 @@ def _get_exclude_admins_filter():
 
 
 @router.get("", summary="List system event logs (admin)")
+@router.get("/", include_in_schema=False)
 @limiter.limit(LIMIT_LOGS)
 async def list_logs(
     request: Request,
