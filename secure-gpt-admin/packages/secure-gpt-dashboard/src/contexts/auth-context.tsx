@@ -10,7 +10,7 @@ interface AuthContextValue {
   sessionExpired: boolean
   logout: () => Promise<void>
   refresh: () => Promise<AuthUser>             
-  dismissExpired: () => void
+  dismissExpired: () => void 
 }
  
 const AuthContext = createContext<AuthContextValue | null>(null) 
