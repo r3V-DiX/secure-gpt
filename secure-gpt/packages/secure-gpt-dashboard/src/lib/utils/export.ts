@@ -10,7 +10,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
  * Creates a temporary blob URL and clicks it — no page navigation.
  */
 export async function downloadLogsCsv(filters: Record<string, string | number | undefined> = {}): Promise<void> {
-    const url = new URL(`${BASE_URL}/api/v1/logs/export`)
+    const url = new URL(`${BASE_URL}/api/v1/event-logs/export`)
     
     // Add filters as query params
     Object.entries(filters).forEach(([key, value]) => {

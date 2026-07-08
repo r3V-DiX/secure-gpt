@@ -19,5 +19,5 @@ export async function fetchMyLogs(filters: LogFilters = {}): Promise<PaginatedRe
     Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
   ) as Record<string, unknown>
 
-  return apiGetPaginated<AuditLog>('/logs', params)
+  return apiGetPaginated<AuditLog>('/event-logs', params)
 }

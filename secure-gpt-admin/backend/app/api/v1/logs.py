@@ -19,7 +19,7 @@ from app.core.response import success, paginated
 from app.core.ratelimit import limiter, LIMIT_LOGS, LIMIT_LOGS_STATS
 from app.models.audit_log import AuditLog, ActionType
 
-router = APIRouter(prefix="/logs", tags=["logs"])
+router = APIRouter(prefix="/event-logs", tags=["logs"])
 
 
 def _serialize_log(log: AuditLog) -> dict:
