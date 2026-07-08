@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Prevent firing the expired modal multiple times from concurrent 401s
   const expiredFired = useRef(false)
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async () => {        
     try {
       const me = await apiGet<AuthUser>('/auth/me')
       setUser(me)
