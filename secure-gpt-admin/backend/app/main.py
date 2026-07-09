@@ -66,12 +66,18 @@ async def rate_limit_handler(request, exc):
 
 # ─── Middleware ───────────────────────────────────────────────────────────────
 
-# Custom CORS handler for Chrome Extensions in development
+# Custom CORS handler for Chrome Extensions
 @app.middleware("http")
 async def extension_cors_interceptor(request, call_next):
     origin = request.headers.get("origin")
-    if settings.app_env == "development" and origin and origin.startswith("chrome-extension://"):
-        response = await call_next(request)
+    # Allow chrome extensions to communicate with the API in both dev and prod
+    if origin and origin.startswith("chrome-extension://"):
+        if request.method == "OPTIONS":
+            from fastapi.responses import Response
+            response = Response(status_code=200)
+        else:
+            response = await call_next(request)
+            
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
