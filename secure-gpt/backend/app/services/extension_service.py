@@ -15,25 +15,27 @@ from app.models.audit_log import AuditLog, ActionType
 from app.models.policy import Policy
 
 # ── SSE subscriber registry ───────────────────────────────────────────────────
-# Maps user_id → set of asyncio.Queue instances (one per connected extension tab).
-# Queues hold serialised policy dicts. Push None to signal the stream to close.
+# Maps user_id or org_id → set of asyncio.Queue instances.
 _policy_subscribers: dict[str, set[asyncio.Queue]] = defaultdict(set)
 
 
-def subscribe_policy(user_id: str) -> asyncio.Queue:
+def subscribe_policy(user_id: str, org_id: str | None) -> asyncio.Queue:
     q: asyncio.Queue = asyncio.Queue()
-    _policy_subscribers[user_id].add(q)
+    key = org_id if org_id else user_id
+    _policy_subscribers[key].add(q)
     return q
 
 
-def unsubscribe_policy(user_id: str, q: asyncio.Queue) -> None:
-    _policy_subscribers[user_id].discard(q)
-    if not _policy_subscribers[user_id]:
-        del _policy_subscribers[user_id]
+def unsubscribe_policy(user_id: str, org_id: str | None, q: asyncio.Queue) -> None:
+    key = org_id if org_id else user_id
+    _policy_subscribers[key].discard(q)
+    if not _policy_subscribers[key]:
+        del _policy_subscribers[key]
 
 
-async def push_policy_update(user_id: str, policy_data: dict) -> None:
-    for q in list(_policy_subscribers.get(user_id, [])):
+async def push_policy_update(user_id: str, org_id: str | None, policy_data: dict) -> None:
+    key = org_id if org_id else user_id
+    for q in list(_policy_subscribers.get(key, [])):
         await q.put(policy_data)
 
 logger = logging.getLogger(__name__)
@@ -135,9 +137,18 @@ async def get_policy_for_extension(
     Return the active policy config for extension polling.
     Falls back to default config if user has no policy.
     """
+    from app.models.user import User
+    user_res = await db.execute(select(User).where(User.id == user_id))
+    user = user_res.scalar_one_or_none()
+
+    if user and user.org_id:
+        where_clause = (Policy.org_id == user.org_id)
+    else:
+        where_clause = (Policy.user_id == user_id)
+
     result = await db.execute(
         select(Policy)
-        .where(Policy.user_id == user_id, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)  # noqa: E712
         .order_by(Policy.version.desc())
         .limit(1)  # FIX: prevent MultipleResultsFound on race condition
     )

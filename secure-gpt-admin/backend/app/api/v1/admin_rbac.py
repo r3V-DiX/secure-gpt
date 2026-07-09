@@ -147,6 +147,70 @@ async def update_user_roles(
     return success(message="User roles updated successfully")
 
 
+from pydantic import BaseModel
+
+class UserOrgUpdateRequest(BaseModel):
+    orgId: str | None
+
+
+@router.put(
+    "/users/{user_id}/org",
+    summary="Update user organization assignment",
+    dependencies=[has_permission("user:update")]
+)
+async def update_user_org(
+    user_id: str,
+    body: UserOrgUpdateRequest,
+    request: Request,
+    current_user: CurrentUser,
+    db: DBSession
+):
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    target_user = result.scalar_one_or_none()
+    if not target_user:
+        raise NotFound("User not found")
+
+    old_org = target_user.org_id
+    new_org = body.orgId
+
+    if new_org:
+        # Check if organization exists, if not, create it to prevent ForeignKey violation
+        from app.models.org import Organisation
+        org_stmt = select(Organisation).where(Organisation.id == new_org)
+        org_res = await db.execute(org_stmt)
+        organisation = org_res.scalar_one_or_none()
+        if not organisation:
+            organisation = Organisation(
+                id=new_org,
+                name=new_org.capitalize(),
+                admin_email=current_user.email
+            )
+            db.add(organisation)
+            await db.flush()
+
+    target_user.org_id = new_org
+
+    # Log admin action
+    await log_admin_action(
+        db,
+        request=request,
+        user=current_user,
+        action="user:update_org",
+        module=PermissionModule.USER,
+        description=f"Updated organization for user {target_user.email} from {old_org} to {new_org}",
+        entity_id=target_user.id,
+        entity_type="User",
+        entity_name=target_user.email,
+        before_state={"orgId": old_org},
+        after_state={"orgId": new_org},
+        risk_level=RiskLevel.MEDIUM
+    )
+
+    await db.commit()
+    return success(message="User organization updated successfully")
+
+
 @router.put(
     "/users/{user_id}/status",
     summary="Toggle user active status (suspend/activate)",

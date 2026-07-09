@@ -36,9 +36,10 @@ def _serialize_policy(policy: Policy) -> dict:
 @router.get("/current", summary="Get current active policy", dependencies=[has_permission("policy:view")])
 @limiter.limit(LIMIT_POLICY)
 async def get_current_policy(request: Request, db: DBSession, current_user: CurrentUser):
+    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
     result = await db.execute(
         select(Policy)
-        .where(Policy.user_id == current_user.id, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)  # noqa: E712
         .order_by(Policy.version.desc())
         .limit(1)
     )
@@ -76,17 +77,18 @@ async def list_policies(
     current_user: CurrentUser,
     pagination: Pagination,
 ):
+    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
 
     count_result = await db.execute(
         select(func.count()).select_from(
-            select(Policy).where(Policy.user_id == current_user.id).subquery()
+            select(Policy).where(where_clause).subquery()
         )
     )
     total = count_result.scalar_one()
 
     result = await db.execute(
         select(Policy)
-        .where(Policy.user_id == current_user.id)
+        .where(where_clause)
         .order_by(Policy.version.desc())
         .offset(pagination.offset)
         .limit(pagination.limit)
@@ -101,21 +103,23 @@ async def list_policies(
     )
 
 
-async def _create_policy_version(db, user_id: str, config: dict, publish: bool) -> Policy:
+async def _create_policy_version(db, user_id: str, org_id: str | None, config: dict, publish: bool) -> Policy:
     """Deactivate old active policy, then create a new versioned policy."""
     # FIX: deepcopy so we don't mutate the caller's dict object.
     config = copy.deepcopy(config)
 
+    where_clause = (Policy.org_id == org_id) if org_id else (Policy.user_id == user_id)
+
     await db.execute(
         update(Policy)
-        .where(Policy.user_id == user_id, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)  # noqa: E712
         .values(is_active=False)
     )
     await db.flush()
 
     result = await db.execute(
         select(Policy)
-        .where(Policy.user_id == user_id)
+        .where(where_clause)
         .order_by(Policy.version.desc())
         .limit(1)
     )
@@ -128,6 +132,7 @@ async def _create_policy_version(db, user_id: str, config: dict, publish: bool) 
 
     policy = Policy(
         user_id=user_id,
+        org_id=org_id,
         config=config,
         version=next_version,
         is_active=True,
@@ -148,16 +153,17 @@ async def create_policy(
     current_user: CurrentUser,
 ):
     # Fetch old active policy for diff logging
+    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
     old_res = await db.execute(
         select(Policy)
-        .where(Policy.user_id == current_user.id, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)  # noqa: E712
         .order_by(Policy.version.desc())
         .limit(1)
     )
     old_policy = old_res.scalar_one_or_none()
     old_config = old_policy.config if old_policy else None
 
-    policy = await _create_policy_version(db, current_user.id, body.config.model_dump(), body.publishImmediately)
+    policy = await _create_policy_version(db, current_user.id, current_user.org_id, body.config.model_dump(), body.publishImmediately)
 
     # Log admin action
     from app.services.rbac_service import log_admin_action
@@ -178,8 +184,8 @@ async def create_policy(
     )
 
     await db.commit()
-    # Push to any connected extension SSE streams for this user
-    await push_policy_update(current_user.id, {
+    # Push to any connected extension SSE streams for this user/org
+    await push_policy_update(current_user.id, current_user.org_id, {
         "version": policy.version,
         "config": policy.config,
         "updatedAt": policy.updated_at.isoformat(),
@@ -196,16 +202,17 @@ async def update_policy(
     current_user: CurrentUser,
 ):
     # Fetch old active policy for diff logging
+    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
     old_res = await db.execute(
         select(Policy)
-        .where(Policy.user_id == current_user.id, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)  # noqa: E712
         .order_by(Policy.version.desc())
         .limit(1)
     )
     old_policy = old_res.scalar_one_or_none()
     old_config = old_policy.config if old_policy else None
 
-    policy = await _create_policy_version(db, current_user.id, body.config.model_dump(), body.publishImmediately)
+    policy = await _create_policy_version(db, current_user.id, current_user.org_id, body.config.model_dump(), body.publishImmediately)
 
     # Log admin action
     from app.services.rbac_service import log_admin_action
@@ -226,8 +233,8 @@ async def update_policy(
     )
 
     await db.commit()
-    # Push to any connected extension SSE streams for this user
-    await push_policy_update(current_user.id, {
+    # Push to any connected extension SSE streams for this user/org
+    await push_policy_update(current_user.id, current_user.org_id, {
         "version": policy.version,
         "config": policy.config,
         "updatedAt": policy.updated_at.isoformat(),
@@ -243,8 +250,9 @@ async def get_policy(
     db: DBSession,
     current_user: CurrentUser,
 ):
+    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
     result = await db.execute(
-        select(Policy).where(Policy.id == policy_id, Policy.user_id == current_user.id)
+        select(Policy).where(Policy.id == policy_id, where_clause)
     )
     policy = result.scalar_one_or_none()
     if not policy:
@@ -260,8 +268,9 @@ async def delete_policy(
     db: DBSession,
     current_user: CurrentUser,
 ):
+    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
     result = await db.execute(
-        select(Policy).where(Policy.id == policy_id, Policy.user_id == current_user.id)
+        select(Policy).where(Policy.id == policy_id, where_clause)
     )
     policy = result.scalar_one_or_none()
     if not policy:

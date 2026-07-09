@@ -50,8 +50,9 @@ async def stream_extension_policy(
     connection drops and cannot reconnect within a few seconds.
     """
     user_id = current_user.id
+    org_id = current_user.org_id
     policy_data = await get_policy_for_extension(db, current_user.id)
-    q = subscribe_policy(user_id)
+    q = subscribe_policy(user_id, org_id)
 
     async def event_generator():
         try:
@@ -71,7 +72,7 @@ async def stream_extension_policy(
                     # Send a keepalive comment so the connection stays alive
                     yield ": keepalive\n\n"
         finally:
-            unsubscribe_policy(user_id, q)
+            unsubscribe_policy(user_id, org_id, q)
 
     return StreamingResponse(
         event_generator(),

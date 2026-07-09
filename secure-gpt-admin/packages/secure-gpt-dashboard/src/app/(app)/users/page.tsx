@@ -20,6 +20,11 @@ export default function UsersPage() {
   const [selectedRoleSlugs, setSelectedRoleSlugs] = useState<string[]>([])
   const [savingRoles, setSavingRoles] = useState(false)
 
+  // Modal Edit Org state
+  const [editOrgUser, setEditOrgUser] = useState<AdminUser | null>(null)
+  const [orgDraft, setOrgDraft] = useState('')
+  const [savingOrg, setSavingOrg] = useState(false)
+
   const { toast } = useToast()
 
   async function loadData() {
@@ -69,6 +74,12 @@ export default function UsersPage() {
     setSelectedRoleSlugs(user.roles.map(r => r.slug))
   }
 
+  // Open edit org modal
+  function handleOpenEditOrg(user: AdminUser) {
+    setEditOrgUser(user)
+    setOrgDraft(user.orgId || '')
+  }
+
   // Handle role checkbox toggles
   function handleToggleRoleSlug(slug: string) {
     setSelectedRoleSlugs(prev =>
@@ -94,6 +105,27 @@ export default function UsersPage() {
       toast.error(err.message || 'Failed to update roles.')
     } finally {
       setSavingRoles(false)
+    }
+  }
+
+  // Submit organization updates
+  async function handleSaveOrg() {
+    if (!editOrgUser) return
+    try {
+      setSavingOrg(true)
+      const targetOrg = orgDraft.trim() || null
+      await apiPut(`/admin/users/${editOrgUser.id}/org`, { orgId: targetOrg })
+      toast.success(`Organization updated for ${editOrgUser.fullName || editOrgUser.email}`)
+      
+      // Update local state orgId
+      setUsers(prev =>
+        prev.map(u => (u.id === editOrgUser.id ? { ...u, orgId: targetOrg } : u))
+      )
+      setEditOrgUser(null)
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update organization.')
+    } finally {
+      setSavingOrg(false)
     }
   }
 
@@ -138,7 +170,14 @@ export default function UsersPage() {
                         <span className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
                           {u.fullName || 'No Name'}
                         </span>
-                        <span className="text-[11px] truncate" style={{ color: 'var(--text-tertiary)' }}>{u.email}</span>
+                        <div className="flex items-center gap-1.5 text-[11px] flex-wrap">
+                          <span style={{ color: 'var(--text-tertiary)' }}>{u.email}</span>
+                          {u.orgId && (
+                            <span className="text-[9px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1 py-0.5 rounded font-mono">
+                              org: {u.orgId}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
@@ -171,6 +210,14 @@ export default function UsersPage() {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="inline-flex items-center gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={<Edit3 size={12} />}
+                          onClick={() => handleOpenEditOrg(u)}
+                        >
+                          Org
+                        </Button>
                         <Button
                           variant="secondary"
                           size="sm"
@@ -270,6 +317,48 @@ export default function UsersPage() {
               size="md"
               loading={savingRoles}
               onClick={handleSaveRoles}
+            >
+              Save Changes
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
+
+      {/* Edit Org Modal */}
+      {editOrgUser && (
+        <Modal open={!!editOrgUser} onClose={() => setEditOrgUser(null)} size="sm">
+          <ModalHeader onClose={() => setEditOrgUser(null)}>
+            <div>
+              <h3 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Update Organization Assignment</h3>
+              <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>{editOrgUser.email}</p>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                Assign this user to an organization ID. All users with the same organization ID will share the same DLP policies. Leave blank to unassign.
+              </p>
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold block" style={{ color: 'var(--text-secondary)' }}>Organization ID</label>
+                <input
+                  type="text"
+                  placeholder="e.g. rivedix"
+                  value={orgDraft}
+                  onChange={(e) => setOrgDraft(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-surface-2)] text-[var(--text-primary)] text-sm outline-none focus:border-white/20"
+                />
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" size="md" onClick={() => setEditOrgUser(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              loading={savingOrg}
+              onClick={handleSaveOrg}
             >
               Save Changes
             </Button>
