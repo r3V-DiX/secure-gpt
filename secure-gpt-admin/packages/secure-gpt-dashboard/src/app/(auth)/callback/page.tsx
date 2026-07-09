@@ -14,7 +14,8 @@ export default function CallbackPage() {
       .then((me) => {
         const isAdmin = me?.role === 'super_admin' || me?.role === 'security_admin'
         if (!isAdmin && typeof window !== 'undefined') {
-          window.location.href = 'http://localhost:3000/dashboard'
+          const userDashboardUrl = process.env.NEXT_PUBLIC_USER_DASHBOARD_URL || 'http://localhost:3000'
+          window.location.href = `${userDashboardUrl}/dashboard`
         } else {
           router.replace("/dashboard")
         }
