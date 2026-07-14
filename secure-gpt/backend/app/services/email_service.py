@@ -22,9 +22,11 @@ def _send_smtp_sync(to_email: str, subject: str, html_content: str, text_content
     smtp_from = os.getenv("SMTP_FROM", "no-reply@securegpt.com")
 
     if not smtp_host or not smtp_port:
+        app_env = os.getenv("APP_ENV", "development")
+        safe_content = text_content if app_env == "development" else "[REDACTED FOR SECURITY IN NON-DEVELOPMENT ENVIRONMENT]"
         logger.warning(
             f"[EMAIL MOCK] No SMTP_HOST/SMTP_PORT configured. Printing email to logs:\n"
-            f"To: {to_email}\nSubject: {subject}\nContent:\n{text_content}"
+            f"To: {to_email}\nSubject: {subject}\nContent:\n{safe_content}"
         )
         return True
 
@@ -60,9 +62,11 @@ def _send_smtp_sync(to_email: str, subject: str, html_content: str, text_content
     except Exception as e:
         logger.error(f"Failed to send SMTP email to {to_email}: {str(e)}")
         # Print fallback to stdout so we never fail completely in dev/test
+        app_env = os.getenv("APP_ENV", "development")
+        safe_content = text_content if app_env == "development" else "[REDACTED FOR SECURITY IN NON-DEVELOPMENT ENVIRONMENT]"
         logger.info(
             f"[EMAIL FALLBACK] Printing email to logs due to SMTP failure:\n"
-            f"To: {to_email}\nSubject: {subject}\nContent:\n{text_content}"
+            f"To: {to_email}\nSubject: {subject}\nContent:\n{safe_content}"
         )
         return False
 

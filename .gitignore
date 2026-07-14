@@ -92,3 +92,5 @@ packages/extension/public/models/
 packages/extension/*.zip
 eng.traineddata
 next-env.d.ts
+
+/scripts
