@@ -172,7 +172,10 @@ function AddEditRuleModal({ category, initialRule, onSave, onClose }: {
         </div>
 
         <div>
-          <label className="text-[11px] font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Regex pattern</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Regex pattern</label>
+            <a href="https://quickref.me/regex" target="_blank" rel="noopener noreferrer" className="text-[10px] hover:underline transition-colors" style={{ color: 'var(--accent-text)' }}>Regex Reference</a>
+          </div>
           <input className="w-full px-3 py-2 rounded-xl border outline-none text-sm font-mono" style={{ ...inp, borderColor: patternError ? 'var(--danger)' : 'var(--border)' }}
             placeholder="e.g. EMP-[0-9]{5}" value={pattern}
             onChange={e => {
