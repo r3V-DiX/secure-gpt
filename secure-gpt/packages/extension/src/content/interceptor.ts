@@ -6,11 +6,14 @@ import { showBanner, removeBanner } from './banners'
 import { showShieldModal } from './modal-manager'
 import { logDetectionEvent } from './audit-logger'
 import { applyMasking, applyImageMasking } from '@/features/actions/services/masking.service'
+import { showLiveWarningTooltip, removeLiveWarningTooltip } from './live-warning-tooltip'
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
 import type { PIICategory } from '@securegpt/shared/constants'
 
 let currentPolicy: PIIConfig
 let isRunning = false
+let preAllowedText = ''
+let inputDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── OCR / image state ────────────────────────────────────────────
 const ocrCache = new Map<string, PIIEntity[]>()
@@ -39,6 +42,7 @@ function attachGlobalListeners(): void {
   window.addEventListener('paste', handleGlobalPaste, true)
   window.addEventListener('change', handleGlobalFileChange, true)
   window.addEventListener('drop', handleGlobalDrop, true)
+  window.addEventListener('input', handleGlobalInput, true)
   console.log('[SecureGPT] Global listeners attached (Capturing phase)')
 }
 
@@ -101,6 +105,79 @@ function handleGlobalSubmit(e: Event): void {
   e.stopImmediatePropagation()
 
   void handleSubmit(root)
+}
+
+async function handleGlobalInput(e: Event): void {
+  if (!e.isTrusted) return
+
+  const target = e.target as HTMLElement
+  const root = findEditableRoot(target)
+  if (!root || bypassSet.has(root)) return
+
+  if (inputDebounceTimer) clearTimeout(inputDebounceTimer)
+  
+  // Clear any existing tooltip immediately when user starts typing again
+  removeLiveWarningTooltip()
+
+  inputDebounceTimer = setTimeout(async () => {
+    // Guard: extension context
+    if (!isExtensionContextValid()) return
+
+    const text = extractText(root)
+    if (!text || text.trim().length === 0) return
+
+    // If it's already allowed, skip
+    if (text === preAllowedText) return
+
+    try {
+      const isActive = await new Promise<boolean>((resolve) => {
+        chrome.runtime.sendMessage({ type: 'GET_STATE' }, (res) => {
+          if (chrome.runtime.lastError) {
+            resolve(true)
+          } else {
+            resolve(res?.active ?? true)
+          }
+        })
+      })
+
+      if (!isActive) return
+
+      const result = await new Promise<DetectionResult>((resolve) => {
+        chrome.runtime.sendMessage(
+          { type: 'DETECT_PII', text, config: currentPolicy },
+          (res) => {
+            if (chrome.runtime.lastError || !res) {
+              resolve({ hasFindings: false, entities: [], tier: 'regex', processingTimeMs: 0, inputLength: text.length })
+            } else {
+              resolve(res)
+            }
+          }
+        )
+      })
+
+      if (result.hasFindings && result.entities.length > 0) {
+        const { action } = getMostRestrictiveAction(result.entities, currentPolicy)
+        
+        showLiveWarningTooltip(
+          result.entities,
+          root,
+          () => {
+            // Mask Now
+            const maskedText = applyMasking(text, result.entities)
+            setInputValue(root, maskedText)
+            removeLiveWarningTooltip()
+          },
+          action === 'BLOCK' ? undefined : () => {
+            // Allow
+            preAllowedText = text
+            removeLiveWarningTooltip()
+          }
+        )
+      }
+    } catch (err) {
+      console.error('[SecureGPT] Live detection error:', err)
+    }
+  }, 1000)
 }
 
 const ACTION_PRIORITY: Record<string, number> = {
@@ -170,6 +247,15 @@ async function handleSubmit(el: HTMLElement): Promise<void> {
     }
 
     const text = extractText(el)
+    
+    // Check if exactly this text was pre-allowed via tooltip
+    if (text === preAllowedText && text.trim().length > 0) {
+      console.log('[SecureGPT] Bypassing submit detection because text was pre-allowed via live tooltip.')
+      isRunning = false
+      resubmit(el)
+      return
+    }
+
     const hasCachedImages = ocrCache.size > 0
     if ((!text || text.trim().length === 0) && !hasCachedImages) {
       isRunning = false
@@ -413,7 +499,9 @@ export function teardown(): void {
   window.removeEventListener('paste', handleGlobalPaste, true)
   window.removeEventListener('change', handleGlobalFileChange, true)
   window.removeEventListener('drop', handleGlobalDrop, true)
+  window.removeEventListener('input', handleGlobalInput, true)
   document.querySelectorAll('[data-securegpt]').forEach((el) => el.remove())
+  removeLiveWarningTooltip()
 }
 
 // ── Image paste interception ──────────────────

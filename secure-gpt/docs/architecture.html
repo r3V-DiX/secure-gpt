@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureGPT - Enterprise DLP Feature Specification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark',
+            fontFamily: 'Inter',
+            themeVariables: {
+                primaryColor: '#3b82f6',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#1d4ed8',
+                lineColor: '#94a3b8',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#0f172a'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #3b82f6;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --accent-glow: rgba(59, 130, 246, 0.3);
+            --border: rgba(255, 255, 255, 0.08);
+            --code-bg: #111827;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0b0f19 80%);
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            padding: 5rem 2rem 3rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            background: linear-gradient(to right, #60a5fa, #a78bfa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 3.5rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5), 0 0 25px var(--accent-glow);
+        }
+
+        .section h2 {
+            font-size: 2rem;
+            margin-top: 0;
+            margin-bottom: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .section h2::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            margin-bottom: 1rem;
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        h3 {
+            color: #60a5fa;
+            font-size: 1.4rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        p, ul, ol {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-bottom: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #f43f5e;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        pre code {
+            color: #cbd5e1;
+            background: transparent;
+            padding: 0;
+            border: none;
+            font-size: 0.95rem;
+        }
+
+        .diagram-container {
+            background: rgba(10, 15, 25, 0.9);
+            border-radius: 14px;
+            padding: 2.5rem;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .mermaid {
+            width: 100%;
+            min-width: 950px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .mermaid svg {
+            width: 100% !important;
+            max-width: 1200px !important;
+            height: auto !important;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 1rem;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        td {
+            color: var(--text-muted);
+        }
+
+        tr:hover td {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .alert-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid #f59e0b;
+            padding: 1.25rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.5rem 0;
+        }
+
+        .alert-box h4 {
+            margin: 0 0 0.5rem 0;
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            border-radius: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SecureGPT: Enterprise DLP Platform</h1>
+        <p>Comprehensive Feature Update Specification & Technical Architecture Design</p>
+    </header>
+
+    <div class="container">
+        
+        <!-- SECTION 1: EXECUTIVE SUMMARY -->
+        <div class="section">
+            <h2><span class="badge">01</span> Executive Summary</h2>
+            <p>This technical document maps out the upgrade from <strong>SecureGPT</strong> (currently an independent user DLP application) to a robust <strong>Enterprise DLP Platform</strong>.</p>
+            <p>The goal is to allow Organizations to register, centrally enforce data protection policies, and manage team members via granular Role-Based Access Control (RBAC). Standard (independent) users must be able to continue using the application with absolute control over their own policies, while Organization-bound users automatically transition to a compliant, controlled state.</p>
+            
+            <div class="alert-box">
+                <h4>Core Design Constraint</h4>
+                <p>Enterprise administrators must hold ultimate veto power. Any preexisting policies owned by a user automatically transition to a read-only lock state upon that user joining an Organization. Legacy policies then become fully editable and deletable by the Organization's Admin.</p>
+            </div>
+        </div>
+
+        <!-- SECTION 2: FUNCTIONAL SPECIFICATIONS -->
+        <div class="section">
+            <h2><span class="badge badge-green">02</span> Detailed Feature Specifications</h2>
+            
+            <h3>1. Organization Registration</h3>
+            <p>Any system user or guest will be able to register a new Organization. This action provisions a tenant space in the system.</p>
+            <ul>
+                <li>Creates an entry in the <code>organisations</code> table.</li>
+                <li>Generates a default, customizable dynamic RBAC schema for the Organization.</li>
+                <li>Automatically binds the creator to the organization (<code>org_id</code> field) and assigns them the default <code>ORG_SUPER_ADMIN</code> role.</li>
+                <li><strong>Domain Validation:</strong> Checks the <code>admin_email</code> domain. Common email domains (e.g. <code>gmail.com</code>, <code>yahoo.com</code>, <code>outlook.com</code>, <code>hotmail.com</code>, etc.) are strictly blocked. Only custom corporate domains are allowed for registering organizations.</li>
+            </ul>
+
+            <h3>2. Invitation & Auto-Enrollment Pipeline</h3>
+            <p>Org Administrators can invite users via email. <strong>Domain Restriction:</strong> The system enforces that the invited user's email domain matches the organization's domain (established during organization registration). Invitations sent to mismatched domains will be rejected by the API.</p>
+            <p>If the domain matches, the system dynamically alters the pathway depending on the user's status:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>User Status</th>
+                        <th>System Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>New User</strong></td>
+                        <td>Email is NOT registered in SecureGPT.</td>
+                        <td>Generates an invitation token, saves it, and sends a registration link. Upon registration, the user is bound to the <code>org_id</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Existing User</strong></td>
+                        <td>Email is ALREADY registered.</td>
+                        <td><strong>Auto-Enrollment:</strong> Updates the user's <code>org_id</code> directly in the database. Locks the user's personal policies (sets <code>is_locked_by_org = True</code>). No accept link required. Sends an informational notification email.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3. Dynamic Scoping of Policies</h3>
+            <p>Policies are evaluated dynamically based on the user's organization state:</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h4><span class="badge">Independent Users</span></h4>
+                    <ul>
+                        <li><code>org_id</code> is <code>NULL</code>.</li>
+                        <li>Has full CRUD permissions over their own policies.</li>
+                        <li>Can toggle, modify, or delete custom Regex patterns and sensitivity thresholds.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4><span class="badge badge-purple">Organization Users</span></h4>
+                    <ul>
+                        <li><code>org_id</code> is bound to an Organization.</li>
+                        <li>All legacy personal policies set <code>is_locked_by_org = True</code>.</li>
+                        <li>The user loses write/update/delete permissions over these policies.</li>
+                        <li>Organization policies are automatically pushed down and active on all organization members.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: DATABASE SCHEMA -->
+        <div class="section">
+            <h2><span class="badge badge-purple">03</span> Database Schema Changes (SQLAlchemy)</h2>
+            <p>The backend requires updates to the SQLAlchemy definitions to transition from schema-only stubs to active relation management.</p>
+            
+            <h3>Modified Models</h3>
+            <p>We modify <code>Organisation</code>, <code>User</code>, and <code>Policy</code> to introduce relations and lock mechanisms.</p>
+            
+            <pre><code># backend/app/models/org.py
+class Organisation(Base):
+    __tablename__ = "organisations"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    admin_email: Mapped[str] = mapped_column(String(255), nullable=False)
+    plan: Mapped[str] = mapped_column(String(50), default="free")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Relationships
+    users: Mapped[list["User"]] = relationship("User", back_populates="organisation")
+    policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="organisation")
+    roles: Mapped[list["Role"]] = relationship("Role", back_populates="organisation")</code></pre>
+
+            <pre><code># backend/app/models/policy.py
+class Policy(Base):
+    __tablename__ = "policies"
+    # ... legacy fields (name, description, pattern, action) ...
+
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"))
+    org_id: Mapped[str | None] = mapped_column(String, ForeignKey("organisations.id"), nullable=True)
+    is_locked_by_org: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="policies")
+    organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="policies")</code></pre>
+
+            <h3>New Dynamic RBAC Tables</h3>
+            <p>To support dynamic roles with module-level permissions, we introduce <code>Role</code>, <code>RolePermission</code>, and <code>UserRoleAssignment</code>.</p>
+            
+            <pre><code># backend/app/models/rbac.py
+from enum import Enum as PyEnum
+
+class PermissionModule(str, PyEnum):
+    POLICY = "POLICY"
+    USER_MANAGEMENT = "USER_MANAGEMENT"
+    AUDIT_LOGS = "AUDIT_LOGS"
+    BILLING = "BILLING"
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    org_id: Mapped[str] = mapped_column(String, ForeignKey("organisations.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_system_default: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    organisation: Mapped["Organisation"] = relationship("Organisation", back_populates="roles")
+    permissions: Mapped[list["RolePermission"]] = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
+
+class RolePermission(Base):
+    __tablename__ = "role_permissions"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    role_id: Mapped[str] = mapped_column(String, ForeignKey("roles.id"), nullable=False)
+    module: Mapped[PermissionModule] = mapped_column(Enum(PermissionModule), nullable=False)
+    
+    can_create: Mapped[bool] = mapped_column(Boolean, default=False)
+    can_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    can_update: Mapped[bool] = mapped_column(Boolean, default=False)
+    can_delete: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    role: Mapped["Role"] = relationship("Role", back_populates="permissions")
+
+class UserRoleAssignment(Base):
+    __tablename__ = "user_role_assignments"
+
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), primary_key=True)
+    role_id: Mapped[str] = mapped_column(String, ForeignKey("roles.id"), primary_key=True)</code></pre>
+        </div>
+
+        <!-- SECTION 4: API SPECIFICATION -->
+        <div class="section">
+            <h2><span class="badge">04</span> Core Backend REST Endpoints</h2>
+            <p>Below are the REST endpoints designed to control the Organization, Invitations, Policies, and Dynamic Roles.</p>
+
+            <h3>1. Organization Registration</h3>
+            <p><code>POST /api/v1/orgs/register</code></p>
+            <pre><code>// Request Payload
+{
+  "name": "Acme Corp",
+  "admin_email": "admin@acme.com"
+}
+
+// Success Response (201 Created)
+{
+  "org_id": "a4d8c89b-730a-4fb4-bf4a-d6981cfef7b1",
+  "name": "Acme Corp",
+  "created_at": "2026-07-09T11:21:00Z"
+}
+
+// Error Response (400 Bad Request - Common email used)
+{
+  "detail": "Organizations must be registered using a custom business domain. Public email providers (gmail.com, yahoo.com, outlook.com, etc.) are not allowed."
+}</code></pre>
+
+            <h3>2. Team Invitations</h3>
+            <p><code>POST /api/v1/orgs/invite</code></p>
+            <pre><code>// Request Payload
+{
+  "email": "employee@acme.com",
+  "role_id": "role-default-user-uuid"
+}
+
+// Response (200 OK - Auto-Enrolled Existing User)
+{
+  "email": "employee@acme.com",
+  "status": "auto_enrolled",
+  "policies_locked": 3
+}
+
+// Response (201 Created - New User Invitation Sent)
+{
+  "email": "new_hire@acme.com",
+  "status": "invitation_sent",
+  "token": "inv-tok-9821379"
+}
+
+// Response (400 Bad Request - Mismatched Domain)
+{
+  "detail": "Cannot invite users from external domains. Invited email domain must match the Organization's registered domain (acme.com)."
+}</code></pre>
+
+            <h3>3. Role & Permission Management</h3>
+            <p><code>POST /api/v1/roles</code></p>
+            <pre><code>// Request Payload
+{
+  "name": "Compliance Auditor",
+  "permissions": [
+    {
+      "module": "POLICY",
+      "can_create": false,
+      "can_read": true,
+      "can_update": false,
+      "can_delete": false
+    },
+    {
+      "module": "AUDIT_LOGS",
+      "can_create": false,
+      "can_read": true,
+      "can_update": false,
+      "can_delete": false
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- SECTION 5: ARCHITECTURE DIAGRAMS -->
+        <div class="section">
+            <h2><span class="badge">05</span> High-Level Architecture Diagrams</h2>
+            
+            <h3>Entity Relationship (Database Schema Model)</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    erDiagram
+                        ORGANISATION ||--o{ USER : "has many"
+                        ORGANISATION ||--o{ ROLE : "defines"
+                        ORGANISATION ||--o{ POLICY : "owns/overrides"
+                        
+                        USER ||--o{ USER_ROLE_ASSIGNMENT : "assigned"
+                        ROLE ||--o{ USER_ROLE_ASSIGNMENT : "granted to"
+                        ROLE ||--o{ ROLE_PERMISSION : "contains"
+                        
+                        USER ||--o{ POLICY : "creates (if no org)"
+                        
+                        ORGANISATION {
+                            string id PK
+                            string name
+                            string admin_email
+                            boolean is_active
+                        }
+                        
+                        USER {
+                            string id PK
+                            string email
+                            string org_id FK "nullable"
+                        }
+                        
+                        ROLE {
+                            string id PK
+                            string org_id FK
+                            string name
+                            boolean is_system_default
+                        }
+                        
+                        ROLE_PERMISSION {
+                            string id PK
+                            string role_id FK
+                            string module "e.g., POLICY, USER"
+                            boolean can_create
+                            boolean can_read
+                            boolean can_update
+                            boolean can_delete
+                        }
+                        
+                        POLICY {
+                            string id PK
+                            string user_id FK
+                            string org_id FK "nullable"
+                            boolean is_locked_by_org "True when user joins org"
+                        }
+                </div>
+            </div>
+
+            <h3>Invitation & Enrollment Logic Flow</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        actor Admin as Org Admin
+                        participant API as SecureGPT API
+                        participant DB as Database
+                        actor User as Invited User
+                        
+                        Admin->>API: Invite Email (user@domain.com)
+                        API->>DB: Check if user exists
+                        
+                        alt User Exists (Auto-Enrollment)
+                            DB-->>API: User Found
+                            API->>DB: Update User (org_id = new_org)
+                            API->>DB: Update Policies (is_locked_by_org = True, org_id = new_org)
+                            API->>DB: Assign Default 'Org User' Role
+                            API->>User: Send "You've been added to Org" Email
+                        else User Does Not Exist
+                            DB-->>API: Not Found
+                            API->>DB: Create Pending Invitation
+                            API->>User: Send Registration Email
+                            User->>API: Clicks Link & Registers
+                            API->>DB: Create User linked to Org
+                        end
+                </div>
+            </div>
+
+            <h3>Policy Life Cycle State Machine</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                        direction LR
+                        [*] --> Personal_Workspace : User signs up independently
+                        
+                        state Personal_Workspace {
+                            IndependentPolicy : Policy created by User
+                            IndependentPolicy : User has FULL CRUD access
+                        }
+                        
+                        Personal_Workspace --> Organization_Workspace : User joins Organization
+                        
+                        state Organization_Workspace {
+                            LockedPolicy : Legacy Policy
+                            LockedPolicy : is_locked_by_org = True
+                            LockedPolicy : User = Read Only
+                            LockedPolicy : Admin = FULL CRUD
+                        }
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>

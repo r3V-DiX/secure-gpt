@@ -94,3 +94,6 @@ eng.traineddata
 next-env.d.ts
 
 /scripts
+/images
+/store-assets
+CHROMEWEBSTORE.md

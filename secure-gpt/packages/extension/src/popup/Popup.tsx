@@ -41,7 +41,6 @@ export function Popup() {
   useEffect(() => {
     void loadState()
 
-    // Listen for auth events from background
     const handler = (msg: { type: string }) => {
       if (msg.type === 'AUTH_SUCCESS') {
         void reload()
@@ -73,8 +72,8 @@ export function Popup() {
 
   if (loading) {
     return (
-      <div style={styles.loadingWrap}>
-        <div style={styles.spinner} />
+      <div className="w-[320px] h-[150px] flex items-center justify-center bg-white font-[var(--font-poppins)]">
+        <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
     )
   }
@@ -84,107 +83,106 @@ export function Popup() {
   }
 
   return (
-    <div style={styles.wrap}>
+    <div className="w-[320px] font-[var(--font-poppins)] bg-white flex flex-col rounded-xl overflow-hidden shadow-2xl">
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.logoRow}>
-          <div style={styles.logoIcon}>S</div>
-          <span style={styles.logoText}>SecureGPT</span>
+      <div className="bg-[#060d1f] px-4 py-3 flex items-center justify-between border-b border-white/5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center font-black text-white text-sm shadow-[0_2px_8px_rgba(99,102,241,0.35)]">
+            R
+          </div>
+          <span className="text-white text-[15.5px] font-bold tracking-tight">Rivedix</span>
         </div>
-        <div style={{ ...styles.statusPill, background: isActive ? 'rgba(34,197,94,.15)' : 'rgba(251,191,36,.15)' }}>
-          <div style={{ ...styles.statusDot, background: isActive ? '#22c55e' : '#fbbf24' }} />
-          <span style={{ ...styles.statusLabel, color: isActive ? '#16a34a' : '#d97706' }}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${isActive ? 'bg-green-500/15 border-green-500/20' : 'bg-amber-500/15 border-amber-500/20'}`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]' : 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)]'}`} />
+          <span className={`text-[11px] font-bold tracking-wide ${isActive ? 'text-green-500' : 'text-amber-500'}`}>
             {isActive ? 'Active' : 'Paused'}
           </span>
         </div>
       </div>
 
       {/* User row */}
-      <div style={styles.userRow}>
+      <div className="flex items-center gap-3 px-4 py-4 bg-gradient-to-b from-[#f0f4ff]/70 to-white">
         {user?.avatarUrl ? (
-          <img src={user.avatarUrl} alt="" style={styles.avatar} />
+          <img src={user.avatarUrl} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
         ) : (
-          <div style={styles.avatarFallback}>
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700 border-2 border-white shadow-sm">
             {user?.fullName?.[0]?.toUpperCase() ?? 'U'}
           </div>
         )}
-        <div style={styles.userInfo}>
-          <div style={styles.userName}>{user?.fullName ?? 'User'}</div>
-          <div style={styles.userEmail}>{user?.email}</div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[13.5px] font-bold text-slate-900 truncate">{user?.fullName ?? 'User'}</div>
+          <div className="text-[11.5px] font-medium text-slate-500 truncate">{user?.email}</div>
         </div>
       </div>
 
-      <div style={styles.divider} />
-
       {/* Stats */}
-      <div style={styles.statsLabel}>Session activity</div>
-      <div style={styles.statsGrid}>
-        <StatCard label="Blocked" value={stats.blockCount} color="#ef4444" bg="#fef2f2" />
-        <StatCard label="Masked" value={stats.maskCount} color="#f59e0b" bg="#fffbeb" />
-        <StatCard label="Warned" value={stats.warnCount} color="#3b82f6" bg="#eff6ff" />
+      <div className="px-4 pb-3 mt-1">
+        <div className="text-[10px] font-black text-slate-400 tracking-wider uppercase mb-2.5">Session Activity</div>
+        <div className="grid grid-cols-3 gap-2">
+          <StatCard label="Blocked" value={stats.blockCount} colorClass="text-red-600" bgClass="bg-red-50 border-red-100" />
+          <StatCard label="Masked" value={stats.maskCount} colorClass="text-amber-600" bgClass="bg-amber-50 border-amber-100" />
+          <StatCard label="Warned" value={stats.warnCount} colorClass="text-blue-600" bgClass="bg-blue-50 border-blue-100" />
+        </div>
       </div>
 
-      <div style={styles.divider} />
+      <div className="h-px bg-slate-100 mx-4 mt-2 mb-1" />
 
       {/* Policy Sync Section */}
-      <div style={styles.syncSection}>
-        <div style={styles.syncHeaderRow}>
-          <span style={styles.syncSectionLabel}>Security Policy</span>
+      <div className="px-4 py-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[10px] font-black text-slate-400 tracking-wider uppercase">Security Policy</span>
           <button 
-            style={{ 
-              ...styles.syncBtn, 
-              opacity: isSyncing ? 0.5 : 1, 
-              cursor: isSyncing ? 'not-allowed' : 'pointer' 
-            }}
+            className={`text-[10.5px] font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1 ${isSyncing ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={handleSync}
             disabled={isSyncing}
           >
             {isSyncing ? (
-              <span className="spin-animation" style={styles.syncSpinnerInline} />
+              <span className="w-3 h-3 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
             ) : (
               <span>Sync Now ↻</span>
             )}
           </button>
         </div>
 
-        <div style={styles.syncStatusCard}>
-          <div style={styles.syncStatusRow}>
-            <div style={styles.syncInfoLabel}>Enforced Version</div>
-            <div style={styles.syncVersionBadge}>v{policyVersion ?? 1}</div>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-600" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11.5px] text-slate-600 font-bold">Enforced Version</div>
+            <div className="bg-blue-100 text-blue-700 text-[10.5px] font-black px-2 py-0.5 rounded-md border border-blue-200 shadow-sm">v{policyVersion ?? 1}</div>
           </div>
-          <div style={styles.syncStatusRow}>
-            <div style={styles.syncInfoLabel}>Last Synced</div>
-            <div style={styles.syncTimestamp}>
+          <div className="flex items-center justify-between">
+            <div className="text-[11.5px] text-slate-600 font-bold">Last Synced</div>
+            <div className="text-[11.5px] text-slate-800 font-black">
               {lastSyncedAt ? new Date(lastSyncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Never'}
             </div>
           </div>
-          <div style={styles.syncStatusIndicatorRow}>
-            <div style={{ ...styles.syncStatusDot, background: '#22c55e' }} />
-            <span style={styles.syncStatusText}>Active & protecting local inputs</span>
+          <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-slate-200/80">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.5)]" />
+            <span className="text-[10.5px] text-slate-500 font-semibold">Active & protecting local inputs</span>
           </div>
         </div>
       </div>
 
-      <div style={styles.divider} />
+      <div className="h-px bg-slate-100 mx-4 my-1" />
 
       {/* Actions */}
-      <div style={styles.actions}>
+      <div className="px-4 py-4 flex flex-col gap-2.5">
         <button
-          style={{ ...styles.btn, ...styles.btnSecondary }}
+          className="w-full py-2.5 rounded-xl text-[13px] font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors border border-slate-200 shadow-sm flex items-center justify-center active:scale-[0.98]"
           onClick={handleToggle}
           disabled={pausing}
         >
-          {pausing ? '...' : isActive ? 'Pause protection' : 'Resume protection'}
+          {pausing ? '...' : isActive ? 'Pause Protection' : 'Resume Protection'}
         </button>
-        <div style={styles.actionRow}>
+        <div className="flex gap-2">
           <button
-            style={{ ...styles.btn, ...styles.btnGhost, flex: 1 }}
+            className="flex-1 py-2.5 rounded-xl text-[12.5px] font-bold text-white bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:shadow-[0_4px_12px_rgba(29,78,216,0.4)] transition-all border border-blue-600 flex items-center justify-center active:scale-[0.98]"
             onClick={() => chrome.tabs.create({ url: `${DASHBOARD_URL}/dashboard` })}
           >
             Dashboard ↗
           </button>
           <button
-            style={{ ...styles.btn, ...styles.btnDanger }}
+            className="px-4 py-2.5 rounded-xl text-[12.5px] font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-100 shadow-sm flex items-center justify-center active:scale-[0.98]"
             onClick={handleLogout}
           >
             Sign out
@@ -193,19 +191,19 @@ export function Popup() {
       </div>
 
       {/* Footer */}
-      <div style={styles.footer}>
-        <span style={styles.footerText}>v{chrome.runtime.getManifest().version}</span>
-        <span style={styles.footerText}>securegpt.rkavach.com</span>
+      <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+        <span className="text-[10px] font-bold text-slate-400">v{chrome.runtime.getManifest().version}</span>
+        <span className="text-[10px] font-bold text-slate-400">rivedix.com</span>
       </div>
     </div>
   )
 }
 
-function StatCard({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
+function StatCard({ label, value, colorClass, bgClass }: { label: string; value: number; colorClass: string; bgClass: string }) {
   return (
-    <div style={{ ...styles.statCard, background: bg }}>
-      <div style={{ ...styles.statValue, color }}>{value}</div>
-      <div style={{ ...styles.statLabel, color }}>{label}</div>
+    <div className={`relative overflow-hidden rounded-xl p-3 text-center border shadow-sm flex flex-col items-center justify-center ${bgClass}`}>
+      <div className={`text-[24px] font-black leading-none mb-1 tracking-tight ${colorClass}`}>{value}</div>
+      <div className={`text-[9.5px] font-black uppercase tracking-wider opacity-80 ${colorClass}`}>{label}</div>
     </div>
   )
 }
@@ -235,16 +233,20 @@ function LoginView({
   }
 
   return (
-    <div style={styles.loginWrap}>
-      <div style={styles.loginIcon}>S</div>
-      <div style={styles.loginTitle}>SecureGPT</div>
-      <div style={styles.loginSub}>Sign in to start protecting your data across AI platforms</div>
+    <div className="w-[320px] px-6 py-10 flex flex-col items-center bg-[#f0f4ff] font-[var(--font-poppins)] text-center shadow-2xl rounded-xl">
+      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-3xl font-black text-white mb-5 shadow-[0_8px_20px_rgba(99,102,241,0.4)] border border-blue-400/30">
+        R
+      </div>
+      <div className="text-[20px] font-black text-slate-900 tracking-tight mb-2">Rivedix</div>
+      <div className="text-[12.5px] font-semibold text-slate-500 leading-relaxed mb-8 max-w-[240px]">
+        Sign in to enforce data privacy and secure your AI interactions.
+      </div>
       <button 
-        style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', cursor: 'pointer' }} 
+        className="w-full flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl text-[13.5px] font-bold text-slate-700 bg-white hover:bg-slate-50 transition-all border border-slate-200 shadow-sm disabled:opacity-50 active:scale-[0.98]"
         onClick={onLogin}
         disabled={loading}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" style={{ marginRight: 8 }}>
+        <svg width="18" height="18" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -254,85 +256,29 @@ function LoginView({
       </button>
 
       {isLocalDev && (
-        <form onSubmit={handleSubmit} style={styles.devForm}>
-          <div style={styles.devDividerRow}>
-            <div style={styles.devLine} />
-            <span style={styles.devText}>dev bypass</span>
-            <div style={styles.devLine} />
+        <form onSubmit={handleSubmit} className="w-full mt-7 flex flex-col gap-3">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Developer</span>
+            <div className="flex-1 h-px bg-slate-200" />
           </div>
           <input
             type="email"
             placeholder="Enter test user email..."
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={styles.devInput}
+            className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-[12.5px] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold placeholder-slate-400 bg-white"
             required
           />
           <button
             type="submit"
             disabled={loading || !email}
-            style={{ ...styles.btn, ...styles.btnSecondary, width: '100%', cursor: 'pointer' }}
+            className="w-full py-3 rounded-xl text-[13px] font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors border border-slate-200 shadow-sm disabled:opacity-50 flex justify-center active:scale-[0.98]"
           >
-            {loading ? 'Bypassing...' : 'Bypass Login (Email)'}
+            {loading ? 'Bypassing...' : 'Bypass Login'}
           </button>
         </form>
       )}
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  wrap: { width: 300, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: '#fff', borderRadius: 12, overflow: 'hidden' },
-  loadingWrap: { width: 300, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' },
-  spinner: { width: 20, height: 20, border: '2px solid #e5e7eb', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 0.7s linear infinite' },
-  header: { background: '#1e40af', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  logoRow: { display: 'flex', alignItems: 'center', gap: 8 },
-  logoIcon: { width: 24, height: 24, background: 'white', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#1e40af' },
-  logoText: { color: 'white', fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em' },
-  statusPill: { display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 20 },
-  statusDot: { width: 6, height: 6, borderRadius: '50%' },
-  statusLabel: { fontSize: 11, fontWeight: 500 },
-  userRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' },
-  avatar: { width: 34, height: 34, borderRadius: '50%', border: '1.5px solid #e5e7eb' },
-  avatarFallback: { width: 34, height: 34, borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#1d4ed8' },
-  userInfo: { flex: 1, minWidth: 0 },
-  userName: { fontSize: 13, fontWeight: 600, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  userEmail: { fontSize: 11, color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  divider: { height: 1, background: '#f3f4f6', margin: '0 14px' },
-  statsLabel: { fontSize: 10, fontWeight: 600, color: '#9ca3af', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '10px 14px 6px' },
-  statsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, padding: '0 14px 10px' },
-  statCard: { borderRadius: 8, padding: '8px 6px', textAlign: 'center' },
-  statValue: { fontSize: 20, fontWeight: 700, lineHeight: 1 },
-  statLabel: { fontSize: 10, fontWeight: 500, marginTop: 3, opacity: 0.8 },
-  actions: { padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 },
-  actionRow: { display: 'flex', gap: 6 },
-  btn: { display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 500, padding: '8px 12px', transition: 'opacity .15s', fontFamily: 'inherit' },
-  btnPrimary: { background: '#2563eb', color: 'white' },
-  btnSecondary: { background: '#f3f4f6', color: '#374151', width: '100%' },
-  btnGhost: { background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb' },
-  btnDanger: { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' },
-  footer: { padding: '8px 14px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between' },
-  footerText: { fontSize: 10, color: '#d1d5db' },
-  loginWrap: { width: 300, padding: '28px 20px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  loginIcon: { width: 44, height: 44, background: '#1e40af', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 4 },
-  loginTitle: { fontSize: 16, fontWeight: 700, color: '#111827' },
-  loginSub: { fontSize: 12, color: '#6b7280', textAlign: 'center', lineHeight: 1.5, marginBottom: 8 },
-  syncSection: { padding: '10px 14px' },
-  syncHeaderRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  syncSectionLabel: { fontSize: 10, fontWeight: 600, color: '#9ca3af', letterSpacing: '0.06em', textTransform: 'uppercase' },
-  syncBtn: { background: 'transparent', border: 'none', color: '#2563eb', fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, transition: 'background .15s', cursor: 'pointer', outline: 'none' },
-  syncStatusCard: { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px' },
-  syncStatusRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  syncInfoLabel: { fontSize: 11, color: '#64748b', fontWeight: 500 },
-  syncVersionBadge: { background: '#dbeafe', color: '#1d4ed8', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 },
-  syncTimestamp: { fontSize: 11, color: '#334155', fontWeight: 600 },
-  syncStatusIndicatorRow: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 6, borderTop: '1px solid #f1f5f9' },
-  syncStatusDot: { width: 5, height: 5, borderRadius: '50%' },
-  syncStatusText: { fontSize: 10, color: '#475569', fontWeight: 500 },
-  syncSpinnerInline: { display: 'inline-block', width: 8, height: 8, border: '1.5px solid #d1d5db', borderTopColor: '#2563eb', borderRadius: '50%' },
-  devForm: { width: '100%', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 },
-  devDividerRow: { display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0 8px' },
-  devLine: { flex: 1, height: 1, background: '#e5e7eb' },
-  devText: { fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 },
-  devInput: { width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 11, outline: 'none', boxSizing: 'border-box' },
 }

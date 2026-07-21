@@ -24,7 +24,7 @@ export const PLATFORM_LABELS: Record<LLMPlatform, string> = {
 
 export const PLATFORM_DOMAINS: Record<LLMPlatform, string | string[]> = {
   chatgpt: ['chat.openai.com', 'chatgpt.com'],
-  gemini: 'gemini.google.com',
+  gemini: ['gemini.google.com', 'www.google.com'],
   copilot: 'copilot.microsoft.com',
   claude: 'claude.ai',
   perplexity: 'perplexity.ai',

@@ -1,6 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-poppins: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --color-brand-primary: #2563eb;
+  --color-brand-secondary: #1d4ed8;
+  --color-header-bg: #060d1f;
+  --color-bg-soft: #f0f4ff;
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
+}
 
 * {
   box-sizing: border-box;
@@ -9,5 +17,16 @@
 body {
   margin: 0;
   padding: 0;
+  font-family: var(--font-poppins);
   -webkit-font-smoothing: antialiased;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spin-animation {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
 }
