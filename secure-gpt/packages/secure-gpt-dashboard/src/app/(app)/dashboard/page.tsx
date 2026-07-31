@@ -1,20 +1,45 @@
 'use client'
 // src/app/(app)/dashboard/page.tsx
-import { Activity, ShieldCheck, Ban, AlertTriangle, Clock, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import Link from 'next/link'
+import { Activity, ShieldCheck, Ban, AlertTriangle, Clock, TrendingUp, Rocket, Sparkles, X } from 'lucide-react'
 import { useDashboard } from '@/features/dashboard/hooks/use-dashboard'
 import { useAuth } from '@/contexts/auth-context'
+import { useProfile } from '@/features/profile/hooks/use-profile'
 import { StatCard } from '@/components/shared/StatCard'
-import { 
-  BarChart, 
-  Bar, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  Tooltip,
   ResponsiveContainer,
   Cell
 } from 'recharts'
 
+const ONBOARDING_DISMISS_KEY = 'securegpt:onboarding:dismissed'
+
 export default function DashboardPage() {
   const { user } = useAuth()
   const { stats, loading, error } = useDashboard(30)
+  const { devices, loading: devicesLoading } = useProfile()
+  const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      return localStorage.getItem(ONBOARDING_DISMISS_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+
+  const showOnboarding = !devicesLoading && devices.length === 0 && !onboardingDismissed
+
+  function dismissOnboarding() {
+    setOnboardingDismissed(true)
+    try {
+      localStorage.setItem(ONBOARDING_DISMISS_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+  }
 
   const greeting = (() => {
     const h = new Date().getHours()
@@ -53,6 +78,52 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ── Onboarding banner (extension not connected) ──────────────────── */}
+      {showOnboarding && (
+        <div
+          className="relative overflow-hidden rounded-2xl border p-5 animate-fade-in"
+          style={{
+            background: 'linear-gradient(135deg, var(--accent-light) 0%, var(--bg-surface) 65%)',
+            borderColor: 'var(--accent-border)',
+          }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div
+              className="size-11 rounded-2xl flex items-center justify-center shrink-0"
+              style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 4px 12px var(--accent-glow)' }}
+            >
+              <Rocket size={20} />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+                Welcome! Set up the SecureGPT extension
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                Install the extension and connect your browser to start masking and blocking sensitive data before it reaches AI tools.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/get-started"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
+                style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+              >
+                <Sparkles size={13} />
+                Get Started
+              </Link>
+              <button
+                onClick={dismissOnboarding}
+                aria-label="Dismiss onboarding"
+                className="size-8 rounded-xl flex items-center justify-center border transition-all hover:brightness-105 cursor-pointer"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-tertiary)' }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="p-4 rounded-xl text-sm font-medium"
           style={{
@@ -74,6 +145,7 @@ export default function DashboardPage() {
             accent="indigo"
             icon={<Activity size={14} />}
             loading={loading}
+            href="/event-logs"
           />
         </div>
         <div className="stagger-2 animate-fade-in">
@@ -84,6 +156,7 @@ export default function DashboardPage() {
             accent="green"
             icon={<ShieldCheck size={14} />}
             loading={loading}
+            href="/event-logs?action=MASK"
           />
         </div>
         <div className="stagger-3 animate-fade-in">
@@ -94,6 +167,7 @@ export default function DashboardPage() {
             accent="red"
             icon={<Ban size={14} />}
             loading={loading}
+            href="/event-logs?action=BLOCK"
           />
         </div>
         <div className="stagger-4 animate-fade-in">
@@ -104,6 +178,7 @@ export default function DashboardPage() {
             accent="amber"
             icon={<AlertTriangle size={14} />}
             loading={loading}
+            href="/event-logs?action=WARN"
           />
         </div>
       </div>

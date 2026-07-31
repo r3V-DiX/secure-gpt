@@ -8,7 +8,7 @@ export interface LogFilters {
   action?: string
   category?: string
   platform?: string
-  domain?: string
+  search?: string
   start_date?: string
   end_date?: string
 }

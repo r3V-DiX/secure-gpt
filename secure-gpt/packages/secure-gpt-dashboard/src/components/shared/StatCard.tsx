@@ -1,4 +1,4 @@
-// src/components/shared/StatCard.tsx
+import Link from 'next/link'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 
 type Accent = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'indigo'
@@ -10,8 +10,9 @@ interface StatCardProps {
   accent?: Accent
   icon?: React.ReactNode
   loading?: boolean
-  trend?: number        // positive = up, negative = down, undefined = no trend
+  trend?: number
   trendLabel?: string
+  href?: string
 }
 
 const accentTokens: Record<Accent, { icon: string; value: string; bg: string; border: string; glow: string; iconBg: string }> = {
@@ -65,7 +66,7 @@ const accentTokens: Record<Accent, { icon: string; value: string; bg: string; bo
   },
 }
 
-export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, trend, trendLabel }: StatCardProps) {
+export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, trend, trendLabel, href }: StatCardProps) {
   if (loading) {
     return (
       <div className="card p-5 flex flex-col gap-3">
@@ -82,8 +83,8 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
   const tokens = accentTokens[accent]
   const hasTrend = trend !== undefined
 
-  return (
-    <div className={`card p-5 flex flex-col gap-3 bg-gradient-to-br ${tokens.bg} border ${tokens.border} ${tokens.glow} transition-all duration-300 group cursor-default`}>
+  const content = (
+    <div className={`card p-5 flex flex-col gap-3 bg-gradient-to-br ${tokens.bg} border ${tokens.border} ${tokens.glow} transition-all duration-300 group ${href ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}>
       {/* Top row */}
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-widest"
@@ -122,4 +123,6 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
       </div>
     </div>
   )
+
+  return href ? <Link href={href}>{content}</Link> : content
 }

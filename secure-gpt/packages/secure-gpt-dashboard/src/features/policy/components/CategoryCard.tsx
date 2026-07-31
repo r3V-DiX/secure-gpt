@@ -118,7 +118,7 @@ function FieldRow({ rule, override, categoryAction, onToggle, onActionChange, di
             color: overrideAction ? ACTION_COLORS[overrideAction].text : 'var(--text-tertiary)',
           }}
         >
-          <option value="">Category default</option>
+          <option value="">Category default ({ACTION_LABEL[categoryAction]})</option>
           {ACTIONS.map(a => <option key={a} value={a}>{ACTION_LABEL[a]}</option>)}
         </select>
       )}
@@ -172,7 +172,10 @@ function AddEditRuleModal({ category, initialRule, onSave, onClose }: {
         </div>
 
         <div>
-          <label className="text-[11px] font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Regex pattern</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Regex pattern</label>
+            <a href="https://quickref.me/regex" target="_blank" rel="noopener noreferrer" className="text-[10px] hover:underline transition-colors" style={{ color: 'var(--accent-text)' }}>Regex Reference</a>
+          </div>
           <input className="w-full px-3 py-2 rounded-xl border outline-none text-sm font-mono" style={{ ...inp, borderColor: patternError ? 'var(--danger)' : 'var(--border)' }}
             placeholder="e.g. EMP-[0-9]{5}" value={pattern}
             onChange={e => {
@@ -291,7 +294,11 @@ export function CategoryCard(props: Props) {
                 </span>
               )}
               {config.enabled && builtinRules.length > 0 && (
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                <span 
+                  className="text-[11px] cursor-help" 
+                  style={{ color: 'var(--text-tertiary)' }}
+                  title={`Active fields: ${builtinRules.filter(r => config.ruleOverrides?.[r.id]?.action !== 'ALLOW').map(r => r.label).join(', ')}`}
+                >
                   {builtinRules.length - disabledCount}/{builtinRules.length} fields active
                 </span>
               )}
@@ -306,14 +313,14 @@ export function CategoryCard(props: Props) {
           {/* Controls */}
           <div className="flex items-center gap-2 shrink-0">
             {!isBuiltin && !readOnly && (
-              <button onClick={onDelete}
+              <button onClick={onDelete} title="Delete category" aria-label="Delete category"
                 className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors"
                 style={{ color: 'var(--text-tertiary)' }}>
                 <Trash2 size={13} />
               </button>
             )}
             {config.enabled && (
-              <button onClick={() => setExpanded(v => !v)}
+              <button onClick={() => setExpanded(v => !v)} title={expanded ? "Collapse" : "Expand"} aria-label={expanded ? "Collapse" : "Expand"}
                 className="p-1.5 rounded-lg transition-colors hover:bg-(--bg-surface-2)"
                 style={{ color: 'var(--text-tertiary)' }}>
                 {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -394,12 +401,12 @@ export function CategoryCard(props: Props) {
                         </div>
                         {!readOnly && (
                           <>
-                            <button onClick={() => { setEditingRule(rule); setAddRuleOpen(true) }}
+                            <button onClick={() => { setEditingRule(rule); setAddRuleOpen(true) }} title="Edit rule" aria-label="Edit rule"
                               className="p-1.5 rounded-lg hover:bg-neutral-500/10 transition-colors shrink-0"
                               style={{ color: 'var(--text-tertiary)' }}>
                               <Pencil size={12} />
                             </button>
-                            <button onClick={() => onDeleteCustomRule(rule.id)}
+                            <button onClick={() => onDeleteCustomRule(rule.id)} title="Delete rule" aria-label="Delete rule"
                               className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors shrink-0"
                               style={{ color: 'var(--text-tertiary)' }}>
                               <Trash2 size={12} />
@@ -506,7 +513,7 @@ function ChipInput({ label, hint, placeholder, items, draft, setDraft, onAdd, on
               style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
               {item}
               {!readOnly && (
-                <button onClick={() => onRemove(item)}
+                <button onClick={() => onRemove(item)} title="Remove item" aria-label="Remove item"
                   className="size-3.5 flex items-center justify-center rounded hover:text-red-400 transition-colors">
                   <X size={9} />
                 </button>

@@ -74,7 +74,7 @@ async def list_logs(
     action: str | None = Query(None),
     category: str | None = Query(None),
     platform: str | None = Query(None),
-    domain: str | None = Query(None),
+    search: str | None = Query(None),
     start_date: str | None = Query(None),
     end_date: str | None = Query(None),
 ):
@@ -86,8 +86,16 @@ async def list_logs(
         query = query.where(AuditLog.category_triggered == category.upper())
     if platform:
         query = query.where(AuditLog.llm_platform == platform.lower())
-    if domain:
-        query = query.where(AuditLog.domain.ilike(f"%{domain}%"))
+    if search:
+        from sqlalchemy import or_
+        from app.models.user import User
+        query = query.outerjoin(User, AuditLog.user_id == User.id).where(
+            or_(
+                AuditLog.domain.ilike(f"%{search}%"),
+                AuditLog.user_email.ilike(f"%{search}%"),
+                User.email.ilike(f"%{search}%")
+            )
+        )
     if start_date:
         try:
             query = query.where(AuditLog.timestamp >= datetime.fromisoformat(start_date))

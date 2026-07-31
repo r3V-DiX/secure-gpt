@@ -73,8 +73,9 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                 : data.map((log, i) => (
                   <React.Fragment key={log.id}>
                     <tr
+                      onClick={() => toggleExpandLog(log.id)}
                       style={{ borderBottom: '1px solid var(--border)', animationDelay: `${i * 15}ms` }}
-                      className="animate-fade-in transition-all duration-150 hover:bg-[var(--bg-surface-2)]/60 cursor-default">
+                      className="animate-fade-in transition-all duration-150 hover:bg-[var(--bg-surface-2)]/60 cursor-pointer">
                       <td className="px-4 py-3">
                         <Badge variant={actionVariant(log.actionTaken)}>{log.actionTaken}</Badge>
                       </td>
@@ -122,9 +123,8 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-2)] transition-all active:scale-95 cursor-pointer shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-2)] transition-all active:scale-95 cursor-pointer shadow-sm pointer-events-none"
                           style={{ color: 'var(--text-secondary)' }}
-                          onClick={() => toggleExpandLog(log.id)}
                         >
                           {expandedLogId === log.id ? <EyeOff size={11} /> : <Eye size={11} />}
                           <span>{expandedLogId === log.id ? 'Hide' : 'Inspect'}</span>
@@ -212,6 +212,17 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                                     {log.acknowledged ? 'Yes' : 'No'}
                                   </Badge>
                                 </div>
+                              </div>
+                            </div>
+                            
+                            {/* Privacy explanation */}
+                            <div className="md:col-span-2 mt-2 p-3 rounded-xl flex items-start gap-3" style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
+                              <span className="mt-0.5 text-sm" aria-hidden="true">ℹ️</span>
+                              <div>
+                                <h5 className="font-bold text-[11px] uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>Privacy by Design</h5>
+                                <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                                  SecureGPT intentionally does not store the raw prompt or blocked text. Your sensitive data is processed locally and never leaves your browser.
+                                </p>
                               </div>
                             </div>
                           </div>

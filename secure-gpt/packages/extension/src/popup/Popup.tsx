@@ -111,7 +111,7 @@ export function Popup() {
         )}
         <div className="flex-1 min-w-0">
           <div className="text-[13.5px] font-bold text-slate-900 truncate">{user?.fullName ?? 'User'}</div>
-          <div className="text-[11.5px] font-medium text-slate-500 truncate">{user?.email}</div>
+          <div className="text-[11.5px] font-medium text-slate-600 truncate">{user?.email}</div>
         </div>
       </div>
 
@@ -158,7 +158,7 @@ export function Popup() {
           </div>
           <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-slate-200/80">
             <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.5)]" />
-            <span className="text-[10.5px] text-slate-500 font-semibold">Active & protecting local inputs</span>
+            <span className="text-[10.5px] text-slate-600 font-semibold">Active & protecting local inputs</span>
           </div>
         </div>
       </div>
@@ -238,7 +238,7 @@ function LoginView({
         R
       </div>
       <div className="text-[20px] font-black text-slate-900 tracking-tight mb-2">Rivedix</div>
-      <div className="text-[12.5px] font-semibold text-slate-500 leading-relaxed mb-8 max-w-[240px]">
+      <div className="text-[12.5px] font-semibold text-slate-600 leading-relaxed mb-8 max-w-[240px]">
         Sign in to enforce data privacy and secure your AI interactions.
       </div>
       <button 

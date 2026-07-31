@@ -47,7 +47,7 @@
   /* ── Text ── */
   --text-primary:   hsl(var(--brand-h), 55%, 11%);
   --text-secondary: hsl(var(--brand-h), 32%, 36%);
-  --text-tertiary:  hsl(var(--brand-h), 22%, 59%);
+  --text-tertiary:  hsl(var(--brand-h), 22%, 45%);
 
   /* ── Nav backdrop ── */
   --nav-bg:         hsla(0, 0%, 100%, 0.88);
@@ -133,7 +133,7 @@
 
   --text-primary:   hsl(var(--brand-h), 20%, 95%);
   --text-secondary: hsl(var(--brand-h), 10%, 65%);
-  --text-tertiary:  hsl(var(--brand-h), 8%, 44%);
+  --text-tertiary:  hsl(var(--brand-h), 8%, 55%);
 
   --nav-bg:         hsla(var(--brand-h), 12%, 10%, 0.88);
 

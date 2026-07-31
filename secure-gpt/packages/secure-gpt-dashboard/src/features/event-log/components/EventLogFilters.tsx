@@ -15,14 +15,14 @@ const PLATFORMS = ['chatgpt', 'gemini', 'claude', 'copilot', 'perplexity']
 export function EventLogFilters({ filters, onFilterChange }: EventLogFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 py-1">
-      {/* Domain Search */}
+      {/* Search */}
       <div className="relative group flex-1 min-w-[240px] max-w-sm">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors" />
         <input
           type="text"
-          placeholder="Search by domain..."
-          value={filters.domain || ''}
-          onChange={(e) => onFilterChange({ domain: e.target.value })}
+          placeholder="Search events..."
+          value={filters.search || ''}
+          onChange={(e) => onFilterChange({ search: e.target.value })}
           className="w-full pl-9 pr-4 py-2 rounded-xl border text-sm outline-none transition-all"
           style={{ 
             background: 'var(--bg-surface)', 
@@ -30,9 +30,9 @@ export function EventLogFilters({ filters, onFilterChange }: EventLogFiltersProp
             color: 'var(--text-primary)'
           }}
         />
-        {filters.domain && (
+        {filters.search && (
           <button 
-            onClick={() => onFilterChange({ domain: '' })}
+            onClick={() => onFilterChange({ search: '' })}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-[var(--bg-surface-3)] text-[var(--text-tertiary)]"
           >
             <X size={12} />
