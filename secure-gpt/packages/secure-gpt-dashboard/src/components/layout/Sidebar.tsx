@@ -17,6 +17,7 @@ const NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Event Log', href: '/event-logs', icon: FileText },
   { label: 'Policy', href: '/policy', icon: ShieldCheck },
+  { label: 'Team', href: '/team', icon: Users },
   { label: 'Profile', href: '/profile', icon: User },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
@@ -70,6 +71,8 @@ export function Sidebar() {
       {/* Nav items */}
       <nav className="flex flex-col gap-0.5 flex-1">
         {NAV.map(({ label, href, icon: Icon }, idx) => {
+          if (href === '/team' && user.role !== 'super_admin' && user.role !== 'security_admin') return null
+          
           const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
 
           return (

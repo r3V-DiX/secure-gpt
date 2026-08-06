@@ -1,12 +1,18 @@
 # backend/app/commands/seed_rbac.py
 
 import asyncio
-from sqlalchemy import select
-from app.core.database import AsyncSessionLocal
-from app.models.rbac import Role, Permission, RolePermission, PermissionModule, RiskLevel
-from app.models.user import User, UserRole
-from app.models.rbac import UserRoleAssignment
 
+from app.core.database import AsyncSessionLocal
+from app.models.rbac import (
+    Permission,
+    PermissionModule,
+    RiskLevel,
+    Role,
+    RolePermission,
+    UserRoleAssignment,
+)
+from app.models.user import User, UserRole
+from sqlalchemy import select
 
 permissions_to_seed = [
     # ── USER Management ──

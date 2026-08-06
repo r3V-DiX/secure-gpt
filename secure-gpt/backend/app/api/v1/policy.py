@@ -3,19 +3,17 @@
 
 import copy
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request
-from sqlalchemy import select, update, func, desc
-from pydantic import BaseModel
 
-from app.core.dependencies import DBSession, CurrentUser, has_permission
+from app.core.dependencies import CurrentUser, DBSession, has_permission
 from app.core.exceptions import NotFound
-from app.core.response import success, paginated
 from app.core.pagination import Pagination
-from app.core.ratelimit import limiter, LIMIT_POLICY
-
+from app.core.ratelimit import LIMIT_POLICY, limiter
+from app.core.response import paginated, success
 from app.models.policy import Policy
 from app.schemas.policy_schema import PolicyCreateRequest, PolicyUpdateRequest
-from app.services.extension_service import push_policy_update, get_policy_for_extension
+from app.services.extension_service import push_policy_update
+from fastapi import APIRouter, Request
+from sqlalchemy import func, select, update
 
 router = APIRouter(prefix="/policy", tags=["policy"])
 
@@ -39,7 +37,7 @@ async def get_current_policy(request: Request, db: DBSession, current_user: Curr
     where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
     result = await db.execute(
         select(Policy)
-        .where(where_clause, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)
         .order_by(Policy.version.desc())
         .limit(1)
     )
@@ -112,7 +110,7 @@ async def _create_policy_version(db, user_id: str, org_id: str | None, config: d
 
     await db.execute(
         update(Policy)
-        .where(where_clause, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)
         .values(is_active=False)
     )
     await db.flush()
@@ -156,7 +154,7 @@ async def create_policy(
     where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
     old_res = await db.execute(
         select(Policy)
-        .where(where_clause, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)
         .order_by(Policy.version.desc())
         .limit(1)
     )
@@ -166,8 +164,8 @@ async def create_policy(
     policy = await _create_policy_version(db, current_user.id, current_user.org_id, body.config.model_dump(), body.publishImmediately)
 
     # Log admin action
-    from app.services.rbac_service import log_admin_action
     from app.models.rbac import PermissionModule, RiskLevel
+    from app.services.rbac_service import log_admin_action
     await log_admin_action(
         db,
         request=request,
@@ -205,7 +203,7 @@ async def update_policy(
     where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
     old_res = await db.execute(
         select(Policy)
-        .where(where_clause, Policy.is_active == True)  # noqa: E712
+        .where(where_clause, Policy.is_active == True)
         .order_by(Policy.version.desc())
         .limit(1)
     )
@@ -215,8 +213,8 @@ async def update_policy(
     policy = await _create_policy_version(db, current_user.id, current_user.org_id, body.config.model_dump(), body.publishImmediately)
 
     # Log admin action
-    from app.services.rbac_service import log_admin_action
     from app.models.rbac import PermissionModule, RiskLevel
+    from app.services.rbac_service import log_admin_action
     await log_admin_action(
         db,
         request=request,
@@ -277,8 +275,8 @@ async def delete_policy(
         raise NotFound("Policy not found")
 
     # Log admin action
-    from app.services.rbac_service import log_admin_action
     from app.models.rbac import PermissionModule, RiskLevel
+    from app.services.rbac_service import log_admin_action
     await log_admin_action(
         db,
         request=request,

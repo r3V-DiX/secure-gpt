@@ -64,7 +64,7 @@ function SaveBar({ isDirty, saving, onSave, onDiscard }: {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function PolicyPage() {
   const { user } = useAuth()
-  const isAdmin = user?.role === 'super_admin' || user?.role === 'security_admin'
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'security_admin' || !user?.orgId
 
   const {
     config, loading, saving, savedAt, error, isDirty,

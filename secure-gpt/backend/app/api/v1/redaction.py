@@ -8,13 +8,12 @@ import os
 import shutil
 import tempfile
 
-from fastapi import APIRouter, File, Form, UploadFile, BackgroundTasks, Request
-from fastapi.responses import FileResponse
-
 from app.core.dependencies import CurrentUser
-from app.core.exceptions import ValidationError, AppException
-from app.core.ratelimit import limiter, LIMIT_REDACT
+from app.core.exceptions import AppException, ValidationError
+from app.core.ratelimit import LIMIT_REDACT, limiter
 from app.services import redaction_service
+from fastapi import APIRouter, BackgroundTasks, File, Form, Request, UploadFile
+from fastapi.responses import FileResponse
 
 router = APIRouter(prefix="/redact", tags=["redaction"])
 
@@ -25,7 +24,7 @@ async def redact_pdf(
     request: Request,
     background_tasks: BackgroundTasks,
     current_user: CurrentUser,
-    file: UploadFile = File(...),
+    file: UploadFile = File(...),  # noqa: B008
     regions: str = Form(...),
 ):
     """
@@ -38,14 +37,14 @@ async def redact_pdf(
 
     try:
         parsed_regions = json.loads(regions)
-    except Exception:
+    except Exception:  # noqa: BLE001
         raise ValidationError("Invalid regions JSON format")
 
     temp_dir = tempfile.mkdtemp(prefix="sgpt_redact_")
     input_pdf_path = os.path.join(temp_dir, "input.pdf")
 
     try:
-        with open(input_pdf_path, "wb") as buffer:
+        with open(input_pdf_path, "wb") as buffer:  # noqa: ASYNC230
             content = await file.read()
             buffer.write(content)
 
@@ -67,7 +66,7 @@ async def redact_pdf(
 
     except (ValidationError, AppException):
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
-        raise AppException(f"Redaction failed: {str(e)}")
+        raise AppException(f"Redaction failed: {e!s}")

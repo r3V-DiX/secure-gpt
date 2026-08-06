@@ -2,17 +2,18 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone, timedelta
-from sqlalchemy import select, delete
+from datetime import datetime, timedelta, timezone
+
 from app.core.database import AsyncSessionLocal
-from app.models.user import User
-from app.models.deleted_user_log import DeletedUserLog
-from app.models.session import Session
-from app.models.rbac import UserRoleAssignment
-from app.models.device import Device
 from app.models.audit_log import AuditLog
 from app.models.auth_event import AuthEvent
+from app.models.deleted_user_log import DeletedUserLog
+from app.models.device import Device
 from app.models.policy import Policy
+from app.models.rbac import UserRoleAssignment
+from app.models.session import Session
+from app.models.user import User
+from sqlalchemy import delete, select
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

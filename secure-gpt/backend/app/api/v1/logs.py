@@ -8,15 +8,14 @@ import io
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
+from app.core.dependencies import CurrentUser, DBSession
+from app.core.pagination import Pagination
+from app.core.ratelimit import LIMIT_LOGS, LIMIT_LOGS_STATS, limiter
+from app.core.response import paginated, success
+from app.models.audit_log import AuditLog
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select, func, desc, cast, String
-
-from app.core.dependencies import DBSession, CurrentUser
-from app.core.pagination import Pagination
-from app.core.response import success, paginated
-from app.core.ratelimit import limiter, LIMIT_LOGS, LIMIT_LOGS_STATS
-from app.models.audit_log import AuditLog, ActionType
+from sqlalchemy import desc, func, select
 
 router = APIRouter(prefix="/event-logs", tags=["logs"])
 
@@ -283,7 +282,7 @@ async def export_logs(request: Request, db: DBSession, current_user: CurrentUser
         ])
 
     output.seek(0)
-    filename = f"dlp_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"dlp_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"  # noqa: DTZ005
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",

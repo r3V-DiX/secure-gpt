@@ -15,9 +15,8 @@ import hashlib
 import hmac
 import logging
 
-from fastapi import Request
-
 from app.core.config import settings
+from fastapi import Request
 
 logger = logging.getLogger(__name__)
 

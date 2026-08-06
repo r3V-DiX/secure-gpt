@@ -2,15 +2,16 @@
 
 import asyncio
 from logging.config import fileConfig
-from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+
+import app.models  # noqa: F401 — registers all ORM models
 from alembic import context
+from app.core.config import settings
 
 # Import Base and all models so Alembic detects them
 from app.core.database import Base
-from app.core.config import settings
-import app.models  # noqa: F401 — registers all ORM models
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 config = context.config
 

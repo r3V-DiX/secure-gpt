@@ -1,16 +1,16 @@
 # backend/app/api/v1/devices.py
 
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request
-from sqlalchemy import select, func, desc
-from pydantic import BaseModel
 
-from app.core.dependencies import DBSession, CurrentUser
+from app.core.dependencies import CurrentUser, DBSession
 from app.core.exceptions import NotFound
 from app.core.pagination import Pagination
-from app.core.response import success, paginated
-from app.core.ratelimit import limiter, LIMIT_DEVICES
+from app.core.ratelimit import LIMIT_DEVICES, limiter
+from app.core.response import paginated, success
 from app.models.device import Device
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+from sqlalchemy import desc, func, select
 
 router = APIRouter(prefix="/devices", tags=["devices"])
 

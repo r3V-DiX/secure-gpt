@@ -25,6 +25,11 @@ export default function UsersPage() {
   const [orgDraft, setOrgDraft] = useState('')
   const [savingOrg, setSavingOrg] = useState(false)
 
+  // Modal Invite state
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviting, setInviting] = useState(false)
+
   const { toast } = useToast()
 
   async function loadData() {
@@ -129,10 +134,29 @@ export default function UsersPage() {
     }
   }
 
+  // Handle invite
+  async function handleInviteUser(e: React.FormEvent) {
+    e.preventDefault()
+    if (!inviteEmail.trim()) return
+
+    try {
+      setInviting(true)
+      await apiPut('/admin/users/invite', { email: inviteEmail.trim() })
+      toast.success('User invited successfully!')
+      setInviteOpen(false)
+      setInviteEmail('')
+      loadData()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to invite user.')
+    } finally {
+      setInviting(false)
+    }
+  }
+
   return (
     <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
             <Shield className="text-[var(--accent)] size-5 shrink-0" />
@@ -142,6 +166,14 @@ export default function UsersPage() {
             Control dynamic role assignments, view active users, and manage account statuses.
           </p>
         </div>
+        <Button
+          variant="primary"
+          size="md"
+          icon={<UserCheck size={14} />}
+          onClick={() => setInviteOpen(true)}
+        >
+          Add Member
+        </Button>
       </div>
 
       {loading ? (
@@ -363,6 +395,51 @@ export default function UsersPage() {
               Save Changes
             </Button>
           </ModalFooter>
+        </Modal>
+      )}
+
+      {/* Invite Member Modal */}
+      {inviteOpen && (
+        <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} size="sm">
+          <form onSubmit={handleInviteUser}>
+            <ModalHeader onClose={() => setInviteOpen(false)}>
+              <div>
+                <h3 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Invite Team Member</h3>
+                <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>Add a new user to your organization</p>
+              </div>
+            </ModalHeader>
+            <ModalBody>
+              <div className="space-y-4">
+                <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                  Enter the email address of the person you want to invite.
+                </p>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold block" style={{ color: 'var(--text-secondary)' }}>Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="colleague@company.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-surface-2)] text-[var(--text-primary)] text-sm outline-none focus:border-white/20"
+                  />
+                </div>
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button type="button" variant="ghost" size="md" onClick={() => setInviteOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                loading={inviting}
+              >
+                Send Invite
+              </Button>
+            </ModalFooter>
+          </form>
         </Modal>
       )}
     </main>

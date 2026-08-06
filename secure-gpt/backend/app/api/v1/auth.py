@@ -11,33 +11,33 @@
 
 import logging
 import secrets
-import httpx
-from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Request, Response
-from fastapi.responses import RedirectResponse, JSONResponse
-from pydantic import BaseModel
+from datetime import datetime, timedelta, timezone
 
+import httpx
 from app.core.config import settings
-from app.core.dependencies import DBSession, CurrentUser
+from app.core.dependencies import CurrentUser, DBSession
 from app.core.exceptions import OAuthFailed, UserInactive
-from app.core.response import success
-from app.core.ratelimit import limiter, LIMIT_AUTH, LIMIT_AUTH_ME, LIMIT_LOGOUT
 from app.core.fingerprint import compute_fingerprint
+from app.core.ratelimit import LIMIT_AUTH, LIMIT_AUTH_ME, LIMIT_LOGOUT, limiter
+from app.core.response import success
 from app.models.session import Session
-from app.services.auth_service import upsert_google_user
-from app.services.session_service import (
-    revoke_session,
-    get_session_id_from_request,
-    clear_session_cookie,
-    SESSION_COOKIE_NAME,
-    SESSION_TTL_SECONDS,
-)
 from app.services.auth_event_service import (
-    log_login_success,
     log_login_failed,
+    log_login_success,
     log_logout,
     log_oauth_failed,
 )
+from app.services.auth_service import upsert_google_user
+from app.services.session_service import (
+    SESSION_COOKIE_NAME,
+    SESSION_TTL_SECONDS,
+    clear_session_cookie,
+    get_session_id_from_request,
+    revoke_session,
+)
+from fastapi import APIRouter, Request, Response
+from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ async def google_callback(
 
     except OAuthFailed:
         raise
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         await log_oauth_failed(db, request, reason=str(exc))
         raise OAuthFailed("Google OAuth request failed")
 
@@ -214,7 +214,7 @@ async def google_callback(
 @router.get("/me", summary="Get current authenticated user")
 @limiter.limit(LIMIT_AUTH_ME)
 async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
-    from app.services.rbac_service import get_user_roles, get_user_permissions
+    from app.services.rbac_service import get_user_permissions, get_user_roles
     roles = await get_user_roles(db, current_user.id)
     permissions = await get_user_permissions(db, current_user.id)
     return success(
@@ -259,8 +259,8 @@ async def delete_me(request: Request, response: Response, db: DBSession, current
     
     # Revoke all active sessions for this user except the current request's session cookie
     # (actually we clear the cookie, so we can revoke all sessions in DB)
-    from sqlalchemy import update
     from app.models.session import Session
+    from sqlalchemy import update
     await db.execute(
         update(Session)
         .where(Session.user_id == current_user.id)
@@ -268,8 +268,9 @@ async def delete_me(request: Request, response: Response, db: DBSession, current
     )
     
     # Send deactivation confirmation email
-    from app.services.email_service import send_deactivation_email
     import asyncio
+
+    from app.services.email_service import send_deactivation_email
     asyncio.create_task(send_deactivation_email(current_user.email))
     
     await db.commit()
@@ -334,8 +335,8 @@ async def dev_login(
         await db.flush()
 
         # Seed standard role assignment
-        from sqlalchemy import select
         from app.models.rbac import Role, UserRoleAssignment
+        from sqlalchemy import select
         role_res = await db.execute(select(Role).where(Role.slug == role_slug))
         role = role_res.scalar_one_or_none()
         if role:

@@ -5,8 +5,8 @@
 # Falls back to user-agent for unauthenticated routes (auth endpoints).
 # ─────────────────────────────────────────────────────────────────────────────
 
-from slowapi import Limiter
 from fastapi import Request
+from slowapi import Limiter
 
 
 def _rate_limit_key(request: Request) -> str:

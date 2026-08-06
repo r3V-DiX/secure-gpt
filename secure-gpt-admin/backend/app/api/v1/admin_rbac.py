@@ -34,14 +34,24 @@ router = APIRouter(prefix="/admin", tags=["admin-rbac"])
     summary="List all users with their dynamic roles",
     dependencies=[has_permission("user:view_all")]
 )
-async def list_users(db: DBSession):
+async def list_users(current_user: CurrentUser, db: DBSession):
+    from app.services.rbac_service import get_user_roles
+    
+    current_roles = await get_user_roles(db, current_user.id)
+    current_slugs = {r.slug for r in current_roles}
+    is_super = "super_admin" in current_slugs
+
     stmt = (
         select(User)
         .options(
             selectinload(User.role_assignments).selectinload(UserRoleAssignment.role)
         )
-        .order_by(User.email)
     )
+
+    if current_user.org_id:
+        stmt = stmt.where(User.org_id == current_user.org_id)
+
+    stmt = stmt.order_by(User.email)
     result = await db.execute(stmt)
     users = result.scalars().all()
 
@@ -73,6 +83,58 @@ async def list_users(db: DBSession):
         })
 
     return success(data=user_data_list, message="Users list fetched successfully")
+
+
+from pydantic import BaseModel, EmailStr
+
+class UserInviteRequest(BaseModel):
+    email: EmailStr
+
+@router.post(
+    "/users/invite",
+    summary="Invite a user to your organization by email",
+    dependencies=[has_permission("user:update")]
+)
+async def invite_user(
+    body: UserInviteRequest,
+    current_user: CurrentUser,
+    db: DBSession
+):
+    from app.services.rbac_service import get_user_roles
+    
+    current_roles = await get_user_roles(db, current_user.id)
+    current_slugs = {r.slug for r in current_roles}
+    is_super = "super_admin" in current_slugs
+
+    if not current_user.org_id:
+        raise Forbidden("You must be part of an organization to invite users. Global admins cannot invite users directly without specifying an organization.")
+
+    email_lower = body.email.lower().strip()
+    
+    stmt = select(User).where(User.email == email_lower)
+    result = await db.execute(stmt)
+    existing_user = result.scalar_one_or_none()
+
+    if existing_user:
+        if existing_user.org_id and existing_user.org_id != current_user.org_id:
+            raise Forbidden("This user is already part of another organization.")
+        
+        # User exists but no org_id, assign them to this org
+        existing_user.org_id = current_user.org_id
+        await db.commit()
+        return success(message="User already existed and was successfully added to your organization.")
+    
+    # Create new placeholder user
+    new_user = User(
+        email=email_lower,
+        full_name=email_lower.split('@')[0],
+        org_id=current_user.org_id,
+        is_active=True,
+    )
+    db.add(new_user)
+    await db.commit()
+    
+    return success(message="User invited successfully.")
 
 
 @router.put(
@@ -549,8 +611,20 @@ async def list_permissions(db: DBSession):
     summary="Get all administrative system changes logs",
     dependencies=[has_permission("audit:view_all")]
 )
-async def list_system_logs(db: DBSession):
-    stmt = select(AdminAuditLog).order_by(AdminAuditLog.created_at.desc())
+async def list_system_logs(current_user: CurrentUser, db: DBSession):
+    from app.services.rbac_service import get_user_roles
+    
+    current_roles = await get_user_roles(db, current_user.id)
+    current_slugs = {r.slug for r in current_roles}
+    is_super = "super_admin" in current_slugs
+
+    stmt = select(AdminAuditLog)
+    if current_user.org_id:
+        stmt = stmt.join(User, AdminAuditLog.user_id == User.id, isouter=True).where(
+            (User.org_id == current_user.org_id) | (AdminAuditLog.user_id == current_user.id)
+        )
+    stmt = stmt.order_by(AdminAuditLog.created_at.desc())
+    
     res = await db.execute(stmt)
     logs_list = res.scalars().all()
 
@@ -588,13 +662,25 @@ async def list_system_logs(db: DBSession):
     summary="Get all authentication audit logs (who logged and when)",
     dependencies=[has_permission("audit:view_all")]
 )
-async def list_audit_logs(db: DBSession):
+async def list_audit_logs(current_user: CurrentUser, db: DBSession):
     from app.models.auth_event import AuthEvent
+    from app.services.rbac_service import get_user_roles
+    
+    current_roles = await get_user_roles(db, current_user.id)
+    current_slugs = {r.slug for r in current_roles}
+    is_super = "super_admin" in current_slugs
+
     stmt = (
         select(AuthEvent)
         .options(selectinload(AuthEvent.user))
-        .order_by(AuthEvent.created_at.desc())
     )
+    
+    if current_user.org_id:
+        stmt = stmt.join(User, AuthEvent.user_id == User.id, isouter=True).where(
+            User.org_id == current_user.org_id
+        )
+
+    stmt = stmt.order_by(AuthEvent.created_at.desc())
     res = await db.execute(stmt)
     events = res.scalars().all()
 
@@ -623,18 +709,29 @@ async def list_audit_logs(db: DBSession):
     summary="Export authentication audit logs as CSV for training ML model",
     dependencies=[has_permission("audit:view_all")]
 )
-async def export_audit_logs(db: DBSession):
+async def export_audit_logs(current_user: CurrentUser, db: DBSession):
     import csv
     import io
     from datetime import datetime, timezone
     from fastapi.responses import StreamingResponse
     from app.models.auth_event import AuthEvent
+    from app.services.rbac_service import get_user_roles
+
+    current_roles = await get_user_roles(db, current_user.id)
+    current_slugs = {r.slug for r in current_roles}
+    is_super = "super_admin" in current_slugs
 
     stmt = (
         select(AuthEvent)
         .options(selectinload(AuthEvent.user))
-        .order_by(AuthEvent.created_at.desc())
     )
+
+    if current_user.org_id:
+        stmt = stmt.join(User, AuthEvent.user_id == User.id, isouter=True).where(
+            User.org_id == current_user.org_id
+        )
+
+    stmt = stmt.order_by(AuthEvent.created_at.desc())
     res = await db.execute(stmt)
     events = res.scalars().all()
 

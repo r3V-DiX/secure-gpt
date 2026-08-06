@@ -1,10 +1,12 @@
-import asyncio
 import argparse
+import asyncio
 import sys
-from sqlalchemy import select
+
 from app.core.database import AsyncSessionLocal
-from app.models.user import User, UserRole
 from app.models.rbac import Role, UserRoleAssignment
+from app.models.user import User, UserRole
+from sqlalchemy import select
+
 
 async def manage_admin(email: str, action: str):
     async with AsyncSessionLocal() as session:

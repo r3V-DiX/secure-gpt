@@ -5,31 +5,31 @@
 # No JWT. No localStorage. Pure httpOnly cookie + server-side session.
 # ─────────────────────────────────────────────────────────────────────────────
 
-from typing import Annotated
 from datetime import datetime, timezone
-
-from fastapi import Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Annotated
 
 from app.core.database import get_db
 from app.core.exceptions import (
+    AccountDeletionPending,
     AuthRequired,
+    FingerprintMismatch,
+    Forbidden,
     SessionExpired,
     SessionRevoked,
-    FingerprintMismatch,
     UserInactive,
-    AccountDeletionPending,
-    Forbidden,
 )
-from app.models.user import User, UserRole
+
 # FIX: AuthEventType lives in models/auth_event.py, not auth_event_service
 from app.models.auth_event import AuthEventType
+from app.models.user import User, UserRole
+from app.services import auth_event_service
 from app.services.auth_service import get_user_by_id
 from app.services.session_service import (
     get_session_id_from_request,
     validate_session,
 )
-from app.services import auth_event_service
+from fastapi import Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
 DBSession = Annotated[AsyncSession, Depends(get_db)]
 
@@ -97,7 +97,7 @@ async def get_current_user(
         if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
             path = request.url.path
             # Allow auth endpoints (me, logout, restore) to bypass the block so they can load/restore the profile
-            if not (path.endswith("/auth/me") or path.endswith("/auth/logout") or path.endswith("/auth/restore")):
+            if not (path.endswith(("/auth/me", "/auth/logout", "/auth/restore"))):
                 raise AccountDeletionPending(
                     details={"email": user.email, "deactivated_at": user.deactivated_at.isoformat()}
                 )
@@ -135,7 +135,10 @@ def has_permission(action: str):
         from app.services.rbac_service import get_user_permissions
         user_perms = await get_user_permissions(db, current_user.id)
         if action not in user_perms:
-            raise Forbidden(f"Missing required permission: {action}")
+            if current_user.org_id is None and action.startswith("policy:"):
+                pass
+            else:
+                raise Forbidden(f"Missing required permission: {action}")
         return current_user
 
     return Depends(_check)
