@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { apiGet, apiPut } from '@/lib/api/client'
+import { apiGet, apiPut, apiPost } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
 import { Avatar } from '@/components/shared/Avatar'
 import { Badge } from '@/components/ui/badge/badge'
@@ -141,7 +141,7 @@ export default function UsersPage() {
 
     try {
       setInviting(true)
-      await apiPut('/admin/users/invite', { email: inviteEmail.trim() })
+      await apiPost('/admin/users/invite', { email: inviteEmail.trim() })
       toast.success('User invited successfully!')
       setInviteOpen(false)
       setInviteEmail('')
