@@ -296,6 +296,52 @@ export async function handleRedactPDF(
   }
 }
 
+export async function handleRedactOffice(
+  fileData: string,
+  entities: PIIEntity[],
+  fileName?: string
+): Promise<{ ok: boolean; redactedPdfData?: string; error?: string }> {
+  try {
+    console.log('[Background] Sending office document to backend for PII masking...')
+
+    // Only value+maskedValue are needed — the backend rewrites XML text nodes
+    // by matching entity.value and replacing with entity.maskedValue.
+    const entityPayload = (entities || []).map((e) => ({
+      value: e.value,
+      maskedValue: e.maskedValue
+    }))
+
+    const resp = await fetch(fileData)
+    const fileBlob = await resp.blob()
+
+    const formData = new FormData()
+    formData.append('file', fileBlob, fileName || 'document.bin')
+    formData.append('entities', JSON.stringify(entityPayload))
+
+    const backendResp = await apiClient.post<Blob>(
+      `${DASHBOARD_URL}/api/v1/redact/office`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        responseType: 'blob',
+        timeout: 30000,
+      }
+    )
+
+    const maskedBlob = backendResp.data
+    const reader = new FileReader()
+    const maskedDataUri = await new Promise<string>((resolve) => {
+      reader.onload = () => resolve(reader.result as string)
+      reader.readAsDataURL(maskedBlob)
+    })
+
+    return { ok: true, redactedPdfData: maskedDataUri }
+  } catch (err) {
+    console.error('[Background] Office masking failed:', err)
+    return { ok: false, error: String(err) }
+  }
+}
+
 const ACTION_PRIORITY: Record<string, number> = {
   BLOCK: 3,
   MASK: 2,

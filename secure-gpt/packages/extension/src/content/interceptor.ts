@@ -603,6 +603,16 @@ export function isOfficeFile(file: File): boolean {
   return OFFICE_EXTENSIONS.has(ext)
 }
 
+// Legacy binary OLE/BIFF formats aren't zip containers, so the backend can't
+// structurally rewrite their text — these stay on the hard-block path.
+const LEGACY_BINARY_EXTENSIONS = new Set(['doc', 'ppt', 'pps', 'pot', 'xls', 'xlsb'])
+
+export function isMaskableOffice(file: File): boolean {
+  if (!isOfficeFile(file)) return false
+  const ext = (file.name.toLowerCase().split('.').pop() ?? '')
+  return !LEGACY_BINARY_EXTENSIONS.has(ext)
+}
+
 // anydoc conversion is synchronous in the offscreen document — cap office
 // scans so a huge file can't stall it. Oversized files forward unscanned.
 const MAX_OFFICE_SCAN_BYTES = 20 * 1024 * 1024
@@ -651,11 +661,31 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
       console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Redacting before upload…`)
 
       if (isOffice) {
-        // Office formats can't be pixel-masked or zip-redacted cheaply —
-        // block the upload entirely: no file is dispatched, only a block
-        // banner + audit event (mirrors the text BLOCK path).
         const topEntity = result.entities[0]
         if (!topEntity) return
+
+        // Zip-based formats (docx/xlsx/pptx/odt/ods/odp/epub/csv/rtf) are masked
+        // by the backend (POST /api/v1/redact/office); legacy binary formats
+        // can't be structurally rewritten and stay hard-blocked.
+        if (isMaskableOffice(file)) {
+          const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
+            chrome.runtime.sendMessage(
+              { type: 'REDACT_OFFICE', pdfData: dataUrl, entities: result.entities, fileName: file.name },
+              resolve
+            )
+          })
+          if (resp && resp.ok && resp.redactedPdfData) {
+            console.info(`[SecureGPT] Masked ${file.name}, re-injecting.`)
+            ocrCache.set(resp.redactedPdfData, [])
+            await dispatchFilePaste(el, resp.redactedPdfData, file.name, file.type)
+            void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
+            void logDetectionEvent({ ...result, hasFindings: true }, 'MASK', topEntity, false)
+            return
+          }
+          console.error('[SecureGPT] Office masking failed — falling back to block')
+        }
+
+        // Block: no file dispatched, only a block banner + audit event.
         showBanner('block', topEntity.category, result.entities.length)
         void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
         void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)

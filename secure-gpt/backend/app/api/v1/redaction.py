@@ -70,3 +70,59 @@ async def redact_pdf(
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
         raise AppException(f"Redaction failed: {e!s}")
+
+
+@router.post("/office", summary="Mask PII in office documents")
+@limiter.limit(LIMIT_REDACT)
+async def redact_office(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    current_user: CurrentUser,
+    file: UploadFile = File(...),  # noqa: B008
+    entities: str = Form(...),
+):
+    """
+    Mask detected PII inside an office document (docx/xlsx/pptx/odt/ods/odp/
+    epub/csv/rtf). Unlike PDF redaction this preserves the document structure —
+    text nodes containing a detected value are replaced with its masked token.
+    Fails closed: if any value cannot be located, no masked file is returned.
+    """
+    try:
+        parsed_entities = json.loads(entities)
+    except Exception:  # noqa: BLE001
+        raise ValidationError("Invalid entities JSON format")
+    if not isinstance(parsed_entities, list) or not parsed_entities:
+        raise ValidationError("entities must be a non-empty list")
+
+    ext = os.path.splitext(file.filename or "")[1].lower().lstrip(".")
+
+    temp_dir = tempfile.mkdtemp(prefix="sgpt_redact_")
+    input_path = os.path.join(temp_dir, f"input.{ext}")
+
+    try:
+        with open(input_path, "wb") as buffer:  # noqa: ASYNC230
+            content = await file.read()
+            buffer.write(content)
+
+        output_path = redaction_service.redact_office_file(
+            input_path,
+            parsed_entities,
+            ext,
+        )
+
+        output_dir = os.path.dirname(output_path)
+        background_tasks.add_task(redaction_service.cleanup_temp_dir, temp_dir)
+        background_tasks.add_task(redaction_service.cleanup_temp_dir, output_dir)
+
+        return FileResponse(
+            output_path,
+            media_type="application/octet-stream",
+            filename=f"masked_{file.filename}",
+        )
+
+    except (ValidationError, AppException):
+        raise
+    except Exception as e:  # noqa: BLE001
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        raise AppException(f"Office masking failed: {e!s}")

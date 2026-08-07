@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isOfficeFile } from '../../src/content/interceptor'
+import { isOfficeFile, isMaskableOffice } from '../../src/content/interceptor'
 
 describe('isOfficeFile', () => {
   const file = (name: string, type: string) => new File(['x'], name, { type })
@@ -26,5 +26,26 @@ describe('isOfficeFile', () => {
     expect(isOfficeFile(file('notes.txt', 'text/plain'))).toBe(false)
     expect(isOfficeFile(file('archive.zip', 'application/zip'))).toBe(false)
     expect(isOfficeFile(file('noext', ''))).toBe(false)
+  })
+})
+
+describe('isMaskableOffice', () => {
+  const file = (name: string, type = 'application/octet-stream') => new File(['x'], name, { type })
+
+  it('masks zip-based + text formats', () => {
+    for (const ext of ['docx', 'docm', 'xlsx', 'xlsm', 'pptx', 'pptm', 'ppsx', 'ppsm', 'odt', 'ods', 'odp', 'epub', 'csv', 'rtf']) {
+      expect(isMaskableOffice(file(`f.${ext}`)), ext).toBe(true)
+    }
+  })
+
+  it('blocks legacy binary formats (not zip containers)', () => {
+    for (const ext of ['doc', 'ppt', 'pps', 'pot', 'xls', 'xlsb']) {
+      expect(isMaskableOffice(file(`f.${ext}`)), ext).toBe(false)
+    }
+  })
+
+  it('returns false for non-office files', () => {
+    expect(isMaskableOffice(file('photo.png', 'image/png'))).toBe(false)
+    expect(isMaskableOffice(file('scan.pdf', 'application/pdf'))).toBe(false)
   })
 })

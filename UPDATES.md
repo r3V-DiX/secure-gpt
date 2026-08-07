@@ -2,6 +2,48 @@
 
 Summary of recent changes. Newest first.
 
+## 2026-08-07 — Mask PII inside office documents (backend zip rewrite)
+
+**What.** Office files with detected PII are now **masked** instead of hard-blocked: the PII text inside the document is replaced with its masked token (e.g. `[PAN-REDACTED]`) and the (masked) file is uploaded. Follows the PDF-redaction precedent — files go to the backend for redaction.
+
+**Flow.** interceptor (findings + zip-based format) → background `REDACT_OFFICE` → `POST /api/v1/redact/office` (multipart `file` + `entities` JSON of `{value, maskedValue}`) → backend unzips, rewrites XML text nodes (`value` → `maskedValue`), re-zips → masked data URL dispatched. Detection still runs locally first; masking only changes what happens after findings.
+
+**How it masks.** anydoc's markdown and `toDocument` carry no source offsets, so the backend **value-matches** `entity.value` inside the document's XML text nodes (docx `w:t`, xlsx `t`, pptx `a:t`, ODF/EPUB any element) and replaces with `entity.maskedValue` (precomputed client-side). A merge pass joins split runs in a paragraph (docx/pptx) so values split across adjacent runs still mask. Python stdlib only — `zipfile` + `xml.etree.ElementTree`, namespace prefixes preserved, untouched parts copied byte-for-byte. No new backend deps, no Dockerfile change.
+
+**Fail-closed.** If any `entity.value` can't be located in the document, the backend returns an error and the extension **blocks** the upload — a partially-masked file is never forwarded.
+
+**Format split.**
+
+| Masked (zip/text) | Blocked (binary, not rewritable) |
+| --- | --- |
+| docx, docm, xlsx, xlsm, pptx, pptm, ppsx, ppsm, odt, ods, odp, epub, csv, rtf | doc, ppt, pps, pot, xls, xlsb |
+
+### Files changed
+
+| File | Change |
+| --- | --- |
+| `secure-gpt/backend/app/services/redaction_service.py` | `redact_office_file` — zip rewrite, `_mask_xml_part`, merge-runs pass, fail-closed `_raise_if_missed` |
+| `secure-gpt/backend/app/api/v1/redaction.py` | `POST /redact/office` route (mirrors `/redact/pdf`) |
+| `secure-gpt/backend/verify_office_masking.py` | standalone verification: 18 checks across docx/xlsx/pptx/odt/epub/csv + split-run + miss-raises |
+| `secure-gpt/packages/extension/src/background/detection-handler.ts` | `handleRedactOffice` (posts file+entities, returns masked data URL) |
+| `secure-gpt/packages/extension/src/background/index.ts` | `REDACT_OFFICE` message case |
+| `secure-gpt/packages/extension/src/content/interceptor.ts` | `isMaskableOffice` (zip vs legacy split); `REDACT_OFFICE` path; MASK audit log; block fallback |
+| `secure-gpt/packages/extension/tests/content/office-file.test.ts` | `isMaskableOffice` unit tests |
+
+### Verification
+
+- `verify_office_masking.py` — 18/18 OK (docx incl. split-run + header, xlsx, pptx, odt, epub, csv, miss raises `ValueError`).
+- Extension: build OK, 10/10 tests, typecheck clean (only pre-existing errors), lint 0 errors.
+- Backend route imports; `/redact/office` registered.
+
+### Notes / follow-ups
+
+- Policy-action nuance deferred: this always masks on findings (like images/PDFs); consulting `config.actions` for WARN/ALLOW categories is separate.
+- RTF masking is best-effort (backslash-escaped text may not match a raw value); fail-closed still protects.
+- Audit logging of redaction requests (who masked what) is future work.
+
+---
+
 ## 2026-08-07 — Office-document PII scanning via `@firecrawl/anydoc-wasm`
 
 **What.** SecureGPT now intercepts and scans office documents (`.docx/.xlsx/.pptx/.odt/.rtf/.epub/.csv` and legacy `doc/ppt/xls/...`) in the browser extension. Previously these file types passed through LLM uploads **unscanned** — a DLP gap.
