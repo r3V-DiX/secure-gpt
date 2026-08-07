@@ -86,7 +86,7 @@ export async function detectPIIFromImage(
 
   await initializePipeline()
 
-  const { rawText, ocrData, severityFloor } = await ocrTier.runOnImage(imageData, config)
+  const { rawText, ocrData, severityFloor, scale, rotation, imgWidth, imgHeight } = await ocrTier.runOnImage(imageData, config)
 
   if (!rawText) {
     return buildResult([], 'ocr', startTime, '')
@@ -110,7 +110,7 @@ export async function detectPIIFromImage(
     : await Promise.resolve<PIIEntity[]>([])
 
   const merged = mergeEntities(regexEntities, nerEntities, [])
-  const ocrEntities = ocrTier.mapEntitiesToBboxes(merged, ocrData, rawText, severityFloor)
+  const ocrEntities = ocrTier.mapEntitiesToBboxes(merged, ocrData, rawText, severityFloor, scale, rotation, imgWidth, imgHeight)
 
   const filtered = applyAllowlist(ocrEntities, config)
 

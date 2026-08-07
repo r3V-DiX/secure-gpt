@@ -51,7 +51,9 @@
     "https://*.meta.ai/*",
     "https://accounts.google.com/*",
     "https://securegpt.rkavach.com/*",
-    "https://api.securegpt.rkavach.com/*"
+    "https://api.securegpt.rkavach.com/*",
+    "http://localhost:3000/*",
+    "http://localhost:8000/*"
   ],
 
   "content_security_policy": {

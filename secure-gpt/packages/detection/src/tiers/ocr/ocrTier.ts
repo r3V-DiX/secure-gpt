@@ -51,10 +51,10 @@ function rotateImageCanvas(img: HTMLImageElement, degrees: number): string {
   return canvas.toDataURL('image/png')
 }
 
-function preprocessImageCanvas(img: HTMLImageElement): string {
+function preprocessImageCanvas(img: HTMLImageElement): { url: string; scale: number } {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
-  if (!ctx) return img.src
+  if (!ctx) return { url: img.src, scale: 1 }
 
   // Scale up small images for better OCR resolution (under 1000px)
   const scale = img.width < 1000 || img.height < 1000 ? 2 : 1
@@ -90,7 +90,7 @@ function preprocessImageCanvas(img: HTMLImageElement): string {
     console.warn('[OCRTier] Failed to apply pixel-level preprocessing filters (likely CORS limit):', e)
   }
 
-  return canvas.toDataURL('image/png')
+  return { url: canvas.toDataURL('image/png'), scale }
 }
 
 
@@ -115,19 +115,31 @@ export class OCRTier extends BaseTier {
     isConfidential: boolean
     severityFloor: any
     rotatedImageUrl?: string
+    scale: number
+    rotation: number
+    imgWidth: number
+    imgHeight: number
   }> {
     const worker = await getOcrWorker()
-    if (!worker) return { rawText: '', ocrData: null, isConfidential: false, severityFloor: 'medium' }
+    if (!worker) return { rawText: '', ocrData: null, isConfidential: false, severityFloor: 'medium', scale: 1, rotation: 0, imgWidth: 0, imgHeight: 0 }
 
     try {
       let processedUrl = imageUrl
       let activeImageElement: HTMLImageElement | null = null
+      let currentScale = 1
+      let currentRotation = 0
+      let imgWidth = 0
+      let imgHeight = 0
 
       if (isBrowser) {
         try {
           console.info('[OCRTier] Loading and preprocessing image (grayscale, thresholding, scaling)...')
           const img = await loadImage(imageUrl)
-          processedUrl = preprocessImageCanvas(img)
+          imgWidth = img.width
+          imgHeight = img.height
+          const result = preprocessImageCanvas(img)
+          processedUrl = result.url
+          currentScale = result.scale
           // Load preprocessed image for any future rotation steps
           activeImageElement = await loadImage(processedUrl)
         } catch (prepErr) {
@@ -141,15 +153,14 @@ export class OCRTier extends BaseTier {
       
       const { isConfidential, severityFloor } = classifyDocument(rawText)
 
-      // --- SECOND PASS OPTIMIZATION FOR PAN CARDS ---
       // If no PAN card pattern is found in rawText, try PSM 11 (sparse text)
-      if (!/\b([A-Z]{3}[PCHFATLJGE][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi.test(rawText)) {
+      if (!/\b([A-Z0-9]{5}\s*[0-9OISLZBQG]{4}\s*[A-Z0-9])\b/gi.test(rawText)) {
         console.info('[OCRTier] No PAN found. Running Sparse Pass (PSM 11)...')
         await worker.setParameters({ tessedit_pageseg_mode: '11' as any })
         const { data: sparseData } = await worker.recognize(processedUrl, {}, { blocks: true })
         
         // Merge sparse text into rawText if it contains PAN-like patterns
-        if (/\b([A-Z]{3}[PCHFATLJGE][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi.test(sparseData.text)) {
+        if (/\b([A-Z0-9]{5}\s*[0-9OISLZBQG]{4}\s*[A-Z0-9])\b/gi.test(sparseData.text)) {
           console.info('[OCRTier] Found PAN in Sparse Pass.')
           rawText += '\n' + normalizeText(sparseData.text)
           // Merge word data for bbox mapping
@@ -187,10 +198,10 @@ export class OCRTier extends BaseTier {
 
               // Optimize rotated pass for PAN cards too
               let finalRotatedText = rotatedText
-              if (!/\b([A-Z]{3}[PCHFATLJGE][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi.test(finalRotatedText)) {
+              if (!/\b([A-Z0-9]{5}\s*[0-9OISLZBQG]{4}\s*[A-Z0-9])\b/gi.test(finalRotatedText)) {
                 await worker.setParameters({ tessedit_pageseg_mode: '11' as any })
                 const { data: sparseRotatedData } = await worker.recognize(rotatedUrl, {}, { blocks: true })
-                if (/\b([A-Z]{3}[PCHFATLJGE][A-Z]\s*[0-9OIS]{4}\s*[A-Z])\b/gi.test(sparseRotatedData.text)) {
+                if (/\b([A-Z0-9]{5}\s*[0-9OISLZBQG]{4}\s*[A-Z0-9])\b/gi.test(sparseRotatedData.text)) {
                   finalRotatedText += '\n' + normalizeText(sparseRotatedData.text)
                   if ((rotatedData as any).words && (sparseRotatedData as any).words) {
                     (rotatedData as any).words.push(...(sparseRotatedData as any).words)
@@ -206,12 +217,17 @@ export class OCRTier extends BaseTier {
               if (rotatedFindings.length > 0) {
                 console.info(`[OCRTier] Successfully found PII at ${deg} degrees! Text length: ${finalRotatedText.length}`)
                 const { isConfidential: rotConf, severityFloor: rotSev } = classifyDocument(finalRotatedText)
+                currentRotation = deg
                 return {
                   rawText: finalRotatedText,
                   ocrData: rotatedData,
                   isConfidential: rotConf,
                   severityFloor: rotSev,
-                  rotatedImageUrl: rotatedUrl
+                  rotatedImageUrl: rotatedUrl,
+                  scale: currentScale,
+                  rotation: currentRotation,
+                  imgWidth,
+                  imgHeight
                 }
               }
             }
@@ -222,20 +238,20 @@ export class OCRTier extends BaseTier {
       } else {
         // Node environment: if firstPassFindings > 0, return immediately
         if (firstPassFindings.length > 0) {
-          return { rawText, ocrData: data, isConfidential, severityFloor }
+          return { rawText, ocrData: data, isConfidential, severityFloor, scale: currentScale, rotation: currentRotation, imgWidth, imgHeight }
         }
       }
 
-      return { rawText, ocrData: data, isConfidential, severityFloor }
+      return { rawText, ocrData: data, isConfidential, severityFloor, scale: currentScale, rotation: currentRotation, imgWidth, imgHeight }
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err ?? 'Unknown OCR error')
       console.error('[OCRTier] OCR failed:', msg)
-      return { rawText: '', ocrData: null, isConfidential: false, severityFloor: 'medium' }
+      return { rawText: '', ocrData: null, isConfidential: false, severityFloor: 'medium', scale: 1, rotation: 0, imgWidth: 0, imgHeight: 0 }
     }
   }
 
-  mapEntitiesToBboxes(entities: PIIEntity[], ocrData: any, rawText: string, severityFloor: any): PIIEntity[] {
+  mapEntitiesToBboxes(entities: PIIEntity[], ocrData: any, rawText: string, severityFloor: any, scale: number = 1, rotation: number = 0, imgWidth: number = 0, imgHeight: number = 0): PIIEntity[] {
     if (!ocrData) return entities
 
     const words: any[] = ocrData.words ||
@@ -300,13 +316,65 @@ export class OCRTier extends BaseTier {
         }
       }
 
-      console.info(`[OCRTier] Attached ${bboxes.length} bounding boxes to entity: ${entity.label}`)
+      console.info(`[OCRTier] Attached ${bboxes.length} raw bounding boxes to entity: ${entity.label}`)
+
+      const transformedBboxes = bboxes.map(box => {
+        let { x0, y0, x1, y1 } = box;
+        
+        // 1. Reverse rotation
+        if (rotation !== 0 && imgWidth > 0 && imgHeight > 0) {
+          const scaledWidth = imgWidth * scale;
+          const scaledHeight = imgHeight * scale;
+          
+          let canvasWidth = scaledWidth;
+          let canvasHeight = scaledHeight;
+          if (rotation === 90 || rotation === 270) {
+            canvasWidth = scaledHeight;
+            canvasHeight = scaledWidth;
+          }
+
+          const rx0 = x0 - canvasWidth / 2;
+          const ry0 = y0 - canvasHeight / 2;
+          const rx1 = x1 - canvasWidth / 2;
+          const ry1 = y1 - canvasHeight / 2;
+
+          // Theta for reverse rotation is -rotation
+          const theta = -rotation * Math.PI / 180;
+          const cos = Math.cos(theta);
+          const sin = Math.sin(theta);
+
+          const pts = [
+            { x: rx0 * cos - ry0 * sin, y: rx0 * sin + ry0 * cos },
+            { x: rx1 * cos - ry0 * sin, y: rx1 * sin + ry0 * cos },
+            { x: rx1 * cos - ry1 * sin, y: rx1 * sin + ry1 * cos },
+            { x: rx0 * cos - ry1 * sin, y: rx0 * sin + ry1 * cos }
+          ];
+
+          const minX = Math.min(...pts.map(p => p.x));
+          const maxX = Math.max(...pts.map(p => p.x));
+          const minY = Math.min(...pts.map(p => p.y));
+          const maxY = Math.max(...pts.map(p => p.y));
+
+          x0 = minX + scaledWidth / 2;
+          x1 = maxX + scaledWidth / 2;
+          y0 = minY + scaledHeight / 2;
+          y1 = maxY + scaledHeight / 2;
+        }
+
+        // 2. Reverse scaling
+        return {
+          x0: x0 / scale,
+          y0: y0 / scale,
+          x1: x1 / scale,
+          y1: y1 / scale
+        };
+      });
 
       return {
         ...entity,
         tier: 'ocr' as const,
         severity: upgradeSeverity(entity.severity, severityFloor),
-        ...(bboxes.length > 0 ? { bboxes } : {})
+        ...(transformedBboxes.length > 0 ? { bboxes: transformedBboxes } : {})
       }
     })
   }

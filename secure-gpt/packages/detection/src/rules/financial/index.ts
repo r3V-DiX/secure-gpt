@@ -81,7 +81,7 @@ export const allFinancialRules: DetectionRule[] = [
     category: 'FINANCIAL' as PIICategory,
     type: 'pan_card',
     label: 'Indian PAN Card',
-    pattern: /\b[A-Z]{5}\s*[0-9OIS]{4}\s*[A-Z]\b/gi,
+    pattern: /\b[A-Z0-9]{5}\s*[0-9OISLZBQG]{4}\s*[A-Z0-9]\b/gi,
     validatorId: 'pan',
     requireContext: false,
     severity: 'high',

@@ -6,12 +6,41 @@
 const VALID_FOURTH_CHAR = new Set(['C', 'P', 'H', 'F', 'A', 'T', 'B', 'L', 'J', 'G', 'D'])
 
 export function panCheck(pan: string): boolean {
-  // Remove spaces and normalize to uppercase
-  const cleaned = pan.replace(/\s+/g, '').toUpperCase()
+  let cleaned = pan.replace(/\s+/g, '').toUpperCase()
 
-  // Must match format: 5 letters, 4 digits (allowing OCR misreads), 1 letter
-  // We allow O=0, I=1, S=5
-  if (!/^[A-Z]{5}[0-9OIS]{4}[A-Z]{1}$/.test(cleaned)) return false
+  if (cleaned.length !== 10) return false
+
+  // Fix common OCR misreads in the first 5 letters (digits misread as letters are fixed)
+  const firstFive = cleaned.substring(0, 5)
+    .replace(/0/g, 'O')
+    .replace(/1/g, 'I')
+    .replace(/5/g, 'S')
+    .replace(/2/g, 'Z')
+    .replace(/8/g, 'B')
+
+  // Fix common OCR misreads in the 4 digits
+  const fourDigits = cleaned.substring(5, 9)
+    .replace(/O/g, '0')
+    .replace(/I/g, '1')
+    .replace(/L/g, '1')
+    .replace(/S/g, '5')
+    .replace(/Z/g, '2')
+    .replace(/B/g, '8')
+    .replace(/Q/g, '0')
+    .replace(/G/g, '6')
+
+  // Fix common OCR misreads in the last letter
+  const lastChar = cleaned.substring(9, 10)
+    .replace(/0/g, 'O')
+    .replace(/1/g, 'I')
+    .replace(/5/g, 'S')
+    .replace(/2/g, 'Z')
+    .replace(/8/g, 'B')
+
+  cleaned = firstFive + fourDigits + lastChar
+
+  // Must match exact format after cleanup
+  if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleaned)) return false
 
   // 4th character must be a valid entity type
   const fourthChar = cleaned[3]
