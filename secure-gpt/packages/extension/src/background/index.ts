@@ -4,7 +4,7 @@
 
 import { startPolicySync, forcePolicySync } from './policy-sync'
 import { startLogBatcher, flushLogs, queueLog, scheduleRecoveryFlush } from './log-batcher'
-import { handleDetectPII, handleDetectPIIImage, handleDetectPIIPDF, handleRedactPDF } from './detection-handler'
+import { handleDetectPII, handleDetectPIIImage, handleDetectPIIPDF, handleDetectPIIOffice, handleRedactPDF } from './detection-handler'
 import { stateStorage, authStorage, policyStorage, localStorageExt } from '@/lib/storage/storage'
 import { fetchCurrentUser } from '@/features/auth/services/auth.service'
 import type { AuditLog } from '@securegpt/shared/types'
@@ -64,6 +64,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case 'DETECT_PII_PDF':
       void handleDetectPIIPDF(message.pdfData, message.config, sender).then(sendResponse)
+      return true
+
+    case 'DETECT_PII_OFFICE':
+      void handleDetectPIIOffice(message.pdfData, message.config, sender, message.fileName).then(sendResponse)
       return true
 
     case 'REDACT_PDF':

@@ -6,7 +6,11 @@
 //   OFFSCREEN_RUN_OCR           → { ok, result: DetectionResult }
 //   OFFSCREEN_RUN_PDF           → { ok, result: { numPages, fullText, pages[] } }
 //   OFFSCREEN_GET_PDF_REGIONS   → { ok, regions[] }
+//   OFFSCREEN_RUN_OFFICE        → { ok, text } | { ok: false, error: ConvertErrorCode }
+//                                (data: { fileData, fileName? } — fileName needed
+//                                 for signature-less formats like CSV)
 
+import init, { formatFromBytes, formatFromExtension, toMarkdownBytes } from '@firecrawl/anydoc-wasm'
 import { detectPII, OCRTier, RegexTier, NERTier } from '@securegpt/detection'
 import type { PIIConfig, DetectionResult } from '@securegpt/shared/types'
 import * as pdfjs from 'pdfjs-dist'
@@ -44,6 +48,45 @@ async function dataUrlToUint8Array(dataUrl: string): Promise<Uint8Array> {
   const resp = await fetch(dataUrl)
   const arrayBuffer = await resp.arrayBuffer()
   return new Uint8Array(arrayBuffer)
+}
+
+// anydoc WASM is initialized once per offscreen document; the module is 6.5 MB
+// and loads the .wasm via `new URL(..., import.meta.url)`, so it must be an
+// extension-page asset. Kept lazy so an office file is never scanned on boot.
+let anydocInit: ReturnType<typeof init> | null = null
+async function awaitAnyDocReady(): Promise<void> {
+  anydocInit ??= init()
+  await anydocInit
+}
+
+// Extracts office-document text (docx/xlsx/pptx/odt/rtf/epub/csv/...) locally.
+// anydoc has no OCR: scanned/image-only PDFs throw `unsupported` here — those
+// still go through the tesseract path in the extension. Any failure surfaces
+// the anydoc error code so the caller can fail open (forward the file).
+async function runOfficeProcessing(fileData: string, fileName?: string) {
+  try {
+    await awaitAnyDocReady()
+    const bytes = await dataUrlToUint8Array(fileData)
+
+    // Content-based detection wins; fall back to the extension for
+    // signature-less formats (CSV has no content marker, so it must be named).
+    let fmt = formatFromBytes(bytes)
+    if (!fmt && fileName) {
+      const ext = fileName.toLowerCase().split('.').pop() ?? ''
+      fmt = formatFromExtension(ext)
+    }
+    if (!fmt) {
+      return { ok: false as const, error: 'unsupported' }
+    }
+
+    const text = toMarkdownBytes(bytes, fmt)
+    return { ok: true as const, text }
+  } catch (err) {
+    const code = (err as { code?: string })?.code
+    const error = code ?? (err instanceof Error ? err.message : String(err))
+    console.error('[Offscreen] Office extraction failed:', error)
+    return { ok: false as const, error }
+  }
 }
 
 async function runPdfProcessing(pdfData: string) {
@@ -139,6 +182,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const { pdfData } = message.data
     runPdfProcessing(pdfData)
       .then(result => sendResponse({ ok: true, result }))
+      .catch(err => sendResponse({ ok: false, error: String(err) }))
+    return true
+  }
+
+  if (message.action === 'OFFSCREEN_RUN_OFFICE') {
+    const { fileData, fileName } = message.data
+    runOfficeProcessing(fileData, fileName)
+      .then(result => sendResponse(result))
       .catch(err => sendResponse({ ok: false, error: String(err) }))
     return true
   }

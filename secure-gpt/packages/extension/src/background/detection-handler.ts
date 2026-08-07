@@ -166,6 +166,55 @@ export async function handleDetectPIIPDF(
   }
 }
 
+export async function handleDetectPIIOffice(
+  fileData: string,
+  config: PIIConfig,
+  sender?: chrome.runtime.MessageSender,
+  fileName?: string
+): Promise<DetectionResult> {
+  const empty: DetectionResult = { hasFindings: false, entities: [], tier: 'regex', processingTimeMs: 0, inputLength: 0 }
+
+  try {
+    console.log('[Background] Proxying office-doc extract to offscreen document...')
+    await setupOffscreen()
+
+    let isReady = false
+    for (let i = 0; i < 15; i++) {
+      try {
+        const ping: { ok: boolean } = await chrome.runtime.sendMessage({ action: 'OFFSCREEN_PING' })
+        if (ping?.ok) { isReady = true; break }
+      } catch (_e) {
+        console.debug(`[Background] Offscreen not ready yet (attempt ${i + 1}), waiting…`)
+      }
+      await new Promise((r) => setTimeout(r, 300))
+    }
+
+    if (!isReady) {
+      console.error('[Background] Offscreen document failed to respond to PING after retries.')
+      return empty
+    }
+
+    const response: { ok: boolean; text?: string; error?: string } =
+      await chrome.runtime.sendMessage({
+        action: 'OFFSCREEN_RUN_OFFICE',
+        data: { fileData, fileName }
+      })
+
+    // Fail open: extraction errors (unsupported/encrypted/malformed/…) surface
+    // as an empty result so the interceptor forwards the original file rather
+    // than silently dropping an upload the user may still need.
+    if (!response?.ok || !response.text) {
+      console.warn('[Background] Office extraction returned no text:', response?.error)
+      return empty
+    }
+
+    return await handleDetectPII(response.text, config, sender)
+  } catch (err) {
+    console.error('[Background] Failed to proxy office detection:', err)
+    return empty
+  }
+}
+
 export async function handleRedactPDF(
   pdfData: string,
   entities: PIIEntity[],

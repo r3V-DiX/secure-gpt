@@ -553,7 +553,8 @@ function handleGlobalPaste(ev: ClipboardEvent): void {
   let targetItem: DataTransferItem | null = null
   const itemList = Array.from(items as unknown as DataTransferItem[])
   for (const item of itemList) {
-    if (item.type.startsWith('image/') || item.type === 'application/pdf') {
+    const blob = item.kind === 'file' ? item.getAsFile() : null
+    if (item.type.startsWith('image/') || item.type === 'application/pdf' || (blob && isOfficeFile(blob))) {
       targetItem = item
       break
     }
@@ -570,8 +571,9 @@ function handleGlobalPaste(ev: ClipboardEvent): void {
   if (!blob) return
 
   const isPdf = targetItem.type === 'application/pdf' || blob.name.toLowerCase().endsWith('.pdf')
+  const isOffice = isOfficeFile(blob)
 
-  if (isPdf) {
+  if (isPdf || isOffice) {
     void handleFileScan(el as HTMLElement, blob)
   } else {
     const reader = new FileReader()
@@ -583,28 +585,58 @@ function handleGlobalPaste(ev: ClipboardEvent): void {
   }
 }
 
+// ── Office document interception (via @firecrawl/anydoc-wasm) ──
+// Office MIME types are unreliable (docx often reports `application/octet-stream`),
+// so detect by filename extension whitelist + known office MIME prefixes.
+const OFFICE_EXTENSIONS = new Set([
+  'doc', 'docx', 'docm',
+  'ppt', 'pps', 'pot', 'pptx', 'pptm', 'ppsx', 'ppsm',
+  'xls', 'xlsx', 'xlsm', 'xlsb',
+  'odt', 'ods', 'odp',
+  'rtf', 'epub', 'csv'
+])
+
+export function isOfficeFile(file: File): boolean {
+  if (file.type.startsWith('application/vnd.ms-')) return true
+  if (file.type.startsWith('application/vnd.openxmlformats-officedocument.')) return true
+  const ext = (file.name.toLowerCase().split('.').pop() ?? '')
+  return OFFICE_EXTENSIONS.has(ext)
+}
+
+// anydoc conversion is synchronous in the offscreen document — cap office
+// scans so a huge file can't stall it. Oversized files forward unscanned.
+const MAX_OFFICE_SCAN_BYTES = 20 * 1024 * 1024
+
 // ── File upload interception ──────────────────
 
 async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
   const isImage = file.type.startsWith('image/')
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-  if (!isImage && !isPdf) return
+  const isOffice = isOfficeFile(file)
+  if (!isImage && !isPdf && !isOffice) return
+
+  const reader = new FileReader()
+  const dataUrl = await new Promise<string>((resolve) => {
+    reader.onload = () => resolve(reader.result as string)
+    reader.readAsDataURL(file)
+  })
+
+  if (isOffice && file.size > MAX_OFFICE_SCAN_BYTES) {
+    console.warn(`[SecureGPT] ${file.name} exceeds ${MAX_OFFICE_SCAN_BYTES} bytes — forwarding unscanned.`)
+    ocrCache.set(dataUrl, [])
+    await dispatchFilePaste(el, dataUrl, file.name, file.type)
+    return
+  }
 
   try {
     incPending()
-    console.info(`[SecureGPT] ${isPdf ? 'PDF' : 'Image'} upload detected, scanning: ${file.name}`)
+    console.info(`[SecureGPT] ${isPdf ? 'PDF' : isOffice ? 'Office doc' : 'Image'} upload detected, scanning: ${file.name}`)
     showBanner(isPdf ? 'loading_pdf' : 'loading', 'FINANCIAL' as PIICategory, 0)
 
-    const reader = new FileReader()
-    const dataUrl = await new Promise<string>((resolve) => {
-      reader.onload = () => resolve(reader.result as string)
-      reader.readAsDataURL(file)
-    })
-
     const result = await new Promise<DetectionResult>((resolve) => {
-      const msgType = isImage ? 'DETECT_PII_IMAGE' : 'DETECT_PII_PDF'
+      const msgType = isImage ? 'DETECT_PII_IMAGE' : isPdf ? 'DETECT_PII_PDF' : 'DETECT_PII_OFFICE'
       chrome.runtime.sendMessage(
-        { type: msgType, imgUrl: dataUrl, pdfData: dataUrl, config: currentPolicy },
+        { type: msgType, imgUrl: dataUrl, pdfData: dataUrl, config: currentPolicy, fileName: file.name },
         (res) => {
           if (chrome.runtime.lastError || !res) {
             resolve({ hasFindings: false, entities: [], tier: 'ocr', processingTimeMs: 0, inputLength: 0 })
@@ -617,6 +649,18 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
 
     if (result.hasFindings && result.entities.length > 0) {
       console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Redacting before upload…`)
+
+      if (isOffice) {
+        // Office formats can't be pixel-masked or zip-redacted cheaply —
+        // block the upload entirely: no file is dispatched, only a block
+        // banner + audit event (mirrors the text BLOCK path).
+        const topEntity = result.entities[0]
+        if (!topEntity) return
+        showBanner('block', topEntity.category, result.entities.length)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)
+        return
+      }
 
       let redactedUrl = dataUrl
       if (isPdf) {
@@ -643,6 +687,12 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
     }
   } catch (err) {
     console.error(`[SecureGPT] File scan error for ${file.name}:`, err)
+    // Fail open: forward the original office file so a scan error never
+    // silently drops a user's upload. (Images/PDFs keep existing behavior.)
+    if (isOffice) {
+      ocrCache.set(dataUrl, [])
+      await dispatchFilePaste(el, dataUrl, file.name, file.type)
+    }
   } finally {
     decPending()
     if (pendingOcrCount === 0) removeBanner()
@@ -656,7 +706,7 @@ function handleGlobalFileChange(ev: Event): void {
 
   const file = target.files[0]
   if (!file) return
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) return
+  if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf') && !isOfficeFile(file)) return
 
   const el = findMainEditor() ?? document.body as HTMLElement
   if (bypassSet.has(el)) return
@@ -675,7 +725,7 @@ function handleGlobalDrop(ev: DragEvent): void {
 
   const file = files[0]
   if (!file) return
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) return
+  if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf') && !isOfficeFile(file)) return
 
   const el = findMainEditor() ?? document.body as HTMLElement
   if (bypassSet.has(el)) return
