@@ -13,7 +13,7 @@ import type { AuditLog } from '@securegpt/shared/types'
 // When user completes Google login, the tab redirects to /callback.
 // We detect this, fetch the user, store it, notify the popup.
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL ?? 'http://localhost:3000'
+  const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL ?? 'https://securegpt.rkavach.com'
   const callbackUrl = `${DASHBOARD_URL}/callback`
 
   if (

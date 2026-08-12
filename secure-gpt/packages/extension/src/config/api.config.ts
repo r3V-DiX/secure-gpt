@@ -1,11 +1,11 @@
 // packages/extension/src/config/api.config.ts
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+  import.meta.env.VITE_API_BASE_URL ?? 'https://api.securegpt.rkavach.com'
 
 // Dashboard URL — auth flows go through here so cookie lands on the right origin
 export const DASHBOARD_URL =
-  import.meta.env.VITE_DASHBOARD_URL ?? 'http://localhost:3000'
+  import.meta.env.VITE_DASHBOARD_URL ?? 'https://securegpt.rkavach.com'
 
 export const API_ENDPOINTS = {
   AUTH_GOOGLE: '/api/v1/auth/google',

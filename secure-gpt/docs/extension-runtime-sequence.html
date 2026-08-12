@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detection Runtime Sequence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.75rem;
+    }
+    .subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--color-muted);
+      margin-bottom: 1.5rem;
+      max-width: 680px;
+      line-height: 1.5;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .name { font-family: 'Geist', sans-serif; font-size: 12px; font-weight: 600; fill: #2d3142; }
+    .sub  { font-family: 'Geist Mono', monospace; font-size: 8px; fill: #4f5d75; }
+    .lbl  { font-family: 'Geist Mono', monospace; font-size: 8px; fill: #4f5d75; letter-spacing: 0.06em; }
+    .guard { font-family: 'Geist Mono', monospace; font-size: 8px; fill: #4f5d75; letter-spacing: 0.04em; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Sequence · SecureGPT Extension</p>
+    <h1>Detection Runtime Sequence</h1>
+    <p class="subtitle">Text detection runs inline in the service worker. Image / PDF / office scans proxy to the offscreen document, then redact before re-injection. Audit events batch to the backend.</p>
+
+    <svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+        <marker id="arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#4f5d75" stroke-width="1.2"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- ── Lifelines ───────────────────────────────────── -->
+      <line x1="150" y1="72" x2="150" y2="604" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="390" y1="72" x2="390" y2="604" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="610" y1="72" x2="610" y2="604" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="840" y1="72" x2="840" y2="604" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- ── Activation bars ─────────────────────────────── -->
+      <rect x="386" y="104" width="8" height="64"  fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="386" y="372" width="8" height="136" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="606" y="408" width="8" height="64"  fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+
+      <!-- ── Messages: text path ─────────────────────────── -->
+      <line x1="150" y1="100" x2="390" y2="100" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <rect x="230" y="80" width="80" height="12" fill="#f5f5f5"/>
+      <text x="270" y="88" class="lbl" text-anchor="middle">DETECT_PII</text>
+
+      <path d="M 390 136 H 436 V 168 H 390" fill="none" stroke="#4f5d75" stroke-width="1"/>
+      <text x="446" y="148" class="lbl">detectPII(text)</text>
+      <text x="446" y="160" class="lbl">regex → mask → NER → allowlist</text>
+
+      <line x1="390" y1="172" x2="150" y2="172" stroke="#eb6c36" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-accent)"/>
+      <rect x="230" y="152" width="80" height="12" fill="#f5f5f5"/>
+      <text x="270" y="160" class="lbl" text-anchor="middle">DetectionResult</text>
+
+      <path d="M 150 208 H 198 V 240 H 150" fill="none" stroke="#4f5d75" stroke-width="1"/>
+      <text x="206" y="220" class="lbl">resolve action (precedence)</text>
+
+      <line x1="150" y1="244" x2="390" y2="244" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-open)"/>
+      <rect x="200" y="224" width="140" height="12" fill="#f5f5f5"/>
+      <text x="270" y="232" class="lbl" text-anchor="middle">queueLog · INCREMENT_STAT</text>
+
+      <line x1="390" y1="280" x2="840" y2="280" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+      <rect x="544" y="260" width="144" height="12" fill="#f5f5f5"/>
+      <text x="616" y="268" class="lbl" text-anchor="middle">POST /api/v1/logs (batch)</text>
+
+      <!-- ── opt fragment: file scan ─────────────────────── -->
+      <rect x="134" y="316" width="492" height="264" rx="4" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+      <rect x="134" y="316" width="36" height="16" rx="2" fill="#f5f5f5" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+      <text x="152" y="324" class="lbl" text-anchor="middle" letter-spacing="0.12em">OPT</text>
+      <text x="146" y="344" class="guard">[image · pdf · office upload]</text>
+
+      <line x1="150" y1="368" x2="390" y2="368" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <rect x="186" y="348" width="168" height="12" fill="#f5f5f5"/>
+      <text x="270" y="356" class="lbl" text-anchor="middle">DETECT_PII_IMAGE/_PDF/_OFFICE</text>
+
+      <line x1="390" y1="404" x2="610" y2="404" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <rect x="410" y="384" width="180" height="12" fill="#f5f5f5"/>
+      <text x="500" y="392" class="lbl" text-anchor="middle">OFFSCREEN_RUN_OCR/_PDF/_OFFICE</text>
+
+      <path d="M 610 440 H 658 V 472 H 610" fill="none" stroke="#4f5d75" stroke-width="1"/>
+      <text x="666" y="452" class="lbl">OCR → regex + NER</text>
+      <text x="666" y="464" class="lbl">map bboxes</text>
+
+      <line x1="610" y1="476" x2="390" y2="476" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+      <rect x="460" y="456" width="80" height="12" fill="#f5f5f5"/>
+      <text x="500" y="464" class="lbl" text-anchor="middle">DetectionResult</text>
+
+      <line x1="390" y1="512" x2="150" y2="512" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+      <rect x="230" y="492" width="80" height="12" fill="#f5f5f5"/>
+      <text x="270" y="500" class="lbl" text-anchor="middle">DetectionResult</text>
+
+      <path d="M 150 548 H 198 V 576 H 150" fill="none" stroke="#4f5d75" stroke-width="1"/>
+      <text x="206" y="560" class="lbl">redact · re-inject</text>
+
+      <!-- ── Actors ───────────────────────────────────────── -->
+      <rect x="78"  y="16" width="144" height="56" rx="6" fill="#ffffff" stroke="#2d3142"/>
+      <text x="150" y="40" class="name" text-anchor="middle">Content Script</text>
+      <text x="150" y="56" class="sub" text-anchor="middle">interceptor.ts</text>
+
+      <rect x="318" y="16" width="144" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+      <text x="390" y="40" class="name" text-anchor="middle">Background SW</text>
+      <text x="390" y="56" class="sub" text-anchor="middle">detection-handler.ts</text>
+
+      <rect x="538" y="16" width="144" height="56" rx="6" fill="#ffffff" stroke="#2d3142"/>
+      <text x="610" y="40" class="name" text-anchor="middle">Offscreen Doc</text>
+      <text x="610" y="56" class="sub" text-anchor="middle">offscreen.ts</text>
+
+      <rect x="768" y="16" width="144" height="56" rx="6" fill="#ffffff" stroke="#2d3142"/>
+      <text x="840" y="40" class="name" text-anchor="middle">Backend</text>
+      <text x="840" y="56" class="sub" text-anchor="middle">FastAPI :8000</text>
+    </svg>
+  </div>
+</body>
+</html>

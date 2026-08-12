@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Scan &amp; Redaction Flow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.75rem;
+    }
+    .subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--color-muted);
+      margin-bottom: 1.5rem;
+      max-width: 680px;
+      line-height: 1.5;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .name { font-family: 'Geist', sans-serif; font-size: 12px; font-weight: 600; fill: #2d3142; }
+    .sub  { font-family: 'Geist Mono', monospace; font-size: 8px; fill: #4f5d75; }
+    .dec  { font-family: 'Geist', sans-serif; font-size: 12px; font-weight: 600; fill: #2d3142; }
+    .lbl  { font-family: 'Geist Mono', monospace; font-size: 8px; fill: #4f5d75; letter-spacing: 0.06em; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Flowchart · SecureGPT Extension</p>
+    <h1>File Scan &amp; Redaction Flow</h1>
+    <p class="subtitle">Images, PDFs, and office docs are extracted offscreen, scanned, then redacted before re-injection. Legacy binary office formats hard-block; failures fail open.</p>
+
+    <svg viewBox="0 0 1000 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- ── Arrows ─────────────────────────────────────── -->
+      <line x1="500" y1="56"  x2="500" y2="88"   stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="500" y1="144" x2="500" y2="168"  stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="500" y1="224" x2="500" y2="236"  stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="600" y1="268" x2="740" y2="268"  stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="500" y1="300" x2="500" y2="340"  stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="500" y1="412" x2="500" y2="448"  stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="580" y1="380" x2="724" y2="380"  stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="820" y1="408" x2="820" y2="448"  stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+      <!-- Arrow labels -->
+      <rect x="656" y="244" width="28" height="12" fill="#f5f5f5"/>
+      <text x="670" y="252" class="lbl" text-anchor="middle">no</text>
+      <rect x="508" y="318" width="24" height="12" fill="#f5f5f5"/>
+      <text x="520" y="326" class="lbl" text-anchor="middle">yes</text>
+      <rect x="508" y="428" width="20" height="12" fill="#f5f5f5"/>
+      <text x="516" y="436" class="lbl" text-anchor="middle">no</text>
+      <rect x="640" y="360" width="24" height="12" fill="#f5f5f5"/>
+      <text x="652" y="368" class="lbl" text-anchor="middle">yes</text>
+
+      <!-- ── Nodes ───────────────────────────────────────── -->
+      <rect x="412" y="8" width="176" height="48" rx="24" fill="#ffffff" stroke="#2d3142"/>
+      <text x="500" y="28" class="name" text-anchor="middle">File captured</text>
+      <text x="500" y="40" class="sub" text-anchor="middle">paste · drop · file change</text>
+
+      <rect x="380" y="88" width="240" height="56" rx="6" fill="#ffffff" stroke="#2d3142"/>
+      <text x="500" y="112" class="name" text-anchor="middle">Offscreen extract</text>
+      <text x="500" y="128" class="sub" text-anchor="middle">tesseract OCR · pdfjs text · anydoc</text>
+
+      <rect x="380" y="168" width="240" height="56" rx="6" fill="#ffffff" stroke="#2d3142"/>
+      <text x="500" y="192" class="name" text-anchor="middle">Detect on text</text>
+      <text x="500" y="208" class="sub" text-anchor="middle">regex + NER · map entities → bboxes</text>
+
+      <polygon points="500,236 600,268 500,300 400,268" fill="#ffffff" stroke="#2d3142"/>
+      <text x="500" y="272" class="dec" text-anchor="middle">findings?</text>
+
+      <rect x="740" y="240" width="160" height="56" rx="28" fill="#ffffff" stroke="#2d3142"/>
+      <text x="820" y="264" class="name" text-anchor="middle">Re-inject original</text>
+      <text x="820" y="280" class="sub" text-anchor="middle">dispatch + log</text>
+
+      <polygon points="500,348 580,380 500,412 420,380" fill="#ffffff" stroke="#2d3142"/>
+      <text x="500" y="384" class="dec" text-anchor="middle">maskable?</text>
+
+      <rect x="412" y="448" width="176" height="48" rx="24" fill="#ffffff" stroke="#2d3142"/>
+      <text x="500" y="470" class="name" text-anchor="middle">Block legacy office</text>
+      <text x="500" y="484" class="sub" text-anchor="middle">banner · stat · audit log</text>
+
+      <rect x="724" y="352" width="192" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+      <text x="820" y="376" class="name" text-anchor="middle">Redact PII</text>
+      <text x="820" y="392" class="sub" text-anchor="middle">local canvas · backend /redact/*</text>
+
+      <rect x="740" y="448" width="160" height="48" rx="24" fill="#ffffff" stroke="#2d3142"/>
+      <text x="820" y="470" class="name" text-anchor="middle">Re-inject redacted</text>
+      <text x="820" y="484" class="sub" text-anchor="middle">dispatch · log MASK</text>
+    </svg>
+  </div>
+</body>
+</html>

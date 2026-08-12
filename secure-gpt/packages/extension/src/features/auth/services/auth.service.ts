@@ -14,7 +14,7 @@ import { API_ENDPOINTS } from '@/config/api.config'
 import type { User } from '@securegpt/shared/types'
 
 // Dashboard URL — all auth flows go through here, NOT the backend directly
-const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL ?? 'http://localhost:3000'
+const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL ?? 'https://securegpt.rkavach.com'
 
 // Separate axios client that targets the dashboard proxy
 const dashboardClient = axios.create({

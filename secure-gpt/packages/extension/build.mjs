@@ -8,11 +8,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const dist = resolve(__dirname, 'dist')
 const pub = resolve(__dirname, 'public')
 
+const mode = process.argv.includes('--mode=development') ? 'development' : 'production'
+
 // 1. Run vite builds
-console.log('Building main extension...')
-execSync('vite build', { stdio: 'inherit' })
-console.log('Building content script...')
-execSync('vite build --config vite.content.config.ts', { stdio: 'inherit' })
+console.log(`Building main extension (${mode} mode)...`)
+execSync(`vite build --mode ${mode}`, { stdio: 'inherit' })
+console.log(`Building content script (${mode} mode)...`)
+execSync(`vite build --config vite.content.config.ts --mode ${mode}`, { stdio: 'inherit' })
 
 // 2. Copy public assets to dist
 console.log('Copying public assets...')
