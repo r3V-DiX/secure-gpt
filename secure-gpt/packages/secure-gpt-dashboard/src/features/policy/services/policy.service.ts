@@ -2,12 +2,13 @@
 import { apiGet, apiPut } from '@/lib/api/client'
 import type { Policy, PIIConfig } from '@/types'
 
-export async function fetchCurrentPolicy(): Promise<Policy> {
-  return apiGet<Policy>('/policy/current')
+export async function fetchCurrentPolicy(departmentId?: string): Promise<Policy> {
+  const query = departmentId ? `?department_id=${encodeURIComponent(departmentId)}` : ''
+  return apiGet<Policy>(`/policy/current${query}`)
 }
 
-export async function savePolicy(config: PIIConfig, publishImmediately = true): Promise<Policy> {
-  return apiPut<Policy>('/policy/current', { config, publishImmediately })
+export async function savePolicy(config: PIIConfig, departmentId?: string, publishImmediately = true): Promise<Policy> {
+  return apiPut<Policy>('/policy/current', { config, department_id: departmentId || null, publishImmediately })
 }
 
 export const DEFAULT_POLICY_CONFIG: PIIConfig = {
@@ -23,4 +24,5 @@ export const DEFAULT_POLICY_CONFIG: PIIConfig = {
   allowPause: true,
   logUserEmail: false,
   sensitivityLevel: 'medium',
+  updatedAt: new Date().toISOString(),
 }

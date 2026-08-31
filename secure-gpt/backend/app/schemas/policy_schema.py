@@ -62,11 +62,13 @@ class PIIConfig(BaseModel):
 
 class PolicyCreateRequest(BaseModel):
     config: PIIConfig
+    department_id: str | None = None
     publishImmediately: bool = True
 
 
 class PolicyUpdateRequest(BaseModel):
     config: PIIConfig
+    department_id: str | None = None
     publishImmediately: bool = True
 
 

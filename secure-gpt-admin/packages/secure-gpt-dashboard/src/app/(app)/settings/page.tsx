@@ -57,7 +57,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-[720px] space-y-5 animate-fade-in pb-8">
+    <div className="w-full space-y-5 animate-fade-in pb-8">
 
       <div>
         <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>

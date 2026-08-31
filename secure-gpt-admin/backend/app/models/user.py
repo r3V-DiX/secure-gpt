@@ -9,9 +9,18 @@ from app.core.database import Base
 
 
 class UserRole(str, PyEnum):
+    # Tier 1
+    PLATFORM_SUPER_ADMIN = "platform_super_admin"
+    # Legacy / general roles
     SUPER_ADMIN = "super_admin"
+    # Tier 2
+    ORG_ADMIN = "org_admin"
     SECURITY_ADMIN = "security_admin"
     AUDITOR = "auditor"
+    # Tier 3
+    DEPARTMENT_ADMIN = "department_admin"
+    # Tier 4
+    EMPLOYEE = "employee"
     USER = "user"
 
 

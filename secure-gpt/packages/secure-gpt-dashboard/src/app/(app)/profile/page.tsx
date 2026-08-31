@@ -39,7 +39,7 @@ export default function ProfilePage() {
     if (!user) return null
 
     return (
-        <div className="max-w-[720px] space-y-5 animate-fade-in pb-8">
+        <div className="w-full space-y-5 animate-fade-in pb-8">
 
             {/* Header */}
             <div>

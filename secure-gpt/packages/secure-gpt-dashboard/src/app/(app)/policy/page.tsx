@@ -1,13 +1,15 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { usePolicy } from '@/features/policy/hooks/use-policy'
 import { CategoryCard } from '@/features/policy/components/CategoryCard'
 import type { PolicyAction } from '@/types'
-import { ShieldCheck, Globe, Settings2, Plus, Save, Undo2, CheckCircle, AlertCircle } from 'lucide-react'
+import { ShieldCheck, Globe, Settings2, Plus, Save, Undo2, CheckCircle, AlertCircle, Building2, Layers } from 'lucide-react'
 import { Modal } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
 import { ACTION_LABEL, ACTION_COLORS, ACTIONS } from '@/features/policy/components/ActionSelector'
 import { useAuth } from '@/contexts/auth-context'
+import { useTeam } from '@/features/team/hooks/use-team'
 
 const PLATFORMS = [
   { id: 'chatgpt',    label: 'ChatGPT',    icon: '/icons/chatgpt.png' },
@@ -63,16 +65,26 @@ function SaveBar({ isDirty, saving, onSave, onDiscard }: {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function PolicyPage() {
+  const searchParams = useSearchParams()
+  const queryDeptId = searchParams.get('department_id') || undefined
   const { user } = useAuth()
-  const isAdmin = user?.role === 'super_admin' || user?.role === 'security_admin' || !user?.orgId
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'security_admin' || user?.role === 'org_admin' || user?.role === 'platform_super_admin' || !user?.orgId
+  const { departments } = useTeam()
 
   const {
     config, loading, saving, savedAt, error, isDirty,
+    departmentId, setDepartmentId,
     updateCategory, addCategory, deleteCategory,
     updateRuleOverride,
     addCustomRule, updateCustomRule, deleteCustomRule,
     updateField, save, discard,
-  } = usePolicy()
+  } = usePolicy(queryDeptId)
+
+  useEffect(() => {
+    if (queryDeptId !== undefined && queryDeptId !== departmentId) {
+      setDepartmentId(queryDeptId)
+    }
+  }, [queryDeptId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [addOpen, setAddOpen] = useState(false)
 
@@ -89,13 +101,14 @@ export default function PolicyPage() {
   }
 
   const cats = Object.keys(config.categories)
+  const activeDept = departments.find(d => d.id === departmentId)
 
   return (
     <>
       <div className="space-y-7 pb-28 animate-fade-in">
 
         {/* ── Page header ── */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Policy Settings</h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -110,6 +123,54 @@ export default function PolicyPage() {
             </span>
           )}
         </div>
+
+        {/* ── Department / Policy Scope Selector ── */}
+        {user?.orgId && (
+          <div className="p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
+            <div>
+              <div className="flex items-center gap-2">
+                <Layers size={16} className="text-blue-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+                  Policy Governance Scope
+                </span>
+              </div>
+              <p className="text-xs mt-0.5 text-[var(--text-secondary)]">
+                {departmentId
+                  ? `Editing specialized DLP rules for the "${activeDept?.name || 'Department'}" category.`
+                  : 'Editing company-wide organization baseline DLP policy.'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setDepartmentId(undefined)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  !departmentId
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                🏢 Org Baseline
+              </button>
+              {departments.map((dept) => (
+                <button
+                  key={dept.id}
+                  type="button"
+                  onClick={() => setDepartmentId(dept.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                    departmentId === dept.id
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                      : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  📁 {dept.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
@@ -178,13 +239,13 @@ export default function PolicyPage() {
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
               {PLATFORMS.map(p => {
-                const on = config.monitoredPlatforms.includes(p.id)
+                const on = (config.monitoredPlatforms as string[]).includes(p.id)
                 return (
                   <button key={p.id}
                     onClick={isAdmin ? () => {
                       const next = on
                         ? config.monitoredPlatforms.filter(x => x !== p.id)
-                        : [...config.monitoredPlatforms, p.id]
+                        : [...config.monitoredPlatforms, p.id as any]
                       updateField('monitoredPlatforms', next)
                     } : undefined}
                     className={`relative flex flex-col items-center justify-center gap-2.5 py-4 rounded-xl border-2 transition-all ${isAdmin ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]' : 'cursor-default'}`}

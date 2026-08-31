@@ -11,19 +11,8 @@ export default function CallbackPage() {
 
   useEffect(() => {
     refresh()
-      .then((me) => {
-        const isAdmin = me?.role === 'super_admin' || me?.role === 'security_admin'
-        if (isAdmin && typeof window !== 'undefined') {
-          const currentHost = window.location.hostname
-          if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-            window.location.href = 'http://localhost:3001/dashboard'
-          } else {
-            const adminUrl = window.location.protocol + '//admin.' + currentHost.replace('www.', '')
-            window.location.href = `${adminUrl}/dashboard`
-          }
-        } else {
-          router.replace("/dashboard")
-        }
+      .then(() => {
+        router.replace("/dashboard")
       })
       .catch(() => router.replace("/login?error=oauth_failed"))
   }, [refresh, router])

@@ -57,7 +57,7 @@ export default function AuditLogsPage() {
   }
 
   return (
-    <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto animate-fade-in">
+    <div className="flex-1 space-y-6 w-full animate-fade-in pb-12">
       {/* Header */}
       <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
         <div>
@@ -210,6 +210,6 @@ export default function AuditLogsPage() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   )
 }

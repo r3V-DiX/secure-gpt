@@ -132,6 +132,10 @@ def has_permission(action: str):
         current_user: CurrentUser,
         db: DBSession,
     ) -> User:
+        # Organization Admins, Security Admins, and Super Admins have inherent policy management rights
+        if current_user.role in (UserRole.ORG_ADMIN, UserRole.SECURITY_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_SUPER_ADMIN):
+            return current_user
+
         from app.services.rbac_service import get_user_permissions
         user_perms = await get_user_permissions(db, current_user.id)
         if action not in user_perms:

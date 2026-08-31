@@ -1,18 +1,26 @@
 'use client'
 // packages/dashboard/src/app/(auth)/login/page.tsx
-// Login redirects to /api/v1/auth/google which Next.js rewrites to backend.
-// Backend does OAuth → redirects to GOOGLE_REDIRECT_URI which must be:
-// http://localhost:3000/api/auth/google/callback
-// That Next.js route plants the cookie on localhost:3000 then redirects to /callback.
 
 import { useState } from 'react'
 import Link from 'next/link'
 import { apiPost } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
+import { Mail, KeyRound, Building2, UserCheck, User, ArrowRight, CheckCircle2, Zap } from 'lucide-react'
 
 export default function LoginPage() {
-  const [devEmail, setDevEmail] = useState('')
+  const [roleType, setRoleType] = useState<'employer' | 'employee' | 'user'>('employer')
+
+  // OTP State
+  const [email, setEmail] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpLoading, setOtpLoading] = useState(false)
+
+  // Dev Quick-Bypass State
+  const [devEmail, setDevEmail] = useState('admin@acmecorp.com')
+  const [devPersona, setDevPersona] = useState<'employer' | 'employee' | 'user'>('employer')
   const [devLoading, setDevLoading] = useState(false)
+
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const isDev = process.env.NODE_ENV === 'development'
   const { toast } = useToast()
@@ -22,11 +30,53 @@ export default function LoginPage() {
       toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
       return
     }
-    // Goes through Next.js rewrite → backend /api/v1/auth/google
-    // Cookie ends up on localhost:3000 — same origin as dashboard ✓
     window.location.href = '/api/v1/auth/google'
   }
 
+  // ── Request Email OTP ───────────────────────────────────────────────────────
+  async function handleRequestOTP(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim()) return
+    if (!privacyAccepted) {
+      toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
+      return
+    }
+    try {
+      setOtpLoading(true)
+      await apiPost('/auth/otp/request', {
+        email: email.trim(),
+        role_type: roleType,
+      })
+      setOtpSent(true)
+      toast.success('Verification code sent to your email!')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send OTP')
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  // ── Verify Email OTP ────────────────────────────────────────────────────────
+  async function handleVerifyOTP(e: React.FormEvent) {
+    e.preventDefault()
+    if (!otpCode.trim()) return
+    try {
+      setOtpLoading(true)
+      await apiPost('/auth/otp/verify', {
+        email: email.trim(),
+        code: otpCode.trim(),
+        role_type: roleType,
+      })
+      toast.success('Signed in successfully!')
+      window.location.href = '/callback'
+    } catch (err: any) {
+      toast.error(err.message || 'Invalid or expired OTP')
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  // ── Dev Login ───────────────────────────────────────────────────────────────
   async function handleDevLogin(e: React.FormEvent) {
     e.preventDefault()
     if (!devEmail) return
@@ -36,8 +86,11 @@ export default function LoginPage() {
     }
     try {
       setDevLoading(true)
-      await apiPost('/auth/dev-login', { email: devEmail })
-      toast.success('Bypass login successful!')
+      await apiPost('/auth/dev-login', {
+        email: devEmail.trim(),
+        persona: devPersona,
+      })
+      toast.success(`Signed in as ${devPersona}!`)
       window.location.href = '/callback'
     } catch (err: any) {
       toast.error(err.message || 'Developer login failed')
@@ -67,25 +120,18 @@ export default function LoginPage() {
         aria-hidden
       />
 
-      {/* Glow blob */}
-      <div
-        className="absolute w-[500px] h-[500px] rounded-full pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ background: 'radial-gradient(circle, var(--accent-light) 0%, transparent 70%)' }}
-        aria-hidden
-      />
-
       {/* Card */}
       <div
-        className="relative w-full max-w-[400px] rounded-2xl p-8"
+        className="relative w-full max-w-[440px] rounded-3xl p-8 shadow-2xl transition-all border"
         style={{
           background: 'var(--bg-surface)',
-          border: '1px solid var(--border-2)',
-          boxShadow: 'var(--shadow-lg)',
+          borderColor: 'var(--border-2)',
+          boxShadow: '0 20px 40px -15px rgba(0,0,0,0.08)',
         }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="size-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden" style={{ background: '#091a2a' }}>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="size-11 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden shrink-0" style={{ background: '#091a2a' }}>
             <img src="/rivedix_logo.png" alt="Rivedix Logo" className="w-full h-full object-contain p-1" />
           </div>
           <div>
@@ -93,37 +139,189 @@ export default function LoginPage() {
               SecureGPT
             </p>
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              DLP Dashboard
+              Enterprise DLP & Privacy Platform
             </p>
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold tracking-tight mb-1.5" style={{ color: 'var(--text-primary)' }}>
-          Welcome back
+        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
+          Sign in to SecureGPT
         </h1>
-        <p className="text-sm mb-8" style={{ color: 'var(--text-secondary)' }}>
-          Sign in to your security dashboard
+        <p className="text-xs mb-6" style={{ color: 'var(--text-secondary)' }}>
+          Choose your login role and authentication method
         </p>
 
+        {/* ── Role Selector (Employer / Employee / Personal) ───────────────── */}
+        <div className="mb-5">
+          <label className="text-xs font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>
+            I am signing in as:
+          </label>
+          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setRoleType('employer')
+                setDevPersona('employer')
+                setDevEmail('admin@acmecorp.com')
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                roleType === 'employer'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+              }`}
+            >
+              <Building2 size={13} /> Employer
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setRoleType('employee')
+                setDevPersona('employee')
+                setDevEmail('developer@acmecorp.com')
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                roleType === 'employee'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+              }`}
+            >
+              <UserCheck size={13} /> Employee
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setRoleType('user')
+                setDevPersona('user')
+                setDevEmail('john.doe@gmail.com')
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                roleType === 'user'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+              }`}
+            >
+              <User size={13} /> Personal
+            </button>
+          </div>
+        </div>
+
         {/* Privacy Policy Checkbox */}
-        <div className="flex items-start gap-2.5 mb-6">
+        <div className="flex items-start gap-2.5 mb-5">
           <input
             id="privacy-checkbox"
             type="checkbox"
             checked={privacyAccepted}
             onChange={e => setPrivacyAccepted(e.target.checked)}
-            className="mt-0.5 rounded border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+            className="mt-0.5 size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
           />
           <label htmlFor="privacy-checkbox" className="text-xs leading-normal select-none cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
             I agree to the{' '}
-            <Link href="/privacy" className="underline hover:text-[var(--text-primary)] transition-colors">
+            <Link href="/privacy" className="underline font-medium hover:text-blue-600 transition-colors" style={{ color: 'var(--text-primary)' }}>
               Privacy Policy
             </Link>{' '}
             and{' '}
-            <Link href="/terms" className="underline hover:text-[var(--text-primary)] transition-colors">
+            <Link href="/terms" className="underline font-medium hover:text-blue-600 transition-colors" style={{ color: 'var(--text-primary)' }}>
               Terms of Service
             </Link>.
           </label>
+        </div>
+
+        {/* ── Email OTP Form ──────────────────────────────────────────────── */}
+        {!otpSent ? (
+          <form onSubmit={handleRequestOTP} className="space-y-3.5">
+            <div>
+              <label className="text-xs font-bold block mb-1" style={{ color: 'var(--text-primary)' }}>
+                {roleType === 'employer'
+                  ? 'Corporate Admin Email'
+                  : roleType === 'employee'
+                  ? 'Company Email'
+                  : 'Your Email'}
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  placeholder={
+                    roleType === 'user'
+                      ? 'you@example.com'
+                      : 'name@yourcompany.com'
+                  }
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                  style={{
+                    background: 'var(--bg-surface)',
+                    borderColor: 'var(--border-strong)',
+                    color: 'var(--text-primary)',
+                  }}
+                />
+                <Mail size={15} className="absolute left-3 top-3" style={{ color: 'var(--text-tertiary)' }} />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={otpLoading || !email || !privacyAccepted}
+              className="w-full py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20"
+            >
+              {otpLoading ? 'Sending Code...' : 'Send Verification OTP'} <ArrowRight size={14} />
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOTP} className="space-y-3.5 animate-fade-in">
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2">
+              <CheckCircle2 size={16} /> Code sent to <b className="font-semibold">{email}</b>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold block mb-1" style={{ color: 'var(--text-primary)' }}>
+                Enter 6-Digit OTP Code
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="123456"
+                  value={otpCode}
+                  onChange={e => setOtpCode(e.target.value)}
+                  required
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-sm font-mono tracking-widest border focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                  style={{
+                    background: 'var(--bg-surface)',
+                    borderColor: 'var(--border-strong)',
+                    color: 'var(--text-primary)',
+                  }}
+                />
+                <KeyRound size={15} className="absolute left-3 top-3.5" style={{ color: 'var(--text-tertiary)' }} />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={otpLoading || otpCode.length < 6}
+              className="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-emerald-500/20"
+            >
+              {otpLoading ? 'Verifying...' : 'Verify & Enter Dashboard'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setOtpSent(false)}
+              className="w-full text-center text-xs font-semibold transition-colors pt-1 cursor-pointer"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              ← Use a different email
+            </button>
+          </form>
+        )}
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          <span className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--text-tertiary)' }}>or</span>
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
         </div>
 
         {/* Google button */}
@@ -131,87 +329,57 @@ export default function LoginPage() {
           onClick={handleGoogle}
           disabled={!privacyAccepted}
           type="button"
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+          className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
           style={{
+            borderColor: 'var(--border-strong)',
             background: 'var(--bg-surface)',
-            border: '1px solid var(--border-2)',
             color: 'var(--text-primary)',
-            boxShadow: 'var(--shadow-sm)',
-            opacity: privacyAccepted ? 1 : 0.5,
-            cursor: privacyAccepted ? 'pointer' : 'not-allowed',
-          }}
-          onMouseEnter={e => {
-            if (!privacyAccepted) return
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-strong)'
-            ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface-2)'
-          }}
-          onMouseLeave={e => {
-            if (!privacyAccepted) return
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'
-            ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface)'
           }}
         >
           <GoogleIcon />
-          Continue with Google
+          Continue with Google OAuth
         </button>
 
-        {/* Developer login (dev only) */}
+        {/* Developer Quick-Bypass */}
         {isDev && (
-          <form onSubmit={handleDevLogin} className="mt-6 pt-6 border-t border-[var(--border)] space-y-3">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-white/30">
-              Developer Quick-Bypass
-            </p>
-            <div className="flex flex-col gap-2">
+          <form onSubmit={handleDevLogin} className="mt-5 pt-5 border-t space-y-2.5" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                <Zap size={13} className="fill-current" /> Developer Quick-Bypass
+              </p>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold">dev-mode</span>
+            </div>
+
+            <div className="flex gap-2">
               <input
                 type="email"
-                placeholder="Enter test user email..."
+                placeholder="Test email..."
                 value={devEmail}
                 onChange={e => setDevEmail(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-white focus:ring-[var(--accent)]"
+                className="flex-1 px-3 py-2 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                style={{
+                  background: 'var(--bg-surface)',
+                  borderColor: 'var(--border-strong)',
+                  color: 'var(--text-primary)',
+                }}
               />
               <button
                 type="submit"
                 disabled={devLoading || !devEmail || !privacyAccepted}
-                className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-sm shadow-amber-500/20"
               >
-                {devLoading ? 'Signing in...' : 'Sign in as Test Email'}
+                {devLoading ? 'Entering...' : 'Instant Login'}
               </button>
             </div>
           </form>
         )}
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>secured by</span>
-          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-        </div>
-
-        {/* Trust badges */}
-        <div className="flex items-center justify-center gap-4 flex-wrap mb-6">
-          {['End-to-end encrypted', 'PII stays on-device', 'Session-based auth'].map(t => (
-            <span key={t} className="flex items-center gap-1 text-[11px] font-medium"
-              style={{ color: 'var(--text-tertiary)' }}>
-              <span style={{ color: 'var(--success)' }}>✓</span>
-              {t}
-            </span>
-          ))}
-        </div>
-
-        {/* Links */}
-        <div className="flex flex-col items-center gap-3 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
+        {/* Footer */}
+        <div className="flex items-center justify-center gap-3 pt-5 mt-5 border-t" style={{ borderColor: 'var(--border)' }}>
           <Link href="/" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
             ← Back to home
           </Link>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
-              Terms of Service
-            </Link>
-          </div>
         </div>
       </div>
     </div>
@@ -220,7 +388,7 @@ export default function LoginPage() {
 
 function GoogleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" className="shrink-0">
+    <svg width="16" height="16" viewBox="0 0 24 24" className="shrink-0">
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />

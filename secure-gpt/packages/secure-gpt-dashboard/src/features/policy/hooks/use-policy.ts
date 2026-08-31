@@ -5,8 +5,9 @@ import { fetchCurrentPolicy, savePolicy, DEFAULT_POLICY_CONFIG } from '../servic
 import { useToast } from '@/contexts/toast-context'
 import type { Policy, PIIConfig, CategoryConfig, PolicyAction, CustomRule, RuleOverride } from '@/types'
 
-export function usePolicy() {
+export function usePolicy(initialDepartmentId?: string) {
   const { toast } = useToast()
+  const [departmentId, setDepartmentId] = useState<string | undefined>(initialDepartmentId)
   const [policy, setPolicy] = useState<Policy | null>(null)
   const [config, setConfig] = useState<PIIConfig>(DEFAULT_POLICY_CONFIG)
   const [loading, setLoading] = useState(true)
@@ -15,18 +16,25 @@ export function usePolicy() {
   const [error, setError] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
 
+  const loadPolicy = async (deptId?: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const p = await fetchCurrentPolicy(deptId)
+      setPolicy(p)
+      setConfig(p.config)
+      setIsDirty(false)
+    } catch (e: any) {
+      setError(e.message)
+      toast.error('Failed to load policy')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    fetchCurrentPolicy()
-      .then((p) => {
-        setPolicy(p)
-        setConfig(p.config)
-      })
-      .catch((e: Error) => {
-        setError(e.message)
-        toast.error('Failed to load policy')
-      })
-      .finally(() => setLoading(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    loadPolicy(departmentId)
+  }, [departmentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateCategory = (category: string, updates: Partial<CategoryConfig>) => {
     setConfig(prev => {
@@ -154,11 +162,12 @@ export function usePolicy() {
     setIsDirty(true)
   }
 
-  const save = async () => {
+  const save = async (customDeptId?: string) => {
     setSaving(true)
     setError(null)
+    const targetDept = customDeptId !== undefined ? customDeptId : departmentId
     try {
-      const updated = await savePolicy(config)
+      const updated = await savePolicy(config, targetDept)
       setPolicy(updated)
       setConfig(updated.config)
       setSavedAt(new Date())
@@ -183,6 +192,7 @@ export function usePolicy() {
 
   return {
     policy, config, loading, saving, savedAt, error, isDirty,
+    departmentId, setDepartmentId, loadPolicy,
     updateCategory, addCategory, deleteCategory,
     updateRuleOverride,
     addCustomRule, updateCustomRule, deleteCustomRule,

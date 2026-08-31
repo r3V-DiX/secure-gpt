@@ -1,33 +1,34 @@
 # backend/app/api/v1/auth.py
 #
-# FIX: google_callback no longer redirects directly to the frontend.
-# It returns a 200 response with set-cookie so the Next.js BFF proxy
-# (route.ts) can intercept it, re-plant the cookie on localhost:3000,
-# and then redirect the browser to /callback.
-#
-# Previously the backend was sending a 302 directly to localhost:3000/callback
-# with set-cookie — the browser followed that redirect and the cookie got
-# attributed to localhost:8000, NOT localhost:3000. Middleware never saw it.
+# Authentication Endpoints:
+# - Google OAuth
+# - Email OTP (Request & Verify)
+# - Developer Quick-Bypass with Role Dropdown (Employer / Employee / Personal User)
 
 import logging
 import secrets
+import random
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 import httpx
 from app.core.config import settings
 from app.core.dependencies import CurrentUser, DBSession
-from app.core.exceptions import OAuthFailed, UserInactive
+from app.core.exceptions import OAuthFailed, UserInactive, Forbidden, BadRequest, NotFound
 from app.core.fingerprint import compute_fingerprint
 from app.core.ratelimit import LIMIT_AUTH, LIMIT_AUTH_ME, LIMIT_LOGOUT, limiter
 from app.core.response import success
 from app.models.session import Session
+from app.models.user import User, UserRole
+from app.models.otp_code import OTPCode
 from app.services.auth_event_service import (
     log_login_failed,
     log_login_success,
     log_logout,
     log_oauth_failed,
 )
-from app.services.auth_service import upsert_google_user
+from app.services.auth_service import upsert_google_user, get_user_by_email
+from app.services.email_service import send_otp_email
 from app.services.session_service import (
     SESSION_COOKIE_NAME,
     SESSION_TTL_SECONDS,
@@ -37,7 +38,8 @@ from app.services.session_service import (
 )
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from sqlalchemy import select, delete
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,8 @@ GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
+
+# ── 1. Google OAuth ───────────────────────────────────────────────────────────
 
 @router.get("/google", summary="Redirect to Google OAuth consent screen")
 @limiter.limit(LIMIT_AUTH)
@@ -73,25 +77,20 @@ async def google_callback(
     code: str | None = None,
     error: str | None = None,
 ):
-    logger.info("=== CALLBACK HIT ===")
-    logger.info("  host header : %s", request.headers.get("host", "MISSING"))
-    logger.info("  full url    : %s", str(request.url))
-    logger.info("  code present: %s", bool(code))
-    logger.info("  error       : %s", error)
-
-    is_oauth_callback = request.headers.get("x-oauth-callback") == "true"
-    frontend_url = settings.allowed_origins_list[0]  # http://localhost:3000
+    frontend_url = settings.cors_origins[0] if settings.cors_origins else "http://localhost:3000"
+    is_prod = settings.is_production
+    is_oauth_callback = request.headers.get("X-Forwarded-Host", "") == "localhost:3000"
 
     if error or not code:
-        await log_oauth_failed(db, request, reason=error or "missing_code")
-        # If proxied via BFF, return error JSON; else redirect
+        await log_oauth_failed(db, request, reason=error or "no_code")
+        await db.commit()
         if is_oauth_callback:
             return JSONResponse(status_code=400, content={"error": "oauth_failed"})
-        return RedirectResponse(url=f"{frontend_url}/login?error=oauth_failed", status_code=302)
+        return RedirectResponse(url=f"{frontend_url}/login?error=oauth_failed")
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            token_resp = await client.post(
+        async with httpx.AsyncClient(timeout=10) as client:
+            token_res = await client.post(
                 GOOGLE_TOKEN_URL,
                 data={
                     "code": code,
@@ -101,85 +100,50 @@ async def google_callback(
                     "grant_type": "authorization_code",
                 },
             )
-            if token_resp.status_code != 200:
-                await log_oauth_failed(db, request, reason="token_exchange_failed")
-                raise OAuthFailed("Failed to exchange authorization code with Google")
-
-            tokens = token_resp.json()
-            access_token = tokens.get("access_token")
+            token_data = token_res.json()
+            access_token = token_data.get("access_token")
             if not access_token:
-                await log_oauth_failed(db, request, reason="no_access_token")
-                raise OAuthFailed("No access token returned from Google")
+                raise OAuthFailed()
 
-            userinfo_resp = await client.get(
+            userinfo_res = await client.get(
                 GOOGLE_USERINFO_URL,
                 headers={"Authorization": f"Bearer {access_token}"},
             )
-            if userinfo_resp.status_code != 200:
-                await log_oauth_failed(db, request, reason="userinfo_fetch_failed")
-                raise OAuthFailed("Failed to fetch user profile from Google")
-
-            profile = userinfo_resp.json()
-
-    except OAuthFailed:
-        raise
-    except Exception as exc:  # noqa: BLE001
+            userinfo = userinfo_res.json()
+    except Exception as exc:
+        logger.error("OAuth token exchange failed: %s", exc)
         await log_oauth_failed(db, request, reason=str(exc))
-        raise OAuthFailed("Google OAuth request failed")
+        await db.commit()
+        if is_oauth_callback:
+            return JSONResponse(status_code=400, content={"error": "oauth_failed"})
+        return RedirectResponse(url=f"{frontend_url}/login?error=oauth_failed")
 
-    user = await upsert_google_user(
-        db,
-        google_id=profile["sub"],
-        email=profile["email"],
-        full_name=profile.get("name", ""),
-        avatar_url=profile.get("picture"),
-    )
+    email = userinfo.get("email")
+    google_id = userinfo.get("sub")
+    name = userinfo.get("name")
+    avatar = userinfo.get("picture")
 
-    if not user.is_active:
-        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
-            pass
-        else:
-            await log_login_failed(db, request, reason="user_inactive", email=user.email)
-            raise UserInactive()
+    if not email or not google_id:
+        raise OAuthFailed()
 
-    # Create session
+    user = await upsert_google_user(db, google_id=google_id, email=email, full_name=name, avatar_url=avatar)
+
     session_id = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
-
-    # Fingerprint is unbound when proxied via BFF (no real browser headers available)
-    fingerprint_hash = None if is_oauth_callback else compute_fingerprint(request)
 
     session = Session(
         id=session_id,
         user_id=user.id,
-        fingerprint_hash=fingerprint_hash,
+        fingerprint_hash=None,
         user_agent=request.headers.get("user-agent"),
         expires_at=expires_at,
     )
     db.add(session)
-    await db.flush()
-
-    logger.info("Session created — fingerprint %s", "unbound" if not fingerprint_hash else "bound")
-
-    is_prod = settings.is_production
-
-    logger.info("=== SETTING COOKIE ===")
-    logger.info("  session_id : %s...", session_id[:8])
-    logger.info("  secure     : %s", is_prod)
-    logger.info("  proxied    : %s", is_oauth_callback)
-
     await log_login_success(db, request, user_id=user.id, session_id=session.id)
     await db.commit()
 
     if is_oauth_callback:
-        # ── BFF proxy path ────────────────────────────────────────────────────
-        # Return 200 + set-cookie so the Next.js proxy (route.ts) can
-        # intercept the cookie and re-plant it on localhost:3000.
-        # The proxy then redirects the browser to /callback.
-        json_response = JSONResponse(
-            status_code=200,
-            content={"ok": True},
-        )
+        json_response = JSONResponse(status_code=200, content={"ok": True})
         json_response.set_cookie(
             key=SESSION_COOKIE_NAME,
             value=session_id,
@@ -189,15 +153,9 @@ async def google_callback(
             samesite="none" if is_prod else "lax",
             path="/",
         )
-        logger.info("CALLBACK DONE (BFF) — returning 200 with set-cookie")
         return json_response
     else:
-        # ── Direct browser path (non-proxied) ────────────────────────────────
-        # Redirect directly to frontend with cookie set on the response.
-        redirect_response = RedirectResponse(
-            url=f"{frontend_url}/callback",
-            status_code=302,
-        )
+        redirect_response = RedirectResponse(url=f"{frontend_url}/callback", status_code=302)
         redirect_response.set_cookie(
             key=SESSION_COOKIE_NAME,
             value=session_id,
@@ -207,14 +165,219 @@ async def google_callback(
             samesite="none" if is_prod else "lax",
             path="/",
         )
-        logger.info("CALLBACK DONE (direct) — redirecting to: %s/callback", frontend_url)
         return redirect_response
 
+
+# ── 2. Email OTP Authentication ───────────────────────────────────────────────
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+    role_type: str | None = "user"  # "employer", "employee", "user"
+
+
+class OTPVerifyRequest(BaseModel):
+    email: EmailStr
+    code: str
+    role_type: str | None = "user"
+
+
+@router.post("/otp/request", summary="Request 6-digit OTP code to email")
+@limiter.limit(LIMIT_AUTH)
+async def request_otp(request: Request, body: OTPRequest, db: DBSession):
+    email_clean = body.email.strip().lower()
+
+    # Generate 6-digit code
+    otp_val = f"{random.randint(100000, 999999)}"
+    hashed_otp = hashlib.sha256(otp_val.encode()).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    # Delete older codes for this email
+    await db.execute(delete(OTPCode).where(OTPCode.email == email_clean))
+
+    otp_code_obj = OTPCode(
+        email=email_clean,
+        code=hashed_otp,
+        attempts=0,
+        expires_at=expires_at,
+    )
+    db.add(otp_code_obj)
+    await db.flush()
+
+    # Send verification email asynchronously
+    await send_otp_email(email_clean, otp_val)
+    await db.commit()
+
+    return success(
+        message=f"6-digit verification code has been dispatched to {email_clean}.",
+        data={"email": email_clean}
+    )
+
+
+@router.post("/otp/verify", summary="Verify OTP code and create session")
+@limiter.limit(LIMIT_AUTH)
+async def verify_otp(request: Request, response: Response, body: OTPVerifyRequest, db: DBSession):
+    email_clean = body.email.strip().lower()
+    code_clean = body.code.strip()
+
+    res = await db.execute(select(OTPCode).where(OTPCode.email == email_clean))
+    otp_record = res.scalar_one_or_none()
+
+    if not otp_record:
+        raise BadRequest("No verification code found. Please request a new code.")
+
+    if datetime.now(timezone.utc) > otp_record.expires_at:
+        await db.execute(delete(OTPCode).where(OTPCode.email == email_clean))
+        await db.commit()
+        raise BadRequest("Verification code has expired. Please request a new one.")
+
+    hashed_input = hashlib.sha256(code_clean.encode()).hexdigest()
+    if otp_record.code != hashed_input:
+        otp_record.attempts += 1
+        await db.commit()
+        if otp_record.attempts >= 5:
+            await db.execute(delete(OTPCode).where(OTPCode.email == email_clean))
+            await db.commit()
+            raise BadRequest("Too many failed attempts. Code invalidated.")
+        raise BadRequest("Invalid verification code.")
+
+    # Code matches — delete record
+    await db.execute(delete(OTPCode).where(OTPCode.email == email_clean))
+
+    # Fetch or auto-create user
+    user = await get_user_by_email(db, email_clean)
+    if not user:
+        # Determine initial role from role_type
+        assigned_role = UserRole.USER
+        if body.role_type == "employer":
+            assigned_role = UserRole.ORG_ADMIN
+        elif body.role_type == "employee":
+            assigned_role = UserRole.EMPLOYEE
+
+        user = User(
+            email=email_clean,
+            full_name=email_clean.split("@")[0].replace(".", " ").title(),
+            role=assigned_role,
+            is_active=True,
+            privacy_accepted=True,
+        )
+        db.add(user)
+        await db.flush()
+
+    session_id = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
+
+    session = Session(
+        id=session_id,
+        user_id=user.id,
+        fingerprint_hash=None,
+        user_agent=request.headers.get("user-agent"),
+        expires_at=expires_at,
+    )
+    db.add(session)
+    await log_login_success(db, request, user_id=user.id, session_id=session.id)
+    await db.commit()
+
+    resp = JSONResponse(
+        content={
+            "success": True,
+            "data": {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role.value,
+            },
+            "message": f"Successfully verified and signed in as {user.email}",
+        }
+    )
+    resp.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_id,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="none" if settings.is_production else "lax",
+        path="/",
+    )
+    return resp
+
+
+# ── 3. Developer Login with Persona Dropdown ──────────────────────────────────
+
+class DevLoginRequest(BaseModel):
+    email: EmailStr
+    persona: str = "employer"  # "employer" | "employee" | "user"
+
+
+@router.post("/dev-login", summary="Bypass authentication with Persona selection")
+async def dev_login(request: Request, body: DevLoginRequest, db: DBSession):
+    if settings.app_env != "development":
+        raise Forbidden("Developer login is only available in development environment")
+
+    email_clean = body.email.strip().lower()
+    user = await get_user_by_email(db, email_clean)
+
+    if not user:
+        role_map = {
+            "employer": UserRole.ORG_ADMIN,
+            "employee": UserRole.EMPLOYEE,
+            "user": UserRole.USER,
+        }
+        assigned_role = role_map.get(body.persona, UserRole.USER)
+
+        user = User(
+            email=email_clean,
+            full_name=email_clean.split("@")[0].title(),
+            role=assigned_role,
+            is_active=True,
+            privacy_accepted=True,
+        )
+        db.add(user)
+        await db.flush()
+
+    session_id = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
+
+    session = Session(
+        id=session_id,
+        user_id=user.id,
+        fingerprint_hash=None,
+        user_agent=request.headers.get("user-agent"),
+        expires_at=expires_at,
+    )
+    db.add(session)
+    await log_login_success(db, request, user_id=user.id, session_id=session.id)
+    await db.commit()
+
+    resp = JSONResponse(content={"ok": True, "message": f"Logged in as {user.email} ({user.role.value})"})
+    resp.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_id,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="none" if settings.is_production else "lax",
+        path="/",
+    )
+    return resp
+
+
+# ── 4. Session & Account Management ───────────────────────────────────────────
 
 @router.get("/me", summary="Get current authenticated user")
 @limiter.limit(LIMIT_AUTH_ME)
 async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
     from app.services.rbac_service import get_user_permissions, get_user_roles
+    from app.models.org import Organisation
+    from app.services.org_service import extract_domain_from_email, is_public_domain
+
+    if not current_user.org_id:
+        user_domain = extract_domain_from_email(current_user.email)
+        if user_domain and not is_public_domain(user_domain):
+            org_res = await db.execute(select(Organisation).where(Organisation.domain == user_domain))
+            matched_org = org_res.scalar_one_or_none()
+            if matched_org:
+                current_user.org_id = matched_org.id
+                await db.commit()
+
     roles = await get_user_roles(db, current_user.id)
     permissions = await get_user_permissions(db, current_user.id)
     return success(
@@ -226,6 +389,7 @@ async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
             "role": current_user.role.value,
             "isActive": current_user.is_active,
             "orgId": current_user.org_id,
+            "departmentId": current_user.department_id,
             "createdAt": current_user.created_at.isoformat(),
             "lastLoginAt": current_user.last_login_at.isoformat() if current_user.last_login_at else None,
             "deactivatedAt": current_user.deactivated_at.isoformat() if current_user.deactivated_at else None,
@@ -235,7 +399,6 @@ async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
         },
         message="User fetched successfully",
     )
-
 
 
 @router.post("/logout", summary="Invalidate current session")
@@ -248,133 +411,3 @@ async def logout(request: Request, response: Response, db: DBSession, current_us
     clear_session_cookie(response)
     await db.commit()
     return success(message="Logged out successfully")
-
-
-@router.delete("/me", summary="Delete user account")
-async def delete_me(request: Request, response: Response, db: DBSession, current_user: CurrentUser):
-    current_user.is_active = False
-    current_user.deactivated_at = datetime.now(timezone.utc)
-    current_user.deactivation_reason = "deletion"
-    current_user.pre_deletion_email_sent = False
-    
-    # Revoke all active sessions for this user except the current request's session cookie
-    # (actually we clear the cookie, so we can revoke all sessions in DB)
-    from app.models.session import Session
-    from sqlalchemy import update
-    await db.execute(
-        update(Session)
-        .where(Session.user_id == current_user.id)
-        .values(is_revoked=True)
-    )
-    
-    # Send deactivation confirmation email
-    import asyncio
-
-    from app.services.email_service import send_deactivation_email
-    asyncio.create_task(send_deactivation_email(current_user.email))
-    
-    await db.commit()
-    clear_session_cookie(response)
-    return success(message="Account deactivated. You have 45 days to reactivate it by signing in.")
-
-
-@router.post("/restore", summary="Reactivate deactivated account")
-async def restore_me(request: Request, db: DBSession, current_user: CurrentUser):
-    current_user.is_active = True
-    current_user.deactivated_at = None
-    current_user.deactivation_reason = None
-    current_user.pre_deletion_email_sent = False
-    await db.commit()
-    return success(message="Account successfully reactivated!")
-
-
-class DevLoginRequest(BaseModel):
-    email: str
-
-
-
-@router.post("/dev-login", summary="Bypass authentication in development")
-async def dev_login(
-    request: Request,
-    body: DevLoginRequest,
-    db: DBSession,
-):
-    from app.core.exceptions import Forbidden
-    if settings.app_env != "development":
-        raise Forbidden("Developer login is only available in development environment")
-
-    from app.services.auth_service import get_user_by_email
-    user = await get_user_by_email(db, body.email)
-    if not user:
-        # Create user automatically for convenience in local testing
-        from app.models.user import User, UserRole
-        email_lower = body.email.lower()
-        
-        # Determine roles based on email prefix/keyword
-        if "security" in email_lower or "sec" in email_lower:
-            legacy_role = UserRole.USER # map to legacy user or custom
-            role_slug = "security_admin"
-        elif "super" in email_lower or "admin" in email_lower:
-            legacy_role = UserRole.SUPER_ADMIN
-            role_slug = "super_admin"
-        elif "audit" in email_lower:
-            legacy_role = UserRole.AUDITOR
-            role_slug = "auditor"
-        else:
-            legacy_role = UserRole.USER
-            role_slug = "user"
-
-        user = User(
-            email=email_lower,
-            full_name=body.email.split("@")[0].title(),
-            role=legacy_role,
-            is_active=True,
-            privacy_accepted=True
-        )
-        db.add(user)
-        await db.flush()
-
-        # Seed standard role assignment
-        from app.models.rbac import Role, UserRoleAssignment
-        from sqlalchemy import select
-        role_res = await db.execute(select(Role).where(Role.slug == role_slug))
-        role = role_res.scalar_one_or_none()
-        if role:
-            assignment = UserRoleAssignment(user_id=user.id, role_id=role.id, is_active=True)
-            db.add(assignment)
-        await db.flush()
-
-
-
-    if not user.is_active:
-        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
-            pass
-        else:
-            raise UserInactive()
-
-    # Create session
-    session_id = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
-
-    session = Session(
-        id=session_id,
-        user_id=user.id,
-        fingerprint_hash=None,  # Unbound session for convenience
-        user_agent=request.headers.get("user-agent"),
-        expires_at=expires_at,
-    )
-    db.add(session)
-    await log_login_success(db, request, user_id=user.id, session_id=session.id)
-    await db.commit()
-
-    response = JSONResponse(content={"ok": True, "message": f"Logged in as {user.email}"})
-    response.set_cookie(
-        key=SESSION_COOKIE_NAME,
-        value=session_id,
-        max_age=SESSION_TTL_SECONDS,
-        httponly=True,
-        secure=settings.is_production,
-        samesite="none" if settings.is_production else "lax",
-        path="/",
-    )
-    return response

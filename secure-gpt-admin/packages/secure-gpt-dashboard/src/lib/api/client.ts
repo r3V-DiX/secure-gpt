@@ -1,9 +1,61 @@
-// packages/dashboard/src/lib/api/client.ts
-// Single Axios instance — session-cookie auth, auto-unwraps backend envelope.
-//
-// KEY FIX: baseURL is /api/v1 (relative) — all requests go to localhost:3000
-// which Next.js proxies to the backend. This means the session cookie is
-// always on the same origin (localhost:3000) — no cross-origin cookie issues.
+// src/lib/store/sidebar-store.ts
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+
+const SIDEBAR_STORAGE_KEY = 'sgpt-admin-sidebar-collapsed'
+
+let listeners: Array<() => void> = []
+let memoryState = {
+  collapsed: false,
+}
+
+if (typeof window !== 'undefined') {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY)
+    if (saved !== null) {
+      memoryState.collapsed = saved === 'true'
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function notify() {
+  listeners.forEach(listener => listener())
+}
+
+export function useSidebarStore() {
+  const [collapsed, setCollapsedState] = useState(memoryState.collapsed)
+
+  useEffect(() => {
+    const handleChange = () => setCollapsedState(memoryState.collapsed)
+    listeners.push(handleChange)
+    return () => {
+      listeners = listeners.filter(l => l !== handleChange)
+    }
+  }, [])
+
+  const setCollapsed = useCallback((value: boolean) => {
+    memoryState.collapsed = value
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(value))
+    } catch {
+      /* ignore */
+    }
+    notify()
+  }, [])
+
+  const toggle = useCallback(() => {
+    setCollapsed(!memoryState.collapsed)
+  }, [setCollapsed])
+
+  return {
+    collapsed,
+    setCollapsed,
+    toggle,
+  }
+}
 
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 

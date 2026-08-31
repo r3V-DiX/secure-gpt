@@ -22,6 +22,8 @@ def _serialize_policy(policy: Policy) -> dict:
     return {
         "id": policy.id,
         "userId": policy.user_id,
+        "orgId": policy.org_id,
+        "departmentId": policy.department_id,
         "config": policy.config,
         "version": policy.version,
         "isActive": policy.is_active,
@@ -33,8 +35,14 @@ def _serialize_policy(policy: Policy) -> dict:
 
 @router.get("/current", summary="Get current active policy")
 @limiter.limit(LIMIT_POLICY)
-async def get_current_policy(request: Request, db: DBSession, current_user: CurrentUser):
-    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
+async def get_current_policy(request: Request, db: DBSession, current_user: CurrentUser, department_id: str | None = None):
+    if department_id and current_user.org_id:
+        where_clause = (Policy.org_id == current_user.org_id) & (Policy.department_id == department_id)
+    elif current_user.org_id:
+        where_clause = (Policy.org_id == current_user.org_id) & (Policy.department_id == None)
+    else:
+        where_clause = (Policy.user_id == current_user.id)
+
     result = await db.execute(
         select(Policy)
         .where(where_clause, Policy.is_active == True)
@@ -48,18 +56,18 @@ async def get_current_policy(request: Request, db: DBSession, current_user: Curr
         now = datetime.now(timezone.utc).isoformat()
         default = copy.deepcopy(DEFAULT_POLICY_CONFIG)
         default["updatedAt"] = now
-        # FIX: return a consistent shape with top-level updatedAt so the
-        # frontend Policy type doesn't get null where it expects a string.
         return success(
             data={
                 "id": None,
                 "userId": current_user.id,
+                "orgId": current_user.org_id,
+                "departmentId": department_id,
                 "config": default,
                 "version": 1,
                 "isActive": True,
                 "publishedAt": None,
                 "createdAt": None,
-                "updatedAt": now,          # ← top-level field now populated
+                "updatedAt": now,
             },
             message="Default policy returned (no custom policy set)",
         )
@@ -74,8 +82,14 @@ async def list_policies(
     db: DBSession,
     current_user: CurrentUser,
     pagination: Pagination,
+    department_id: str | None = None,
 ):
-    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
+    if department_id and current_user.org_id:
+        where_clause = (Policy.org_id == current_user.org_id) & (Policy.department_id == department_id)
+    elif current_user.org_id:
+        where_clause = (Policy.org_id == current_user.org_id)
+    else:
+        where_clause = (Policy.user_id == current_user.id)
 
     count_result = await db.execute(
         select(func.count()).select_from(
@@ -101,12 +115,16 @@ async def list_policies(
     )
 
 
-async def _create_policy_version(db, user_id: str, org_id: str | None, config: dict, publish: bool) -> Policy:
+async def _create_policy_version(db, user_id: str, org_id: str | None, department_id: str | None, config: dict, publish: bool) -> Policy:
     """Deactivate old active policy, then create a new versioned policy."""
-    # FIX: deepcopy so we don't mutate the caller's dict object.
     config = copy.deepcopy(config)
 
-    where_clause = (Policy.org_id == org_id) if org_id else (Policy.user_id == user_id)
+    if department_id and org_id:
+        where_clause = (Policy.org_id == org_id) & (Policy.department_id == department_id)
+    elif org_id:
+        where_clause = (Policy.org_id == org_id) & (Policy.department_id == None)
+    else:
+        where_clause = (Policy.user_id == user_id)
 
     await db.execute(
         update(Policy)
@@ -131,6 +149,7 @@ async def _create_policy_version(db, user_id: str, org_id: str | None, config: d
     policy = Policy(
         user_id=user_id,
         org_id=org_id,
+        department_id=department_id,
         config=config,
         version=next_version,
         is_active=True,
@@ -150,8 +169,16 @@ async def create_policy(
     db: DBSession,
     current_user: CurrentUser,
 ):
+    dept_id = body.department_id if current_user.org_id else None
+    
     # Fetch old active policy for diff logging
-    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
+    if dept_id and current_user.org_id:
+        where_clause = (Policy.org_id == current_user.org_id) & (Policy.department_id == dept_id)
+    elif current_user.org_id:
+        where_clause = (Policy.org_id == current_user.org_id) & (Policy.department_id == None)
+    else:
+        where_clause = (Policy.user_id == current_user.id)
+
     old_res = await db.execute(
         select(Policy)
         .where(where_clause, Policy.is_active == True)
@@ -161,7 +188,7 @@ async def create_policy(
     old_policy = old_res.scalar_one_or_none()
     old_config = old_policy.config if old_policy else None
 
-    policy = await _create_policy_version(db, current_user.id, current_user.org_id, body.config.model_dump(), body.publishImmediately)
+    policy = await _create_policy_version(db, current_user.id, current_user.org_id, dept_id, body.config.model_dump(), body.publishImmediately)
 
     # Log admin action
     from app.models.rbac import PermissionModule, RiskLevel
@@ -199,8 +226,16 @@ async def update_policy(
     db: DBSession,
     current_user: CurrentUser,
 ):
+    dept_id = body.department_id if current_user.org_id else None
+
     # Fetch old active policy for diff logging
-    where_clause = (Policy.org_id == current_user.org_id) if current_user.org_id else (Policy.user_id == current_user.id)
+    if dept_id and current_user.org_id:
+        where_clause = (Policy.org_id == current_user.org_id) & (Policy.department_id == dept_id)
+    elif current_user.org_id:
+        where_clause = (Policy.org_id == current_user.org_id) & (Policy.department_id == None)
+    else:
+        where_clause = (Policy.user_id == current_user.id)
+
     old_res = await db.execute(
         select(Policy)
         .where(where_clause, Policy.is_active == True)
@@ -210,7 +245,7 @@ async def update_policy(
     old_policy = old_res.scalar_one_or_none()
     old_config = old_policy.config if old_policy else None
 
-    policy = await _create_policy_version(db, current_user.id, current_user.org_id, body.config.model_dump(), body.publishImmediately)
+    policy = await _create_policy_version(db, current_user.id, current_user.org_id, dept_id, body.config.model_dump(), body.publishImmediately)
 
     # Log admin action
     from app.models.rbac import PermissionModule, RiskLevel

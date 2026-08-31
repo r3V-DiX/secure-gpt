@@ -1,215 +1,146 @@
 // src/types/index.ts
-// All types mirror backend response shapes exactly (camelCase from API).
+// Re-export all shared types and declare dashboard-specific UI extensions
 
-// ── Pagination ────────────────────────────────────────────────────────────────
+export * from '@securegpt/shared'
+
+// ── Action & Severity aliases for dashboard compatibility ─────────────────────
+export type ActionType = 'BLOCK' | 'MASK' | 'WARN_ALLOW' | 'ALLOW' | 'BLOCKED' | 'MASKED' | 'WARNED' | 'ALLOWED'
+export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'low' | 'medium' | 'high' | 'critical'
+
+// ── Dashboard Pagination ──────────────────────────────────────────────────────
 export interface Pagination {
-    page: number
-    page_size: number
-    total: number
-    total_pages: number
-    has_next: boolean
-    has_prev: boolean
+  page: number
+  page_size: number
+  total: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
 }
 
 export interface PaginatedResult<T> {
-    data: T[]
-    pagination: Pagination
+  data: T[]
+  pagination: Pagination
 }
 
-// ── Auth / User ───────────────────────────────────────────────────────────────
-export type UserRole = 'super_admin' | 'security_admin' | 'auditor' | 'user'
-
+// ── Auth User Extension ───────────────────────────────────────────────────────
 export interface AuthUser {
-    id: string
-    email: string
-    fullName: string | null
-    avatarUrl: string | null
-    role: UserRole
-    isActive: boolean
-    orgId: string | null
-    createdAt: string
-    lastLoginAt: string | null
-    deactivatedAt?: string | null
-    deactivationReason?: string | null
-    roles?: string[]
-    permissions?: string[]
+  id: string
+  email: string
+  fullName: string | null
+  avatarUrl: string | null
+  role: string
+  isActive: boolean
+  orgId: string | null
+  departmentId?: string | null
+  createdAt: string
+  lastLoginAt: string | null
+  deactivatedAt?: string | null
+  deactivationReason?: string | null
+  roles?: string[]
+  permissions?: string[]
 }
 
-// ── Admin RBAC Types ──────────────────────────────────────────────────────────
-export interface Permission {
-    id: string
-    action: string
-    module: 'USER' | 'POLICY' | 'SYSTEM' | 'AUDIT' | 'ROLE' | 'ORGANISATION'
-    name: string
-    description: string | null
-    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+// ── Enterprise Organisation & Department ──────────────────────────────────────
+export type OrgStatus = 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED'
 
-    isActive: boolean
+export interface Organisation {
+  id: string
+  name: string
+  domain: string | null
+  admin_email: string
+  status: OrgStatus
+  dns_txt_token: string | null
+  domain_verified_at: string | null
+  created_at: string
 }
 
-export interface Role {
-    id: string
-    name: string
-    slug: string
-    description: string | null
-    isSystem: boolean
-    isActive: boolean
-    createdAt: string
-    updatedAt: string
-    permissions: Permission[]
+export interface Department {
+  id: string
+  org_id: string
+  name: string
+  description: string | null
+  created_at: string
+  members_count?: number
 }
 
-export interface AdminUser {
-    id: string
-    email: string
-    fullName: string | null
-    avatarUrl: string | null
-    role: UserRole
-    isActive: boolean
-    orgId: string | null
-    createdAt: string
-    lastLoginAt: string | null
-    deactivatedAt?: string | null
-    deactivationReason?: string | null
-    roles: Role[]
-}
-
-export interface AdminAuditLog {
-    id: string
-    userId: string | null
-    userEmail: string | null
-    userName: string | null
-    userRoles: string[] | null
-    action: string
-    module: 'USER' | 'POLICY' | 'SYSTEM' | 'AUDIT' | 'ROLE' | 'ORGANISATION'
-    description: string | null
-    entityId: string | null
-    entityType: string | null
-    entityName: string | null
-    beforeState: Record<string, any> | null
-    afterState: Record<string, any> | null
-    ipAddress: string | null
-    userAgent: string | null
-    status: 'SUCCESS' | 'FAILED' | 'DENIED'
-    reason: string | null
-    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-    createdAt: string
-}
-
-
-// ── Audit Log ─────────────────────────────────────────────────────────────────
-export type ActionType = 'BLOCK' | 'MASK' | 'WARN_ALLOW' | 'ALLOW'
-export type SeverityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-
-export interface AuditLog {
-    id: string
-    eventId: string | null
-    actionTaken: ActionType
-    categoryTriggered: string
-    detectionType: string
-    detectionTier: string
-    llmPlatform: string
-    domain: string | null
-    matchCount: number
-    entityTypes: string[]
-    severities: SeverityLevel[]
-    extensionVersion: string | null
-    osPlatform: string | null
-    browser: string | null
-    acknowledged: boolean
-    latencyMs: number | null
-    timestamp: string
-    receivedAt: string
+// ── DLP Incident ──────────────────────────────────────────────────────────────
+export interface DLPIncident {
+  id: string
+  org_id: string
+  department_id: string | null
+  user_id: string
+  user_email: string
+  policy_id: string
+  policy_name: string
+  target_app: string
+  action_taken: 'BLOCK' | 'MASK' | 'WARN' | 'LOG_ONLY'
+  severity: string
+  redacted_snippet: string
+  override_reason: string | null
+  created_at: string
 }
 
 // ── Dashboard Stats ───────────────────────────────────────────────────────────
 export interface DashboardStats {
-    totalEvents: number
-    maskedCount: number
-    allowedCount: number
-    blockedCount: number
-    cancelledCount: number
-    topEntityTypes: { type: string; count: number }[]
-    topDomains: { domain: string; count: number }[]
-    eventsByDay: { date: string; count: number }[]
+  totalEvents: number
+  blockedCount: number
+  maskedCount: number
+  warnedCount: number
+  cancelledCount?: number
+  allowedCount: number
+  topEntityTypes: { type: string; count: number }[]
+  topPlatforms: { platform: string; count: number }[]
+  topDomains: { domain: string; count: number }[]
+  timeline?: { date: string; count: number }[]
+  eventsByDay?: { date: string; count: number }[]
+}
+
+// ── AuditLog Override for Frontend ───────────────────────────────────────────
+export interface AuditLog {
+  id?: string
+  eventId: string
+  timestamp: string
+  receivedAt?: string
+  actionTaken: import('@securegpt/shared').PolicyAction
+  categoryTriggered: import('@securegpt/shared').PIICategory
+  detectionType: string
+  detectionTier: import('@securegpt/shared').DetectionTier
+  llmPlatform: string
+  domain?: string
+  matchCount: number
+  snippetHash?: string
+  entityTypes?: string[]
+  severities?: string[]
+  extensionVersion?: string
+  osPlatform?: string
+  browser?: string
+  acknowledged?: boolean
+  latencyMs?: number
+  pipelineVersion?: string
 }
 
 // ── Policy ────────────────────────────────────────────────────────────────────
-export type PolicyAction = 'BLOCK' | 'MASK' | 'WARN_ALLOW' | 'ALLOW'
-
-export interface CustomRule {
-    id: string
-    type: 'custom'
-    label: string
-    pattern: string
-    caseSensitive?: boolean
-    severity: 'low' | 'medium' | 'high' | 'critical'
-    description?: string
-    requireContext?: boolean
-    triggers?: string[]
-    maskingLabel?: string
-    enabled: boolean
-}
-
-export interface RuleOverride {
-    enabled?: boolean
-    action?: PolicyAction
-}
-
-export interface CategoryConfig {
-    enabled: boolean
-    action: PolicyAction
-    customKeywords: string[]
-    allowlist: string[]
-    fuzzyMatch: boolean
-    customRules?: CustomRule[]
-    ruleOverrides?: Record<string, RuleOverride>
-}
-
-export interface PIIConfig {
-    version: number
-    categories: Record<string, CategoryConfig>
-    monitoredPlatforms: string[]
-    customDomains: string[]
-    allowPause: boolean
-    logUserEmail: boolean
-    sensitivityLevel: 'low' | 'medium' | 'high'
-    updatedAt?: string
-}
-
 export interface Policy {
-    id: string | null
-    userId: string
-    config: PIIConfig
-    version: number
-    isActive: boolean
-    publishedAt: string | null
-    createdAt: string | null
-    updatedAt: string | null
+  id: string | null
+  userId: string
+  config: import('@securegpt/shared').PIIConfig
+  version: number
+  isActive: boolean
+  publishedAt: string | null
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 // ── Device ────────────────────────────────────────────────────────────────────
 export interface Device {
-    id: string
-    userId: string | null
-    name: string
-    hostname: string | null
-    osPlatform: string | null
-    browser: string | null
-    extensionVersion: string | null
-    isActive: boolean
-    createdAt: string
-    lastSeenAt: string | null
-}
-
-// ── Log Stats ─────────────────────────────────────────────────────────────────
-export interface LogStats {
-    totalEvents: number
-    blockedCount: number
-    maskedCount: number
-    warnedCount: number
-    allowedCount: number
-    topEntityTypes: { type: string; count: number }[]
-    topPlatforms: { platform: string; count: number }[]
-    topDomains: { domain: string; count: number }[]
+  id: string
+  userId: string | null
+  name: string
+  hostname: string | null
+  osPlatform: string | null
+  browser: string | null
+  extensionVersion: string | null
+  isActive: boolean
+  createdAt: string
+  lastSeenAt: string | null
 }

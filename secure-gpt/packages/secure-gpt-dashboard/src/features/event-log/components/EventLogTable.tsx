@@ -70,10 +70,12 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                     </td>
                   </tr>
                 )
-                : data.map((log, i) => (
-                  <React.Fragment key={log.id}>
+                : data.map((log, i) => {
+                  const logKey = log.id || log.eventId || String(i)
+                  return (
+                  <React.Fragment key={logKey}>
                     <tr
-                      onClick={() => toggleExpandLog(log.id)}
+                      onClick={() => toggleExpandLog(logKey)}
                       style={{ borderBottom: '1px solid var(--border)', animationDelay: `${i * 15}ms` }}
                       className="animate-fade-in transition-all duration-150 hover:bg-[var(--bg-surface-2)]/60 cursor-pointer">
                       <td className="px-4 py-3">
@@ -102,19 +104,19 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
-                          {log.entityTypes.slice(0, 2).map(et => (
+                          {(log.entityTypes ?? []).slice(0, 2).map(et => (
                             <span key={et}
                               className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium"
                               style={{ background: 'var(--bg-surface-3)', color: 'var(--text-secondary)' }}>
                               {et}
                             </span>
                           ))}
-                          {log.entityTypes.length > 2 && (
+                          {(log.entityTypes ?? []).length > 2 && (
                             <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                              +{log.entityTypes.length - 2}
+                              +{(log.entityTypes ?? []).length - 2}
                             </span>
                           )}
-                          {log.entityTypes.length === 0 && <span className="text-xs text-[var(--text-tertiary)]">—</span>}
+                          {(log.entityTypes ?? []).length === 0 && <span className="text-xs text-[var(--text-tertiary)]">—</span>}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs tabular-nums whitespace-nowrap"
@@ -126,14 +128,14 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-2)] transition-all active:scale-95 cursor-pointer shadow-sm pointer-events-none"
                           style={{ color: 'var(--text-secondary)' }}
                         >
-                          {expandedLogId === log.id ? <EyeOff size={11} /> : <Eye size={11} />}
-                          <span>{expandedLogId === log.id ? 'Hide' : 'Inspect'}</span>
+                          {expandedLogId === logKey ? <EyeOff size={11} /> : <Eye size={11} />}
+                          <span>{expandedLogId === logKey ? 'Hide' : 'Inspect'}</span>
                         </button>
                       </td>
                     </tr>
 
                     {/* Expanded details block */}
-                    {expandedLogId === log.id && (
+                    {expandedLogId === logKey && (
                       <tr className="bg-white/[0.01] dark:bg-black/[0.05]">
                         <td colSpan={7} className="py-4 px-6 border-b border-[var(--border-2)]">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-left">
@@ -186,31 +188,31 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                                 <div>
                                   <span className="block text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>Entity Categories</span>
                                   <div className="flex flex-wrap gap-1.5 mt-1">
-                                    {log.entityTypes.map(et => (
+                                    {(log.entityTypes ?? []).map(et => (
                                       <span key={et} className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium"
                                         style={{ background: 'var(--bg-surface-3)', color: 'var(--text-primary)' }}>
                                         {et}
                                       </span>
                                     ))}
-                                    {log.entityTypes.length === 0 && <span className="italic text-gray-400">None detected</span>}
+                                    {(log.entityTypes ?? []).length === 0 && <span className="italic text-gray-400">None detected</span>}
                                   </div>
                                 </div>
                                 <div>
                                   <span className="block text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>Entity Severities</span>
                                   <div className="flex flex-wrap gap-1.5 mt-1">
-                                    {log.severities.map((sev, idx) => (
+                                    {(log.severities ?? []).map((sev, idx) => (
                                       <Badge key={idx} variant={sev === 'CRITICAL' || sev === 'HIGH' ? 'danger' : 'info'}>
                                         {sev}
                                       </Badge>
                                     ))}
-                                    {log.severities.length === 0 && <span className="italic text-gray-400">None</span>}
+                                    {(log.severities ?? []).length === 0 && <span className="italic text-gray-400">None</span>}
                                   </div>
                                 </div>
                                 <div className="pt-2 border-t border-[var(--border-2)] flex items-center justify-between">
                                   <span style={{ color: 'var(--text-secondary)' }}>User Acknowledged Warning</span>
-                                  <Badge variant={log.acknowledged ? 'success' : 'neutral'}>
-                                    {log.acknowledged ? 'Yes' : 'No'}
-                                  </Badge>
+                                  <span className="font-semibold" style={{ color: log.acknowledged ? 'var(--warning)' : 'var(--text-tertiary)' }}>
+                                    {log.acknowledged ? 'Yes (Bypassed)' : 'No'}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -230,8 +232,8 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                       </tr>
                     )}
                   </React.Fragment>
-                ))
-            }
+                  )
+                })}
           </tbody>
         </table>
       </div>

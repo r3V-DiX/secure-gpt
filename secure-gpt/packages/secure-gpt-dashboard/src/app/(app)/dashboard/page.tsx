@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const firstName = user?.fullName?.split(' ')[0] ?? 'there'
 
   return (
-    <div className="max-w-[1280px] space-y-7 animate-fade-in pb-8">
+    <div className="w-full space-y-7 animate-fade-in pb-8">
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between flex-wrap gap-3 pt-1">
@@ -300,9 +300,9 @@ export default function DashboardPage() {
                 style={{ color: 'var(--text-tertiary)' }}>
                 Events Over Time
               </h2>
-              {!loading && stats && stats.eventsByDay.length > 0 && (
+              {!loading && stats && (stats.eventsByDay?.length ?? 0) > 0 && (
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                  {stats.eventsByDay.reduce((s, d) => s + d.count, 0).toLocaleString()} total
+                  {(stats.eventsByDay ?? []).reduce((s, d) => s + d.count, 0).toLocaleString()} total
                 </p>
               )}
             </div>
@@ -313,11 +313,11 @@ export default function DashboardPage() {
               <div className="skeleton h-28 rounded-lg" />
               <div className="skeleton h-3 w-20 rounded" />
             </div>
-          ) : stats?.eventsByDay.length === 0 ? (
+          ) : (stats?.eventsByDay ?? []).length === 0 ? (
             <EmptyState label="No events in period" />
           ) : (
-            <div className="h-32 -mx-2">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-32 min-h-[128px] min-w-0 w-full -mx-2">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={128}>
                 <BarChart data={stats?.eventsByDay ?? []}>
                   <Tooltip
                     cursor={{ fill: 'var(--bg-surface-2)', opacity: 0.4 }}
@@ -348,7 +348,7 @@ export default function DashboardPage() {
                     animationDuration={1500}
                   >
                     {(stats?.eventsByDay ?? []).map((entry, index) => {
-                      const max = Math.max(...(stats?.eventsByDay.map(d => d.count) ?? [1]))
+                      const max = Math.max(...((stats?.eventsByDay ?? []).map(d => d.count) ?? [1]))
                       return (
                         <Cell 
                           key={`cell-${index}`} 
@@ -362,7 +362,7 @@ export default function DashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex justify-between mt-2 px-2">
-                {([stats?.eventsByDay[0], stats?.eventsByDay[Math.floor(stats?.eventsByDay.length / 2)], stats?.eventsByDay[stats?.eventsByDay.length - 1]])
+                {([(stats?.eventsByDay ?? [])[0], (stats?.eventsByDay ?? [])[Math.floor((stats?.eventsByDay ?? []).length / 2)], (stats?.eventsByDay ?? [])[(stats?.eventsByDay ?? []).length - 1]])
                   .filter((d): d is { date: string; count: number } => d !== undefined)
                   .map((d, i) => (
                     <span key={i} className="text-[9px] font-mono font-medium"

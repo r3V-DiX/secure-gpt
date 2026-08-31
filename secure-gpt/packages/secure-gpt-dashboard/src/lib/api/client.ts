@@ -101,6 +101,11 @@ export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
   return res.data.data
 }
 
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  const res = await apiClient.patch<BackendEnvelope<T>>(path, body)
+  return res.data.data
+}
+
 export async function apiDelete<T>(path: string): Promise<T> {
   const res = await apiClient.delete<BackendEnvelope<T>>(path)
   return res.data.data

@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const firstName = user?.fullName?.split(' ')[0] ?? 'there'
 
   return (
-    <div className="max-w-[1280px] space-y-7 animate-fade-in pb-8">
+    <div className="w-full space-y-7 animate-fade-in pb-8">
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between flex-wrap gap-3 pt-1">

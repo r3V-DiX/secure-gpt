@@ -9,9 +9,18 @@ from app.core.database import Base
 
 
 class UserRole(str, PyEnum):
+    # Tier 1
+    PLATFORM_SUPER_ADMIN = "platform_super_admin"
+    # Legacy / general roles
     SUPER_ADMIN = "super_admin"
+    # Tier 2
+    ORG_ADMIN = "org_admin"
     SECURITY_ADMIN = "security_admin"
     AUDITOR = "auditor"
+    # Tier 3
+    DEPARTMENT_ADMIN = "department_admin"
+    # Tier 4
+    EMPLOYEE = "employee"
     USER = "user"
 
 
@@ -34,9 +43,12 @@ class User(Base):
     is_high_risk: Mapped[bool] = mapped_column(Boolean, default=False)
     privacy_accepted: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # Organisation FK — nullable, schema only for now
+    # Organisation & Department FKs
     org_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True
+    )
+    department_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True
     )
 
     # Timestamps
@@ -57,6 +69,7 @@ class User(Base):
 
     # Relationships
     organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="users")  # noqa: F821
+    department: Mapped["Department | None"] = relationship("Department", back_populates="members")  # noqa: F821
     sessions: Mapped[list["Session"]] = relationship("Session", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     auth_events: Mapped[list["AuthEvent"]] = relationship("AuthEvent", back_populates="user")  # noqa: F821
     devices: Mapped[list["Device"]] = relationship("Device", back_populates="user")  # noqa: F821
@@ -64,3 +77,4 @@ class User(Base):
     policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="user")  # noqa: F821
     role_assignments: Mapped[list["UserRoleAssignment"]] = relationship("UserRoleAssignment", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     admin_audit_logs: Mapped[list["AdminAuditLog"]] = relationship("AdminAuditLog", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
+    incidents: Mapped[list["DLPIncident"]] = relationship("DLPIncident", back_populates="user")  # noqa: F821

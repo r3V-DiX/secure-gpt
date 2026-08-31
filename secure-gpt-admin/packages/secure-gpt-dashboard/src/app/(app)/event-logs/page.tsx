@@ -38,7 +38,7 @@ export default function LogsPage() {
   const error = loadError || exportError
 
   return (
-    <div className="max-w-[1200px] space-y-6 animate-fade-in pb-8">
+    <div className="w-full space-y-6 animate-fade-in pb-8">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>

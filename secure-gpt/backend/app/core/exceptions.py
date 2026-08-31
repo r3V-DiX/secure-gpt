@@ -76,6 +76,12 @@ class Forbidden(AppException):
 
 # ─── Resource Errors (4xx) ────────────────────────────────────────────────────
 
+class BadRequest(AppException):
+    status_code = 400
+    code = "BAD_REQUEST"
+    message = "Bad request"
+
+
 class NotFound(AppException):
     status_code = 404
     code = "NOT_FOUND"

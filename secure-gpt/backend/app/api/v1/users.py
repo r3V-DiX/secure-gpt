@@ -20,12 +20,38 @@ def _serialize_user(user: User) -> dict:
         "role": user.role.value if isinstance(user.role, UserRole) else user.role,
         "isActive": user.is_active,
         "orgId": user.org_id,
+        "departmentId": user.department_id,
         "createdAt": user.created_at.isoformat(),
         "lastLoginAt": user.last_login_at.isoformat() if user.last_login_at else None,
     }
 
 
-@router.get("", summary="List users", dependencies=[has_permission("user:view_all")])
+@router.patch("/{user_id}/department", summary="Assign user to a department")
+async def assign_user_department(
+    user_id: str,
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    body = await request.json()
+    department_id = body.get("department_id")
+
+    res = await db.execute(select(User).where(User.id == user_id))
+    target_user = res.scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if current_user.role != UserRole.SUPER_ADMIN and target_user.org_id != current_user.org_id:
+        raise HTTPException(status_code=403, detail="Cannot modify users from another organization")
+
+    target_user.department_id = department_id or None
+    await db.commit()
+    await db.refresh(target_user)
+
+    return success(data=_serialize_user(target_user), message="User department updated successfully")
+
+
+@router.get("", summary="List users")
 async def list_users(
     request: Request,
     db: DBSession,
@@ -35,9 +61,12 @@ async def list_users(
     query = select(User)
     
     # Super admins can see everyone.
-    # Org admins (like security_admin) can only see users in their org.
+    # Org admins & employees can see users in their own org.
     if current_user.role != UserRole.SUPER_ADMIN:
-        query = query.where(User.org_id == current_user.org_id)
+        if current_user.org_id:
+            query = query.where(User.org_id == current_user.org_id)
+        else:
+            query = query.where(User.id == current_user.id)
         
     count_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = count_result.scalar_one()

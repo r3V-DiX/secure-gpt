@@ -1,22 +1,9 @@
 import type { Metadata } from "next";
-import { Poppins, DM_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ToastProvider } from "@/contexts/toast-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { ModalProvider } from "@/components/ui/modal/modal";
 import "./globals.css";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  variable: "--font-poppins",
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const dmMono = DM_Mono({
-  subsets: ["latin"],
-  variable: "--font-dm-mono",
-  weight: ["400", "500"],
-});
 
 export const metadata: Metadata = {
   title: "SecureGPT — Browser-Native AI Data Protection",
@@ -36,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${poppins.variable} ${dmMono.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
