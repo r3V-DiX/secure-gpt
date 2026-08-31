@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [otpLoading, setOtpLoading] = useState(false)
 
   // Dev Quick-Bypass State
-  const [devEmail, setDevEmail] = useState('admin@acmecorp.com')
+  const [devEmail, setDevEmail] = useState('admin@blackvector.online')
   const [devPersona, setDevPersona] = useState<'employer' | 'employee' | 'user'>('employer')
   const [devLoading, setDevLoading] = useState(false)
 

@@ -50,11 +50,26 @@ export default function TeamPage() {
   const [orgResult, setOrgResult] = useState<any>(null)
   const [orgError, setOrgError] = useState<string | null>(null)
   const [copiedToken, setCopiedToken] = useState(false)
+  const [verifyingDns, setVerifyingDns] = useState(false)
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text)
     setCopiedToken(true)
     setTimeout(() => setCopiedToken(false), 2000)
+  }
+
+  const handleVerifyDns = async () => {
+    if (!currentOrg?.id) return
+    setVerifyingDns(true)
+    try {
+      const res = await apiPost<any>('/orgs/verify-domain', { org_id: currentOrg.id })
+      await fetchTeamData()
+      alert(res?.message || 'Domain verified successfully!')
+    } catch (err: any) {
+      alert(err.message || 'Failed to verify DNS record')
+    } finally {
+      setVerifyingDns(false)
+    }
   }
 
   const handleInvite = async () => {
@@ -114,7 +129,9 @@ export default function TeamPage() {
   const userDomain = user?.email?.split('@')[1]
   const orgDisplayName = currentOrg?.name || (user?.role === 'org_admin' ? `${userDomain?.split('.')[0]?.toUpperCase()} Enterprise` : 'Acme Cybersecurity')
   const orgDomain = currentOrg?.domain || userDomain
-  const orgStatus = currentOrg?.status || 'PENDING_VERIFICATION'
+  const rawStatus = String(currentOrg?.status || 'PENDING_VERIFICATION')
+  const isOrgActive = rawStatus.toUpperCase().includes('ACTIVE')
+  const orgStatus = isOrgActive ? 'ACTIVE' : 'PENDING_VERIFICATION'
   const dnsToken = currentOrg?.dns_txt_token || (user?.email?.includes('@') ? `securegpt-verification=sgpt-${user.id.slice(0, 16)}` : 'securegpt-verification=sgpt-98b1a9c8ca55fcef1ceafdb33807efaa')
 
   if (loading) {
@@ -251,9 +268,26 @@ export default function TeamPage() {
                   {copiedToken ? <Check size={12} style={{ color: 'var(--success)' }} /> : <Copy size={12} />}
                   <span>{copiedToken ? 'Copied' : 'Copy'}</span>
                 </button>
+
+                {orgStatus !== 'ACTIVE' && (
+                  <button
+                    type="button"
+                    disabled={verifyingDns}
+                    onClick={handleVerifyDns}
+                    className="px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 text-white"
+                    style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+                  >
+                    {verifyingDns ? (
+                      <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={12} />
+                    )}
+                    <span>{verifyingDns ? 'Checking DNS…' : 'Verify Domain'}</span>
+                  </button>
+                )}
               </div>
               <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                Add this TXT record to your DNS provider (Cloudflare, Route53, GoDaddy) to verify domain.
+                Add this TXT record to your Cloudflare DNS, then click <b>Verify Domain</b>.
               </p>
             </div>
           )}
