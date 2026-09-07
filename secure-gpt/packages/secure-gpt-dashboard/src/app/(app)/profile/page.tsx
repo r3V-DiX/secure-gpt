@@ -1,7 +1,7 @@
 'use client'
 // src/app/(app)/profile/page.tsx
 import { useState } from 'react'
-import { Monitor, Cpu, Globe, Calendar, Clock, Hash } from 'lucide-react'
+import { Monitor, Cpu, Globe, Calendar, Clock, Hash, Trash2 } from 'lucide-react'
 import { useProfile } from '@/features/profile/hooks/use-profile'
 import { Avatar } from '@/components/shared/Avatar'
 import { apiDelete } from '@/lib/api/client'
@@ -9,7 +9,7 @@ import { useToast } from '@/contexts/toast-context'
 import { Modal } from '@/components/ui/modal/modal'
 
 export default function ProfilePage() {
-    const { user, devices, loading } = useProfile()
+    const { user, devices, loading, removeDevice } = useProfile()
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const { toast } = useToast()
@@ -168,14 +168,30 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
 
-                                <div className="text-right shrink-0 space-y-1">
-                                    <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                                        {d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleDateString() : 'Never'}
-                                    </p>
-                                    <span className="text-[10px] font-semibold"
-                                        style={{ color: d.isActive ? 'var(--success)' : 'var(--text-tertiary)' }}>
-                                        {d.isActive ? '● Active' : '○ Inactive'}
-                                    </span>
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <div className="text-right space-y-1">
+                                        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                                            {d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleDateString() : 'Never'}
+                                        </p>
+                                        <span className="text-[10px] font-semibold"
+                                            style={{ color: d.isActive ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                                            {d.isActive ? '● Active' : '○ Inactive'}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            if (confirm(`Remove device "${d.name}"?`)) {
+                                                await removeDevice(d.id)
+                                                toast.success('Device removed')
+                                            }
+                                        }}
+                                        className="p-1.5 rounded-lg border hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-slate-400 hover:text-red-600 cursor-pointer"
+                                        style={{ borderColor: 'var(--border-2)' }}
+                                        title="Remove device"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             </div>
                         ))}

@@ -20,7 +20,10 @@ const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL ?? 'https://securegpt.r
 const dashboardClient = axios.create({
   baseURL: DASHBOARD_URL,
   withCredentials: true,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Extension-Request': 'true',
+  },
   timeout: 10000,
 })
 
@@ -33,6 +36,8 @@ export async function fetchCurrentUser(): Promise<User | null> {
     )
     const user = response.data.data
     await authStorage.setAuth({ user })
+    // Ensure device is registered with the backend for real-time pairing status
+    void registerDevice()
     return user
   } catch {
     await authStorage.clearAuth()
@@ -52,6 +57,19 @@ export async function signInWithEmail(email: string): Promise<User | null> {
   try {
     await dashboardClient.post('/api/v1/auth/dev-login', { email })
     const user = await fetchCurrentUser()
+    if (user) {
+      chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS', user }).catch(() => {})
+      try {
+        const tabs = await chrome.tabs.query({})
+        for (const t of tabs) {
+          if (t.id) {
+            chrome.tabs.sendMessage(t.id, { type: 'AUTH_SUCCESS' }).catch(() => {})
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
     return user
   } catch (err) {
     console.error('[SecureGPT] Email bypass login failed:', err)
@@ -69,6 +87,18 @@ export async function signOut(): Promise<void> {
     // Even if backend call fails, clear local state
   } finally {
     await authStorage.clearAuth()
+    // Broadcast auth lost to popup and all active tabs
+    chrome.runtime.sendMessage({ type: 'AUTH_LOST' }).catch(() => {})
+    try {
+      const tabs = await chrome.tabs.query({})
+      for (const t of tabs) {
+        if (t.id) {
+          chrome.tabs.sendMessage(t.id, { type: 'AUTH_LOST' }).catch(() => {})
+        }
+      }
+    } catch {
+      // ignore
+    }
   }
 }
 

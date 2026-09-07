@@ -6,7 +6,7 @@
   "description": "SecureGPT Chrome Extension — DLP for LLM platforms",
   "scripts": {
     "dev": "vite build --watch --mode development",
-    "build": "node build.mjs --mode=production",
+    "build": "node build.mjs --mode=development",
     "build:dev": "node build.mjs --mode=development",
     "build:prod": "node build.mjs --mode=production",
     "test": "vitest run",

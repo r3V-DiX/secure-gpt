@@ -8,7 +8,7 @@ import { logDetectionEvent } from './audit-logger'
 import { applyMasking, applyImageMasking } from '@/features/actions/services/masking.service'
 import { showLiveWarningTooltip, removeLiveWarningTooltip } from './live-warning-tooltip'
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
-import type { PIICategory } from '@securegpt/shared/constants'
+import { POLICY_ACTION_PRIORITY, type PIICategory, type PolicyAction } from '@securegpt/shared/constants'
 
 let currentPolicy: PIIConfig
 let isRunning = false
@@ -107,7 +107,7 @@ function handleGlobalSubmit(e: Event): void {
   void handleSubmit(root)
 }
 
-async function handleGlobalInput(e: Event): void {
+async function handleGlobalInput(e: Event): Promise<void> {
   if (!e.isTrusted) return
 
   const target = e.target as HTMLElement
@@ -180,24 +180,17 @@ async function handleGlobalInput(e: Event): void {
   }, 1000)
 }
 
-const ACTION_PRIORITY: Record<string, number> = {
-  BLOCK: 3,
-  MASK: 2,
-  WARN_ALLOW: 1,
-  ALLOW: 0,
-}
-
-function getMostRestrictiveAction(entities: PIIEntity[], policy: PIIConfig): { action: string; topEntity: PIIEntity } {
+function getMostRestrictiveAction(entities: PIIEntity[], policy: PIIConfig): { action: PolicyAction; topEntity: PIIEntity } {
   let maxPriority = -1
-  let topAction = 'ALLOW'
+  let topAction: PolicyAction = 'ALLOW'
   let topEntity = entities[0]!
 
   for (const entity of entities) {
     const catConfig = policy.categories[entity.category]
     // Per-rule action override takes precedence over the category-level action
-    const ruleAction = catConfig?.ruleOverrides?.[entity.ruleId]?.action
-    const action = ruleAction ?? catConfig?.action ?? 'ALLOW'
-    const priority = ACTION_PRIORITY[action] ?? 0
+    const ruleAction = catConfig?.ruleOverrides?.[entity.ruleId]?.action as PolicyAction | undefined
+    const action: PolicyAction = (ruleAction ?? catConfig?.action ?? 'ALLOW') as PolicyAction
+    const priority = POLICY_ACTION_PRIORITY[action] ?? 0
     if (priority > maxPriority) {
       maxPriority = priority
       topAction = action

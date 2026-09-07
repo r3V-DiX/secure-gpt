@@ -33,7 +33,15 @@ export function TopNav({ onMenuClick }: TopNavProps) {
   const segments = pathname.split('/').filter(Boolean)
   const currentKey = segments[0] || 'dashboard'
   const pageTitle = ROUTE_LABELS[currentKey] || 'Dashboard'
-  const isProtected = devices.length > 0
+
+  // Consider protected only if there is an active device seen recently (e.g. last 5 mins)
+  const isProtected = devices.some((d) => {
+    if (!d.isActive) return false
+    if (!d.lastSeenAt) return false
+    const lastSeenTime = new Date(d.lastSeenAt).getTime()
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
+    return lastSeenTime >= fiveMinutesAgo
+  })
 
   return (
     <header className="h-[58px] border-b border-[var(--border)] bg-[var(--nav-bg)] backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between transition-colors">
@@ -65,8 +73,19 @@ export function TopNav({ onMenuClick }: TopNavProps) {
       {/* ── Right Side: Live Protection Badge & Theme Toggle ── */}
       <div className="flex items-center gap-3">
         {isProtected ? (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold tracking-tight shadow-sm"
+            style={{
+              background: 'var(--success-light)',
+              borderColor: 'var(--success-border)',
+              borderWidth: '1px',
+              color: 'var(--success)',
+            }}
+          >
+            <span
+              className="size-2 rounded-full animate-pulse"
+              style={{ background: 'var(--success)' }}
+            />
             <span>Real-time DLP Guard Active</span>
           </div>
         ) : (

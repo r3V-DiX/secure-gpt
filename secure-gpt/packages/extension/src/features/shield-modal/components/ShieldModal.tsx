@@ -14,7 +14,7 @@ interface ShieldModalProps {
   onCancel: () => void
   onMask?: () => void
   readOnly?: boolean
-  readOnlyTitle?: string
+  readOnlyTitle?: string | undefined
 }
 
 const categoryStyles: Record<PIICategory, { bg: string; border: string; text: string; dot: string }> = {
@@ -110,13 +110,13 @@ export function ShieldModal({
 
             {/* Detected items grouped by category */}
             {(Object.entries(grouped) as [PIICategory, PIIEntity[]][]).map(([cat, entities]) => {
-              const s = categoryStyles[cat]
+              const s = categoryStyles[cat] ?? { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', dot: 'bg-slate-400' }
               return (
                 <div key={cat} className={clsx('category-card', s.bg, s.border)}>
                   <div className="category-header">
-                    <span className="category-icon">{categoryIcons[cat]}</span>
+                    <span className="category-icon">{categoryIcons[cat] ?? '⚠️'}</span>
                     <span className={clsx('category-label', s.text)}>
-                      {PII_CATEGORY_LABELS[cat]}
+                      {PII_CATEGORY_LABELS[cat] ?? cat}
                     </span>
                     <span className={clsx('category-count', s.text)}>{entities.length}</span>
                   </div>

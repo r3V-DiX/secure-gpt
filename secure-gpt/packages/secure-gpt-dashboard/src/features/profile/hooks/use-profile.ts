@@ -11,12 +11,32 @@ export function useProfile() {
   const [devicesLoading, setDevicesLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchMyDevices()
-      .then(setDevices)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setDevicesLoading(false))
-  }, [])
+  const refreshDevices = async () => {
+    try {
+      const list = await fetchMyDevices()
+      setDevices(list)
+      setError(null)
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setDevicesLoading(false)
+    }
+  }
 
-  return { user, devices, loading: authLoading || devicesLoading, error }
+  const removeDevice = async (deviceId: string) => {
+    const { deleteDevice } = await import('../services/profile.service')
+    await deleteDevice(deviceId)
+    setDevices(prev => prev.filter(d => d.id !== deviceId))
+  }
+
+  useEffect(() => {
+    if (user) {
+      void refreshDevices()
+    } else {
+      setDevices([])
+      setDevicesLoading(false)
+    }
+  }, [user?.id])
+
+  return { user, devices, loading: authLoading || devicesLoading, error, refreshDevices, removeDevice }
 }

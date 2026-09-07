@@ -6,22 +6,22 @@ from app.services.policy_service import resolve_strictest_action
 
 class TestPolicyInheritanceAndConflictResolution(unittest.TestCase):
     def test_strictest_action_resolution(self):
-        # BLOCK > MASK > WARN > LOG_ONLY
+        # BLOCK > MASK > WARN_ALLOW > ALLOW
         self.assertEqual(
-            resolve_strictest_action([PolicyAction.LOG_ONLY, PolicyAction.WARN, PolicyAction.BLOCK]),
+            resolve_strictest_action([PolicyAction.ALLOW, PolicyAction.WARN_ALLOW, PolicyAction.BLOCK]),
             PolicyAction.BLOCK
         )
         self.assertEqual(
-            resolve_strictest_action([PolicyAction.LOG_ONLY, PolicyAction.MASK, PolicyAction.WARN]),
+            resolve_strictest_action([PolicyAction.ALLOW, PolicyAction.MASK, PolicyAction.WARN_ALLOW]),
             PolicyAction.MASK
         )
         self.assertEqual(
-            resolve_strictest_action([PolicyAction.LOG_ONLY, PolicyAction.WARN]),
-            PolicyAction.WARN
+            resolve_strictest_action([PolicyAction.ALLOW, PolicyAction.WARN_ALLOW]),
+            PolicyAction.WARN_ALLOW
         )
         self.assertEqual(
-            resolve_strictest_action([PolicyAction.LOG_ONLY]),
-            PolicyAction.LOG_ONLY
+            resolve_strictest_action([PolicyAction.ALLOW]),
+            PolicyAction.ALLOW
         )
         self.assertIsNone(resolve_strictest_action([]))
 

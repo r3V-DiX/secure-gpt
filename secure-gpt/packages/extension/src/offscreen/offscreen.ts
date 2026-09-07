@@ -255,7 +255,7 @@ async function runImageOcr(
       tier: 'ocr',
       processingTimeMs: 0,
       inputLength: rawText.length,
-      rotatedImageUrl
+      ...(rotatedImageUrl ? { rotatedImageUrl } : {})
     }
 
     console.log(`[Offscreen] OCR complete — ${rawText.length} chars, ${mappedEntities.length} entities`)

@@ -196,6 +196,7 @@ export async function detectPIIDemo(
 
       entities.push({
         id: uuidv4(),
+        ruleId: `demo.${rule.category.toLowerCase()}.${rule.type}`,
         type: rule.type,
         label: rule.label,
         category: rule.category,

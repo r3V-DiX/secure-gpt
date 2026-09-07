@@ -30,7 +30,9 @@ export function useAuth() {
       }
       // No cached user — check with backend
       const fresh = await fetchCurrentUser()
-      setUser(fresh)
+      setUser(fresh ?? null)
+    } catch {
+      setUser(null)
     } finally {
       setLoading(false)
     }

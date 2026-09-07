@@ -11,8 +11,8 @@ from app.core.database import Base
 class PolicyAction(str, PyEnum):
     BLOCK = "BLOCK"
     MASK = "MASK"
-    WARN = "WARN"
-    LOG_ONLY = "LOG_ONLY"
+    WARN_ALLOW = "WARN_ALLOW"
+    ALLOW = "ALLOW"
 
 
 class PolicyCategory(str, PyEnum):

@@ -75,3 +75,17 @@ export const DEFAULT_CATEGORY_ACTIONS: Record<PIICategory, PolicyAction> = {
   CONFIDENTIAL: 'BLOCK',
   IP: 'WARN_ALLOW',
 }
+
+export const POLICY_ACTION_PRIORITY: Record<PolicyAction, number> = {
+  BLOCK: 3,
+  MASK: 2,
+  WARN_ALLOW: 1,
+  ALLOW: 0,
+}
+
+export function resolveStrictestAction(actions: PolicyAction[]): PolicyAction | null {
+  if (!actions.length) return null
+  return actions.reduce((strictest, current) =>
+    (POLICY_ACTION_PRIORITY[current] ?? 0) > (POLICY_ACTION_PRIORITY[strictest] ?? 0) ? current : strictest
+  )
+}

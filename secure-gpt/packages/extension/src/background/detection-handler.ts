@@ -6,7 +6,7 @@ import { EXTENSION_VERSION } from '@/config/defaults.config'
 import { DASHBOARD_URL } from '@/config/api.config'
 import apiClient from '@/lib/api/client'
 import { queueLog } from './log-batcher'
-import { DOMAIN_TO_PLATFORM } from '@securegpt/shared/constants'
+import { DOMAIN_TO_PLATFORM, POLICY_ACTION_PRIORITY, type PolicyAction } from '@securegpt/shared/constants'
 
 let creating: Promise<void> | null = null
 
@@ -342,13 +342,6 @@ export async function handleRedactOffice(
   }
 }
 
-const ACTION_PRIORITY: Record<string, number> = {
-  BLOCK: 3,
-  MASK: 2,
-  WARN_ALLOW: 1,
-  ALLOW: 0,
-}
-
 export async function _logBackgroundDetection(
   result: DetectionResult,
   _text: string,
@@ -359,12 +352,12 @@ export async function _logBackgroundDetection(
     if (result.entities.length === 0) return
 
     let maxPriority = -1
-    let finalAction = 'ALLOW'
+    let finalAction: PolicyAction = 'ALLOW'
     let topEntity = result.entities[0]!
 
     for (const entity of result.entities) {
-      const action = config.categories[entity.category]?.action ?? 'ALLOW'
-      const priority = ACTION_PRIORITY[action] ?? 0
+      const action = (config.categories[entity.category]?.action ?? 'ALLOW') as PolicyAction
+      const priority = POLICY_ACTION_PRIORITY[action] ?? 0
       if (priority > maxPriority) {
         maxPriority = priority
         finalAction = action

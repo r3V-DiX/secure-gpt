@@ -5,15 +5,15 @@ from app.models.policy import PolicyAction
 ACTION_SEVERITY_ORDER = {
     PolicyAction.BLOCK: 4,
     PolicyAction.MASK: 3,
-    PolicyAction.WARN: 2,
-    PolicyAction.LOG_ONLY: 1,
+    PolicyAction.WARN_ALLOW: 2,
+    PolicyAction.ALLOW: 1,
 }
 
 
 def resolve_strictest_action(actions: list[PolicyAction]) -> PolicyAction | None:
     """
     Given a list of triggered policy actions, returns the strictest action.
-    Hierarchy: BLOCK > MASK > WARN > LOG_ONLY
+    Hierarchy: BLOCK > MASK > WARN_ALLOW > ALLOW
     """
     if not actions:
         return None

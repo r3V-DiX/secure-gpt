@@ -13,3 +13,8 @@ export async function fetchMyDevices(): Promise<Device[]> {
     )
     return res.data
 }
+
+export async function deleteDevice(deviceId: string): Promise<void> {
+    const { apiDelete } = await import('@/lib/api/client')
+    await apiDelete(`/devices/${deviceId}`)
+}
