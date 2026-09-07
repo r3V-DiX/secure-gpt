@@ -361,6 +361,7 @@ async def delete_user(
 ):
     from app.models.session import Session
     from app.models.device import Device
+    from app.models.policy import Policy
     from sqlalchemy import delete
 
     stmt = select(User).where(User.id == user_id)
@@ -398,7 +399,10 @@ async def delete_user(
     # 3. Delete registered extension devices
     await db.execute(delete(Device).where(Device.user_id == user_id))
 
-    # 4. Log admin audit entry
+    # 4. Delete user custom policies
+    await db.execute(delete(Policy).where(Policy.user_id == user_id))
+
+    # 5. Log admin audit entry
     await log_admin_action(
         db,
         request=request,
