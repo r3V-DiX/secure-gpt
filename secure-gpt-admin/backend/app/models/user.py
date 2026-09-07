@@ -38,7 +38,10 @@ class User(Base):
     google_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
 
     # Role & Status
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, values_callable=lambda x: [e.value for e in x], native_enum=False),
+        default=UserRole.USER,
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_high_risk: Mapped[bool] = mapped_column(Boolean, default=False)
     privacy_accepted: Mapped[bool] = mapped_column(Boolean, default=False)
