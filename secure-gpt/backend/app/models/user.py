@@ -72,9 +72,9 @@ class User(Base):
     department: Mapped["Department | None"] = relationship("Department", back_populates="members")  # noqa: F821
     sessions: Mapped[list["Session"]] = relationship("Session", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     auth_events: Mapped[list["AuthEvent"]] = relationship("AuthEvent", back_populates="user")  # noqa: F821
-    devices: Mapped[list["Device"]] = relationship("Device", back_populates="user")  # noqa: F821
+    devices: Mapped[list["Device"]] = relationship("Device", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="user")  # noqa: F821
-    policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="user")  # noqa: F821
+    policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     role_assignments: Mapped[list["UserRoleAssignment"]] = relationship("UserRoleAssignment", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     admin_audit_logs: Mapped[list["AdminAuditLog"]] = relationship("AdminAuditLog", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     incidents: Mapped[list["DLPIncident"]] = relationship("DLPIncident", back_populates="user")  # noqa: F821

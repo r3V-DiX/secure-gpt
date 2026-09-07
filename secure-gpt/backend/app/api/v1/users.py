@@ -135,6 +135,7 @@ async def delete_user(
 ):
     from app.models.session import Session
     from app.models.device import Device
+    from app.models.policy import Policy
     from sqlalchemy import delete
 
     res = await db.execute(select(User).where(User.id == user_id))
@@ -158,7 +159,10 @@ async def delete_user(
     # 2. Delete all registered devices
     await db.execute(delete(Device).where(Device.user_id == target_user.id))
 
-    # 3. Permanently remove the user record
+    # 3. Delete all custom policies created by this user
+    await db.execute(delete(Policy).where(Policy.user_id == target_user.id))
+
+    # 4. Permanently remove the user record
     await db.delete(target_user)
     await db.commit()
 
