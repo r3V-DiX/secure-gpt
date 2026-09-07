@@ -30,10 +30,19 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s [%s]", settings.app_name, settings.app_env)
-    if settings.debug:
-        async with engine.begin() as conn:
+    async with engine.begin() as conn:
+        if settings.debug:
             await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables synced (dev mode)")
+            logger.info("Database tables synced (dev mode)")
+        else:
+            # Ensure newly added tables and columns exist in production
+            await conn.run_sync(Base.metadata.create_all)
+            from sqlalchemy import text
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS department_id VARCHAR REFERENCES departments(id) ON DELETE SET NULL;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS deactivated_at TIMESTAMP WITH TIME ZONE;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS deactivation_reason VARCHAR(50);"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS pre_deletion_email_sent BOOLEAN DEFAULT FALSE;"))
+            await conn.execute(text("ALTER TABLE policies ADD COLUMN IF NOT EXISTS department_id VARCHAR REFERENCES departments(id) ON DELETE SET NULL;"))
     yield
     await engine.dispose()
     logger.info("Shutdown complete")
