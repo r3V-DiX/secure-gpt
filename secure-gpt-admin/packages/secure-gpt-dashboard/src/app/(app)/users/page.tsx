@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { apiGet, apiPut, apiPost } from '@/lib/api/client'
+import { apiGet, apiPut, apiPost, apiDelete } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
 import { Avatar } from '@/components/shared/Avatar'
 import { Badge } from '@/components/ui/badge/badge'
 import { Button } from '@/components/ui/button/button'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal/modal'
-import { Shield, UserMinus, UserCheck, ShieldAlert, Loader2, Edit3 } from 'lucide-react'
+import { Shield, UserMinus, UserCheck, ShieldAlert, Loader2, Edit3, Trash2 } from 'lucide-react'
 import type { AdminUser, Role } from '@/types'
 
 export default function UsersPage() {
@@ -70,6 +70,22 @@ export default function UsersPage() {
       )
     } catch (err: any) {
       toast.error(err.message || 'Failed to update user status.')
+    }
+  }
+
+  // Delete user permanently
+  async function handleDeleteUser(user: AdminUser) {
+    const confirmed = window.confirm(
+      `⚠️ PERMANENT ACTION:\nAre you sure you want to PERMANENTLY delete user ${user.fullName || user.email}?\nAll active sessions, devices, and permissions will be destroyed immediately.`
+    )
+    if (!confirmed) return
+
+    try {
+      await apiDelete(`/admin/users/${user.id}`)
+      toast.success(`User ${user.fullName || user.email} has been permanently deleted.`)
+      setUsers(prev => prev.filter(u => u.id !== user.id))
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete user.')
     }
   }
 
@@ -265,6 +281,15 @@ export default function UsersPage() {
                           onClick={() => handleToggleStatus(u)}
                         >
                           {u.isActive ? 'Suspend' : 'Activate'}
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          icon={<Trash2 size={12} />}
+                          onClick={() => handleDeleteUser(u)}
+                          title="Permanently Hard Delete User"
+                        >
+                          Delete
                         </Button>
                       </div>
                     </td>

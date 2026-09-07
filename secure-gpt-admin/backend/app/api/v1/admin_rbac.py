@@ -348,6 +348,78 @@ async def toggle_user_status(
     )
 
 
+@router.delete(
+    "/users/{user_id}",
+    summary="Permanently delete user and revoke all sessions/devices",
+    dependencies=[has_permission("user:delete")]
+)
+async def delete_user(
+    user_id: str,
+    request: Request,
+    current_user: CurrentUser,
+    db: DBSession
+):
+    from app.models.session import Session
+    from app.models.device import Device
+    from sqlalchemy import delete
+
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    target_user = result.scalar_one_or_none()
+    if not target_user:
+        raise NotFound("User not found")
+
+    if target_user.id == current_user.id:
+        raise Forbidden("You cannot delete your own account from the admin dashboard")
+
+    from app.services.rbac_service import get_user_roles
+
+    target_roles = await get_user_roles(db, target_user.id)
+    target_slugs = {r.slug for r in target_roles}
+
+    current_roles = await get_user_roles(db, current_user.id)
+    current_slugs = {r.slug for r in current_roles}
+    is_current_super = "super_admin" in current_slugs
+
+    if "super_admin" in target_slugs and not is_current_super:
+        raise Forbidden("Non-Super Admin users cannot delete a Super Admin account")
+
+    # If org admin, ensure user is within their own org
+    if not is_current_super and current_user.org_id:
+        if target_user.org_id != current_user.org_id:
+            raise Forbidden("Cannot delete users from another organization")
+
+    # 1. Clear role assignments
+    await db.execute(UserRoleAssignment.__table__.delete().where(UserRoleAssignment.user_id == user_id))
+
+    # 2. Terminate all active sessions
+    await db.execute(delete(Session).where(Session.user_id == user_id))
+
+    # 3. Delete registered extension devices
+    await db.execute(delete(Device).where(Device.user_id == user_id))
+
+    # 4. Log admin audit entry
+    await log_admin_action(
+        db,
+        request=request,
+        user=current_user,
+        action="user:delete",
+        module=PermissionModule.USER,
+        description=f"Permanently deleted user {target_user.email}",
+        entity_id=target_user.id,
+        entity_type="User",
+        entity_name=target_user.email,
+        before_state={"email": target_user.email, "orgId": target_user.org_id},
+        risk_level=RiskLevel.CRITICAL
+    )
+
+    # 5. Permanently remove from database
+    await db.delete(target_user)
+    await db.commit()
+
+    return success(message=f"User {target_user.email} permanently removed.")
+
+
 # ─── ROLE MANAGEMENT ─────────────────────────────────────────────────────────
 
 @router.get(
