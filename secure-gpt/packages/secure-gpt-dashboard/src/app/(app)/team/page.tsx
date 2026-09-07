@@ -12,17 +12,19 @@ import {
   Users, Plus, Mail, Building2, FolderPlus,
   ShieldCheck, AlertCircle, CheckCircle2, Copy, Shield,
   Layers, UserCheck, Globe, Check, KeyRound, ArrowUpRight,
-  SlidersHorizontal, UserPlus
+  SlidersHorizontal, UserPlus, Trash2
 } from 'lucide-react'
 import { Modal } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
 import { useAuth } from '@/contexts/auth-context'
+import { useToast } from '@/contexts/toast-context'
 import { apiPost } from '@/lib/api/client'
 
 export default function TeamPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const { users, departments, currentOrg, loading, error, inviteMember, createDepartment, assignDepartment, fetchTeamData } = useTeam()
+  const { toast } = useToast()
+  const { users, departments, currentOrg, loading, error, inviteMember, createDepartment, assignDepartment, deleteUser, fetchTeamData } = useTeam()
   
   // Modals
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -428,12 +430,13 @@ export default function TeamPage() {
                 <th className="px-5 py-3">Role</th>
                 <th className="px-5 py-3">Assigned Category / Policy Tier</th>
                 <th className="px-5 py-3">DLP Policy Status</th>
+                <th className="px-5 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-5 py-8 text-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  <td colSpan={5} className="px-5 py-8 text-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
                     No employees enrolled in this organization yet.
                   </td>
                 </tr>
@@ -478,6 +481,30 @@ export default function TeamPage() {
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'var(--success)' }}>
                         <span className="size-1.5 rounded-full" style={{ background: 'var(--success)' }} /> Active Protection
                       </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      {u.id !== user?.id ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (confirm(`Instantly remove & terminate user ${u.email}? All active sessions and devices will be revoked immediately.`)) {
+                              const res = await deleteUser(u.id)
+                              if (res.success) {
+                                toast.success(`User ${u.email} removed.`)
+                              } else {
+                                toast.error(res.error || 'Failed to remove user')
+                              }
+                            }
+                          }}
+                          className="p-1.5 rounded-lg border hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-slate-400 hover:text-red-600 cursor-pointer inline-flex items-center justify-center"
+                          style={{ borderColor: 'var(--border-2)' }}
+                          title="Terminate / Remove User"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-[var(--text-muted)] italic">You</span>
+                      )}
                     </td>
                   </tr>
                 ))

@@ -77,7 +77,7 @@ async def google_callback(
     code: str | None = None,
     error: str | None = None,
 ):
-    frontend_url = settings.cors_origins[0] if settings.cors_origins else "http://localhost:3000"
+    frontend_url = settings.frontend_url
     is_prod = settings.is_production
     is_oauth_callback = request.headers.get("X-Forwarded-Host", "") == "localhost:3000"
 
@@ -411,3 +411,38 @@ async def logout(request: Request, response: Response, db: DBSession, current_us
     clear_session_cookie(response)
     await db.commit()
     return success(message="Logged out successfully")
+
+
+@router.delete("/me", summary="Permanently delete or deactivate user account")
+@limiter.limit(LIMIT_LOGOUT)
+async def delete_account(
+    request: Request,
+    response: Response,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    """
+    Deactivates user account, revokes all active sessions, unlinks devices, and clears cookie.
+    Under compliance policies, account is marked deactivated with timestamp.
+    """
+    from app.models.device import Device
+
+    # 1. Soft-delete / deactivate user
+    current_user.is_active = False
+    current_user.deactivated_at = datetime.now(timezone.utc)
+    current_user.deactivation_reason = "User requested account deletion"
+
+    # 2. Revoke all active sessions for this user
+    await db.execute(
+        delete(Session).where(Session.user_id == current_user.id)
+    )
+
+    # 3. Delete registered devices
+    await db.execute(
+        delete(Device).where(Device.user_id == current_user.id)
+    )
+
+    clear_session_cookie(response)
+    await db.commit()
+
+    return success(message="Account successfully deleted")

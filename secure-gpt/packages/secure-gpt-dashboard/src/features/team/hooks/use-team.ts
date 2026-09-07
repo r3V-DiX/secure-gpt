@@ -69,6 +69,17 @@ export function useTeam() {
     }
   }
 
+  const deleteUser = async (userId: string) => {
+    try {
+      const { apiDelete } = await import('@/lib/api/client')
+      await apiDelete(`/users/${userId}`)
+      await fetchTeamData()
+      return { success: true }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to delete user' }
+    }
+  }
+
   return {
     users,
     departments,
@@ -78,6 +89,7 @@ export function useTeam() {
     inviteMember,
     createDepartment,
     assignDepartment,
+    deleteUser,
     fetchTeamData,
   }
 }

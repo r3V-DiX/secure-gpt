@@ -124,3 +124,42 @@ async def invite_user(
         
         # In a real app, send invite email here.
         return success(data=_serialize_user(new_user), message="User invited and added to organization.")
+
+
+@router.delete("/{user_id}", summary="Delete or remove user from organization")
+async def delete_user(
+    user_id: str,
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    from app.models.session import Session
+    from app.models.device import Device
+    from sqlalchemy import delete
+
+    res = await db.execute(select(User).where(User.id == user_id))
+    target_user = res.scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Permissions check: Super admin can delete anyone. Org admin can delete users in their org.
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.PLATFORM_SUPER_ADMIN]:
+        if current_user.role == UserRole.ORG_ADMIN:
+            if target_user.org_id != current_user.org_id:
+                raise HTTPException(status_code=403, detail="Cannot delete users from another organization")
+            if target_user.id == current_user.id:
+                raise HTTPException(status_code=400, detail="Cannot delete yourself from admin panel. Use Profile settings.")
+        else:
+            raise HTTPException(status_code=403, detail="Insufficient permissions to delete users")
+
+    # 1. Terminate all active sessions for this user immediately
+    await db.execute(delete(Session).where(Session.user_id == target_user.id))
+
+    # 2. Delete all registered devices
+    await db.execute(delete(Device).where(Device.user_id == target_user.id))
+
+    # 3. Permanently remove the user record
+    await db.delete(target_user)
+    await db.commit()
+
+    return success(message=f"User {target_user.email} was permanently removed.")
