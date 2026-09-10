@@ -8,11 +8,14 @@ import { policyStorage, authStorage } from '@/lib/storage/storage'
 import { API_ENDPOINTS, DASHBOARD_URL } from '@/config/api.config'
 import { PLATFORM_DOMAINS } from '@securegpt/shared/constants'
 import apiClient from '@/lib/api/client'
+import { sendDeviceHeartbeat } from '@/features/auth/services/auth.service'
 import type { PIIConfig } from '@securegpt/shared/types'
 
 const FALLBACK_ALARM_NAME = 'securegpt-policy-fallback'
+const HEARTBEAT_ALARM_NAME = 'securegpt-device-heartbeat'
 // Minimum alarm period Chrome allows is 1 minute
 const FALLBACK_ALARM_PERIOD_MIN = 1
+const HEARTBEAT_ALARM_PERIOD_MIN = 2
 const SSE_RETRY_DELAY_MS = 5 * 1000
 
 const LLM_URL_PATTERNS: string[] = Object.values(PLATFORM_DOMAINS)
@@ -27,6 +30,16 @@ export function startPolicySync(): void {
   // Register the alarm listener once — safe to call multiple times as Chrome
   // deduplicates listeners registered in the same service worker context.
   chrome.alarms.onAlarm.addListener(handleAlarm)
+  
+  // Register periodic device heartbeat alarm
+  chrome.alarms.get(HEARTBEAT_ALARM_NAME, (existing) => {
+    if (!existing) {
+      chrome.alarms.create(HEARTBEAT_ALARM_NAME, {
+        periodInMinutes: HEARTBEAT_ALARM_PERIOD_MIN,
+      })
+    }
+  })
+  void sendDeviceHeartbeat()
   void connectSSE()
 }
 
@@ -35,11 +48,14 @@ export function stopPolicySync(): void {
   sseAbortController?.abort()
   sseAbortController = null
   void chrome.alarms.clear(FALLBACK_ALARM_NAME)
+  void chrome.alarms.clear(HEARTBEAT_ALARM_NAME)
 }
 
 function handleAlarm(alarm: chrome.alarms.Alarm): void {
   if (alarm.name === FALLBACK_ALARM_NAME) {
     void pollOnce()
+  } else if (alarm.name === HEARTBEAT_ALARM_NAME) {
+    void sendDeviceHeartbeat()
   }
 }
 

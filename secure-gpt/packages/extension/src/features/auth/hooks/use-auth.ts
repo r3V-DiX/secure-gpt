@@ -7,6 +7,7 @@ import {
   signInWithGoogle,
   signInWithEmail,
   signOut,
+  registerDevice,
 } from '../services/auth.service'
 import type { User } from '@securegpt/shared/types'
 
@@ -26,6 +27,8 @@ export function useAuth() {
       if (cached) {
         setUser(cached)
         setLoading(false)
+        // Ensure device registration / heartbeat is synced in the background
+        void registerDevice()
         return
       }
       // No cached user — check with backend

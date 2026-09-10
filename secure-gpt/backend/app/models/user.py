@@ -24,6 +24,48 @@ class UserRole(str, PyEnum):
     USER = "user"
 
 
+from sqlalchemy.types import TypeDecorator
+
+
+class UserRoleType(TypeDecorator):
+    """
+    Resilient role type that seamlessly handles both enum objects,
+    lowercase strings ('org_admin'), and uppercase DB values ('ORG_ADMIN').
+    """
+    impl = String(50)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, UserRole):
+            return value.value
+        if isinstance(value, str):
+            val_clean = value.lower()
+            try:
+                return UserRole(val_clean).value
+            except ValueError:
+                try:
+                    return UserRole[value.upper()].value
+                except KeyError:
+                    return value
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, UserRole):
+            return value
+        val_clean = str(value).lower()
+        try:
+            return UserRole(val_clean)
+        except ValueError:
+            try:
+                return UserRole[str(value).upper()]
+            except KeyError:
+                return UserRole.USER
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -39,7 +81,7 @@ class User(Base):
 
     # Role & Status
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, values_callable=lambda x: [e.value for e in x], native_enum=False),
+        UserRoleType,
         default=UserRole.USER,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

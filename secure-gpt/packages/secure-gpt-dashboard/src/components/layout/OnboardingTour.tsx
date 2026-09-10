@@ -94,8 +94,26 @@ function Tooltip({
   )
 }
 
+import { useAuth } from '@/contexts/auth-context'
+
 export function OnboardingTour() {
+  const { user } = useAuth()
   const [run, setRun] = useState(false)
+
+  useEffect(() => {
+    // Automatically trigger tour for new user / account if not completed yet
+    if (user && typeof window !== 'undefined') {
+      const tourKey = `securegpt_tour_completed_${user.id}`
+      const hasCompleted = localStorage.getItem(tourKey)
+      if (!hasCompleted) {
+        // Small delay to ensure DOM and target elements are fully mounted
+        const timer = setTimeout(() => {
+          setRun(true)
+        }, 800)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [user])
 
   useEffect(() => {
     // Manually triggered tour based on user preference
@@ -110,6 +128,9 @@ export function OnboardingTour() {
 
     if (finishedStatuses.includes(status)) {
       setRun(false)
+      if (user && typeof window !== 'undefined') {
+        localStorage.setItem(`securegpt_tour_completed_${user.id}`, 'true')
+      }
     }
   }
 

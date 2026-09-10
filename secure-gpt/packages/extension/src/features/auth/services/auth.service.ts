@@ -9,7 +9,7 @@
 // ─────────────────────────────────────────────
 
 import axios from 'axios'
-import { authStorage } from '@/lib/storage/storage'
+import { authStorage, localStorageExt } from '@/lib/storage/storage'
 import { API_ENDPOINTS } from '@/config/api.config'
 import type { User } from '@securegpt/shared/types'
 
@@ -115,20 +115,67 @@ export async function getCurrentUser(): Promise<User | null> {
 // ── Register device with backend ──────────────
 export async function registerDevice(): Promise<string | null> {
   try {
-    const response = await dashboardClient.post<{
-      success: boolean
-      data: { id: string }
-    }>(API_ENDPOINTS.DEVICE_REGISTER, {
+    const cachedDeviceId = await localStorageExt.get<string>('deviceId')
+    const payload = {
       name: `${getBrowserName()} Extension`,
       hostname: null,
       osPlatform: navigator.platform,
       browser: getBrowserName(),
       extensionVersion: chrome.runtime.getManifest().version,
-    })
-    return response.data.data.id
-  } catch {
-    console.warn('[SecureGPT] Device registration failed')
+    }
+
+    if (cachedDeviceId) {
+      try {
+        await dashboardClient.patch(
+          API_ENDPOINTS.DEVICE_HEARTBEAT(cachedDeviceId),
+          payload
+        )
+        return cachedDeviceId
+      } catch {
+        // If device was deleted or not found, proceed to re-register
+      }
+    }
+
+    const response = await dashboardClient.post<{
+      success: boolean
+      data: { id: string }
+    }>(API_ENDPOINTS.DEVICE_REGISTER, payload)
+
+    const newDeviceId = response.data?.data?.id
+    if (newDeviceId) {
+      await localStorageExt.set('deviceId', newDeviceId)
+    }
+    return newDeviceId
+  } catch (err) {
+    console.warn('[SecureGPT] Device registration failed:', err)
     return null
+  }
+}
+
+export async function sendDeviceHeartbeat(): Promise<void> {
+  const cachedDeviceId = await localStorageExt.get<string>('deviceId')
+  if (!cachedDeviceId) {
+    return
+  }
+
+  try {
+    await dashboardClient.patch(
+      API_ENDPOINTS.DEVICE_HEARTBEAT(cachedDeviceId),
+      {
+        name: `${getBrowserName()} Extension`,
+        osPlatform: navigator.platform,
+        browser: getBrowserName(),
+        extensionVersion: chrome.runtime.getManifest().version,
+      }
+    )
+  } catch (err: unknown) {
+    // If heartbeat fails because device was deleted (404) or unauthenticated (401),
+    // clear local device state and sign out the extension
+    const axiosErr = err as { response?: { status?: number } }
+    if (axiosErr.response?.status === 404 || axiosErr.response?.status === 401) {
+      await localStorageExt.remove('deviceId')
+      await signOut()
+    }
   }
 }
 
