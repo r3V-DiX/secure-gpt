@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, ChevronRight, ShieldCheck, Sun, Moon } from 'lucide-react'
@@ -34,14 +34,16 @@ export function TopNav({ onMenuClick }: TopNavProps) {
   const currentKey = segments[0] || 'dashboard'
   const pageTitle = ROUTE_LABELS[currentKey] || 'Dashboard'
 
-  // Consider protected only if there is an active device seen recently (e.g. last 5 mins)
-  const isProtected = devices.some((d) => {
-    if (!d.isActive) return false
-    if (!d.lastSeenAt) return false
-    const lastSeenTime = new Date(d.lastSeenAt).getTime()
+  const [isProtected, setIsProtected] = useState(false)
+
+  useEffect(() => {
     const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
-    return lastSeenTime >= fiveMinutesAgo
-  })
+    const active = devices.some((d) => {
+      if (!d.isActive || !d.lastSeenAt) return false
+      return new Date(d.lastSeenAt).getTime() >= fiveMinutesAgo
+    })
+    setIsProtected(active)
+  }, [devices])
 
   return (
     <header className="h-[58px] border-b border-[var(--border)] bg-[var(--nav-bg)] backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between transition-colors">

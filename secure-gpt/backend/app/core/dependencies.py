@@ -84,11 +84,8 @@ async def get_current_user(
         )
         raise FingerprintMismatch()
 
-    if error_code or not session:
-        raise AuthRequired()
-
-    # Load user
-    user = await get_user_by_id(db, session.user_id)
+    # Load user (use eagerly-loaded session.user if available)
+    user = session.user if session and getattr(session, "user", None) else await get_user_by_id(db, session.user_id)
     if not user:
         raise AuthRequired("User account not found")
 

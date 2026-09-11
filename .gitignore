@@ -58,6 +58,10 @@ coverage.xml
 !.env.example
 *.pem
 
+# Local dumps and model binaries
+combined-*.txt
+*.traineddata
+
 # Logs and local databases
 *.log
 logs/

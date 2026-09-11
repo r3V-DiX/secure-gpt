@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 const SIDEBAR_STORAGE_KEY = 'sgpt-sidebar-collapsed'
 
 let listeners: Array<() => void> = []
-let memoryState = {
+const memoryState = {
   collapsed: false,
 }
 

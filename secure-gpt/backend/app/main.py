@@ -34,15 +34,6 @@ async def lifespan(app: FastAPI):
         if settings.debug:
             await conn.run_sync(Base.metadata.create_all)
             logger.info("Database tables synced (dev mode)")
-        else:
-            # Ensure newly added tables and columns exist in production
-            await conn.run_sync(Base.metadata.create_all)
-            from sqlalchemy import text
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS department_id VARCHAR REFERENCES departments(id) ON DELETE SET NULL;"))
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS deactivated_at TIMESTAMP WITH TIME ZONE;"))
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS deactivation_reason VARCHAR(50);"))
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS pre_deletion_email_sent BOOLEAN DEFAULT FALSE;"))
-            await conn.execute(text("ALTER TABLE policies ADD COLUMN IF NOT EXISTS department_id VARCHAR REFERENCES departments(id) ON DELETE SET NULL;"))
     yield
     await engine.dispose()
     logger.info("Shutdown complete")
@@ -79,8 +70,20 @@ async def rate_limit_handler(request, exc):
 @app.middleware("http")
 async def extension_cors_interceptor(request, call_next):
     origin = request.headers.get("origin")
-    # Allow chrome extensions to communicate with the API in both dev and prod
+    # Allow approved chrome extensions to communicate with the API
     if origin and origin.startswith("chrome-extension://"):
+        # In dev mode, allow any local extension; in production, strictly enforce allowlisted IDs
+        is_allowed = settings.debug or (origin in settings.allowed_extension_origins)
+        if not is_allowed:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=403,
+                content=make_error(
+                    code="FORBIDDEN_ORIGIN",
+                    message="Origin not permitted",
+                ),
+            )
+
         if request.method == "OPTIONS":
             from fastapi.responses import Response
             response = Response(status_code=200)

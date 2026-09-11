@@ -48,8 +48,9 @@ class Settings(BaseSettings):
     google_redirect_uri: str = Field(...)
     
     # ── CORS ───────────────────────────────────────────────────────────────────
-    # Comma-separated string — parsed to list in allowed_origins_list property
+    # Non-sensitive — default covers local dev
     allowed_origins: str = "http://localhost:3000,http://localhost:3001"
+    allowed_extension_ids: str = ""  # Comma-separated Chrome Extension IDs
 
     # ── API ────────────────────────────────────────────────────────────────────
     api_v1_prefix: str = "/api/v1"
@@ -68,6 +69,12 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
+
+    @property
+    def allowed_extension_origins(self) -> set[str]:
+        if not self.allowed_extension_ids:
+            return set()
+        return {f"chrome-extension://{ext_id.strip()}" for ext_id in self.allowed_extension_ids.split(",") if ext_id.strip()}
 
     @property
     def frontend_url(self) -> str:

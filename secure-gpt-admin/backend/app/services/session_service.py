@@ -108,8 +108,12 @@ async def create_session(
     return session
 
 
+from sqlalchemy.orm import selectinload
+
 async def get_session(db: AsyncSession, session_id: str) -> Session | None:
-    result = await db.execute(select(Session).where(Session.id == session_id))
+    result = await db.execute(
+        select(Session).options(selectinload(Session.user)).where(Session.id == session_id)
+    )
     return result.scalar_one_or_none()
 
 

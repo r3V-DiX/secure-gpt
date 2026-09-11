@@ -27,3 +27,7 @@ Pillow==10.4.0
 
 # ── File upload ───────────────────────────────────────────────────────────────
 python-multipart==0.0.12       # Required for UploadFile / Form parsing in FastAPI
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

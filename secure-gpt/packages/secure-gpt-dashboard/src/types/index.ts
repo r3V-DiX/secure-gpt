@@ -96,15 +96,17 @@ export interface DashboardStats {
 }
 
 // ── AuditLog Override for Frontend ───────────────────────────────────────────
-export interface AuditLog {
+import type { PolicyAction, PIICategory, DetectionTier, PIIConfig } from '@securegpt/shared'
+
+export interface EventLog {
   id?: string
   eventId: string
   timestamp: string
   receivedAt?: string
-  actionTaken: import('@securegpt/shared').PolicyAction
-  categoryTriggered: import('@securegpt/shared').PIICategory
+  actionTaken: PolicyAction
+  categoryTriggered: PIICategory
   detectionType: string
-  detectionTier: import('@securegpt/shared').DetectionTier
+  detectionTier: DetectionTier
   llmPlatform: string
   domain?: string
   matchCount: number
@@ -119,11 +121,13 @@ export interface AuditLog {
   pipelineVersion?: string
 }
 
+export type AuditLog = EventLog
+
 // ── Policy ────────────────────────────────────────────────────────────────────
 export interface Policy {
   id: string | null
   userId: string
-  config: import('@securegpt/shared').PIIConfig
+  config: PIIConfig
   version: number
   isActive: boolean
   publishedAt: string | null
