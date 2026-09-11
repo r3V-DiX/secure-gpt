@@ -5,7 +5,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import auth, logs, policy, devices, redaction, users, orgs, incidents, system
+from app.api.v1 import auth, logs, policy, devices, redaction, users, orgs, incidents, system, admin
 from app.api.v1.extension import log as extension_log
 from app.api.v1.extension import policy as extension_policy
 
@@ -16,6 +16,9 @@ api_router.include_router(system.router)
 
 # ── Core auth ─────────────────────────────────────────────────────────────────
 api_router.include_router(auth.router)
+
+# ── Admin Panel RBAC & Audit ──────────────────────────────────────────────────
+api_router.include_router(admin.router)
 
 # ── User & Org data ───────────────────────────────────────────────────────────
 api_router.include_router(logs.router)
