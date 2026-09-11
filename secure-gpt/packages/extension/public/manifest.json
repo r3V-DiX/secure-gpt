@@ -1,25 +1,21 @@
 {
   "manifest_version": 3,
   "name": "SecureGPT — LLM Data Protection",
-  "version": "1.1.3",
+  "version": "1.2.0",
   "description": "Prevent leaks into generative tools. Detect and mask PII, secrets, and confidential information on major platforms.",
-
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-
   "action": {
     "default_popup": "src/popup/index.html",
     "default_title": "SecureGPT"
   },
-
   "background": {
     "service_worker": "background/index.js",
     "type": "module"
   },
-
   "content_scripts": [
     {
       "matches": [
@@ -32,14 +28,19 @@
         "https://*.perplexity.ai/*",
         "https://*.meta.ai/*"
       ],
-      "js": ["content/index.js"],
+      "js": [
+        "content/index.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }
   ],
-
-  "permissions": ["storage", "tabs", "offscreen", "alarms"],
-
+  "permissions": [
+    "storage",
+    "tabs",
+    "offscreen",
+    "alarms"
+  ],
   "host_permissions": [
     "https://*.openai.com/*",
     "https://*.chatgpt.com/*",
@@ -55,11 +56,9 @@
     "http://localhost:3000/*",
     "http://localhost:8000/*"
   ],
-
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
-
   "web_accessible_resources": [
     {
       "resources": [
@@ -69,7 +68,9 @@
         "models/*",
         "wasm/*"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }
