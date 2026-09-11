@@ -155,6 +155,10 @@ export async function registerDevice(): Promise<string | null> {
 export async function sendDeviceHeartbeat(): Promise<void> {
   const cachedDeviceId = await localStorageExt.get<string>('deviceId')
   if (!cachedDeviceId) {
+    const loggedIn = await authStorage.isLoggedIn()
+    if (loggedIn) {
+      void registerDevice()
+    }
     return
   }
 

@@ -15,6 +15,7 @@ import { Avatar } from '@/components/shared/Avatar'
 import { useLogoutConfirm } from '@/components/ui/modal/modal'
 import { useToast } from '@/contexts/toast-context'
 import { useSidebarStore } from '@/lib/api/client'
+import { VersionModal } from '@/components/shared/VersionModal'
 
 export interface NavItemConfig {
   label: string
@@ -77,6 +78,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
   const confirmLogout = useLogoutConfirm()
   const { toast } = useToast()
   const { theme, toggleTheme } = useTheme()
+  const [versionModalOpen, setVersionModalOpen] = useState(false)
 
   const handleMouseEnter = useCallback(() => {
     if (!collapsed) return
@@ -311,6 +313,24 @@ export function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
               </button>
             )}
           </div>
+
+          {/* Release Version Tag */}
+          {!compactMode && (
+            <button
+              type="button"
+              onClick={() => setVersionModalOpen(true)}
+              className="w-full px-2 pt-1.5 pb-1 flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono border-t border-[var(--sidebar-border)]/50 mt-1 hover:bg-[var(--sidebar-hover-bg)] rounded transition-colors group cursor-pointer"
+              title="Click to check live admin system & component versions"
+            >
+              <span className="flex items-center gap-1 group-hover:text-[var(--sidebar-text-active)]">
+                <span className="size-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                v1.0.0
+              </span>
+              <span className="opacity-60 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity">
+                Status ↗
+              </span>
+            </button>
+          )}
         </div>
       </div>
     )
@@ -340,6 +360,11 @@ export function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
       >
         {renderInner(true)}
       </aside>
+
+      <VersionModal
+        open={versionModalOpen}
+        onClose={() => setVersionModalOpen(false)}
+      />
     </>
   )
 }

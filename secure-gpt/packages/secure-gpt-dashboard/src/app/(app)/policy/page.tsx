@@ -45,12 +45,12 @@ function SaveBar({ isDirty, saving, onSave, onDiscard }: {
         <p className="text-xs font-medium pr-2" style={{ color: 'var(--text-secondary)' }}>
           {saving ? 'Publishing policy…' : 'You have unsaved changes'}
         </p>
-        <button onClick={onDiscard} disabled={saving}
+        <button onClick={() => onDiscard()} disabled={saving}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-(--bg-surface-2)"
           style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
           <Undo2 size={11} /> Discard
         </button>
-        <button onClick={onSave} disabled={saving}
+        <button onClick={() => onSave()} disabled={saving}
           className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40"
           style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 2px 8px var(--accent-glow)' }}>
           {saving
@@ -301,7 +301,7 @@ export default function PolicyPage() {
         </section>
       </div>
 
-      {isAdmin && <SaveBar isDirty={isDirty} saving={saving} onSave={save} onDiscard={discard} />}
+      {isAdmin && <SaveBar isDirty={isDirty} saving={saving} onSave={() => save()} onDiscard={() => discard()} />}
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} size="sm">
         <AddCategoryModal

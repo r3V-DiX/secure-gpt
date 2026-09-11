@@ -1,17 +1,18 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { clsx } from 'clsx'
 import {
   LayoutDashboard, FileText, ShieldCheck,
   User, Settings, LogOut, Users, Sparkles, ShieldAlert,
-  PanelLeftClose, PanelLeft, X, Sun, Moon, Shield
+  PanelLeftClose, PanelLeft, X, Sun, Moon, Shield, History
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/contexts/theme-context'
 import { Avatar } from '@/components/shared/Avatar'
+import { VersionModal } from '@/components/shared/VersionModal'
 import { useLogoutConfirm } from '@/components/ui/modal/modal'
 import { useToast } from '@/contexts/toast-context'
 
@@ -80,6 +81,7 @@ export function SidebarInner({
   const confirmLogout = useLogoutConfirm()
   const { toast } = useToast()
   const { theme, toggleTheme } = useTheme()
+  const [versionModalOpen, setVersionModalOpen] = useState(false)
 
   if (!user) return null
 
@@ -305,7 +307,30 @@ export function SidebarInner({
             </button>
           )}
         </div>
+
+        {/* Release Version Tag */}
+        {!isCompact && (
+          <button
+            type="button"
+            onClick={() => setVersionModalOpen(true)}
+            className="w-full px-2 pt-1.5 pb-1 flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono border-t border-[var(--sidebar-border)]/50 mt-1 hover:bg-[var(--sidebar-hover-bg)] rounded transition-colors group cursor-pointer"
+            title="Click to check live system & component versions"
+          >
+            <span className="flex items-center gap-1 group-hover:text-[var(--sidebar-text-active)]">
+              <span className="size-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+              v1.0.0
+            </span>
+            <span className="opacity-60 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity">
+              Status ↗
+            </span>
+          </button>
+        )}
       </div>
+
+      <VersionModal
+        open={versionModalOpen}
+        onClose={() => setVersionModalOpen(false)}
+      />
     </div>
   )
 }

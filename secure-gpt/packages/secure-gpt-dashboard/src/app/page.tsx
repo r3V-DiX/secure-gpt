@@ -22,6 +22,7 @@ import {
   FileKey,
   Fingerprint,
   Network,
+  History,
 } from 'lucide-react';
 
 const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/securegpt-%E2%80%94-llm-data-prot/cbhlhbhhlcfilggkmcmodmfaeongmbmo';
@@ -57,6 +58,14 @@ export default function LandingPage() {
             <a href="#threat-coverage" className="text-sm font-medium transition-colors" style={{ color: 'var(--text-secondary)' }}
                onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>Coverage</a>
+            <Link href="/versions" className="text-sm font-medium transition-colors flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}
+               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
+              <span>Versions</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] font-semibold">
+                v1.0.0
+              </span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">
@@ -416,6 +425,7 @@ export default function LandingPage() {
                 <li><a href="#features" style={{ color: 'inherit' }}>Features</a></li>
                 <li><a href="#how-it-works" style={{ color: 'inherit' }}>How it works</a></li>
                 <li><a href="#threat-coverage" style={{ color: 'inherit' }}>Threat coverage</a></li>
+                <li><Link href="/versions" style={{ color: 'var(--brand-light)' }}>Version History (v1.0.0)</Link></li>
                 <li><a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-light)' }}>Chrome Extension ↗</a></li>
                 <li><Link href="/dashboard" style={{ color: 'inherit' }}>Dashboard</Link></li>
               </ul>

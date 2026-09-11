@@ -5,11 +5,14 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import auth, logs, policy, devices, redaction, users, orgs, incidents
+from app.api.v1 import auth, logs, policy, devices, redaction, users, orgs, incidents, system
 from app.api.v1.extension import log as extension_log
 from app.api.v1.extension import policy as extension_policy
 
 api_router = APIRouter()
+
+# ── System metadata & release version ─────────────────────────────────────────
+api_router.include_router(system.router)
 
 # ── Core auth ─────────────────────────────────────────────────────────────────
 api_router.include_router(auth.router)

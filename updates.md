@@ -20,8 +20,10 @@
   - Fix login failure for Admins in admin portal (callback routing, role verification, and token exchange).
 
 ### 3. Identity, Login & Organization UI (TPRM-Style Onboarding)
+- [ ] **Microsoft OAuth & Enterprise SSO Integration**:
+  - Implement Microsoft Entra ID (Azure AD / Office 365) OAuth login alongside existing Google OAuth for both web dashboards and browser extension authentication.
 - [ ] **Revamp Organization Login UI**:
-  - Redesign organization sign-in screen supporting company workspace slug routing and enterprise SSO.
+  - Redesign organization sign-in screen supporting company workspace slug routing and enterprise SSO (Microsoft & Google Workspace).
 - [ ] **Account Type & Role Badge in UI**:
   - Display clear visual badge in the UI showing exactly how the user is logged in:
     - `Organization`
@@ -42,9 +44,10 @@
   - When an admin clicks "Configure Policy" from Team & Org (redirecting to `/policy?department_id=...` for a specific sub-category/department like Engineering, Finance, etc.), provide a sticky/prominent "← Back to Team & Organization" navigation link on the policy page to return directly to the org view.
 
 ### 4. Release Engineering & Audit Tracking
-- [ ] **Production Release Tracker (Current: v1.0.0)**:
-  - Establish a single source of truth for every update in production.
+- [x] **Production Release Tracker (Current: v1.0.0)**:
+  - Establish a single source of truth for every update in production (`RELEASE_TRACKER.md`).
   - Implement a public, unauthenticated system version endpoint (`/api/v1/system/version`) to report live deployed build versions.
+  - Added visual version badges to dashboards and verification checks to update scripts.
 
 ---
 

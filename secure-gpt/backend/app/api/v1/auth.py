@@ -128,6 +128,18 @@ async def google_callback(
 
     user = await upsert_google_user(db, google_id=google_id, email=email, full_name=name, avatar_url=avatar)
 
+    if not user.is_active:
+        if user.deactivated_at and (datetime.now(timezone.utc) - user.deactivated_at).days <= 45:
+            # Reactivate user account if within 45 days grace period
+            user.is_active = True
+            user.deactivated_at = None
+            user.deactivation_reason = None
+            await db.flush()
+        else:
+            await log_login_failed(db, request, reason="user_inactive", email=user.email)
+            await db.commit()
+            raise UserInactive()
+
     session_id = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
 

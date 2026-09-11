@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     app_name: str = "DLP Shield"
     app_env: str = "development"
     debug: bool = False
+    app_version: str = "1.0.0"
+    git_commit: str = "unknown"
+    build_time: str = "unknown"
 
     # SENSITIVE — no default, must be set in .env
     secret_key: str = Field(..., min_length=32)
