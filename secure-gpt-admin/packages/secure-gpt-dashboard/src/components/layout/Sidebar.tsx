@@ -296,9 +296,24 @@ export function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
                   <span className="text-[13px] font-bold text-[var(--sidebar-text-active)] truncate leading-snug">
                     {user.fullName || 'Admin User'}
                   </span>
-                  <span className="text-[11px] text-[var(--text-muted)] truncate leading-none capitalize">
-                    {user.role.replace('_', ' ')}
-                  </span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span
+                      className={clsx(
+                        'text-[9.5px] font-bold px-1.5 py-0.5 rounded-full border uppercase tracking-wider',
+                        user.role === 'super_admin'
+                          ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                          : user.role === 'security_admin'
+                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      )}
+                    >
+                      {user.role === 'super_admin'
+                        ? 'Super Admin'
+                        : user.role === 'security_admin'
+                        ? 'Security Admin'
+                        : 'Admin'}
+                    </span>
+                  </div>
                 </div>
               )}
             </Link>

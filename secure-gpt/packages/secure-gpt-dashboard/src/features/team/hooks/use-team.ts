@@ -69,6 +69,16 @@ export function useTeam() {
     }
   }
 
+  const changeUserRole = async (userId: string, role: string) => {
+    try {
+      await apiPatch<any>(`/users/${userId}/role`, { role })
+      await fetchTeamData()
+      return { success: true }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to update role' }
+    }
+  }
+
   const deleteUser = async (userId: string) => {
     try {
       const { apiDelete } = await import('@/lib/api/client')
@@ -89,6 +99,7 @@ export function useTeam() {
     inviteMember,
     createDepartment,
     assignDepartment,
+    changeUserRole,
     deleteUser,
     fetchTeamData,
   }

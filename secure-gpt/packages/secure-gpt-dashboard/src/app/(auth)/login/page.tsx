@@ -33,6 +33,14 @@ export default function LoginPage() {
     window.location.href = '/api/v1/auth/google'
   }
 
+  function handleMicrosoft() {
+    if (!privacyAccepted) {
+      toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
+      return
+    }
+    window.location.href = '/api/v1/auth/microsoft'
+  }
+
   // ── Request Email OTP ───────────────────────────────────────────────────────
   async function handleRequestOTP(e: React.FormEvent) {
     e.preventDefault()
@@ -324,21 +332,43 @@ export default function LoginPage() {
           <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
         </div>
 
-        {/* Google button */}
-        <button
-          onClick={handleGoogle}
-          disabled={!privacyAccepted}
-          type="button"
-          className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-          style={{
-            borderColor: 'var(--border-strong)',
-            background: 'var(--bg-surface)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <GoogleIcon />
-          Continue with Google OAuth
-        </button>
+        {/* OAuth buttons */}
+        <div className="space-y-2">
+          <button
+            onClick={handleGoogle}
+            disabled={!privacyAccepted}
+            type="button"
+            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+            style={{
+              borderColor: 'var(--border-strong)',
+              background: 'var(--bg-surface)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <GoogleIcon />
+            Continue with Google Workspace
+          </button>
+
+          <button
+            onClick={handleMicrosoft}
+            disabled={!privacyAccepted}
+            type="button"
+            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+            style={{
+              borderColor: 'var(--border-strong)',
+              background: 'var(--bg-surface)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <svg className="size-4 shrink-0" viewBox="0 0 21 21">
+              <path fill="#f25022" d="M1 1h9v9H1z"/>
+              <path fill="#00a4ef" d="M1 11h9v9H1z"/>
+              <path fill="#7fba00" d="M11 1h9v9h-9z"/>
+              <path fill="#ffb900" d="M11 11h9v9h-9z"/>
+            </svg>
+            Continue with Microsoft Entra ID (Azure AD)
+          </button>
+        </div>
 
         {/* Developer Quick-Bypass */}
         {isDev && (

@@ -51,6 +51,42 @@ async def assign_user_department(
     return success(data=_serialize_user(target_user), message="User department updated successfully")
 
 
+@router.patch("/{user_id}/role", summary="Change user role")
+async def change_user_role(
+    user_id: str,
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    body = await request.json()
+    new_role_str = body.get("role")
+    if not new_role_str:
+        raise HTTPException(status_code=400, detail="Role is required")
+
+    res = await db.execute(select(User).where(User.id == user_id))
+    target_user = res.scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.PLATFORM_SUPER_ADMIN]:
+        if current_user.role != UserRole.ORG_ADMIN:
+            raise HTTPException(status_code=403, detail="Only Organization Admins can change user roles")
+        if target_user.org_id != current_user.org_id:
+            raise HTTPException(status_code=403, detail="Cannot modify users from another organization")
+        if new_role_str.lower() not in ["employee", "org_admin", "user"]:
+            raise HTTPException(status_code=403, detail="Invalid role assignment")
+
+    try:
+        target_user.role = UserRole(new_role_str.lower())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid role specified")
+
+    await db.commit()
+    await db.refresh(target_user)
+
+    return success(data=_serialize_user(target_user), message="User role updated successfully")
+
+
 @router.get("", summary="List users")
 async def list_users(
     request: Request,

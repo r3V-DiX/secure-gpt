@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SecureGPT — LLM Data Protection",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Prevent leaks into generative tools. Detect and mask PII, secrets, and confidential information on major platforms.",
   "icons": {
     "16": "icons/icon16.png",
@@ -26,7 +26,19 @@
         "https://copilot.microsoft.com/*",
         "https://*.claude.ai/*",
         "https://*.perplexity.ai/*",
-        "https://*.meta.ai/*"
+        "https://*.meta.ai/*",
+        "https://poe.com/*",
+        "https://*.mistral.ai/*",
+        "https://*.cursor.com/*",
+        "https://*.cursor.sh/*",
+        "https://v0.dev/*",
+        "https://replit.com/*",
+        "https://huggingface.co/chat/*",
+        "https://*.deepseek.com/*",
+        "https://www.phind.com/*",
+        "https://www.notion.so/*",
+        "https://app.jasper.ai/*",
+        "https://app.copy.ai/*"
       ],
       "js": [
         "content/index.js"
@@ -50,6 +62,18 @@
     "https://*.claude.ai/*",
     "https://*.perplexity.ai/*",
     "https://*.meta.ai/*",
+    "https://poe.com/*",
+    "https://*.mistral.ai/*",
+    "https://*.cursor.com/*",
+    "https://*.cursor.sh/*",
+    "https://v0.dev/*",
+    "https://replit.com/*",
+    "https://huggingface.co/chat/*",
+    "https://*.deepseek.com/*",
+    "https://www.phind.com/*",
+    "https://www.notion.so/*",
+    "https://app.jasper.ai/*",
+    "https://app.copy.ai/*",
     "https://accounts.google.com/*",
     "https://securegpt.rkavach.com/*",
     "https://api.securegpt.rkavach.com/*",

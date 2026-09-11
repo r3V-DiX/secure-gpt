@@ -9,6 +9,7 @@ import Link from 'next/link'
 import {
   Activity, Circle, CircleCheck, Download, ExternalLink,
   MousePointerClick, PartyPopper, SlidersHorizontal, Zap,
+  Building2, Users, CheckCircle2
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
@@ -70,6 +71,44 @@ export default function GetStartedPage() {
   const { devices, loading: devicesLoading } = useProfile()
   const [done, setDone] = useState<string[]>([])
 
+  const isOrgAdmin = user?.role === 'org_admin' || user?.role === 'super_admin' || user?.role === 'platform_super_admin'
+  const isEmployee = user?.role === 'employee'
+
+  const activeSteps: Step[] = isOrgAdmin
+    ? [
+        {
+          id: 'verify_domain',
+          icon: Building2,
+          title: 'Verify Corporate Domain (DNS TXT)',
+          description: 'Add the challenge TXT record to your DNS provider to activate domain-level protection and unlock employee invitations.',
+        },
+        {
+          id: 'invite_team',
+          icon: Users,
+          title: 'Invite Team & Assign Departments',
+          description: 'Invite employees matching your corporate domain and segregate policies by Engineering, Finance, or General Org Baseline.',
+        },
+        {
+          id: 'policy',
+          icon: SlidersHorizontal,
+          title: 'Configure Enterprise DLP Policy',
+          description: 'Establish organization-wide thresholds for PII, Financial data, API keys, and toggle Document & File Scanning.',
+        },
+        {
+          id: 'install',
+          icon: Download,
+          title: 'Deploy Browser Extension',
+          description: 'Install or push the Chrome Extension to team workstations via Google Workspace or Chrome Enterprise MDM.',
+        },
+        {
+          id: 'track',
+          icon: Activity,
+          title: 'Monitor Audit Logs & Incidents',
+          description: 'Review blocked prompts, audit logs, and trigger leaderboards across all company departments.',
+        },
+      ]
+    : STEPS
+
   // Hydrate completion state from localStorage
   useEffect(() => {
     try {
@@ -95,9 +134,9 @@ export default function GetStartedPage() {
     })
   }
 
-  const completed = STEPS.filter((s) => done.includes(s.id)).length
-  const pct = Math.round((completed / STEPS.length) * 100)
-  const allDone = completed === STEPS.length
+  const completed = activeSteps.filter((s) => done.includes(s.id)).length
+  const pct = Math.round((completed / activeSteps.length) * 100)
+  const allDone = completed === activeSteps.length
   const firstName = user?.fullName?.split(' ')[0] ?? 'there'
 
   return (
@@ -147,7 +186,7 @@ export default function GetStartedPage() {
             )}
           </div>
           <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>
-            {completed}/{STEPS.length} steps
+            {completed}/{activeSteps.length} steps
           </span>
         </div>
         <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-surface-3)' }}>
@@ -168,7 +207,7 @@ export default function GetStartedPage() {
 
       {/* ── Step cards ──────────────────────────────────────────────────── */}
       <div className="space-y-4">
-        {STEPS.map((step, i) => {
+        {activeSteps.map((step, i) => {
           const isDone = done.includes(step.id)
           const Icon = step.icon
           return (

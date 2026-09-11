@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     app_name: str = "DLP Shield Admin"
     app_env: str = "development"
     debug: bool = False
-    app_version: str = "1.0.0"
+    app_version: str = "1.1.2"
     git_commit: str = "unknown"
     build_time: str = "unknown"
 

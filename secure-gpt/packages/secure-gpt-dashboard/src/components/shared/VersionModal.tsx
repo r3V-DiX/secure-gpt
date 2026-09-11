@@ -122,7 +122,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Dashboard</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.dashboard || '1.0.0'}
+                    v{data.components?.dashboard || '1.1.2'}
                   </span>
                 </div>
 
@@ -132,7 +132,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Extension</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.extension || '1.2.0'}
+                    v{data.components?.extension || '1.2.1'}
                   </span>
                 </div>
               </div>

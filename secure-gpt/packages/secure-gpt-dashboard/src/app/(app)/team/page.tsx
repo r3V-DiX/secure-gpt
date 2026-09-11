@@ -24,7 +24,7 @@ export default function TeamPage() {
   const router = useRouter()
   const { user } = useAuth()
   const { toast } = useToast()
-  const { users, departments, currentOrg, loading, error, inviteMember, createDepartment, assignDepartment, deleteUser, fetchTeamData } = useTeam()
+  const { users, departments, currentOrg, loading, error, inviteMember, createDepartment, assignDepartment, changeUserRole, deleteUser, fetchTeamData } = useTeam()
   
   // Modals
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -458,10 +458,22 @@ export default function TeamPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded"
-                        style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                        {u.role}
-                      </span>
+                      {user?.role === 'org_admin' || user?.role === 'super_admin' || user?.role === 'platform_super_admin' ? (
+                        <select
+                          value={u.role}
+                          onChange={(e) => changeUserRole(u.id, e.target.value)}
+                          className="px-2 py-0.5 text-[11px] font-mono font-bold rounded-lg border bg-[var(--bg-surface-2)] text-[var(--text-primary)] border-[var(--border)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
+                        >
+                          <option value="employee">EMPLOYEE</option>
+                          <option value="org_admin">ORG_ADMIN</option>
+                          <option value="user">USER</option>
+                        </select>
+                      ) : (
+                        <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded"
+                          style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                          {u.role}
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5">
                       <select
@@ -528,6 +540,19 @@ export default function TeamPage() {
             </p>
           </div>
 
+          {!isOrgActive && (
+            <div className="p-3.5 text-xs rounded-xl flex items-start gap-2.5"
+              style={{ background: 'var(--warning-light)', border: '1px solid var(--warning-border)', color: 'var(--warning-text)' }}>
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Domain Verification Required</p>
+                <p className="mt-0.5 text-[11px] opacity-90">
+                  You cannot invite team members until domain ownership is verified via the DNS TXT challenge on this page. Add the TXT token to your DNS registrar and click "Verify DNS Record".
+                </p>
+              </div>
+            </div>
+          )}
+
           {inviteError && (
             <div className="p-3 text-xs rounded-xl"
               style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', color: 'var(--danger)' }}>
@@ -584,10 +609,10 @@ export default function TeamPage() {
             <Button
               variant="primary"
               size="sm"
-              disabled={inviting || !inviteEmail}
+              disabled={inviting || !inviteEmail || !isOrgActive}
               onClick={handleInvite}
             >
-              {inviting ? 'Inviting…' : 'Send Invite'}
+              {inviting ? 'Inviting…' : !isOrgActive ? 'Verification Required' : 'Send Invite'}
             </Button>
           </div>
         </div>

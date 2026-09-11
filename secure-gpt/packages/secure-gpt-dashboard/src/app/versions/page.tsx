@@ -38,6 +38,67 @@ interface VersionItem {
 
 const BASELINE_VERSIONS: VersionItem[] = [
   {
+    version: '1.1.2',
+    date: 'September 11, 2026',
+    status: 'Production Stable',
+    tag: 'Radial UX Polish & Streamlined DLP',
+    commit: 'prod-v1.1.2',
+    summary: 'Streamlined real-time DLP prompt experience removing disruptive floating warning modals in favor of a sleek, non-intrusive radial risk indicator and updated component orchestration.',
+    info: 'SecureGPT Core Platform v1.1.2 delivers refined real-time risk indication with zero UI clutter, alongside synchronous submission blocking.',
+    whatsNew: [
+      'Minimalist inline radial risk gauge cleanly indicating real-time prompt risk levels without distracting popover tooltips.',
+      'Refactored input listeners to decouple asynchronous background risk assessment from instant user typing.',
+      'Updated system component versions and telemetry matrices across all user and admin nodes.',
+    ],
+    changedFunctionality: [
+      'Permanently removed live popover warning cards from prompt textareas.',
+      'Enforced prompt blocking strictly at form submission (Enter / Send button) while keeping continuous live visual risk feedback.',
+    ],
+    improvements: [
+      'Zero layout disruption and completely unobscured prompt input fields.',
+      'Reduced memory footprint and eliminated extraneous DOM event listener allocations.',
+    ],
+    problemsSolved: [
+      'Eliminated disruptive tooltip overlays covering prompt text and autocomplete menus.',
+      'Prevented accidental prompt submission interruption during active editing.',
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: 'September 11, 2026',
+    status: 'Released',
+    tag: 'Phase 1 Core & Org Controls Release',
+    commit: 'prod-v1.1.0',
+    summary: 'Comprehensive Phase 1 milestone release delivering non-blocking prompt evaluation with radial risk gauge, document scanning policy toggles, 15+ LLM platform coverage, Microsoft Entra ID OAuth, live team role management, and DNS domain verification gating.',
+    info: 'SecureGPT Core Platform v1.1.0 unifies enterprise identity, third-party risk management (TPRM) onboarding, and non-intrusive prompt protection.',
+    whatsNew: [
+      'Asynchronous prompt evaluation with dynamic radial percentage risk gauge anchored to LLM input fields without typing lag.',
+      'Document & File Scanning Policy toggle allowing admins to inspect or bypass PDF, Office documents, and image uploads.',
+      'Expanded LLM platform coverage across 15+ AI tools (ChatGPT, Claude, Gemini, Copilot, Perplexity, Meta AI, Poe, Mistral, Cursor, v0, Replit, HuggingChat, DeepSeek, Phind, Notion AI, Jasper, Copy.ai).',
+      'Microsoft Entra ID (Azure AD / Office 365) OAuth authentication alongside Google Workspace.',
+      'Live Team Role Management allowing Org Admins to switch roles (EMPLOYEE, ORG_ADMIN, USER) directly from team table.',
+      'Domain verification gating preventing employee invitations until corporate domain ownership is confirmed via DNS TXT record challenge.',
+      'Sticky Department Back-Navigation on policy page for seamless return to team view.',
+      'Clear Account Type & Role Badges (Super Admin, Org Admin, Employee, Personal User) in user and admin dashboards.',
+    ],
+    changedFunctionality: [
+      'Removed live blocking keystroke listeners before Enter key press to eliminate editor lag and DOM collisions.',
+      'Updated Get Started onboarding checklist to dynamically tailor steps for Org Admins vs Employees vs Personal Users.',
+      'Elevated admin role checking during OAuth callback to cleanly handle all administrative roles without false redirects.',
+    ],
+    improvements: [
+      'Smooth CSS SVG circle transition for real-time risk scores from 0% (Clean) to 100% (Critical Risk).',
+      'Debounced input analysis at 600ms providing near-instant visual feedback with zero main-thread blockage.',
+      'Automated account reactivation for existing users during OAuth login within 45-day grace period.',
+    ],
+    problemsSolved: [
+      'Completely eliminated typing latency and cursor displacement in contenteditable chat inputs.',
+      'Fixed circular JSON reference serialization error on policy save bar in user and admin portals.',
+      'Fixed existing user login rejection during Google and Microsoft OAuth flows.',
+      'Prevented unverified domain admins from inviting colleagues before verifying domain control.',
+    ],
+  },
+  {
     version: '1.0.0',
     date: 'September 11, 2026',
     status: 'Production Stable',
@@ -72,6 +133,56 @@ const BASELINE_VERSIONS: VersionItem[] = [
 
 const ADMIN_VERSIONS: VersionItem[] = [
   {
+    version: '1.1.2',
+    date: 'September 11, 2026',
+    status: 'Production Stable',
+    tag: 'Control Plane Version Parity & Telemetry Sync',
+    commit: 'admin-v1.1.2',
+    summary: 'Synchronized administrative control plane aligning system metadata, telemetry endpoints, and component introspection with v1.1.2 core platform.',
+    info: 'SecureGPT Admin Console v1.1.2 ensures uniform version telemetry and monitoring alignment across enterprise deployments.',
+    whatsNew: [
+      'Synchronized component metadata endpoints with Extension v1.2.1 and Dashboard v1.1.2.',
+      'Refined policy state verification against updated extension interception models.',
+    ],
+    changedFunctionality: [
+      'Updated live health and component version endpoints to broadcast unified v1.1.2 ecosystem metrics.',
+    ],
+    improvements: [
+      'Instant component matrix synchronization across all administrative inspection views.',
+    ],
+    problemsSolved: [
+      'Eliminated version drift reporting between user and administrative backend instances.',
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: 'September 11, 2026',
+    status: 'Released',
+    tag: 'Admin RBAC & Policy Scope Expansion',
+    commit: 'admin-v1.1.0',
+    summary: 'Admin Control Plane v1.1.0 delivers policy trigger leaderboards for top employees and departments, dynamic role modification directly in team views, and document scanning toggles.',
+    info: 'SecureGPT Admin Console centralizes organizational governance, telemetry, and departmental policy overrides.',
+    whatsNew: [
+      'Top Employees & Departments Policy Trigger Leaderboard on Admin Dashboard.',
+      'Document & File Scanning master policy toggle for administrative governance.',
+      'Team Role management endpoint allowing instant role elevation and demotion.',
+      'Sticky Department Back-Navigation for departmental policy editing.',
+      'Clean multi-role checking in administrative OAuth callback routing.',
+    ],
+    changedFunctionality: [
+      'Enforced domain verification gate on team invitations to prevent unauthorized employee onboarding.',
+      'Enhanced SaveBar handlers to eliminate synthetic React event leakage into JSON payloads.',
+    ],
+    improvements: [
+      'Visual role status badges for Super Admin, Security Admin, and Org Admin.',
+      'Real-time DNS TXT record challenge instructions with instant copy actions.',
+    ],
+    problemsSolved: [
+      'Resolved circular JSON error on policy save.',
+      'Eliminated admin login loop bouncing secondary admins to user portal.',
+    ],
+  },
+  {
     version: '1.0.0',
     date: 'September 11, 2026',
     status: 'Production Stable',
@@ -104,9 +215,35 @@ const ADMIN_VERSIONS: VersionItem[] = [
 
 const EXTENSION_VERSIONS: VersionItem[] = [
   {
-    version: '1.2.0',
+    version: '1.2.1',
     date: 'September 11, 2026',
     status: 'Production Stable',
+    tag: 'Streamlined Radial Risk Gauge',
+    commit: 'ext-v1.2.1',
+    summary: 'Streamlined real-time DLP experience removing intrusive popover cards and tooltips, exclusively featuring the lightweight Shadow DOM radial risk gauge.',
+    info: 'SecureGPT Extension v1.2.1 provides clean, non-intrusive prompt risk visualization with zero prompt occlusion and synchronous form-submission DLP protection.',
+    whatsNew: [
+      'Exclusive Shadow DOM radial risk percentage gauge with zero-friction visual threat cues.',
+      'Completely removed floating live warning tooltip overlays and redundant popover action bars.',
+      'Lightweight memory optimization with eliminated temporary tooltip DOM trees.',
+    ],
+    changedFunctionality: [
+      'Removed live-warning-tooltip component from extension content scripts.',
+      'DLP actions (mask/block) enforce cleanly on submission while the radial gauge provides passive continuous risk scoring.',
+    ],
+    improvements: [
+      'Unobstructed typing area across all 15+ monitored generative AI platforms.',
+      'Even faster DOM evaluation cycle with zero layout disruption.',
+    ],
+    problemsSolved: [
+      'Fixed floating tooltip cards covering chat input boxes and platform-native dropdown menus.',
+      'Eliminated click interception issues caused by transient popover elements.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: 'September 11, 2026',
+    status: 'Released',
     tag: 'Manifest V3 Production Build',
     commit: 'ext-v1.2.0',
     summary: 'High-performance browser extension providing zero-latency DOM interception, WebAssembly document parsing, and client-side DLP scanning across 15+ AI platforms.',
@@ -224,21 +361,21 @@ export default function DedicatedVersionsPage() {
       key: 'baseline',
       label: 'Baseline Product',
       icon: <Layers size={16} />,
-      badge: 'v1.0.0',
+      badge: 'v1.1.2',
       description: 'Core backend, API gateway, telemetry, and DLP engine infrastructure.',
     },
     {
       key: 'admin',
       label: 'Admin Version History',
       icon: <Server size={16} />,
-      badge: 'v1.0.0',
+      badge: 'v1.1.2',
       description: 'Administrative console, RBAC, tenant management, and audit logging.',
     },
     {
       key: 'extension',
       label: 'Extension Version',
       icon: <ShieldCheck size={16} />,
-      badge: '4 releases (v1.2.0)',
+      badge: '5 releases (v1.2.1)',
       description: 'Browser-native DLP extension, WASM scanner, and DOM interception.',
     },
   ]

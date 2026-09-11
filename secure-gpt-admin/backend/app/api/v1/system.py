@@ -21,6 +21,6 @@ async def get_system_version():
         "buildTime": settings.build_time,
         "components": {
             "adminBackend": settings.app_version,
-            "adminFrontend": "1.0.0",
+            "adminFrontend": "1.1.2",
         },
     }

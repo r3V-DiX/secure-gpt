@@ -43,6 +43,7 @@ export interface PIIConfig {
   allowPause: boolean             // can user pause the extension?
   logUserEmail: boolean           // store email in audit logs?
   sensitivityLevel: 'low' | 'medium' | 'high'
+  enableDocumentScanning?: boolean // Admin toggle to inspect uploaded documents/files
   updatedAt: string               // ISO timestamp of last policy sync
 }
 
@@ -94,5 +95,6 @@ export const DEFAULT_PII_CONFIG: PIIConfig = {
   allowPause: true,
   logUserEmail: false,
   sensitivityLevel: 'medium',
+  enableDocumentScanning: true,
   updatedAt: new Date().toISOString(),
 }

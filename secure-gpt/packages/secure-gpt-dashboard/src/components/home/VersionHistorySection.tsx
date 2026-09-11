@@ -36,9 +36,35 @@ interface VersionItem {
 
 const BASELINE_VERSIONS: VersionItem[] = [
   {
-    version: '1.0.0',
+    version: '1.1.2',
     date: 'September 11, 2026',
     status: 'Production Stable',
+    tag: 'Radial UX Polish & Streamlined DLP',
+    commit: 'prod-v1.1.2',
+    summary: 'Streamlined real-time DLP prompt experience removing disruptive floating warning modals in favor of a sleek, non-intrusive radial risk indicator and updated component orchestration.',
+    info: 'SecureGPT Core Platform v1.1.2 delivers refined real-time risk indication with zero UI clutter, alongside synchronous submission blocking.',
+    whatsNew: [
+      'Minimalist inline radial risk gauge cleanly indicating real-time prompt risk levels without distracting popover tooltips.',
+      'Refactored input listeners to decouple asynchronous background risk assessment from instant user typing.',
+      'Updated system component versions and telemetry matrices across all user and admin nodes.',
+    ],
+    changedFunctionality: [
+      'Permanently removed live popover warning cards from prompt textareas.',
+      'Enforced prompt blocking strictly at form submission (Enter / Send button) while keeping continuous live visual risk feedback.',
+    ],
+    improvements: [
+      'Zero layout disruption and completely unobscured prompt input fields.',
+      'Reduced memory footprint and eliminated extraneous DOM event listener allocations.',
+    ],
+    problemsSolved: [
+      'Eliminated disruptive tooltip overlays covering prompt text and autocomplete menus.',
+      'Prevented accidental prompt submission interruption during active editing.',
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: 'September 11, 2026',
+    status: 'Released',
     tag: 'Baseline Production Release',
     commit: 'prod-v1.0.0',
     summary: 'Initial production baseline establishing enterprise DLP interception, multi-tenant policy synchronization, audit telemetry, and centralized release tracking.',
@@ -70,9 +96,31 @@ const BASELINE_VERSIONS: VersionItem[] = [
 
 const ADMIN_VERSIONS: VersionItem[] = [
   {
-    version: '1.0.0',
+    version: '1.1.2',
     date: 'September 11, 2026',
     status: 'Production Stable',
+    tag: 'Control Plane Version Parity',
+    commit: 'admin-v1.1.2',
+    summary: 'Synchronized administrative control plane aligning system metadata, telemetry endpoints, and component introspection with v1.1.2 core platform.',
+    info: 'SecureGPT Admin Console v1.1.2 ensures uniform version telemetry and monitoring alignment across enterprise deployments.',
+    whatsNew: [
+      'Synchronized component metadata endpoints with Extension v1.2.1 and Dashboard v1.1.2.',
+      'Refined policy state verification against updated extension interception models.',
+    ],
+    changedFunctionality: [
+      'Updated live health and component version endpoints to broadcast unified v1.1.2 ecosystem metrics.',
+    ],
+    improvements: [
+      'Instant component matrix synchronization across all administrative inspection views.',
+    ],
+    problemsSolved: [
+      'Eliminated version drift reporting between user and administrative backend instances.',
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: 'September 11, 2026',
+    status: 'Released',
     tag: 'Admin Control Plane v1',
     commit: 'admin-v1.0.0',
     summary: 'Dedicated administrative control plane for Super Admins and Security Officers to manage enterprise policies, roles, and audit compliance.',
@@ -102,9 +150,35 @@ const ADMIN_VERSIONS: VersionItem[] = [
 
 const EXTENSION_VERSIONS: VersionItem[] = [
   {
-    version: '1.2.0',
+    version: '1.2.1',
     date: 'September 11, 2026',
     status: 'Production Stable',
+    tag: 'Streamlined Radial Risk Gauge',
+    commit: 'ext-v1.2.1',
+    summary: 'Streamlined real-time DLP experience removing intrusive popover cards and tooltips, exclusively featuring the lightweight Shadow DOM radial risk gauge.',
+    info: 'SecureGPT Extension v1.2.1 provides clean, non-intrusive prompt risk visualization with zero prompt occlusion and synchronous form-submission DLP protection.',
+    whatsNew: [
+      'Exclusive Shadow DOM radial risk percentage gauge with zero-friction visual threat cues.',
+      'Completely removed floating live warning tooltip overlays and redundant popover action bars.',
+      'Lightweight memory optimization with eliminated temporary tooltip DOM trees.',
+    ],
+    changedFunctionality: [
+      'Removed live-warning-tooltip component from extension content scripts.',
+      'DLP actions (mask/block) enforce cleanly on submission while the radial gauge provides passive continuous risk scoring.',
+    ],
+    improvements: [
+      'Unobstructed typing area across all 15+ monitored generative AI platforms.',
+      'Even faster DOM evaluation cycle with zero layout disruption.',
+    ],
+    problemsSolved: [
+      'Fixed floating tooltip cards covering chat input boxes and platform-native dropdown menus.',
+      'Eliminated click interception issues caused by transient popover elements.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: 'September 11, 2026',
+    status: 'Released',
     tag: 'Manifest V3 Production Build',
     commit: 'ext-v1.2.0',
     summary: 'High-performance browser extension providing zero-latency DOM interception and client-side DLP scanning across major AI platforms.',
@@ -141,21 +215,21 @@ export function VersionHistorySection() {
       label: 'Baseline Product',
       icon: <Layers size={16} />,
       count: BASELINE_VERSIONS.length,
-      badge: 'v1.0.0',
+      badge: 'v1.1.2',
     },
     {
       key: 'admin',
       label: 'Admin Console',
       icon: <Server size={16} />,
       count: ADMIN_VERSIONS.length,
-      badge: 'v1.0.0',
+      badge: 'v1.1.2',
     },
     {
       key: 'extension',
       label: 'Chrome Extension',
       icon: <ShieldCheck size={16} />,
       count: EXTENSION_VERSIONS.length,
-      badge: 'v1.2.0',
+      badge: 'v1.2.1',
     },
   ]
 

@@ -25,9 +25,43 @@ const INPUT_SELECTORS = [
   'textarea[placeholder*="anything"]',
   // Meta AI
   'div[contenteditable="true"][role="textbox"]',
+  // Mistral Le Chat
+  'textarea[placeholder*="Ask"]',
+  'textarea[data-testid="chat-input"]',
+  // Poe
+  'textarea[placeholder*="Talk to"]',
+  'div[class*="ChatMessageInputContainer"] textarea',
+  // DeepSeek
+  'textarea#chat-input',
+  'textarea[placeholder*="DeepSeek"]',
+  'div[contenteditable="true"]#chat-input',
+  // v0.dev
+  'textarea[placeholder*="Ask v0"]',
+  'textarea[placeholder*="What can I help you build"]',
+  // Replit
+  'div[class*="replit-ui"] textarea',
+  'textarea[placeholder*="Reply to agent"]',
+  // HuggingChat
+  'textarea[placeholder*="Ask anything"]',
+  'textarea[enterkeyhint="send"]',
+  // Phind
+  'textarea[placeholder*="Ask Phind"]',
+  'textarea[aria-label="Search"]',
+  // Notion AI
+  'div[placeholder*="Ask AI"]',
+  'div[class*="notion-ai-prompt-input"]',
+  // Jasper AI
+  'textarea[placeholder*="Ask Jasper"]',
+  'div[contenteditable="true"][data-slate-editor="true"]',
+  // Copy.ai
+  'textarea[placeholder*="Enter prompt"]',
+  'textarea[data-testid="chat-textarea"]',
+  // Cursor Web
+  'textarea[placeholder*="Plan, code"]',
   // Generic fallback
   'textarea[placeholder]',
   'div[contenteditable="true"][role="textbox"]',
+  'div[contenteditable="true"]',
 ]
 
 const BUTTON_SELECTORS = [
@@ -40,9 +74,13 @@ const BUTTON_SELECTORS = [
   'button[data-testid*="submit"]',
   'button[data-testid*="ask"]',
   'button[data-testid*="composer-button"]',
+  'button[aria-label*="Generate"]',
+  'button[data-testid="send-button"]',
   // Perplexity-specific
-  'button:has(svg path[d*="M13.22"])', // Common icon pattern
-  'button.bg-accentMain', 
+  'button:has(svg path[d*="M13.22"])',
+  'button.bg-accentMain',
+  // DeepSeek / Mistral
+  'div[role="button"][aria-label*="Send"]',
 ]
 
 /**

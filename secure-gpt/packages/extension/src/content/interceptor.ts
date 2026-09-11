@@ -6,7 +6,7 @@ import { showBanner, removeBanner } from './banners'
 import { showShieldModal } from './modal-manager'
 import { logDetectionEvent } from './audit-logger'
 import { applyMasking, applyImageMasking } from '@/features/actions/services/masking.service'
-import { showLiveWarningTooltip, removeLiveWarningTooltip } from './live-warning-tooltip'
+import { updateRadialRiskGauge, hideRadialRiskGauge } from './radial-risk-gauge'
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
 import { POLICY_ACTION_PRIORITY, type PIICategory, type PolicyAction } from '@securegpt/shared/constants'
 
@@ -115,19 +115,22 @@ async function handleGlobalInput(e: Event): Promise<void> {
   if (!root || bypassSet.has(root)) return
 
   if (inputDebounceTimer) clearTimeout(inputDebounceTimer)
-  
-  // Clear any existing tooltip immediately when user starts typing again
-  removeLiveWarningTooltip()
 
   inputDebounceTimer = setTimeout(async () => {
     // Guard: extension context
     if (!isExtensionContextValid()) return
 
     const text = extractText(root)
-    if (!text || text.trim().length === 0) return
+    if (!text || text.trim().length === 0) {
+      hideRadialRiskGauge()
+      return
+    }
 
     // If it's already allowed, skip
-    if (text === preAllowedText) return
+    if (text === preAllowedText) {
+      updateRadialRiskGauge(root, 0, [])
+      return
+    }
 
     try {
       const isActive = await new Promise<boolean>((resolve) => {
@@ -140,7 +143,10 @@ async function handleGlobalInput(e: Event): Promise<void> {
         })
       })
 
-      if (!isActive) return
+      if (!isActive) {
+        hideRadialRiskGauge()
+        return
+      }
 
       const result = await new Promise<DetectionResult>((resolve) => {
         chrome.runtime.sendMessage(
@@ -155,29 +161,12 @@ async function handleGlobalInput(e: Event): Promise<void> {
         )
       })
 
-      if (result.hasFindings && result.entities.length > 0) {
-        const { action } = getMostRestrictiveAction(result.entities, currentPolicy)
-        
-        showLiveWarningTooltip(
-          result.entities,
-          root,
-          () => {
-            // Mask Now
-            const maskedText = applyMasking(text, result.entities)
-            setInputValue(root, maskedText)
-            removeLiveWarningTooltip()
-          },
-          action === 'BLOCK' ? undefined : () => {
-            // Allow
-            preAllowedText = text
-            removeLiveWarningTooltip()
-          }
-        )
-      }
+      // Update radial risk gauge dynamically without blocking user
+      updateRadialRiskGauge(root, result.hasFindings ? result.entities.length : 0, result.entities)
     } catch (err) {
       console.error('[SecureGPT] Live detection error:', err)
     }
-  }, 1000)
+  }, 600)
 }
 
 function getMostRestrictiveAction(entities: PIIEntity[], policy: PIIConfig): { action: PolicyAction; topEntity: PIIEntity } {
@@ -494,7 +483,7 @@ export function teardown(): void {
   window.removeEventListener('drop', handleGlobalDrop, true)
   window.removeEventListener('input', handleGlobalInput, true)
   document.querySelectorAll('[data-securegpt]').forEach((el) => el.remove())
-  removeLiveWarningTooltip()
+  hideRadialRiskGauge()
 }
 
 // ── Image paste interception ──────────────────
@@ -617,6 +606,19 @@ async function handleFileScan(el: HTMLElement, file: File): Promise<void> {
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
   const isOffice = isOfficeFile(file)
   if (!isImage && !isPdf && !isOffice) return
+
+  // Document scanning policy toggle: If disabled by admin, bypass file inspection
+  if (currentPolicy?.enableDocumentScanning === false) {
+    console.info(`[SecureGPT] Document scanning disabled by policy — skipping inspection for ${file.name}`)
+    const reader = new FileReader()
+    const dataUrl = await new Promise<string>((resolve) => {
+      reader.onload = () => resolve(reader.result as string)
+      reader.readAsDataURL(file)
+    })
+    ocrCache.set(dataUrl, [])
+    await dispatchFilePaste(el, dataUrl, file.name, file.type)
+    return
+  }
 
   const reader = new FileReader()
   const dataUrl = await new Promise<string>((resolve) => {

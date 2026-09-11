@@ -290,9 +290,30 @@ export function SidebarInner({
                 <span className="text-[13px] font-bold text-[var(--sidebar-text-active)] truncate leading-snug">
                   {user.fullName || 'User'}
                 </span>
-                <span className="text-[11px] text-[var(--text-muted)] truncate leading-none capitalize">
-                  {user.role.replace('_', ' ')}
-                </span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span
+                    className={clsx(
+                      'text-[9.5px] font-bold px-1.5 py-0.5 rounded-full border uppercase tracking-wider',
+                      user.role === 'super_admin' || user.role === 'platform_super_admin'
+                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                        : user.role === 'org_admin' || user.role === 'security_admin'
+                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                        : user.role === 'employee'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        : 'bg-slate-500/10 text-slate-400 border-slate-500/30'
+                    )}
+                  >
+                    {user.role === 'super_admin' || user.role === 'platform_super_admin'
+                      ? 'Super Admin'
+                      : user.role === 'org_admin'
+                      ? 'Org Admin'
+                      : user.role === 'employee'
+                      ? 'Employee'
+                      : user.orgId
+                      ? 'Organization'
+                      : 'Personal User'}
+                  </span>
+                </div>
               </div>
             )}
           </Link>
@@ -318,7 +339,7 @@ export function SidebarInner({
           >
             <span className="flex items-center gap-1 group-hover:text-[var(--sidebar-text-active)]">
               <span className="size-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-              v1.0.0
+              v1.1.2
             </span>
             <span className="opacity-60 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity">
               Status ↗

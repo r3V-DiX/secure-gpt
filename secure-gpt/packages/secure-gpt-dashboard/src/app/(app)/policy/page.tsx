@@ -1,10 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { usePolicy } from '@/features/policy/hooks/use-policy'
 import { CategoryCard } from '@/features/policy/components/CategoryCard'
 import type { PolicyAction } from '@/types'
-import { ShieldCheck, Globe, Settings2, Plus, Save, Undo2, CheckCircle, AlertCircle, Building2, Layers } from 'lucide-react'
+import { ShieldCheck, Globe, Settings2, Plus, Save, Undo2, CheckCircle, AlertCircle, Building2, Layers, ArrowLeft } from 'lucide-react'
 import { Modal } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
 import { ACTION_LABEL, ACTION_COLORS, ACTIONS } from '@/features/policy/components/ActionSelector'
@@ -106,6 +107,22 @@ export default function PolicyPage() {
   return (
     <>
       <div className="space-y-7 pb-28 animate-fade-in">
+
+        {/* ── Back to Organization / Team link ── */}
+        {departmentId && (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/team"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all hover:bg-[var(--accent-light)] hover:text-[var(--accent)] hover:border-[var(--accent-border)]"
+              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
+            >
+              <ArrowLeft size={13} /> ← Back to Team & Organization
+            </Link>
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 font-bold border border-blue-500/20">
+              Department Override Scope: {activeDept?.name || departmentId}
+            </span>
+          </div>
+        )}
 
         {/* ── Page header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -279,21 +296,22 @@ export default function PolicyPage() {
           <div className="rounded-2xl border overflow-hidden"
             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
             {([
+              { key: 'enableDocumentScanning' as const, label: 'Document & File Scanning', desc: 'Inspect and redact sensitive data in uploaded PDF, Office documents, and images' },
               { key: 'allowPause' as const, label: 'Allow users to pause protection', desc: 'Users can temporarily disable SecureGPT without contacting an admin' },
               { key: 'logUserEmail' as const, label: 'Include email in audit logs', desc: "Audit entries will contain the user's email address for traceability" },
             ]).map(({ key, label, desc }, i) => (
               <div key={key}
                 className={`flex items-center gap-4 px-5 py-4 transition-colors ${isAdmin ? 'cursor-pointer hover:bg-(--bg-surface-2)' : 'cursor-default'}`}
-                style={{ borderBottom: i === 0 ? '1px solid var(--border)' : undefined }}
-                onClick={isAdmin ? () => updateField(key, !config[key]) : undefined}>
+                style={{ borderBottom: i < 2 ? '1px solid var(--border)' : undefined }}
+                onClick={isAdmin ? () => updateField(key as any, !(config as any)[key]) : undefined}>
                 <div className="flex-1">
                   <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{desc}</p>
                 </div>
                 <div className="relative w-10 h-5 rounded-full transition-all duration-200 shrink-0 pointer-events-none"
-                  style={{ background: config[key] ? 'var(--accent)' : 'var(--bg-surface-3)' }}>
+                  style={{ background: (config as any)[key] !== false ? 'var(--accent)' : 'var(--bg-surface-3)' }}>
                   <span className="absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform duration-200"
-                    style={{ transform: config[key] ? 'translateX(20px)' : 'translateX(0)' }} />
+                    style={{ transform: (config as any)[key] !== false ? 'translateX(20px)' : 'translateX(0)' }} />
                 </div>
               </div>
             ))}

@@ -199,6 +199,12 @@ async def invite_user(body: OrgInviteUserRequest, db: DBSession, current_user: C
     if not org:
         raise NotFound("Organization not found")
 
+    # Domain verification gating: Prevent invitations until organization domain ownership is verified
+    if org.status != OrgStatus.ACTIVE and not org.domain_verified_at:
+        raise BadRequest(
+            message=f"Domain verification required: You must verify ownership of '{org.domain}' via DNS TXT challenge before inviting team members."
+        )
+
     user_domain = extract_domain_from_email(body.email)
     if user_domain != org.domain:
         raise BadRequest(

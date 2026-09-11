@@ -1,50 +1,50 @@
 # SecureGPT Product & Engineering Roadmap / Updates
 
-### 🚀 Phase 1: Core Product, Critical Fixes & Org Onboarding (Top Priority)
+### 🚀 Phase 1: Core Product, Critical Fixes & Org Onboarding (Top Priority) [COMPLETED - v1.1.0]
 
 ### 1. Interception & Policy Controls
-- [ ] **Prompt Evaluation UX**:
+- [x] **Prompt Evaluation UX**:
   - Remove live blocking prompt keystroke interception before pressing `Enter` to avoid typing lag and DOM interference.
   - Add a non-intrusive circular risk badge / radial percentage gauge anchored on the right of input fields that updates dynamically.
-- [ ] **Document Scanning Policy**:
+- [x] **Document Scanning Policy**:
   - Add policy toggle to enable or disable document scanning (allowing admins to choose whether files/documents are inspected).
-- [ ] **Policy Platform Expansion**:
+- [x] **Policy Platform Expansion**:
   - Add support and coverage for at least 15+ LLM sites in policy and content scripts (ChatGPT, Claude, Gemini, Copilot, Perplexity, Poe, Mistral, Cursor, v0, Replit, HuggingChat, DeepSeek, Phind, Notion AI, Jasper, Copy.ai).
 
 ### 2. Critical Bug Fixes & Stability
-- [ ] **Fix Policy Updation (Circular JSON Error)**:
+- [x] **Fix Policy Updation (Circular JSON Error)**:
   - *Issue:* `Converting circular structure to JSON --> starting at object with constructor 'HTMLButtonElement' | property '__reactFiber$...' -> stateNode`.
   - *Fix:* Sanitize event handlers in admin UI (`SaveBar` and mutation triggers) to avoid passing synthetic React events / DOM nodes into JSON payload or mutation functions.
-- [ ] **Fix Authentication & Login (Existing Users & Admins)**:
-  - Fix login failure for existing users (session handling, token expiration/refresh, auth backward compatibility).
+- [x] **Fix Authentication & Login (Existing Users & Admins)**:
+  - Fix login failure for existing users (session handling, token expiration/refresh, auth backward compatibility, 45-day reactivation).
   - Fix login failure for Admins in admin portal (callback routing, role verification, and token exchange).
 
 ### 3. Identity, Login & Organization UI (TPRM-Style Onboarding)
-- [ ] **Microsoft OAuth & Enterprise SSO Integration**:
+- [x] **Microsoft OAuth & Enterprise SSO Integration**:
   - Implement Microsoft Entra ID (Azure AD / Office 365) OAuth login alongside existing Google OAuth for both web dashboards and browser extension authentication.
-- [ ] **Revamp Organization Login UI**:
+- [x] **Revamp Organization Login UI**:
   - Redesign organization sign-in screen supporting company workspace slug routing and enterprise SSO (Microsoft & Google Workspace).
-- [ ] **Account Type & Role Badge in UI**:
+- [x] **Account Type & Role Badge in UI**:
   - Display clear visual badge in the UI showing exactly how the user is logged in:
     - `Organization`
     - `Employee`
     - `Org Admin`
     - `Super Admin`
     - `Personal User`
-- [ ] **Domain Verification Gating**:
+- [x] **Domain Verification Gating**:
   - Prevent team/org admins from inviting employees before verifying company domain ownership (via DNS TXT record or meta tag).
   - Add an interactive guided onboarding tour / walkthrough explaining the verification process.
-- [ ] **Role Management (RBAC)**:
+- [x] **Role Management (RBAC)**:
   - Allow organization admins to view and change roles of users directly from the team table.
-- [ ] **Dashboard Analytics**:
+- [x] **Dashboard Analytics**:
   - Display leaderboard of top employees / departments by policy triggers on the admin dashboard.
-- [ ] **Redesign "Get Started" Page**:
+- [x] **Redesign "Get Started" Page**:
   - Overhaul the get started page to provide a clear, role-appropriate checklist for new organizations and users.
-- [ ] **Quick Back-Navigation Link from Department Policy to Org/Admin View**:
+- [x] **Quick Back-Navigation Link from Department Policy to Org/Admin View**:
   - When an admin clicks "Configure Policy" from Team & Org (redirecting to `/policy?department_id=...` for a specific sub-category/department like Engineering, Finance, etc.), provide a sticky/prominent "← Back to Team & Organization" navigation link on the policy page to return directly to the org view.
 
 ### 4. Release Engineering & Audit Tracking
-- [x] **Production Release Tracker (Current: v1.0.0)**:
+- [x] **Production Release Tracker (Current: v1.1.0)**:
   - Establish a single source of truth for every update in production (`RELEASE_TRACKER.md`).
   - Implement a public, unauthenticated system version endpoint (`/api/v1/system/version`) to report live deployed build versions.
   - Added visual version badges to dashboards and verification checks to update scripts.

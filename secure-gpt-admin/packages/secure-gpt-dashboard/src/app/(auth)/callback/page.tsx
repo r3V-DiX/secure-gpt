@@ -12,7 +12,17 @@ export default function CallbackPage() {
   useEffect(() => {
     refresh()
       .then((me) => {
-        const isAdmin = me?.role === 'super_admin' || me?.role === 'security_admin'
+        const role = me?.role?.toLowerCase() || ''
+        const rolesList = (me?.roles || []).map((r) => r.toLowerCase())
+        const isAdmin =
+          role === 'super_admin' ||
+          role === 'security_admin' ||
+          role === 'platform_super_admin' ||
+          role === 'org_admin' ||
+          rolesList.includes('super_admin') ||
+          rolesList.includes('security_admin') ||
+          rolesList.includes('org_admin')
+
         if (!isAdmin && typeof window !== 'undefined') {
           const userDashboardUrl = process.env.NEXT_PUBLIC_USER_DASHBOARD_URL || 'http://localhost:3000'
           window.location.href = `${userDashboardUrl}/dashboard`

@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     app_name: str = "DLP Shield"
     app_env: str = "development"
     debug: bool = False
-    app_version: str = "1.0.0"
+    app_version: str = "1.1.2"
     git_commit: str = "unknown"
     build_time: str = "unknown"
 
@@ -47,6 +47,12 @@ class Settings(BaseSettings):
 
     # Non-sensitive — default is fine for local dev
     google_redirect_uri: str = Field(...)
+
+    # ── Microsoft Entra ID (Azure AD) OAuth ───────────────────────────────────
+    microsoft_client_id: str | None = None
+    microsoft_client_secret: str | None = None
+    microsoft_tenant_id: str = "common"
+    microsoft_redirect_uri: str = "http://localhost:8000/api/v1/auth/microsoft/callback"
     
     # ── CORS ───────────────────────────────────────────────────────────────────
     # Non-sensitive — default covers local dev

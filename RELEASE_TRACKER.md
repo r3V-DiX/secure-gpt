@@ -6,6 +6,57 @@ Single source of truth for deployments, releases, database migrations, and compo
 
 ## Release History
 
+### [v1.1.2] - Radial UX Polish & Version Synchronization
+- **Date**: 2026-09-11
+- **Commit**: `prod-v1.1.2`
+- **Environment**: Production (`ap-south-1`)
+- **Status**: Ready for Deployment
+
+#### What Was Added & Improved
+- **Radial Risk Gauge UX**: Permanently removed floating live warning tooltip modals in favor of a sleek, unobtrusive circular percentage gauge anchored to prompt fields.
+- **Synchronous DLP Blocking**: Preserved synchronous blocking enforcement strictly on Enter key and Send button clicks.
+- **Component Parity**: Bumped extension to `1.2.1` and application suite to `1.1.2`.
+
+#### Component Matrix
+| Component | Service Name | Version | Image / Artifact |
+|---|---|---|---|
+| User Backend API | `secure-gpt-backend` | `1.1.2` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-backend:prod-latest` |
+| Admin Backend API | `securegpt-admin-backend` | `1.1.2` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-backend:prod-latest` |
+| User Dashboard | `secure-gpt-dashboard` | `1.1.2` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-dashboard:prod-latest` |
+| Admin Frontend | `securegpt-admin-frontend` | `1.1.2` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-frontend:prod-latest` |
+| Chrome Extension | `@securegpt/extension` | `1.2.1` | Chrome Web Store / dist archive |
+
+---
+
+### [v1.1.0] - Phase 1 Complete (Interception & Policy Controls, TPRM Org Onboarding & Stability)
+- **Date**: 2026-09-11
+- **Commit**: `prod-v1.1.0`
+- **Environment**: Production (`ap-south-1`)
+- **Status**: Released
+
+#### What Was Added & Improved
+- **Prompt Evaluation UX**: Non-blocking asynchronous live debouncing with dynamic radial percentage risk gauge anchored to LLM prompt areas.
+- **Document & File Scanning Policy**: Admin policy toggle to enable/disable file inspection for PDF, Office documents, and images.
+- **15+ LLM Platform Coverage**: Added domain mappings and DOM selectors for ChatGPT, Claude, Gemini, Copilot, Perplexity, Meta AI, Poe, Mistral, Cursor Web, v0, Replit, HuggingChat, DeepSeek, Phind, Notion AI, Jasper, Copy.ai.
+- **Identity & Microsoft OAuth**: Microsoft Entra ID (Azure AD) OAuth integration alongside Google Workspace.
+- **Role Management & TPRM Onboarding**:
+  - Live role changing (EMPLOYEE / ORG_ADMIN / USER) directly in team table.
+  - Domain verification gating preventing invitations before DNS TXT challenge completion.
+  - Sticky department back-navigation on policy page.
+  - Account Type & Role Badges throughout dashboards.
+  - Policy trigger leaderboards on Admin Dashboard.
+
+#### Component Matrix
+| Component | Service Name | Version | Image / Artifact |
+|---|---|---|---|
+| User Backend API | `secure-gpt-backend` | `1.1.0` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-backend:prod-latest` |
+| Admin Backend API | `securegpt-admin-backend` | `1.1.0` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-backend:prod-latest` |
+| User Dashboard | `secure-gpt-dashboard` | `1.1.0` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-dashboard:prod-latest` |
+| Admin Frontend | `securegpt-admin-frontend` | `1.1.0` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-frontend:prod-latest` |
+| Chrome Extension | `@securegpt/extension` | `1.2.0` | Chrome Web Store / dist archive |
+
+---
+
 ### [v1.0.0] - Baseline Production Release
 - **Date**: 2026-09-11
 - **Commit**: `prod-v1.0.0`

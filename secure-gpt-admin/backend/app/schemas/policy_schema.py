@@ -57,6 +57,7 @@ class PIIConfig(BaseModel):
     allowPause: bool = True
     logUserEmail: bool = False
     sensitivityLevel: str = "medium"
+    enableDocumentScanning: bool = True
     updatedAt: str | None = None
 
 
