@@ -7,6 +7,7 @@ import { Avatar } from '@/components/shared/Avatar'
 import { apiDelete } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
 import { Modal, useDangerConfirm } from '@/components/ui/modal/modal'
+import { EmptyState } from '@/components/ui/empty-state/EmptyState'
 
 export default function ProfilePage() {
     const { user, devices, loading, removeDevice } = useProfile()
@@ -129,11 +130,12 @@ export default function ProfilePage() {
                 </div>
 
                 {devices.length === 0 ? (
-                    <div className="flex flex-col items-center gap-2 py-12">
-                        <span className="text-3xl opacity-30">💻</span>
-                        <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                            No devices registered yet
-                        </p>
+                    <div className="p-6">
+                        <EmptyState
+                            icon={Monitor}
+                            title="No Devices Registered"
+                            description="Install the SecureGPT browser extension and connect your account to register this device."
+                        />
                     </div>
                 ) : (
                     <div className="divide-y" style={{ borderColor: 'var(--border)' }}>

@@ -2,6 +2,7 @@ import { Users, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
 import { useToast } from '@/contexts/toast-context'
 import { useDangerConfirm } from '@/components/ui/modal/modal'
+import { EmptyState } from '@/components/ui/empty-state/EmptyState'
 
 interface TeamMemberTableProps {
   users: any[]
@@ -73,8 +74,12 @@ export function TeamMemberTable({
           <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  No employees enrolled in this organization yet.
+                <td colSpan={5} className="p-6">
+                  <EmptyState
+                    icon={Users}
+                    title="No Employees Enrolled"
+                    description="Invite team members to enforce organization-wide DLP policies across all browser endpoints."
+                  />
                 </td>
               </tr>
             ) : (
