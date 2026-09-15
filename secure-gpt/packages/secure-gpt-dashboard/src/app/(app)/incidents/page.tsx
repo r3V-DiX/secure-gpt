@@ -27,11 +27,11 @@ export default function IncidentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-            <ShieldAlert className="text-[var(--accent)]" size={22} />
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <ShieldAlert className="text-[var(--accent)]" size={24} />
             Enterprise DLP Incident Stream
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Real-time audit log of intercepted sensitive data and prompt violations across all employees.
           </p>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 // src/features/event-log/components/EventLogTable.tsx
 import { Badge, actionVariant } from '@/components/ui/badge/badge'
+import { EmptyState } from '@/components/ui/empty-state/EmptyState'
 import { Pagination } from '@/components/data-display/pagination'
 import { Eye, EyeOff } from 'lucide-react'
 import type { AuditLog, Pagination as PaginationType } from '@/types'
@@ -60,14 +61,12 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
               : data.length === 0
                 ? (
                   <tr>
-                    <td colSpan={7} className="py-20 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <span className="text-3xl opacity-30">📭</span>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
-                          No logs found matching your filters.
-                        </p>
-                      </div>
-                    </td>
+                      <td colSpan={7} className="p-8">
+                        <EmptyState
+                          title="No Event Logs Found"
+                          description="No logs matching your selected filter criteria. Try clearing or expanding your filters."
+                        />
+                      </td>
                   </tr>
                 )
                 : data.map((log, i) => {

@@ -60,10 +60,10 @@ export default function SettingsPage() {
     <div className="w-full space-y-5 animate-fade-in pb-8">
 
       <div>
-        <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
           Settings
         </h1>
-        <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
           Manage your account and preferences
         </p>
       </div>

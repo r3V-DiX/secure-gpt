@@ -6,10 +6,11 @@ import { useProfile } from '@/features/profile/hooks/use-profile'
 import { Avatar } from '@/components/shared/Avatar'
 import { apiDelete } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
-import { Modal } from '@/components/ui/modal/modal'
+import { Modal, useDangerConfirm } from '@/components/ui/modal/modal'
 
 export default function ProfilePage() {
     const { user, devices, loading, removeDevice } = useProfile()
+    const confirmDanger = useDangerConfirm()
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const { toast } = useToast()
@@ -43,10 +44,10 @@ export default function ProfilePage() {
 
             {/* Header */}
             <div>
-                <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                     Profile
                 </h1>
-                <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                     Your account information and registered devices
                 </p>
             </div>
@@ -181,7 +182,12 @@ export default function ProfilePage() {
                                     <button
                                         type="button"
                                         onClick={async () => {
-                                            if (confirm(`Remove device "${d.name}"?`)) {
+                                            const confirmed = await confirmDanger({
+                                                title: `Remove device "${d.name}"?`,
+                                                description: `Unlinking ${d.name} (${d.osPlatform || 'Unknown OS'}) will terminate its connection to SecureGPT.`,
+                                                confirmLabel: 'Remove Device',
+                                            })
+                                            if (confirmed) {
                                                 await removeDevice(d.id)
                                                 toast.success('Device removed')
                                             }

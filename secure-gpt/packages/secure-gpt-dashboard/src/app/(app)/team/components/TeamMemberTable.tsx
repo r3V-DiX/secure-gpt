@@ -1,8 +1,7 @@
-'use client'
-
 import { Users, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
 import { useToast } from '@/contexts/toast-context'
+import { useDangerConfirm } from '@/components/ui/modal/modal'
 
 interface TeamMemberTableProps {
   users: any[]
@@ -26,6 +25,7 @@ export function TeamMemberTable({
   onDeleteUser,
 }: TeamMemberTableProps) {
   const { toast } = useToast()
+  const confirmDanger = useDangerConfirm()
 
   return (
     <div className="space-y-3.5">
@@ -140,7 +140,12 @@ export function TeamMemberTable({
                       <button
                         type="button"
                         onClick={async () => {
-                          if (confirm(`Instantly remove & terminate user ${u.email}? All active sessions and devices will be revoked immediately.`)) {
+                          const confirmed = await confirmDanger({
+                            title: `Terminate user ${u.email}?`,
+                            description: 'All active sessions and connected devices for this employee will be revoked immediately.',
+                            confirmLabel: 'Terminate User',
+                          })
+                          if (confirmed) {
                             const res = await onDeleteUser(u.id)
                             if (res.success) {
                               toast.success(`User ${u.email} removed.`)

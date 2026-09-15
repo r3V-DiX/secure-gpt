@@ -113,8 +113,8 @@ export default function PolicyPage() {
         {/* ── Page header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Policy Settings</h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Policy Settings</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
               {isAdmin
                 ? 'Control how SecureGPT responds when it detects sensitive data'
                 : "View the organization's active data protection policies"}
