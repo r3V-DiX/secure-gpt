@@ -8,6 +8,7 @@ interface TeamMemberTableProps {
   users: any[]
   departments: any[]
   currentUser: any
+  isOrgActive?: boolean
   onOpenInvite: () => void
   onChangeRole: (userId: string, role: string) => Promise<any>
   onAssignDepartment: (userId: string, deptId: string | null) => Promise<any>
@@ -18,6 +19,7 @@ export function TeamMemberTable({
   users,
   departments,
   currentUser,
+  isOrgActive = true,
   onOpenInvite,
   onChangeRole,
   onAssignDepartment,
@@ -36,7 +38,13 @@ export function TeamMemberTable({
             Employees with active Chrome Extensions bound to your corporate DLP policy.
           </p>
         </div>
-        <Button variant="primary" size="sm" onClick={onOpenInvite}>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={onOpenInvite}
+          disabled={!isOrgActive}
+          title={!isOrgActive ? 'Verify domain to invite employees' : undefined}
+        >
           <Plus size={12} className="mr-1" /> Invite Colleague
         </Button>
       </div>

@@ -32,7 +32,7 @@
     - `Super Admin`
     - `Personal User`
 - [x] **Domain Verification Gating**:
-  - Prevent team/org admins from inviting employees before verifying company domain ownership (via DNS TXT record or meta tag).
+  - Strictly prevent team/org admins from inviting employees or creating employee categories/departments before verifying company domain ownership (via DNS TXT record or meta tag).
   - Add an interactive guided onboarding tour / walkthrough explaining the verification process.
 - [x] **Role Management (RBAC)**:
   - Allow organization admins to view and change roles of users directly from the team table.
@@ -68,6 +68,8 @@
   - Add real-time DNS lookup status feedback (e.g., checking TXT record propagation, expected vs. found values) directly in the UI.
 
 ### Employee & Personal UX
+- [ ] **LLM Site Detection Banner / Modal ("SecureGPT Enabled")**:
+  - When any supported LLM platform is opened (ChatGPT, Claude, Gemini, Perplexity, Copilot, etc.), display an initial non-intrusive extension notification modal/toast confirming that SecureGPT data protection is active and monitoring prompts.
 - [ ] **Business Justification in Shield Modal ("Break-Glass")**:
   - Provide an optional justification text input when a prompt or file triggers a `WARN` or `BLOCK`, logging the reason for compliance review.
 - [ ] **Extension Shadow DOM Focus & Z-Index Guard**:

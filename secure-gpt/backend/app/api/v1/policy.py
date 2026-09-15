@@ -228,6 +228,19 @@ async def update_policy(
 ):
     dept_id = body.department_id if current_user.org_id else None
 
+    # Domain verification gating for custom policy categories under unverified org
+    if current_user.org_id:
+        from app.models.org import Organisation, OrgStatus
+        org_res = await db.execute(select(Organisation).where(Organisation.id == current_user.org_id))
+        org = org_res.scalar_one_or_none()
+        if org and org.status != OrgStatus.ACTIVE and not org.domain_verified_at:
+            builtin_cats = {'FINANCIAL', 'PII', 'CONFIDENTIAL', 'IP'}
+            requested_cats = set(body.config.categories.keys())
+            if not requested_cats.issubset(builtin_cats):
+                raise BadRequest(
+                    message=f"Domain verification required: You cannot create new custom categories until '{org.domain}' is verified via DNS TXT record."
+                )
+
     # Fetch old active policy for diff logging
     if dept_id and current_user.org_id:
         where_clause = (Policy.org_id == current_user.org_id) & (Policy.department_id == dept_id)

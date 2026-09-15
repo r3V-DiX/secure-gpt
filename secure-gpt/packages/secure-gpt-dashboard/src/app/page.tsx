@@ -25,7 +25,29 @@ import {
   History,
 } from 'lucide-react';
 
+import { PlatformIcon } from '@/components/shared/PlatformIcon';
+
 const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/securegpt-%E2%80%94-llm-data-prot/cbhlhbhhlcfilggkmcmodmfaeongmbmo';
+
+const ALL_HERO_PLATFORMS = [
+  { id: 'chatgpt', name: 'ChatGPT' },
+  { id: 'claude', name: 'Claude' },
+  { id: 'gemini', name: 'Gemini' },
+  { id: 'copilot', name: 'Copilot' },
+  { id: 'perplexity', name: 'Perplexity' },
+  { id: 'deepseek', name: 'DeepSeek' },
+  { id: 'cursor', name: 'Cursor' },
+  { id: 'mistral', name: 'Mistral' },
+  { id: 'meta-ai', name: 'Meta AI' },
+  { id: 'v0', name: 'v0.dev' },
+  { id: 'replit', name: 'Replit' },
+  { id: 'poe', name: 'Poe' },
+  { id: 'huggingchat', name: 'HuggingChat' },
+  { id: 'phind', name: 'Phind' },
+  { id: 'notion', name: 'Notion AI' },
+  { id: 'jasper', name: 'Jasper' },
+  { id: 'copy-ai', name: 'Copy.ai' },
+] as const;
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
@@ -55,6 +77,9 @@ export default function LandingPage() {
             <a href="#how-it-works" className="text-sm font-medium transition-colors" style={{ color: 'var(--text-secondary)' }}
                onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>How it works</a>
+            <a href="#platforms" className="text-sm font-medium transition-colors" style={{ color: 'var(--text-secondary)' }}
+               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>Platforms</a>
             <a href="#threat-coverage" className="text-sm font-medium transition-colors" style={{ color: 'var(--text-secondary)' }}
                onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>Coverage</a>
@@ -150,14 +175,18 @@ export default function LandingPage() {
             </div>
 
             <div className="mt-20">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] mb-8" style={{ color: 'var(--text-tertiary)' }}>
-                Protects your prompts on every major AI platform
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] mb-6" style={{ color: 'var(--text-tertiary)' }}>
+                Active client-side DLP protection across 17+ major AI platforms
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {['ChatGPT', 'Claude', 'Gemini', 'Copilot', 'Perplexity', 'Custom LLMs'].map(name => (
-                  <span key={name} className="px-4 py-2 rounded-full text-sm font-medium border transition-all"
-                        style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}>
-                    {name}
+              <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-4xl mx-auto">
+                {ALL_HERO_PLATFORMS.map(p => (
+                  <span
+                    key={p.id}
+                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all hover:scale-105 shadow-2xs"
+                    style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+                  >
+                    <PlatformIcon platformId={p.id} size={16} className="rounded-xs shrink-0" />
+                    {p.name}
                   </span>
                 ))}
               </div>
@@ -306,6 +335,74 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── Supported AI Platforms (17 Total) ── */}
+        <section id="platforms" className="py-28 px-6 border-t"
+                 style={{ background: 'var(--bg-base)', borderColor: 'var(--border)' }}>
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-4 border"
+                   style={{ background: 'var(--accent-light)', borderColor: 'var(--accent-border)', color: 'var(--accent)' }}>
+                <Globe size={13} />
+                Universal LLM Egress Protection
+              </div>
+              <h2 className="text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+                Zero-Config Coverage for 17+ AI Platforms
+              </h2>
+              <p className="max-w-2xl mx-auto text-base" style={{ color: 'var(--text-secondary)' }}>
+                SecureGPT automatically hooks into web chat areas, prompt inputs, and drag-and-drop file upload zones across all industry standard generative AI tools.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[
+                { id: 'chatgpt',    name: 'ChatGPT',           category: 'Chatbot',    domain: 'chatgpt.com', desc: 'OpenAI GPT-4o, o1, Canvas, File Uploads' },
+                { id: 'claude',     name: 'Claude (Anthropic)', category: 'Chatbot',    domain: 'claude.ai', desc: 'Artifacts, Claude 3.5 Sonnet, Projects' },
+                { id: 'gemini',     name: 'Google Gemini',     category: 'Chatbot',    domain: 'gemini.google.com', desc: 'Gemini 1.5 Pro, Flash, Google Search' },
+                { id: 'copilot',    name: 'Microsoft Copilot', category: 'Chatbot',    domain: 'copilot.microsoft.com', desc: 'Microsoft 365, Web Search, Notebook' },
+                { id: 'perplexity', name: 'Perplexity AI',     category: 'Search AI',  domain: 'perplexity.ai', desc: 'Pro Search, Collections, Citations' },
+                { id: 'deepseek',   name: 'DeepSeek',          category: 'Chatbot',    domain: 'deepseek.com', desc: 'DeepSeek-V3, R1 Reasoning, Web Chat' },
+                { id: 'mistral',    name: 'Mistral Le Chat',   category: 'Chatbot',    domain: 'chat.mistral.ai', desc: 'Mistral Large, Pixtral, Document OCR' },
+                { id: 'meta-ai',    name: 'Meta AI',           category: 'Chatbot',    domain: 'meta.ai', desc: 'Llama 3.3, Imagine, Assistant' },
+                { id: 'poe',        name: 'Poe',               category: 'Aggregator', domain: 'poe.com', desc: 'Multi-bot prompt interface & bots' },
+                { id: 'cursor',     name: 'Cursor Web',        category: 'Coding AI',  domain: 'cursor.com', desc: 'Web Composer, Docs indexer' },
+                { id: 'v0',         name: 'v0.dev (Vercel)',   category: 'Coding AI',  domain: 'v0.dev', desc: 'Frontend code generation, Canvas' },
+                { id: 'replit',     name: 'Replit Agent',      category: 'Coding AI',  domain: 'replit.com', desc: 'Interactive developer workspace' },
+                { id: 'huggingchat',name: 'HuggingChat',       category: 'Open Source',domain: 'huggingface.co', desc: 'Open LLMs (Qwen, Llama, Command R)' },
+                { id: 'phind',      name: 'Phind AI',          category: 'Coding AI',  domain: 'phind.com', desc: 'Technical developer search engine' },
+                { id: 'notion',     name: 'Notion AI',         category: 'Enterprise', domain: 'notion.so', desc: 'Workspace AI, Doc Generation' },
+                { id: 'jasper',     name: 'Jasper AI',         category: 'Marketing',  domain: 'jasper.ai', desc: 'Enterprise marketing copy & campaigns' },
+                { id: 'copy-ai',    name: 'Copy.ai',           category: 'Marketing',  domain: 'copy.ai', desc: 'Sales automation & content workflows' },
+              ].map(p => (
+                <div
+                  key={p.id}
+                  className="p-5 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 shadow-xs flex flex-col justify-between"
+                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <PlatformIcon platformId={p.id} size={36} className="rounded-xl shadow-xs" />
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                        Protected
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                      {p.name}
+                    </h3>
+                    <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--text-secondary)' }}>
+                      {p.desc}
+                    </p>
+                  </div>
+                  <div className="pt-3 border-t flex items-center justify-between text-[11px] font-mono"
+                       style={{ borderColor: 'var(--border-2)', color: 'var(--text-muted)' }}>
+                    <span>{p.domain}</span>
+                    <span className="text-[10px] font-sans font-semibold text-[var(--accent)]">{p.category}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ── Threat coverage ── */}
         <section id="threat-coverage" className="py-28 px-6 border-t"
                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
@@ -424,6 +521,7 @@ export default function LandingPage() {
               <ul className="space-y-3 text-sm" style={{ color: 'var(--on-dark-muted)' }}>
                 <li><a href="#features" style={{ color: 'inherit' }}>Features</a></li>
                 <li><a href="#how-it-works" style={{ color: 'inherit' }}>How it works</a></li>
+                <li><a href="#platforms" style={{ color: 'inherit' }}>Supported Platforms (17)</a></li>
                 <li><a href="#threat-coverage" style={{ color: 'inherit' }}>Threat coverage</a></li>
                 <li><Link href="/versions" style={{ color: 'var(--brand-light)' }}>Version History (v1.1.2)</Link></li>
                 <li><a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-light)' }}>Chrome Extension ↗</a></li>

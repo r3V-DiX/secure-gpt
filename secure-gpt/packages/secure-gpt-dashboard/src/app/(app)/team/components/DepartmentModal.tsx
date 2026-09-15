@@ -2,11 +2,12 @@
 
 import { Modal } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
-import { FolderPlus } from 'lucide-react'
+import { FolderPlus, AlertCircle } from 'lucide-react'
 
 interface DepartmentModalProps {
   open: boolean
   onClose: () => void
+  isOrgActive?: boolean
   deptName: string
   setDeptName: (val: string) => void
   deptDesc: string
@@ -19,6 +20,7 @@ interface DepartmentModalProps {
 export function DepartmentModal({
   open,
   onClose,
+  isOrgActive = true,
   deptName,
   setDeptName,
   deptDesc,
@@ -39,6 +41,21 @@ export function DepartmentModal({
           </p>
         </div>
 
+        {!isOrgActive && (
+          <div
+            className="p-3.5 text-xs rounded-xl flex items-start gap-2.5"
+            style={{ background: 'var(--warning-light)', border: '1px solid var(--warning-border)', color: 'var(--warning-text)' }}
+          >
+            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Domain Verification Required</p>
+              <p className="mt-0.5 text-[11px] opacity-90">
+                You cannot create employee categories or departments until your domain ownership is verified via the DNS TXT challenge.
+              </p>
+            </div>
+          </div>
+        )}
+
         {deptError && (
           <div
             className="p-3 text-xs rounded-xl"
@@ -55,10 +72,11 @@ export function DepartmentModal({
             </label>
             <input
               type="text"
+              disabled={!isOrgActive}
               placeholder="e.g. Engineering, Financial Analysts, Customer Support"
               value={deptName}
               onChange={(e) => setDeptName(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-primary)' }}
             />
           </div>
@@ -69,10 +87,11 @@ export function DepartmentModal({
             </label>
             <input
               type="text"
+              disabled={!isOrgActive}
               placeholder="e.g. Strict masking for financial records and source code"
               value={deptDesc}
               onChange={(e) => setDeptDesc(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-primary)' }}
             />
           </div>
@@ -85,7 +104,7 @@ export function DepartmentModal({
           <Button
             variant="primary"
             size="sm"
-            disabled={!deptName.trim() || creatingDept}
+            disabled={!deptName.trim() || creatingDept || !isOrgActive}
             onClick={onCreateDept}
           >
             <FolderPlus size={13} className="mr-1.5" />

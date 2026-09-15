@@ -167,10 +167,22 @@ export default function TeamPage() {
               <Building2 size={13} className="mr-1.5" /> Register Domain
             </Button>
           )}
-          <Button variant="secondary" size="sm" onClick={() => setDeptOpen(true)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setDeptOpen(true)}
+            disabled={!isOrgActive}
+            title={!isOrgActive ? 'Verify domain to create employee categories' : undefined}
+          >
             <FolderPlus size={13} className="mr-1.5" /> New Department
           </Button>
-          <Button variant="primary" size="sm" onClick={() => setInviteOpen(true)}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setInviteOpen(true)}
+            disabled={!isOrgActive}
+            title={!isOrgActive ? 'Verify domain to invite employees' : undefined}
+          >
             <Plus size={13} className="mr-1.5" /> Invite Employee
           </Button>
         </div>
@@ -204,7 +216,13 @@ export default function TeamPage() {
               Assign employees to categories to apply custom DLP policies per department.
             </p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setDeptOpen(true)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setDeptOpen(true)}
+            disabled={!isOrgActive}
+            title={!isOrgActive ? 'Verify domain to create employee categories' : undefined}
+          >
             <Plus size={12} className="mr-1" /> Add Category
           </Button>
         </div>
@@ -268,13 +286,15 @@ export default function TeamPage() {
                     </button>
                     <button
                       type="button"
+                      disabled={!isOrgActive}
                       onClick={() => {
+                        if (!isOrgActive) return
                         setSelectedDept(dept.id)
                         setInviteOpen(true)
                       }}
-                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1 transition-all cursor-pointer hover:bg-[var(--bg-surface-2)]"
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1 transition-all cursor-pointer hover:bg-[var(--bg-surface-2)] disabled:opacity-40 disabled:cursor-not-allowed"
                       style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
-                      title="Invite colleague to this category"
+                      title={!isOrgActive ? 'Verify domain to invite employees' : 'Invite colleague to this category'}
                     >
                       <UserPlus size={12} />
                     </button>
@@ -291,6 +311,7 @@ export default function TeamPage() {
         users={users}
         departments={departments}
         currentUser={user}
+        isOrgActive={isOrgActive}
         onOpenInvite={() => setInviteOpen(true)}
         onChangeRole={changeUserRole}
         onAssignDepartment={assignDepartment}
@@ -317,6 +338,7 @@ export default function TeamPage() {
       <DepartmentModal
         open={deptOpen}
         onClose={() => setDeptOpen(false)}
+        isOrgActive={isOrgActive}
         deptName={deptName}
         setDeptName={setDeptName}
         deptDesc={deptDesc}

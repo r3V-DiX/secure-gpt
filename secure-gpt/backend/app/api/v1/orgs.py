@@ -117,13 +117,9 @@ async def verify_domain(body: OrgVerifyDomainRequest, db: DBSession, current_use
     
     is_valid = await verify_dns_txt_record(org.domain, org.dns_txt_token)
     if not is_valid:
-        # In case user just updated it, also allow if current_user is ORG_ADMIN of this org
-        if current_user.role == UserRole.ORG_ADMIN and current_user.org_id == org.id:
-            pass # allow manual confirmation if needed, but report
-        else:
-            raise BadRequest(
-                message=f"DNS verification challenge failed. Could not find TXT record containing '{org.dns_txt_token}' on domain '{org.domain}'. DNS propagation can take 1-2 minutes."
-            )
+        raise BadRequest(
+            message=f"DNS verification challenge failed. Could not find TXT record containing '{org.dns_txt_token}' on domain '{org.domain}'. DNS propagation can take 1-2 minutes."
+        )
 
     org.status = OrgStatus.ACTIVE
     org.domain_verified_at = datetime.now(timezone.utc)
@@ -281,6 +277,17 @@ async def create_department(body: DepartmentCreateRequest, db: DBSession, curren
 
     if not current_user.org_id:
         raise Forbidden("Must be in an organization to create departments.")
+
+    # Domain verification gating: Prevent department/category creation until organization domain ownership is verified
+    res = await db.execute(select(Organisation).where(Organisation.id == current_user.org_id))
+    org = res.scalar_one_or_none()
+    if not org:
+        raise NotFound("Organization not found")
+
+    if org.status != OrgStatus.ACTIVE and not org.domain_verified_at:
+        raise BadRequest(
+            message=f"Domain verification required: You must verify ownership of '{org.domain}' via DNS TXT challenge before creating employee categories or departments."
+        )
 
     dept = Department(
         org_id=current_user.org_id,
