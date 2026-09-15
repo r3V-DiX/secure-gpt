@@ -45,15 +45,28 @@ export function Badge({ variant = 'default', children, dot, className, ...props 
 }
 
 export function actionVariant(action: string): BadgeVariant {
+  const normalized = action?.toUpperCase()
   const map: Record<string, BadgeVariant> = {
-    BLOCK: 'danger', MASK: 'warning', WARN_ALLOW: 'info', ALLOW: 'success',
+    BLOCK: 'danger',
+    BLOCKED: 'danger',
+    MASK: 'warning',
+    MASKED: 'warning',
+    WARN: 'info',
+    WARNED: 'info',
+    WARN_ALLOW: 'info',
+    ALLOW: 'success',
+    ALLOWED: 'success',
   }
-  return map[action] ?? 'neutral'
+  return map[normalized] ?? 'neutral'
 }
 
 export function severityVariant(sev: string): BadgeVariant {
+  const normalized = sev?.toUpperCase()
   const map: Record<string, BadgeVariant> = {
-    CRITICAL: 'danger', HIGH: 'warning', MEDIUM: 'info', LOW: 'success',
+    CRITICAL: 'danger',
+    HIGH: 'warning',
+    MEDIUM: 'info',
+    LOW: 'success',
   }
-  return map[sev] ?? 'neutral'
+  return map[normalized] ?? 'neutral'
 }

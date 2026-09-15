@@ -3,11 +3,21 @@
 import type { AuditLog } from '@/types'
 
 export function formatAction(action: string): string {
+    const normalized = action?.toUpperCase()
     const map: Record<string, string> = {
-        BLOCK: 'Blocked', MASK: 'Masked', WARN_ALLOW: 'Warned', ALLOW: 'Allowed',
+        BLOCK: 'Blocked',
+        BLOCKED: 'Blocked',
+        MASK: 'Masked',
+        MASKED: 'Masked',
+        WARN: 'Warned',
+        WARNED: 'Warned',
+        WARN_ALLOW: 'Warned',
+        ALLOW: 'Allowed',
+        ALLOWED: 'Allowed',
     }
-    return map[action] ?? action
+    return map[normalized] ?? action
 }
+
 
 export function formatDetectionType(type: string): string {
     return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())

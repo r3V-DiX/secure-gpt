@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────
 
 import { setupInterceptor, teardown } from './interceptor'
+import { initSiteDetectionIndicator, removeSiteDetectionIndicator } from './site-detection-indicator'
 import { DEFAULT_EXTENSION_CONFIG } from '@/config/defaults.config'
 import { PLATFORM_DOMAINS } from '@securegpt/shared/constants'
 
@@ -53,6 +54,9 @@ async function init() {
   // Start intercepting submit events
   setupInterceptor(policy)
 
+  // Initialize Site Detection Welcome Modal & Floating Indicator
+  initSiteDetectionIndicator(policy)
+
   // Register the message listener exactly once — never on re-init
   if (!messageListenerRegistered) {
     messageListenerRegistered = true
@@ -67,16 +71,20 @@ function handleBackgroundMessage(message: { type: string; policy?: any }): void 
   }
   if (message.type === 'POLICY_UPDATED' && message.policy) {
     setupInterceptor(message.policy)
+    initSiteDetectionIndicator(message.policy)
   }
   if (message.type === 'EXTENSION_PAUSED') {
     teardown()
+    removeSiteDetectionIndicator()
   }
   if (message.type === 'EXTENSION_RESUMED') {
     void init()
   }
   if (message.type === 'AUTH_LOST') {
     teardown()
+    removeSiteDetectionIndicator()
   }
 }
 
 void init()
+

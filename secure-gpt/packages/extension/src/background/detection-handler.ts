@@ -1,46 +1,12 @@
 // packages/extension/src/background/detection-handler.ts
-import type { PIIConfig, DetectionResult, AuditLog, PIIEntity } from '@securegpt/shared/types'
+import type { PIIConfig, DetectionResult, AuditLog } from '@securegpt/shared/types'
 import { detectPII } from '@securegpt/detection'
 import { v4 as uuidv4 } from 'uuid'
 import { EXTENSION_VERSION } from '@/config/defaults.config'
-import { DASHBOARD_URL } from '@/config/api.config'
-import apiClient from '@/lib/api/client'
 import { queueLog } from './log-batcher'
 import { DOMAIN_TO_PLATFORM, POLICY_ACTION_PRIORITY, type PolicyAction } from '@securegpt/shared/constants'
-
-let creating: Promise<void> | null = null
-
-async function setupOffscreen() {
-  const offscreenUrl = chrome.runtime.getURL('src/offscreen/offscreen.html')
-
-  if (typeof chrome.runtime.getContexts !== 'undefined') {
-    const existing = await chrome.runtime.getContexts({
-      contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
-      documentUrls: [offscreenUrl]
-    })
-    if (existing.length > 0) return
-  }
-
-  if (creating) {
-    await creating
-    return
-  }
-
-  try {
-    creating = chrome.offscreen.createDocument({
-      url: offscreenUrl,
-      reasons: [chrome.offscreen.Reason.DOM_PARSER],
-      justification: 'Run Tesseract.js OCR engine in a worker-enabled context'
-    })
-    await creating
-  } catch (err) {
-    if (!String(err).includes('Only a single offscreen document may be created')) {
-      console.error('[Background] Failed to create offscreen document:', err)
-    }
-  } finally {
-    creating = null
-  }
-}
+import { ensureOffscreenReady } from './offscreen-proxy'
+export { handleRedactPDF, handleRedactOffice } from './redaction-handler'
 
 async function sha256(text: string): Promise<string> {
   const encoder = new TextEncoder()
@@ -68,7 +34,7 @@ export async function handleDetectPII(
       entities: [],
       tier: 'regex',
       processingTimeMs: 0,
-      inputLength: text.length
+      inputLength: text.length,
     }
   }
 }
@@ -82,19 +48,7 @@ export async function handleDetectPIIImage(
 
   try {
     console.log('[Background] Proxying OCR request to offscreen document...')
-    await setupOffscreen()
-
-    let isReady = false
-    for (let i = 0; i < 15; i++) {
-      try {
-        const ping: { ok: boolean } = await chrome.runtime.sendMessage({ action: 'OFFSCREEN_PING' })
-        if (ping?.ok) { isReady = true; break }
-      } catch (_e) {
-        console.debug(`[Background] Offscreen not ready yet (attempt ${i + 1}), waiting…`)
-      }
-      await new Promise((r) => setTimeout(r, 300))
-    }
-
+    const isReady = await ensureOffscreenReady()
     if (!isReady) {
       console.error('[Background] Offscreen document failed to respond to PING after retries.')
       return empty
@@ -103,7 +57,7 @@ export async function handleDetectPIIImage(
     const response: { ok: boolean; result?: DetectionResult; error?: string } =
       await chrome.runtime.sendMessage({
         action: 'OFFSCREEN_RUN_OCR',
-        data: { imageUrl: imgUrl, config }
+        data: { imageUrl: imgUrl, config },
       })
 
     if (!response?.ok || !response.result) {
@@ -129,19 +83,7 @@ export async function handleDetectPIIPDF(
 
   try {
     console.log('[Background] Proxying PDF extract to offscreen document...')
-    await setupOffscreen()
-
-    let isReady = false
-    for (let i = 0; i < 15; i++) {
-      try {
-        const ping: { ok: boolean } = await chrome.runtime.sendMessage({ action: 'OFFSCREEN_PING' })
-        if (ping?.ok) { isReady = true; break }
-      } catch (_e) {
-        console.debug(`[Background] Offscreen not ready yet (attempt ${i + 1}), waiting…`)
-      }
-      await new Promise((r) => setTimeout(r, 300))
-    }
-
+    const isReady = await ensureOffscreenReady()
     if (!isReady) {
       console.error('[Background] Offscreen document failed to respond to PING after retries.')
       return empty
@@ -150,7 +92,7 @@ export async function handleDetectPIIPDF(
     const response: { ok: boolean; result?: any; error?: string } =
       await chrome.runtime.sendMessage({
         action: 'OFFSCREEN_RUN_PDF',
-        data: { pdfData }
+        data: { pdfData },
       })
 
     if (!response?.ok || !response.result) {
@@ -176,19 +118,7 @@ export async function handleDetectPIIOffice(
 
   try {
     console.log('[Background] Proxying office-doc extract to offscreen document...')
-    await setupOffscreen()
-
-    let isReady = false
-    for (let i = 0; i < 15; i++) {
-      try {
-        const ping: { ok: boolean } = await chrome.runtime.sendMessage({ action: 'OFFSCREEN_PING' })
-        if (ping?.ok) { isReady = true; break }
-      } catch (_e) {
-        console.debug(`[Background] Offscreen not ready yet (attempt ${i + 1}), waiting…`)
-      }
-      await new Promise((r) => setTimeout(r, 300))
-    }
-
+    const isReady = await ensureOffscreenReady()
     if (!isReady) {
       console.error('[Background] Offscreen document failed to respond to PING after retries.')
       return empty
@@ -197,12 +127,9 @@ export async function handleDetectPIIOffice(
     const response: { ok: boolean; text?: string; error?: string } =
       await chrome.runtime.sendMessage({
         action: 'OFFSCREEN_RUN_OFFICE',
-        data: { fileData, fileName }
+        data: { fileData, fileName },
       })
 
-    // Fail open: extraction errors (unsupported/encrypted/malformed/…) surface
-    // as an empty result so the interceptor forwards the original file rather
-    // than silently dropping an upload the user may still need.
     if (!response?.ok || !response.text) {
       console.warn('[Background] Office extraction returned no text:', response?.error)
       return empty
@@ -212,133 +139,6 @@ export async function handleDetectPIIOffice(
   } catch (err) {
     console.error('[Background] Failed to proxy office detection:', err)
     return empty
-  }
-}
-
-export async function handleRedactPDF(
-  pdfData: string,
-  entities: PIIEntity[],
-  manualRegions: any[] = []
-): Promise<{ ok: boolean; redactedPdfData?: string; error?: string }> {
-  try {
-    console.log('[Background] Sending PDF to backend for secure redaction...')
-
-    const textValues = (entities || [])
-      .filter((e: any) => !e.bboxes || e.bboxes.length === 0)
-      .map((e: any) => e.value)
-
-    let autoRegions: any[] = []
-    if (textValues.length > 0) {
-      console.debug('[Background] Mapping text values to coordinates via offscreen...')
-
-      // Bug 19 fix: ensure offscreen is alive before requesting region mapping.
-      // If the document was recycled, lastPdfPages would be empty and all
-      // text-based regions would silently come back empty.
-      await setupOffscreen()
-
-      const mappingResp = await chrome.runtime.sendMessage({
-        action: 'OFFSCREEN_GET_PDF_REGIONS',
-        data: { values: textValues }
-      })
-      if (mappingResp?.ok && Array.isArray(mappingResp.regions) && mappingResp.regions.length > 0) {
-        autoRegions = mappingResp.regions
-      } else {
-        console.warn('[Background] PDF region mapping returned empty — offscreen state may be stale')
-      }
-    }
-
-    const entitiesWithBboxes = (entities || [])
-      .filter((e: any) => e.bboxes && e.bboxes.length > 0)
-      .flatMap((e: any) => e.bboxes.map((b: any) => ({
-        page: 0,
-        x: b.x0,
-        y: b.y0,
-        width: b.x1 - b.x0,
-        height: b.y1 - b.y0
-      })))
-
-    const regions = [...autoRegions, ...entitiesWithBboxes, ...manualRegions]
-    const validRegions = regions.filter(r => r.width > 0 && r.height > 0)
-
-    // Bug 5 fix: was using raw fetch() pointing directly to API_BASE_URL with no
-    // credentials. The session cookie lives on the dashboard domain so direct backend
-    // calls always 401 in production. Use apiClient (Axios, withCredentials: true,
-    // proxied through the dashboard URL) to match every other API call in this file.
-    const resp = await fetch(pdfData)
-    const pdfBlob = await resp.blob()
-
-    const formData = new FormData()
-    formData.append('file', pdfBlob, 'document.pdf')
-    console.info(`[Background] Sending ${validRegions.length} redaction regions to backend.`)
-    formData.append('regions', JSON.stringify(validRegions))
-
-    const backendResp = await apiClient.post<Blob>(
-      `${DASHBOARD_URL}/api/v1/redact/pdf`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        responseType: 'blob',
-        timeout: 30000,
-      }
-    )
-
-    const redactedBlob = backendResp.data
-    const reader = new FileReader()
-    const redactedDataUri = await new Promise<string>((resolve) => {
-      reader.onload = () => resolve(reader.result as string)
-      reader.readAsDataURL(redactedBlob)
-    })
-
-    return { ok: true, redactedPdfData: redactedDataUri }
-  } catch (err) {
-    console.error('[Background] Backend Redaction failed:', err)
-    return { ok: false, error: String(err) }
-  }
-}
-
-export async function handleRedactOffice(
-  fileData: string,
-  entities: PIIEntity[],
-  fileName?: string
-): Promise<{ ok: boolean; redactedPdfData?: string; error?: string }> {
-  try {
-    console.log('[Background] Sending office document to backend for PII masking...')
-
-    // Only value+maskedValue are needed — the backend rewrites XML text nodes
-    // by matching entity.value and replacing with entity.maskedValue.
-    const entityPayload = (entities || []).map((e) => ({
-      value: e.value,
-      maskedValue: e.maskedValue
-    }))
-
-    const resp = await fetch(fileData)
-    const fileBlob = await resp.blob()
-
-    const formData = new FormData()
-    formData.append('file', fileBlob, fileName || 'document.bin')
-    formData.append('entities', JSON.stringify(entityPayload))
-
-    const backendResp = await apiClient.post<Blob>(
-      `${DASHBOARD_URL}/api/v1/redact/office`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        responseType: 'blob',
-        timeout: 30000,
-      }
-    )
-
-    const maskedBlob = backendResp.data
-    const reader = new FileReader()
-    const maskedDataUri = await new Promise<string>((resolve) => {
-      reader.onload = () => resolve(reader.result as string)
-      reader.readAsDataURL(maskedBlob)
-    })
-
-    return { ok: true, redactedPdfData: maskedDataUri }
-  } catch (err) {
-    console.error('[Background] Office masking failed:', err)
-    return { ok: false, error: String(err) }
   }
 }
 

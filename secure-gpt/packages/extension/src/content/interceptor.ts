@@ -1,21 +1,15 @@
 // packages/extension/src/content/interceptor.ts
 // Interceptor — hooks into LLM page submit events
 
-import { findEditableRoot, findMainEditor, extractText, bypassSet, clearAttachments, dispatchFilePaste, dispatchImagePaste } from './dom-utils'
-import { showBanner, removeBanner } from './banners'
-import { showShieldModal } from './modal-manager'
-import { logDetectionEvent } from './audit-logger'
-import { applyMasking } from '@/features/actions/services/masking.service'
+import { findEditableRoot, findMainEditor, extractText, bypassSet } from './dom-utils'
 import { updateRadialRiskGauge, hideRadialRiskGauge } from './radial-risk-gauge'
-import { setInputValue, resubmit } from './text-replacer'
-import { waitForPendingOcr } from './ocr-wait-handler'
 import { handleFileScan, handleImagePasteInternal, isOfficeFile, isMaskableOffice } from './file-scanner'
 export { isOfficeFile, isMaskableOffice }
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
-import { POLICY_ACTION_PRIORITY, type PolicyAction } from '@securegpt/shared/constants'
+import { isExtensionContextValid, handleSubmit, getMostRestrictiveAction, type SubmitContext } from './submit-handler'
+export { getMostRestrictiveAction }
 
 let currentPolicy: PIIConfig
-let isRunning = false
 let preAllowedText = ''
 
 export function setPreAllowedText(text: string): void {
@@ -30,12 +24,11 @@ const incPending = () => { pendingOcrCount++ }
 const decPending = () => { pendingOcrCount = Math.max(0, pendingOcrCount - 1) }
 const getPendingCount = () => pendingOcrCount
 
-function isExtensionContextValid(): boolean {
-  try {
-    return !!chrome.runtime?.id
-  } catch {
-    return false
-  }
+const submitContext: SubmitContext = {
+  getCurrentPolicy: () => currentPolicy,
+  getPreAllowedText: () => preAllowedText,
+  ocrCache,
+  getPendingCount,
 }
 
 export function setupInterceptor(policy: PIIConfig): void {
@@ -52,6 +45,8 @@ function attachGlobalListeners(): void {
   window.addEventListener('change', handleGlobalFileChange, true)
   window.addEventListener('drop', handleGlobalDrop, true)
   window.addEventListener('input', handleGlobalInput, true)
+  window.addEventListener('focusin', handleGlobalFocus, true)
+  window.addEventListener('focusout', handleGlobalBlur, true)
   console.log('[SecureGPT] Global listeners attached (Capturing phase)')
 }
 
@@ -66,7 +61,7 @@ function handleGlobalKeyDown(e: KeyboardEvent): void {
   e.preventDefault()
   e.stopImmediatePropagation()
 
-  void handleSubmit(root)
+  void handleSubmit(root, submitContext)
 }
 
 function handleGlobalClick(e: MouseEvent): void {
@@ -96,7 +91,7 @@ function handleGlobalClick(e: MouseEvent): void {
     e.preventDefault()
     e.stopImmediatePropagation()
 
-    void handleSubmit(root)
+    void handleSubmit(root, submitContext)
   }
 }
 
@@ -110,7 +105,30 @@ function handleGlobalSubmit(e: Event): void {
   e.preventDefault()
   e.stopImmediatePropagation()
 
-  void handleSubmit(root)
+  void handleSubmit(root, submitContext)
+}
+
+function handleGlobalFocus(e: FocusEvent): void {
+  if (!e.isTrusted) return
+  const target = e.target as HTMLElement
+  const root = findEditableRoot(target)
+  if (!root || bypassSet.has(root)) return
+
+  const text = extractText(root)
+  updateRadialRiskGauge(root, 0, [], text, currentPolicy)
+}
+
+function handleGlobalBlur(e: FocusEvent): void {
+  const target = e.target as HTMLElement
+  const root = findEditableRoot(target)
+  if (!root) return
+
+  setTimeout(() => {
+    const text = extractText(root)
+    if (!text || text.trim().length === 0) {
+      hideRadialRiskGauge()
+    }
+  }, 250)
 }
 
 async function handleGlobalInput(e: Event): Promise<void> {
@@ -127,12 +145,12 @@ async function handleGlobalInput(e: Event): Promise<void> {
 
     const text = extractText(root)
     if (!text || text.trim().length === 0) {
-      hideRadialRiskGauge()
+      updateRadialRiskGauge(root, 0, [], '', currentPolicy)
       return
     }
 
     if (text === preAllowedText) {
-      updateRadialRiskGauge(root, 0, [])
+      updateRadialRiskGauge(root, 0, [], text, currentPolicy)
       return
     }
 
@@ -165,237 +183,11 @@ async function handleGlobalInput(e: Event): Promise<void> {
         )
       })
 
-      updateRadialRiskGauge(root, result.hasFindings ? result.entities.length : 0, result.entities)
+      updateRadialRiskGauge(root, result.hasFindings ? result.entities.length : 0, result.entities, text, currentPolicy)
     } catch (err) {
       console.error('[SecureGPT] Live detection error:', err)
     }
   }, 600)
-}
-
-function getMostRestrictiveAction(entities: PIIEntity[], policy: PIIConfig): { action: PolicyAction; topEntity: PIIEntity } {
-  let maxPriority = -1
-  let topAction: PolicyAction = 'ALLOW'
-  let topEntity = entities[0]!
-
-  for (const entity of entities) {
-    const catConfig = policy.categories[entity.category]
-    const ruleAction = catConfig?.ruleOverrides?.[entity.ruleId]?.action as PolicyAction | undefined
-    const action: PolicyAction = (ruleAction ?? catConfig?.action ?? 'ALLOW') as PolicyAction
-    const priority = POLICY_ACTION_PRIORITY[action] ?? 0
-    if (priority > maxPriority) {
-      maxPriority = priority
-      topAction = action
-      topEntity = entity
-    }
-  }
-
-  return { action: topAction, topEntity }
-}
-
-async function handleSubmit(el: HTMLElement): Promise<void> {
-  if (!isExtensionContextValid()) {
-    console.warn('[SecureGPT] Extension context invalidated — refresh the page to re-enable protection')
-    return
-  }
-
-  if (isRunning) return
-  isRunning = true
-
-  try {
-    const isActive = await new Promise<boolean>((resolve) => {
-      chrome.runtime.sendMessage({ type: 'GET_STATE' }, (res) => {
-        if (chrome.runtime.lastError) {
-          resolve(true)
-        } else {
-          resolve(res?.active ?? true)
-        }
-      })
-    })
-
-    if (!isActive) {
-      isRunning = false
-      resubmit(el)
-      return
-    }
-
-    // Wait for in-flight image/PDF OCR to complete (with timeout)
-    if (pendingOcrCount > 0) {
-      await waitForPendingOcr(getPendingCount)
-    }
-
-    const text = extractText(el)
-    
-    if (text === preAllowedText && text.trim().length > 0) {
-      console.log('[SecureGPT] Bypassing submit detection because text was pre-allowed via live tooltip.')
-      isRunning = false
-      resubmit(el)
-      return
-    }
-
-    const hasCachedImages = ocrCache.size > 0
-    if ((!text || text.trim().length === 0) && !hasCachedImages) {
-      isRunning = false
-      resubmit(el)
-      return
-    }
-
-    console.log('[SecureGPT] Requesting detection from background...')
-    const allOcrEntities = Array.from(ocrCache.values()).flat()
-
-    let result: DetectionResult
-    if (text.trim().length > 0) {
-      result = await new Promise<DetectionResult>((resolve) => {
-        chrome.runtime.sendMessage(
-          { type: 'DETECT_PII', text, config: currentPolicy },
-          (res) => {
-            if (chrome.runtime.lastError) {
-              console.error('[SecureGPT] Background detection error:', chrome.runtime.lastError)
-              resolve({ hasFindings: false, entities: [], tier: 'regex', processingTimeMs: 0, inputLength: text.length })
-            } else {
-              resolve(res)
-            }
-          }
-        )
-      })
-    } else {
-      result = { hasFindings: false, entities: [], tier: 'regex', processingTimeMs: 0, inputLength: 0 }
-    }
-    console.log('[SecureGPT] Detection result:', result)
-
-    const mergedEntities = [...result.entities, ...allOcrEntities]
-    const hasFindings = result.hasFindings || allOcrEntities.length > 0
-
-    if (!hasFindings) {
-      ocrCache.clear()
-      isRunning = false
-      resubmit(el)
-      return
-    }
-
-    const { action, topEntity } = getMostRestrictiveAction(mergedEntities, currentPolicy)
-    console.log(`[SecureGPT] Primary Action: ${action} triggered by ${topEntity.category}`)
-
-    if (action === 'BLOCK') {
-      showBanner('block', topEntity.category, mergedEntities.length, undefined, () => {
-        showShieldModal(
-          { ...result, entities: mergedEntities, hasFindings },
-          currentPolicy,
-          text,
-          undefined,
-          true,
-          'Blocked: PII/Confidentiality Leak Detected'
-        )
-      })
-      void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
-      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'BLOCK', topEntity, false)
-      ocrCache.clear()
-      isRunning = false
-      return
-    }
-
-    if (action === 'ALLOW') {
-      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'ALLOW', topEntity, false)
-      isRunning = false
-      resubmit(el)
-      return
-    }
-
-    if (action === 'MASK') {
-      console.log('[SecureGPT] Automatic masking triggered')
-      const maskedText = applyMasking(text, result.entities)
-      setInputValue(el, maskedText)
-
-      await clearAttachments()
-      for (const [fileUrl] of ocrCache.entries()) {
-        const isPdf = fileUrl.startsWith('data:application/pdf')
-        if (isPdf) {
-          await dispatchFilePaste(el, fileUrl, 'redacted.pdf', 'application/pdf')
-        } else {
-          await dispatchImagePaste(el, fileUrl)
-        }
-      }
-      ocrCache.clear()
-
-      void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
-      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
-      showBanner('mask', topEntity.category, mergedEntities.length, undefined, () => {
-        showShieldModal(
-          { ...result, entities: mergedEntities, hasFindings },
-          currentPolicy,
-          text,
-          undefined,
-          true,
-          'Masked: Sensitive Data Redacted'
-        )
-      })
-
-      isRunning = false
-      setTimeout(() => resubmit(el), 400)
-      return
-    }
-
-    // WARN_ALLOW
-    isRunning = false
-    showShieldModal(
-      { ...result, entities: mergedEntities, hasFindings },
-      currentPolicy,
-      text,
-      async (proceed, masked, _acknowledged) => {
-        removeBanner()
-
-        if (!proceed) {
-          console.log('[SecureGPT] User cancelled submission')
-          return
-        }
-
-        if (masked) {
-          const maskedText = applyMasking(text, result.entities)
-          setInputValue(el, maskedText)
-
-          await clearAttachments()
-          for (const [fileUrl] of ocrCache.entries()) {
-            const isPdf = fileUrl.startsWith('data:application/pdf')
-            if (isPdf) {
-              await dispatchFilePaste(el, fileUrl, 'redacted.pdf', 'application/pdf')
-            } else {
-              await dispatchImagePaste(el, fileUrl)
-            }
-          }
-          ocrCache.clear()
-
-          void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
-          void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
-          showBanner('mask', topEntity.category, mergedEntities.length, undefined, () => {
-            showShieldModal(
-              { ...result, entities: mergedEntities, hasFindings },
-              currentPolicy,
-              text,
-              undefined,
-              true,
-              'Masked: Sensitive Data Redacted'
-            )
-          })
-
-          setTimeout(() => resubmit(el), 400)
-        } else {
-          ocrCache.clear()
-          void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
-          void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'WARN_ALLOW', topEntity, true)
-          resubmit(el)
-        }
-      }
-    )
-
-  } catch (err) {
-    const message = (err as Error)?.message ?? ''
-    if (message.includes('Extension context invalidated')) {
-      console.warn('[SecureGPT] Extension context lost mid-flight — refresh the page')
-    } else {
-      console.error('[SecureGPT] Error in handleSubmit:', err)
-    }
-    isRunning = false
-    resubmit(el)
-  }
 }
 
 export function teardown(): void {
@@ -406,6 +198,8 @@ export function teardown(): void {
   window.removeEventListener('change', handleGlobalFileChange, true)
   window.removeEventListener('drop', handleGlobalDrop, true)
   window.removeEventListener('input', handleGlobalInput, true)
+  window.removeEventListener('focusin', handleGlobalFocus, true)
+  window.removeEventListener('focusout', handleGlobalBlur, true)
   document.querySelectorAll('[data-securegpt]').forEach((el) => el.remove())
   hideRadialRiskGauge()
 }
@@ -483,4 +277,3 @@ function handleGlobalDrop(ev: DragEvent): void {
   ev.stopImmediatePropagation()
   void handleFileScan(el, file, currentPolicy, ocrCache, incPending, decPending, getPendingCount)
 }
-
