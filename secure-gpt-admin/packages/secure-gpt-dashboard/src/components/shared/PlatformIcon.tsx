@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 export interface PlatformIconProps {
   platformId: string
@@ -6,7 +6,47 @@ export interface PlatformIconProps {
   className?: string
 }
 
+// Map platformId to the local file in /icons/[filename]
+const LOCAL_ICON_FILES: Record<string, string> = {
+  chatgpt: '/icons/chatgpt.png',
+  gemini: '/icons/gemini.png',
+  copilot: '/icons/copilot.png',
+  claude: '/icons/claude.png',
+  perplexity: '/icons/perplexity.png',
+  'meta-ai': '/icons/meta-ai.png',
+  poe: '/icons/poe.png',
+  mistral: '/icons/mistral.png',
+  cursor: '/icons/cursor.png',
+  v0: '/icons/v0.png',
+  replit: '/icons/replit.png',
+  huggingchat: '/icons/huggingchat.png',
+  deepseek: '/icons/deepseek.png',
+  phind: '/icons/phind.png',
+  notion: '/icons/notion.png',
+  jasper: '/icons/jasper.png',
+  'copy-ai': '/icons/copy-ai.png',
+}
+
 export function PlatformIcon({ platformId, size = 24, className = '' }: PlatformIconProps) {
+  const [imgError, setImgError] = useState(false)
+  const iconSrc = LOCAL_ICON_FILES[platformId]
+
+  // If local icon exists and hasn't failed loading, use the PNG/SVG from /icons/
+  if (iconSrc && !imgError) {
+    return (
+      <img
+        src={iconSrc}
+        alt={platformId}
+        width={size}
+        height={size}
+        onError={() => setImgError(true)}
+        className={`object-contain rounded-md shrink-0 ${className}`}
+        style={{ width: size, height: size }}
+      />
+    )
+  }
+
+  // Fallback vector SVG if file is not yet added in /icons/
   switch (platformId) {
     case 'chatgpt':
       return (
