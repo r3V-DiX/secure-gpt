@@ -57,3 +57,11 @@ export function severityVariant(sev: string): BadgeVariant {
   }
   return map[sev] ?? 'neutral'
 }
+
+export function ActionBadge({ action, className }: { action: string; className?: string }) {
+  return (
+    <Badge variant={actionVariant(action)} className={className}>
+      {action}
+    </Badge>
+  )
+}

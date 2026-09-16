@@ -17,7 +17,7 @@ export interface PaginatedResult<T> {
 }
 
 // ── Auth / User ───────────────────────────────────────────────────────────────
-export type UserRole = 'super_admin' | 'security_admin' | 'auditor' | 'user'
+export type UserRole = 'super_admin' | 'platform_super_admin' | 'org_admin' | 'security_admin' | 'auditor' | 'employee' | 'user'
 
 export interface AuthUser {
     id: string

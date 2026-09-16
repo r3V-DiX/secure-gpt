@@ -6,6 +6,30 @@ Single source of truth for deployments, releases, database migrations, and compo
 
 ## Release History
 
+### [v1.1.3] - Enterprise Scale Roster & Bulk Operations Suite
+- **Date**: 2026-09-16
+- **Commit**: `prod-v1.1.3`
+- **Environment**: Production (`ap-south-1`)
+- **Status**: Production Stable
+- **Components**: `secure-gpt-backend` `1.1.3`, `securegpt-admin-backend` `1.1.3`, `secure-gpt-dashboard` `1.1.3`, `securegpt-admin-frontend` `1.1.3`, `@securegpt/extension` `1.2.2`
+
+#### What Was Added & Improved
+- **Enterprise Scale Architecture**: Full server-side pagination (LIMIT/OFFSET), live debounced multi-field search (name/email), role filters, and department filters capable of seamlessly handling 1,000+ employees and users.
+- **Bulk Operations Toolbar**: Floating multi-select action bar enabling batch department reassignments, batch role changes, bulk suspensions, and bulk hard deletions.
+- **CSV Roster Import & Export**: One-click streaming CSV exports and drag-and-drop CSV roster importer with downloadable template, row error reporting, and automatic enrollment.
+- **Component Parity**: Upgraded user and admin dashboards to `v1.1.3` with accessible controls and updated version cards in `/versions`.
+
+#### Component Matrix
+| Component | Service Name | Version | Image / Artifact |
+|---|---|---|---|
+| User Backend API | `secure-gpt-backend` | `1.1.3` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-backend:prod-latest` |
+| Admin Backend API | `securegpt-admin-backend` | `1.1.3` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-backend:prod-latest` |
+| User Dashboard | `secure-gpt-dashboard` | `1.1.3` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-dashboard:prod-latest` |
+| Admin Frontend | `securegpt-admin-frontend` | `1.1.3` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-frontend:prod-latest` |
+| Chrome Extension | `@securegpt/extension` | `1.2.2` | Chrome Web Store / dist archive |
+
+---
+
 ### [v1.2.2-ext] - Extension Maintenance & Domain Gating Enforcement
 - **Date**: 2026-09-16
 - **Commit**: `ext-v1.2.2`

@@ -18,9 +18,39 @@ export interface VersionItem {
 
 export const BASELINE_VERSIONS: VersionItem[] = [
   {
+    version: '1.1.3',
+    date: 'September 16, 2026',
+    status: 'Production Stable',
+    tag: 'Enterprise Scale & Bulk Operations Suite',
+    commit: 'prod-v1.1.3',
+    summary: 'Enterprise-grade employee roster management scaled for 1,000+ employees with server-side pagination, live debounced search and filtering, floating bulk operations toolbar, and CSV roster import & export.',
+    info: 'SecureGPT Core Platform v1.1.3 unlocks enterprise scalability with streamlined roster controls, bulk department assignments, role switching, and one-click CSV roster import.',
+    whatsNew: [
+      'Server-side paginated team and user rosters supporting organizations with 1,000+ employees.',
+      'Live debounced search (by email and name) and multi-dimensional filters for departments and roles.',
+      'Floating Bulk Operations toolbar supporting batch department assignment, batch role updates, batch suspension, and batch hard deletion.',
+      'Full CSV Roster Import modal with drag-and-drop file upload, downloadable template, and detailed row-by-row error validation.',
+      'Direct CSV Roster Export streaming filtered employee datasets with complete security metadata.',
+      'ActionBadge component integration and robust React 19 forwardRef icon rendering in EmptyState.',
+    ],
+    changedFunctionality: [
+      'Replaced client-side employee array slicing with high-performance SQL server-side pagination (LIMIT/OFFSET).',
+      'Unified single-click and batch multi-select state management with page-level and global selection indicators.',
+    ],
+    improvements: [
+      'Near-instant table responsiveness and minimal browser DOM memory footprint even with massive organizational directories.',
+      'Full WCAG accessibility compliance on all interactive controls, checkboxes, and modal dialogs.',
+    ],
+    problemsSolved: [
+      'Fixed React 19 forwardRef element error in EmptyState component when rendering Lucide icons.',
+      'Fixed missing ActionBadge export in dashboard UI badge module.',
+      'Prevented UI lockup and memory exhaustion during large-scale team member inspection.',
+    ],
+  },
+  {
     version: '1.1.2',
     date: 'September 11, 2026',
-    status: 'Production Stable',
+    status: 'Released',
     tag: 'Radial UX Polish & Streamlined DLP',
     commit: 'prod-v1.1.2',
     summary: 'Streamlined real-time DLP prompt experience removing disruptive floating warning modals in favor of a sleek, non-intrusive radial risk indicator and updated component orchestration.',
@@ -112,6 +142,35 @@ export const BASELINE_VERSIONS: VersionItem[] = [
 ]
 
 export const ADMIN_VERSIONS: VersionItem[] = [
+  {
+    version: '1.1.3',
+    date: 'September 16, 2026',
+    status: 'Production Stable',
+    tag: 'Enterprise Scalability & Multi-Tenant RBAC Suite',
+    commit: 'admin-v1.1.3',
+    summary: 'Enterprise user management suite with server-side pagination, search & filter bars, floating bulk operations (bulk org assignment, bulk role updates, bulk suspension, bulk deletion), and CSV roster import & export.',
+    info: 'SecureGPT Admin Console v1.1.3 scales administrative governance for 1,000+ users across all organizations with comprehensive bulk actions and audit logging.',
+    whatsNew: [
+      'Enterprise server-side pagination and debounced search on user management (RBAC) console.',
+      'Multi-dimensional filters for dynamic security roles and account active/suspended statuses.',
+      'Floating Bulk Action Bar enabling multi-select operations across hundreds of user accounts simultaneously.',
+      'CSV User Roster Import supporting instant bulk account enrollment and dynamic role assignment.',
+      'CSV User Export streaming full administrative user rosters with role and organization metadata.',
+      'Audit logging integration recording actor, IP, timestamp, and target count for all bulk administrative operations.',
+    ],
+    changedFunctionality: [
+      'Upgraded GET /admin/users with server-side pagination, ILIKE search, and dynamic role slug filtering.',
+      'Added /admin/users/bulk, /admin/users/export-csv, and /admin/users/import-csv endpoints.',
+    ],
+    improvements: [
+      'Lightning-fast administrative user directory browsing with minimal memory overhead.',
+      'Full keyboard and screen reader accessibility on all selection and bulk action dialogs.',
+    ],
+    problemsSolved: [
+      'Eliminated frontend performance bottlenecks when managing organizations with thousands of users.',
+      'Fixed missing ActionBadge UI component exports in admin dashboard.',
+    ],
+  },
   {
     version: '1.1.2',
     date: 'September 11, 2026',

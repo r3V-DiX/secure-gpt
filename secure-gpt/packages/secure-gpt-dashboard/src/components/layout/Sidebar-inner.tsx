@@ -339,7 +339,7 @@ export function SidebarInner({
           >
             <span className="flex items-center gap-1 group-hover:text-[var(--sidebar-text-active)]">
               <span className="size-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-              v1.1.2
+              v1.1.3
             </span>
             <span className="opacity-60 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity">
               Status ↗

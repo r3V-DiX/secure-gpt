@@ -60,13 +60,10 @@ export function actionVariant(action: string): BadgeVariant {
   return map[normalized] ?? 'neutral'
 }
 
-export function severityVariant(sev: string): BadgeVariant {
-  const normalized = sev?.toUpperCase()
-  const map: Record<string, BadgeVariant> = {
-    CRITICAL: 'danger',
-    HIGH: 'warning',
-    MEDIUM: 'info',
-    LOW: 'success',
-  }
-  return map[normalized] ?? 'neutral'
+export function ActionBadge({ action, className }: { action: string; className?: string }) {
+  return (
+    <Badge variant={actionVariant(action)} className={className}>
+      {action}
+    </Badge>
+  )
 }

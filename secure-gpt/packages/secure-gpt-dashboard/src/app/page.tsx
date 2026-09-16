@@ -523,7 +523,7 @@ export default function LandingPage() {
                 <li><a href="#how-it-works" style={{ color: 'inherit' }}>How it works</a></li>
                 <li><a href="#platforms" style={{ color: 'inherit' }}>Supported Platforms (17)</a></li>
                 <li><a href="#threat-coverage" style={{ color: 'inherit' }}>Threat coverage</a></li>
-                <li><Link href="/versions" style={{ color: 'var(--brand-light)' }}>Version History (v1.1.2)</Link></li>
+                <li><Link href="/versions" style={{ color: 'var(--brand-light)' }}>Version History (v1.1.3)</Link></li>
                 <li><a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-light)' }}>Chrome Extension ↗</a></li>
                 <li><Link href="/dashboard" style={{ color: 'inherit' }}>Dashboard</Link></li>
               </ul>

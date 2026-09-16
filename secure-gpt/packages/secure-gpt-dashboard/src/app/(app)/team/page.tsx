@@ -17,6 +17,8 @@ import { DepartmentModal } from './components/DepartmentModal'
 import { MemberInviteModal } from './components/MemberInviteModal'
 import { OrgRegisterModal } from './components/OrgRegisterModal'
 import { TeamMemberTable } from './components/TeamMemberTable'
+import { TeamBulkActionsBar } from './components/TeamBulkActionsBar'
+import { TeamCsvImportModal } from './components/TeamCsvImportModal'
 
 export default function TeamPage() {
   const router = useRouter()
@@ -27,11 +29,17 @@ export default function TeamPage() {
     currentOrg,
     loading,
     error,
+    filters,
+    pagination,
+    updateFilters,
+    setPage,
     inviteMember,
     createDepartment,
     assignDepartment,
     changeUserRole,
     deleteUser,
+    executeBulkAction,
+    exportCsv,
     fetchTeamData,
   } = useTeam()
 
@@ -39,6 +47,26 @@ export default function TeamPage() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [deptOpen, setDeptOpen] = useState(false)
   const [orgRegisterOpen, setOrgRegisterOpen] = useState(false)
+  const [csvImportOpen, setCsvImportOpen] = useState(false)
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+
+  const toggleSelectUser = (userId: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    )
+  }
+
+  const toggleSelectAll = () => {
+    const pageIds = users.map((u) => u.id)
+    const allPageSelected = pageIds.every((id) => selectedIds.includes(id))
+    if (allPageSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)))
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])))
+    }
+  }
 
   // Invite state
   const [inviteEmail, setInviteEmail] = useState('')
@@ -118,7 +146,7 @@ export default function TeamPage() {
   const rawStatus = String(currentOrg?.status || 'PENDING_VERIFICATION')
   const isOrgActive = rawStatus.toUpperCase().includes('ACTIVE')
 
-  if (loading) {
+  if (loading && !users.length) {
     return (
       <div className="space-y-6 animate-fade-in max-w-6xl">
         <div className="skeleton h-10 w-64 rounded-2xl" />
@@ -138,33 +166,20 @@ export default function TeamPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span
-              className="px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase"
-              style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }}
-            >
-              Tier 2 • Organization
-            </span>
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Enterprise Workspace</span>
+            <Building2 className="text-[var(--accent)]" size={24} />
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              {currentOrg ? currentOrg.name : 'Team & Organization Admin'}
+            </h1>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            Enterprise Team & Governance
-          </h1>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            Enforce unified browser DLP policies across all company employees and department categories.
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            Manage departmental policies, domain verification gating, and employee DLP roster.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
           {!currentOrg && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setOrgAdminEmail(user?.email || '')
-                setOrgRegisterOpen(true)
-              }}
-            >
-              <Building2 size={13} className="mr-1.5" /> Register Domain
+            <Button variant="primary" size="sm" onClick={() => setOrgRegisterOpen(true)}>
+              <Building2 size={13} className="mr-1.5" /> Register Organization
             </Button>
           )}
           <Button
@@ -172,18 +187,9 @@ export default function TeamPage() {
             size="sm"
             onClick={() => setDeptOpen(true)}
             disabled={!isOrgActive}
-            title={!isOrgActive ? 'Verify domain to create employee categories' : undefined}
+            title={!isOrgActive ? 'Verify domain to create departments' : undefined}
           >
             <FolderPlus size={13} className="mr-1.5" /> New Department
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setInviteOpen(true)}
-            disabled={!isOrgActive}
-            title={!isOrgActive ? 'Verify domain to invite employees' : undefined}
-          >
-            <Plus size={13} className="mr-1.5" /> Invite Employee
           </Button>
         </div>
       </div>
@@ -198,22 +204,22 @@ export default function TeamPage() {
         </div>
       )}
 
-      {/* ── 2. Master Organization Status & DNS Token Card ───────────────── */}
+      {/* ── 2. Domain Verification Gating Status ────────────────────────── */}
       <OrgVerificationCard
         currentOrg={currentOrg}
         user={user}
         onVerified={fetchTeamData}
       />
 
-      {/* ── 3. Department / Category Grid ─────────────────────────────────── */}
-      <div className="space-y-3.5">
+      {/* ── 3. Department Categories Deck ──────────────────────────────── */}
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
-              <Layers size={14} style={{ color: 'var(--accent)' }} /> Employee Categories & Departments ({departments.length})
+              <Layers size={14} style={{ color: 'var(--accent)' }} /> Department DLP Profiles ({departments.length})
             </h3>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-              Assign employees to categories to apply custom DLP policies per department.
+              Tier 3 policies customize masking & blocking rules per department (e.g. Engineering vs Finance).
             </p>
           </div>
           <Button
@@ -312,10 +318,36 @@ export default function TeamPage() {
         departments={departments}
         currentUser={user}
         isOrgActive={isOrgActive}
+        loading={loading}
+        filters={filters}
+        pagination={pagination}
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelectUser}
+        onToggleSelectAll={toggleSelectAll}
         onOpenInvite={() => setInviteOpen(true)}
+        onOpenCsvImport={() => setCsvImportOpen(true)}
+        onExportCsv={exportCsv}
+        onUpdateFilters={updateFilters}
+        onPageChange={setPage}
         onChangeRole={changeUserRole}
         onAssignDepartment={assignDepartment}
         onDeleteUser={deleteUser}
+      />
+
+      {/* Floating Bulk Operations Toolbar */}
+      <TeamBulkActionsBar
+        selectedIds={selectedIds}
+        totalCount={pagination.total}
+        departments={departments}
+        onClearSelection={() => setSelectedIds([])}
+        onBulkAction={(action, extra) => executeBulkAction(selectedIds, action, extra)}
+      />
+
+      {/* CSV Import Modal */}
+      <TeamCsvImportModal
+        open={csvImportOpen}
+        onClose={() => setCsvImportOpen(false)}
+        onSuccess={() => void fetchTeamData()}
       />
 
       {/* ── 5. Modals ────────────────────────────────────────────────────── */}

@@ -16,7 +16,7 @@ export function EmptyState({
   action,
   className = '',
 }: EmptyStateProps) {
-  const isLucideIcon = typeof IconOrNode === 'function'
+  const isLucideIcon = typeof IconOrNode === 'function' || (typeof IconOrNode === 'object' && IconOrNode !== null && '$$typeof' in IconOrNode)
 
   return (
     <div
@@ -35,7 +35,7 @@ export function EmptyState({
             color: 'var(--text-tertiary)',
           }}
         >
-          {isLucideIcon ? <IconOrNode size={22} /> : IconOrNode}
+          {isLucideIcon ? React.createElement(IconOrNode as any, { size: 22 }) : IconOrNode}
         </div>
       )}
 
