@@ -302,58 +302,109 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Policy Trigger Leaderboard (Employees & Departments) ────────── */}
+      {/* ── Dynamic Role-Based Intelligence Row ─────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Top Employees Leaderboard */}
-        <div className="card p-5 animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users size={15} style={{ color: 'var(--accent)' }} />
-              <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-                Top Employees by Policy Triggers
-              </h2>
-            </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border)]">
-              Ranked
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { email: 'sarah.connor@acme.corp', name: 'Sarah Connor', dept: 'Engineering', count: 42, role: 'Lead Architect', color: '#ef4444' },
-              { email: 'alex.chen@acme.corp', name: 'Alex Chen', dept: 'Finance', count: 29, role: 'Financial Analyst', color: '#f59e0b' },
-              { email: 'david.miller@acme.corp', name: 'David Miller', dept: 'Marketing', count: 18, role: 'Growth Lead', color: '#6366f1' },
-              { email: 'rachel.green@acme.corp', name: 'Rachel Green', dept: 'Legal', count: 11, role: 'Corporate Counsel', color: '#10b981' },
-            ].map((emp, i) => (
-              <div key={emp.email} className="flex items-center justify-between p-2.5 rounded-xl border transition-all hover:bg-[var(--bg-surface-2)]"
-                style={{ borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="size-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
-                    style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
-                    #{i + 1}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{emp.name}</p>
-                    <p className="text-[11px] font-mono truncate" style={{ color: 'var(--text-tertiary)' }}>{emp.email} · {emp.dept}</p>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-full"
-                    style={{ background: `${emp.color}15`, color: emp.color, border: `1px solid ${emp.color}30` }}>
-                    {emp.count} triggers
-                  </span>
-                </div>
+        {user?.role === 'super_admin' || user?.role === 'platform_super_admin' || stats?.roleScope === 'platform' ? (
+          /* ── SUPER ADMIN VIEW: Top Organizations ── */
+          <div className="card p-5 animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Building2 size={15} style={{ color: 'var(--accent)' }} />
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
+                  Top Organizations by DLP Volume
+                </h2>
               </div>
-            ))}
-          </div>
-        </div>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border)]">
+                Multi-Tenant
+              </span>
+            </div>
 
-        {/* Top Departments Leaderboard */}
+            <div className="space-y-3">
+              {stats?.topOrganizations && stats.topOrganizations.length > 0 ? (
+                stats.topOrganizations.map((org, i) => (
+                  <div key={org.id} className="flex items-center justify-between p-2.5 rounded-xl border transition-all hover:bg-[var(--bg-surface-2)]"
+                    style={{ borderColor: 'var(--border)' }}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                        style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+                        #{i + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{org.name}</p>
+                        <p className="text-[11px] font-mono truncate" style={{ color: 'var(--text-tertiary)' }}>{org.domain} · <span className="uppercase text-[10px] font-bold text-[var(--accent)]">{org.plan}</span></p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-full"
+                        style={{ background: `${org.color || '#6366f1'}15`, color: org.color || '#6366f1', border: `1px solid ${org.color || '#6366f1'}30` }}>
+                        {org.count} triggers
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs text-[var(--text-tertiary)] bg-[var(--bg-surface-2)] rounded-xl border border-[var(--border)]">
+                  No organization activity recorded in this period.
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ── ORG ADMIN VIEW: Top Employees ── */
+          <div className="card p-5 animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Users size={15} style={{ color: 'var(--accent)' }} />
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
+                  Top Employees by Policy Triggers
+                </h2>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border)]">
+                Ranked
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {stats?.topEmployees && stats.topEmployees.length > 0 ? (
+                stats.topEmployees.map((emp, i) => (
+                  <div key={emp.email} className="flex items-center justify-between p-2.5 rounded-xl border transition-all hover:bg-[var(--bg-surface-2)]"
+                    style={{ borderColor: 'var(--border)' }}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                        style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+                        #{i + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{emp.name}</p>
+                        <p className="text-[11px] font-mono truncate" style={{ color: 'var(--text-tertiary)' }}>{emp.email} · {emp.dept}</p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-full"
+                        style={{ background: `${emp.color || '#6366f1'}15`, color: emp.color || '#6366f1', border: `1px solid ${emp.color || '#6366f1'}30` }}>
+                        {emp.count} triggers
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs text-[var(--text-tertiary)] bg-[var(--bg-surface-2)] rounded-xl border border-[var(--border)]">
+                  No employee policy triggers recorded in this period.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Top Departments / Threat Distribution Leaderboard */}
         <div className="card p-5 animate-fade-in">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Building2 size={15} style={{ color: 'var(--accent)' }} />
               <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-                Departments by DLP Interceptions
+                {user?.role === 'super_admin' || user?.role === 'platform_super_admin' || stats?.roleScope === 'platform'
+                  ? 'Platform Threat & Department Distribution'
+                  : 'Departments by DLP Interceptions'}
               </h2>
             </div>
             <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border)]">
@@ -362,28 +413,29 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-3.5">
-            {[
-              { name: 'Engineering & DevOps', count: 124, percent: 88, action: 'Confidential Code / Keys', color: '#ef4444' },
-              { name: 'Finance & Accounting', count: 76, percent: 54, action: 'Financial / PCI-DSS', color: '#f59e0b' },
-              { name: 'People & HR', count: 41, percent: 32, action: 'PII & Employee Records', color: '#6366f1' },
-              { name: 'Product Marketing', count: 23, percent: 18, action: 'Confidential Roadmaps', color: '#10b981' },
-            ].map((dept) => (
-              <div key={dept.name} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{dept.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono opacity-80" style={{ color: 'var(--text-tertiary)' }}>{dept.action}</span>
-                    <span className="font-bold font-mono text-[var(--text-secondary)]">{dept.count}</span>
+            {stats?.topDepartments && stats.topDepartments.length > 0 ? (
+              stats.topDepartments.map((dept) => (
+                <div key={dept.name} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{dept.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono opacity-80" style={{ color: 'var(--text-tertiary)' }}>{dept.action}</span>
+                      <span className="font-bold font-mono text-[var(--text-secondary)]">{dept.count}</span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-surface-3)' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${dept.percent}%`, background: dept.color || 'var(--accent)' }}
+                    />
                   </div>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-surface-3)' }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${dept.percent}%`, background: dept.color }}
-                  />
-                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-xs text-[var(--text-tertiary)] bg-[var(--bg-surface-2)] rounded-xl border border-[var(--border)]">
+                No department interceptions recorded in this period.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

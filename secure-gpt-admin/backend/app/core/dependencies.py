@@ -124,11 +124,15 @@ def require_roles(*roles: UserRole):
 def has_permission(action: str):
     """
     Dependency that raises Forbidden if the current user lacks the specified permission.
+    Super Admin and Org Admins have inherent admin permissions.
     """
     async def _check(
         current_user: CurrentUser,
         db: DBSession,
     ) -> User:
+        if current_user.role in (UserRole.SUPER_ADMIN, UserRole.PLATFORM_SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SECURITY_ADMIN):
+            return current_user
+
         from app.services.rbac_service import get_user_permissions
         user_perms = await get_user_permissions(db, current_user.id)
         if action not in user_perms:

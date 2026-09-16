@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal/modal'
 import { CheckCircle2, RefreshCw, Server, Laptop, ShieldCheck, AlertCircle } from 'lucide-react'
 import apiClient from '@/lib/api/client'
@@ -147,20 +148,32 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
       </ModalBody>
 
       <ModalFooter>
-        <button
-          onClick={fetchVersion}
-          disabled={loading}
-          className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] flex items-center gap-1.5 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
-        <button
-          onClick={onClose}
-          className="px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors"
-        >
-          Close
-        </button>
+        <div className="flex items-center justify-between w-full">
+          <Link
+            href="/versions"
+            onClick={onClose}
+            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 hover:underline"
+          >
+            <span>View Full Changelog & Release Notes</span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchVersion}
+              disabled={loading}
+              className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </ModalFooter>
     </Modal>
   )

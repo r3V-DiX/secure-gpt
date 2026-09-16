@@ -138,6 +138,7 @@ export interface AuditLog {
 
 // ── Dashboard Stats ───────────────────────────────────────────────────────────
 export interface DashboardStats {
+    roleScope?: 'platform' | 'organization'
     totalEvents: number
     maskedCount: number
     allowedCount: number
@@ -146,6 +147,9 @@ export interface DashboardStats {
     topEntityTypes: { type: string; count: number }[]
     topDomains: { domain: string; count: number }[]
     eventsByDay: { date: string; count: number }[]
+    topOrganizations?: { id: string; name: string; domain: string; plan: string; count: number; percent: number; color?: string }[]
+    topEmployees?: { email: string; name: string; dept: string; count: number; role?: string; color?: string }[]
+    topDepartments?: { name: string; count: number; percent: number; action: string; color?: string }[]
 }
 
 // ── Policy ────────────────────────────────────────────────────────────────────

@@ -79,7 +79,7 @@ async def list_users(current_user: CurrentUser, db: DBSession):
             "email": u.email,
             "fullName": u.full_name,
             "avatarUrl": u.avatar_url,
-            "role": u.role.value,  # Legacy role enum string
+            "role": u.role.value if hasattr(u.role, "value") else str(u.role).lower(),  # Legacy role enum string
             "isActive": u.is_active,
             "orgId": u.org_id,
             "createdAt": u.created_at,

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SecureGPT — LLM Data Protection",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Prevent leaks into generative tools. Detect and mask PII, secrets, and confidential information on major platforms.",
   "icons": {
     "16": "icons/icon16.png",

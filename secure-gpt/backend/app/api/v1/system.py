@@ -65,7 +65,7 @@ async def get_system_version():
         "buildTime": settings.build_time,
         "components": {
             "backend": settings.app_version,
-            "extension": "1.2.1",
+            "extension": "1.2.2",
             "dashboard": "1.1.2",
         },
     }

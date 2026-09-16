@@ -238,11 +238,19 @@ export default function LoginPage() {
           <Link href="/" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
             ← Back to home
           </Link>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+          <div className="flex items-center gap-4 text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
+            <Link href="/versions" className="hover:text-[var(--accent)] hover:underline transition-colors flex items-center gap-1">
+              <span>Version History</span>
+              <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] font-semibold">
+                v1.1.2
+              </span>
+            </Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:underline">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+            <span>•</span>
+            <Link href="/terms" className="hover:underline">
               Terms of Service
             </Link>
           </div>

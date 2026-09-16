@@ -207,10 +207,48 @@ async def get_dashboard_stats(
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     since = today - timedelta(days=days - 1)
 
-    where = [
-        _get_exclude_admins_filter(),
-        AuditLog.timestamp >= since,
-    ]
+    from app.models.user import User, UserRole
+    from app.models.org import Organisation
+    from app.models.department import Department
+    from app.models.rbac import UserRoleAssignment, Role
+
+    is_super_admin = False
+    role_str = (current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)).lower()
+    if role_str in ("super_admin", "platform_super_admin"):
+        is_super_admin = True
+    else:
+        super_role_res = await db.execute(
+            select(Role)
+            .join(UserRoleAssignment, UserRoleAssignment.role_id == Role.id)
+            .where(
+                UserRoleAssignment.user_id == current_user.id,
+                UserRoleAssignment.is_active == True,
+                Role.slug.in_(("super_admin", "platform_super_admin")),
+            )
+        )
+        if super_role_res.scalar_one_or_none():
+            is_super_admin = True
+
+    palette = ["#ef4444", "#f59e0b", "#6366f1", "#10b981", "#8b5cf6"]
+
+    if is_super_admin:
+        role_scope = "platform"
+        where = [
+            _get_exclude_admins_filter(),
+            AuditLog.timestamp >= since,
+        ]
+    elif current_user.org_id:
+        role_scope = "organization"
+        where = [
+            AuditLog.org_id == current_user.org_id,
+            AuditLog.timestamp >= since,
+        ]
+    else:
+        role_scope = "organization"
+        where = [
+            AuditLog.user_id == current_user.id,
+            AuditLog.timestamp >= since,
+        ]
 
     # DB-side action counts
     action_rows = await db.execute(
@@ -263,8 +301,124 @@ async def get_dashboard_stats(
         for i in range(days)
     ]
 
+    top_organizations = []
+    top_employees = []
+    top_departments = []
+
+    if is_super_admin:
+        # Platform Super Admin -> Top Organizations by DLP Interceptions
+        org_stats_query = (
+            select(
+                Organisation.id,
+                Organisation.name,
+                Organisation.domain,
+                Organisation.plan,
+                func.count(AuditLog.id).label("cnt")
+            )
+            .join(AuditLog, AuditLog.org_id == Organisation.id)
+            .where(AuditLog.timestamp >= since)
+            .group_by(Organisation.id, Organisation.name, Organisation.domain, Organisation.plan)
+            .order_by(desc("cnt"))
+            .limit(5)
+        )
+        org_rows = (await db.execute(org_stats_query)).all()
+        max_org_cnt = max([r.cnt for r in org_rows], default=1) or 1
+        for idx, r in enumerate(org_rows):
+            top_organizations.append({
+                "id": r.id,
+                "name": r.name,
+                "domain": r.domain,
+                "plan": (r.plan or "enterprise").upper(),
+                "count": r.cnt,
+                "percent": min(100, int((r.cnt / max_org_cnt) * 100)),
+                "color": palette[idx % len(palette)],
+            })
+
+        # Platform-wide top departments
+        dept_stats_query = (
+            select(
+                Department.name,
+                func.count(AuditLog.id).label("cnt")
+            )
+            .join(User, User.department_id == Department.id)
+            .join(AuditLog, AuditLog.user_id == User.id)
+            .where(AuditLog.timestamp >= since)
+            .group_by(Department.name)
+            .order_by(desc("cnt"))
+            .limit(5)
+        )
+        dept_rows = (await db.execute(dept_stats_query)).all()
+        max_dept_cnt = max([r.cnt for r in dept_rows], default=1) or 1
+        for idx, r in enumerate(dept_rows):
+            top_departments.append({
+                "name": r.name,
+                "count": r.cnt,
+                "percent": min(100, int((r.cnt / max_dept_cnt) * 100)),
+                "action": "Platform Threat Detections",
+                "color": palette[idx % len(palette)],
+            })
+    else:
+        # Org Admin / Security Admin -> Top Employees in their Organization
+        emp_filter = [AuditLog.timestamp >= since]
+        if current_user.org_id:
+            emp_filter.append(User.org_id == current_user.org_id)
+
+        emp_stats_query = (
+            select(
+                User.email,
+                User.full_name,
+                Department.name.label("department_name"),
+                func.count(AuditLog.id).label("cnt")
+            )
+            .join(AuditLog, AuditLog.user_id == User.id)
+            .outerjoin(Department, Department.id == User.department_id)
+            .where(*emp_filter)
+            .group_by(User.email, User.full_name, Department.name)
+            .order_by(desc("cnt"))
+            .limit(5)
+        )
+        emp_rows = (await db.execute(emp_stats_query)).all()
+        for idx, row in enumerate(emp_rows):
+            top_employees.append({
+                "email": row.email,
+                "name": row.full_name or row.email.split("@")[0].replace(".", " ").title(),
+                "dept": row.department_name or "General",
+                "count": row.cnt,
+                "role": "Team Member",
+                "color": palette[idx % len(palette)],
+            })
+
+        # Top Departments in their Organization
+        dept_filter = [AuditLog.timestamp >= since]
+        if current_user.org_id:
+            dept_filter.append(Department.org_id == current_user.org_id)
+
+        dept_stats_query = (
+            select(
+                Department.name,
+                func.count(AuditLog.id).label("cnt")
+            )
+            .join(User, User.department_id == Department.id)
+            .join(AuditLog, AuditLog.user_id == User.id)
+            .where(*dept_filter)
+            .group_by(Department.name)
+            .order_by(desc("cnt"))
+            .limit(5)
+        )
+        dept_rows = (await db.execute(dept_stats_query)).all()
+        max_dept_cnt = max([r.cnt for r in dept_rows], default=1) or 1
+        for idx, r in enumerate(dept_rows):
+            top_departments.append({
+                "name": r.name,
+                "count": r.cnt,
+                "percent": min(100, int((r.cnt / max_dept_cnt) * 100)),
+                "action": "DLP Policy Triggers",
+                "color": palette[idx % len(palette)],
+            })
+
     return success(
         data={
+            "roleScope": role_scope,
             "totalEvents": total,
             "maskedCount": action_counts.get("MASK", 0),
             "allowedCount": action_counts.get("ALLOW", 0),
@@ -273,6 +427,9 @@ async def get_dashboard_stats(
             "topEntityTypes": top_entity_types,
             "topDomains": top_domains,
             "eventsByDay": events_by_day,
+            "topOrganizations": top_organizations,
+            "topEmployees": top_employees,
+            "topDepartments": top_departments,
         },
         message="Dashboard stats fetched",
     )

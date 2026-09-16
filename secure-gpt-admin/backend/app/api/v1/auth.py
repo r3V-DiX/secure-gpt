@@ -222,7 +222,7 @@ async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
             "email": current_user.email,
             "fullName": current_user.full_name,
             "avatarUrl": current_user.avatar_url,
-            "role": current_user.role.value,
+            "role": current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role).lower(),
             "isActive": current_user.is_active,
             "orgId": current_user.org_id,
             "createdAt": current_user.created_at.isoformat(),
@@ -539,7 +539,7 @@ async def verify_otp(
         "email": user.email,
         "fullName": user.full_name,
         "avatarUrl": user.avatar_url,
-        "role": user.role.value,
+        "role": user.role.value if hasattr(user.role, "value") else str(user.role).lower(),
         "deactivatedAt": user.deactivated_at.isoformat() if user.deactivated_at else None,
         "deactivationReason": user.deactivation_reason,
     }, "message": f"Logged in as {user.email}"})

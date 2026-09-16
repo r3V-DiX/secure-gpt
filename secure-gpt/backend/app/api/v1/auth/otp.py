@@ -136,7 +136,7 @@ async def verify_otp(request: Request, response: Response, body: OTPVerifyReques
             "data": {
                 "id": user.id,
                 "email": user.email,
-                "role": user.role.value,
+                "role": user.role.value if hasattr(user.role, "value") else str(user.role).lower(),
             },
             "message": f"Successfully verified and signed in as {user.email}",
         }

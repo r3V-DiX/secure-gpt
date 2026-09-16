@@ -6,6 +6,29 @@ Single source of truth for deployments, releases, database migrations, and compo
 
 ## Release History
 
+### [v1.2.2-ext] - Extension Maintenance & Domain Gating Enforcement
+- **Date**: 2026-09-16
+- **Commit**: `ext-v1.2.2`
+- **Environment**: Production (`ap-south-1` / Chrome Web Store)
+- **Status**: Production Stable
+- **Component**: `@securegpt/extension` `1.2.2`
+
+#### What Was Added & Improved
+- **Extension Version Bump**: Upgraded Chrome Extension version to `1.2.2` across `manifest.json` and `package.json`.
+- **Domain Verification & Onboarding Gating Alignment**: Unified extension telemetry and authentication with strict corporate domain verification gates.
+- **Radial Risk Gauge & Interceptor Reliability**: Refined client-side DOM risk gauge positioning and input event decoupling on supported LLM sites.
+
+#### Component Matrix
+| Component | Service Name | Version | Image / Artifact |
+|---|---|---|---|
+| User Backend API | `secure-gpt-backend` | `1.1.2` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-backend:prod-latest` |
+| Admin Backend API | `securegpt-admin-backend` | `1.1.2` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-backend:prod-latest` |
+| User Dashboard | `secure-gpt-dashboard` | `1.1.2` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-dashboard:prod-latest` |
+| Admin Frontend | `securegpt-admin-frontend` | `1.1.2` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-frontend:prod-latest` |
+| Chrome Extension | `@securegpt/extension` | `1.2.2` | Chrome Web Store / dist archive |
+
+---
+
 ### [v1.1.2] - Radial UX Polish & Version Synchronization
 - **Date**: 2026-09-11
 - **Commit**: `prod-v1.1.2`

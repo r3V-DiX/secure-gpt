@@ -93,6 +93,8 @@ export interface DashboardStats {
   topDomains: { domain: string; count: number }[]
   timeline?: { date: string; count: number }[]
   eventsByDay?: { date: string; count: number }[]
+  topEmployees?: { email: string; name: string; dept: string; count: number; role?: string; color?: string }[]
+  topDepartments?: { name: string; count: number; percent: number; action: string; color?: string }[]
 }
 
 // ── AuditLog Override for Frontend ───────────────────────────────────────────

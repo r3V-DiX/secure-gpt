@@ -29,26 +29,26 @@ from sqlalchemy.types import TypeDecorator
 
 class UserRoleType(TypeDecorator):
     """
-    Resilient role type that seamlessly handles both enum objects,
-    lowercase strings ('org_admin'), and uppercase DB values ('ORG_ADMIN').
+    Resilient role type that handles Enum, lowercase strings,
+    and binds to Postgres native uppercase 'userrole' enum.
     """
-    impl = String(50)
+    impl = Enum(UserRole, name="userrole", values_callable=lambda x: [e.name for e in x], native_enum=True)
     cache_ok = True
 
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
         if isinstance(value, UserRole):
-            return value.value
+            return value.name
         if isinstance(value, str):
-            val_clean = value.lower()
+            val_clean = value.upper()
             try:
-                return UserRole(val_clean).value
-            except ValueError:
+                return UserRole[val_clean].name
+            except KeyError:
                 try:
-                    return UserRole[value.upper()].value
-                except KeyError:
-                    return value
+                    return UserRole(value.lower()).name
+                except ValueError:
+                    return val_clean
         return str(value)
 
     def process_result_value(self, value, dialect):
@@ -56,13 +56,13 @@ class UserRoleType(TypeDecorator):
             return None
         if isinstance(value, UserRole):
             return value
-        val_clean = str(value).lower()
+        val_clean = str(value).upper()
         try:
-            return UserRole(val_clean)
-        except ValueError:
+            return UserRole[val_clean]
+        except KeyError:
             try:
-                return UserRole[str(value).upper()]
-            except KeyError:
+                return UserRole(str(value).lower())
+            except ValueError:
                 return UserRole.USER
 
 
@@ -88,9 +88,12 @@ class User(Base):
     is_high_risk: Mapped[bool] = mapped_column(Boolean, default=False)
     privacy_accepted: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # Organisation FK — nullable, schema only for now
+    # Organisation & Department FKs
     org_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True
+    )
+    department_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True
     )
 
     # Timestamps
@@ -111,6 +114,7 @@ class User(Base):
 
     # Relationships
     organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="users")  # noqa: F821
+    department: Mapped["Department | None"] = relationship("Department", back_populates="members")  # noqa: F821
     sessions: Mapped[list["Session"]] = relationship("Session", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     auth_events: Mapped[list["AuthEvent"]] = relationship("AuthEvent", back_populates="user")  # noqa: F821
     devices: Mapped[list["Device"]] = relationship("Device", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
@@ -118,3 +122,4 @@ class User(Base):
     policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     role_assignments: Mapped[list["UserRoleAssignment"]] = relationship("UserRoleAssignment", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     admin_audit_logs: Mapped[list["AdminAuditLog"]] = relationship("AdminAuditLog", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
+    incidents: Mapped[list["DLPIncident"]] = relationship("DLPIncident", back_populates="user")  # noqa: F821

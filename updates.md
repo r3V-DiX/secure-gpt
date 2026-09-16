@@ -44,9 +44,10 @@
   - When an admin clicks "Configure Policy" from Team & Org (redirecting to `/policy?department_id=...` for a specific sub-category/department like Engineering, Finance, etc.), provide a sticky/prominent "← Back to Team & Organization" navigation link on the policy page to return directly to the org view.
 
 ### 4. Release Engineering & Audit Tracking
-- [x] **Production Release Tracker (Current: v1.1.0)**:
+- [x] **Production Release Tracker (Current: App v1.1.2 / Extension v1.2.2)**:
   - Establish a single source of truth for every update in production (`RELEASE_TRACKER.md`).
-  - Implement a public, unauthenticated system version endpoint (`/api/v1/system/version`) to report live deployed build versions.
+  - Documented Chrome Extension `v1.2.2` release with enterprise domain verification gating and radial risk gauge stabilization.
+  - Implement a public, unauthenticated system version endpoint (`/api/v1/system/version`) to report live deployed build versions across backend, dashboard, and extension.
   - Added visual version badges to dashboards and verification checks to update scripts.
 
 ---

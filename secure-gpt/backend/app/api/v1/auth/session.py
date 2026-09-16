@@ -74,7 +74,8 @@ async def dev_login(request: Request, body: DevLoginRequest, db: DBSession):
     await log_login_success(db, request, user_id=user.id, session_id=session.id)
     await db.commit()
 
-    resp = JSONResponse(content={"ok": True, "message": f"Logged in as {user.email} ({user.role.value})"})
+    role_str = user.role.value if hasattr(user.role, "value") else str(user.role).lower()
+    resp = JSONResponse(content={"ok": True, "message": f"Logged in as {user.email} ({role_str})"})
     resp.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=session_id,
@@ -107,7 +108,7 @@ async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
             "email": current_user.email,
             "fullName": current_user.full_name,
             "avatarUrl": current_user.avatar_url,
-            "role": current_user.role.value,
+            "role": current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role).lower(),
             "isActive": current_user.is_active,
             "orgId": current_user.org_id,
             "departmentId": current_user.department_id,
