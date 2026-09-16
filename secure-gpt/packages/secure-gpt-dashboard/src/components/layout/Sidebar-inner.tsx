@@ -7,7 +7,7 @@ import { clsx } from 'clsx'
 import {
   LayoutDashboard, FileText, ShieldCheck,
   User, Settings, LogOut, Users, Sparkles, ShieldAlert,
-  PanelLeftClose, PanelLeft, X, Sun, Moon, Shield, History
+  PanelLeftClose, PanelLeft, X, Sun, Moon, Shield, History, Key, ClipboardList, Database
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/contexts/theme-context'
@@ -22,6 +22,7 @@ export interface NavItemConfig {
   icon: React.ComponentType<{ size?: number; className?: string }>
   exact?: boolean
   adminOnly?: boolean
+  superAdminOnly?: boolean
   badge?: string
 }
 
@@ -30,7 +31,9 @@ export interface NavGroup {
   items: NavItemConfig[]
 }
 
-const NAV_GROUPS: NavGroup[] = [
+const IS_ADMIN_MODE = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
+
+const STANDARD_NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
     items: [
@@ -54,6 +57,39 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Account',
+    items: [
+      { label: 'Profile', href: '/profile', icon: User },
+      { label: 'Settings', href: '/settings', icon: Settings },
+    ],
+  },
+]
+
+const SUPER_ADMIN_NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
+    ],
+  },
+  {
+    label: 'Security & Logs',
+    items: [
+      { label: 'Event Logs', href: '/event-logs', icon: FileText },
+      { label: 'Audit Logs', href: '/audit', icon: ClipboardList, superAdminOnly: true },
+      { label: 'System Logs', href: '/system-logs', icon: Database, superAdminOnly: true },
+    ],
+  },
+  {
+    label: 'Access & Governance',
+    items: [
+      { label: 'Policy Rules', href: '/policy', icon: ShieldCheck },
+      { label: 'Global Users', href: '/users', icon: Users, superAdminOnly: true },
+      { label: 'Roles', href: '/roles', icon: Shield, superAdminOnly: true },
+      { label: 'Permissions', href: '/permissions', icon: Key, superAdminOnly: true },
+    ],
+  },
+  {
+    label: 'Account & System',
     items: [
       { label: 'Profile', href: '/profile', icon: User },
       { label: 'Settings', href: '/settings', icon: Settings },
@@ -173,8 +209,12 @@ export function SidebarInner({
 
         {/* ── Navigation Items ─────────────────────────────────── */}
         <nav className="p-2 space-y-4 overflow-y-auto max-h-[calc(100vh-175px)]">
-          {NAV_GROUPS.map((group) => {
-            const filteredItems = group.items.filter(item => !item.adminOnly || isPlatformAdmin)
+          {(IS_ADMIN_MODE || user?.role === 'super_admin' ? SUPER_ADMIN_NAV_GROUPS : STANDARD_NAV_GROUPS).map((group) => {
+            const filteredItems = group.items.filter((item) => {
+              if (item.superAdminOnly && user.role !== 'super_admin' && user.role !== 'platform_super_admin') return false
+              if (item.adminOnly && !isPlatformAdmin) return false
+              return true
+            })
             if (filteredItems.length === 0) return null
 
             return (

@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${DOCKER_REGISTRY:-securegpt}/backend:${IMAGE_TAG:-latest}
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: "production"
+      DEBUG: "false"
+      SECRET_KEY: ${SECRET_KEY}
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      REDIS_URL: ${REDIS_URL}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  admin-backend:
+    image: ${DOCKER_REGISTRY:-securegpt}/backend:${IMAGE_TAG:-latest}
+    restart: always
+    ports:
+      - "8001:8000"
+    environment:
+      APP_ENV: "production"
+      DEBUG: "false"
+      SECRET_KEY: ${SECRET_KEY}
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      REDIS_URL: ${REDIS_URL}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  dashboard:
+    image: ${DOCKER_REGISTRY:-securegpt}/dashboard:${IMAGE_TAG:-latest}
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: "production"
+      PORT: 3000
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  admin-dashboard:
+    image: ${DOCKER_REGISTRY:-securegpt}/admin-dashboard:${IMAGE_TAG:-latest}
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: "production"
+      PORT: 3000
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

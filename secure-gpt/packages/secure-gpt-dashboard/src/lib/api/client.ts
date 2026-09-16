@@ -88,7 +88,20 @@ export async function apiGetPaginated<T>(
   params?: Record<string, unknown>,
 ): Promise<{ data: T[]; pagination: BackendPaginatedEnvelope<T>['pagination'] }> {
   const res = await apiClient.get<BackendPaginatedEnvelope<T>>(path, { params })
-  return { data: res.data.data, pagination: res.data.pagination }
+  const rawData = res.data?.data
+  const rawPagination = res.data?.pagination
+
+  const dataArray: T[] = Array.isArray(rawData) ? rawData : (Array.isArray(res.data) ? (res.data as unknown as T[]) : [])
+  const pagination = rawPagination ?? {
+    page: Number(params?.page) || 1,
+    page_size: Number(params?.page_size) || dataArray.length || 20,
+    total: dataArray.length,
+    total_pages: 1,
+    has_next: false,
+    has_prev: false,
+  }
+
+  return { data: dataArray, pagination }
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {

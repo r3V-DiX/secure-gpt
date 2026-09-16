@@ -74,6 +74,18 @@ export function TopNav({ onMenuClick }: TopNavProps) {
 
       {/* ── Right Side: Live Protection Badge & Theme Toggle ── */}
       <div className="flex items-center gap-3">
+        {user && (user.role === 'super_admin' || user.role === 'platform_super_admin') && process.env.NEXT_PUBLIC_APP_MODE !== 'admin' && (
+          <a
+            href={process.env.NODE_ENV === 'production' ? 'https://admin.securegpt.rkavach.com' : 'http://localhost:3001'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-all shadow-xs"
+          >
+            <span>Admin Console</span>
+            <span className="text-[10px]">↗</span>
+          </a>
+        )}
+
         {isProtected ? (
           <div
             className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold tracking-tight shadow-sm"

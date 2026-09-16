@@ -28,10 +28,12 @@ WORKDIR /app
 # Build-time args — NEXT_PUBLIC_* vars are baked in at build time by Next.js
 ARG NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 ARG NEXT_PUBLIC_API_URL=http://localhost:3000
+ARG NEXT_PUBLIC_APP_MODE=standard
 ARG NODE_ENV=production
 
 ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_MODE=$NEXT_PUBLIC_APP_MODE
 ENV NODE_ENV=$NODE_ENV
 
 # Copy root node_modules only (workspaces hoists everything here)

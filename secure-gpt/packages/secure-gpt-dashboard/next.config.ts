@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const distDir = process.env.NEXT_DIST_DIR || (process.env.PORT === "3001" || process.env.NEXT_PUBLIC_APP_MODE === "admin" ? ".next-admin" : ".next");
+
 const nextConfig: NextConfig = {
+  distDir,
   output: "standalone",
   transpilePackages: ["@securegpt/shared"],
   turbopack: {

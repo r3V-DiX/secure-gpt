@@ -110,24 +110,29 @@ export default function LoginPage() {
     }
   }
 
+  const isAdminMode = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
+
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{ background: 'var(--bg-base)' }}
     >
-      {/* Grid pattern */}
+      {/* Background Grid Pattern */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `
-            linear-gradient(var(--border) 1px, transparent 1px),
-            linear-gradient(90deg, var(--border) 1px, transparent 1px)
-          `,
-          backgroundSize: '48px 48px',
-          maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
-          WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
+          backgroundImage:
+            'linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
           opacity: 0.6,
         }}
+        aria-hidden
+      />
+
+      {/* Glow blob */}
+      <div
+        className="absolute w-[500px] h-[500px] rounded-full pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        style={{ background: 'radial-gradient(circle, var(--accent-light) 0%, transparent 70%)' }}
         aria-hidden
       />
 
@@ -146,77 +151,88 @@ export default function LoginPage() {
             <img src="/rivedix_logo.png" alt="Rivedix Logo" className="w-full h-full object-contain p-1" />
           </div>
           <div>
-            <p className="text-base font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              SecureGPT
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-base font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                SecureGPT
+              </p>
+              {isAdminMode && (
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-500 border border-indigo-500/20">
+                  Admin
+                </span>
+              )}
+            </div>
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              Enterprise DLP & Privacy Platform
+              {isAdminMode ? 'Super Admin & Governance Console' : 'Enterprise DLP & Privacy Platform'}
             </p>
           </div>
         </div>
 
         <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
-          Sign in to SecureGPT
+          {isAdminMode ? 'Sign in to Admin Console' : 'Sign in to SecureGPT'}
         </h1>
         <p className="text-xs mb-6" style={{ color: 'var(--text-secondary)' }}>
-          Choose your login role and authentication method
+          {isAdminMode
+            ? 'Enter your Super Admin credentials to access the global control plane.'
+            : 'Choose your login role and authentication method'}
         </p>
 
-        {/* ── Role Selector (Employer / Employee / Personal) ───────────────── */}
-        <div className="mb-5">
-          <label className="text-xs font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>
-            I am signing in as:
-          </label>
-          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setRoleType('employer')
-                setDevPersona('employer')
-                setDevEmail('admin@acmecorp.com')
-              }}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                roleType === 'employer'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
-              }`}
-            >
-              <Building2 size={13} /> Employer
-            </button>
+        {/* ── Role Selector (Shown only on standard tenant app, hidden on admin portal) ── */}
+        {!isAdminMode && (
+          <div className="mb-5">
+            <label className="text-xs font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>
+              I am signing in as:
+            </label>
+            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setRoleType('employer')
+                  setDevPersona('employer')
+                  setDevEmail('admin@acmecorp.com')
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  roleType === 'employer'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+                }`}
+              >
+                <Building2 size={13} /> Employer
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setRoleType('employee')
-                setDevPersona('employee')
-                setDevEmail('developer@acmecorp.com')
-              }}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                roleType === 'employee'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
-              }`}
-            >
-              <UserCheck size={13} /> Employee
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRoleType('employee')
+                  setDevPersona('employee')
+                  setDevEmail('developer@acmecorp.com')
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  roleType === 'employee'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+                }`}
+              >
+                <UserCheck size={13} /> Employee
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setRoleType('user')
-                setDevPersona('user')
-                setDevEmail('john.doe@gmail.com')
-              }}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                roleType === 'user'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
-              }`}
-            >
-              <User size={13} /> Personal
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRoleType('user')
+                  setDevPersona('user')
+                  setDevEmail('john.doe@gmail.com')
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  roleType === 'user'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+                }`}
+              >
+                <User size={13} /> Personal
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Privacy Policy Checkbox */}
         <div className="flex items-start gap-2.5 mb-5">

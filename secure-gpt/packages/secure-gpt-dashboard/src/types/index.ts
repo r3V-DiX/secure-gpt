@@ -23,6 +23,80 @@ export interface PaginatedResult<T> {
 }
 
 // ── Auth User Extension ───────────────────────────────────────────────────────
+export type UserRole = 'super_admin' | 'platform_super_admin' | 'org_admin' | 'security_admin' | 'auditor' | 'employee' | 'user'
+
+export interface Permission {
+  id: string
+  action: string
+  module: 'USER' | 'POLICY' | 'SYSTEM' | 'AUDIT' | 'ROLE' | 'ORGANISATION'
+  name: string
+  description: string | null
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  isActive: boolean
+}
+
+export interface Role {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  isSystem: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  permissions: Permission[]
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  fullName: string | null
+  avatarUrl: string | null
+  role: UserRole | string
+  isActive: boolean
+  orgId: string | null
+  createdAt: string
+  lastLoginAt: string | null
+  deactivatedAt?: string | null
+  deactivationReason?: string | null
+  roles: Role[]
+}
+
+export interface AdminAuditLog {
+  id: string
+  userId: string | null
+  userEmail: string | null
+  userName: string | null
+  userRoles: string[] | null
+  action: string
+  module: 'USER' | 'POLICY' | 'SYSTEM' | 'AUDIT' | 'ROLE' | 'ORGANISATION'
+  description: string | null
+  entityId: string | null
+  entityType: string | null
+  entityName: string | null
+  beforeState: Record<string, any> | null
+  afterState: Record<string, any> | null
+  ipAddress: string | null
+  userAgent: string | null
+  status: 'SUCCESS' | 'FAILED' | 'DENIED'
+  reason: string | null
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  createdAt: string
+}
+
+export interface SystemAuthLog {
+  id: string
+  userId: string | null
+  userEmail: string
+  userName: string
+  eventType: string
+  success: boolean
+  userAgent: string | null
+  fingerprintHash: string | null
+  metadata: Record<string, any> | null
+  createdAt: string
+}
+
 export interface AuthUser {
   id: string
   email: string
@@ -82,6 +156,7 @@ export interface DLPIncident {
 
 // ── Dashboard Stats ───────────────────────────────────────────────────────────
 export interface DashboardStats {
+  roleScope?: string
   totalEvents: number
   blockedCount: number
   maskedCount: number
@@ -89,10 +164,11 @@ export interface DashboardStats {
   cancelledCount?: number
   allowedCount: number
   topEntityTypes: { type: string; count: number }[]
-  topPlatforms: { platform: string; count: number }[]
+  topPlatforms?: { platform: string; count: number }[]
   topDomains: { domain: string; count: number }[]
   timeline?: { date: string; count: number }[]
   eventsByDay?: { date: string; count: number }[]
+  topOrganizations?: { id: string; name: string; domain: string; plan: string; count: number; percent: number; color?: string }[]
   topEmployees?: { email: string; name: string; dept: string; count: number; role?: string; color?: string }[]
   topDepartments?: { name: string; count: number; percent: number; action: string; color?: string }[]
 }

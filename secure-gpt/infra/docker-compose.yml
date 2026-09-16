@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: securegpt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-securegpt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securegpt_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-securegpt_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-securegpt} -d ${POSTGRES_DB:-securegpt_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: securegpt-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: securegpt-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: "DLP Shield API"
+      APP_ENV: "development"
+      DEBUG: "true"
+      SECRET_KEY: ${SECRET_KEY:-change_this_to_a_secure_32_character_key_1234}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-securegpt}:${POSTGRES_PASSWORD:-securegpt_secret}@postgres:5432/${POSTGRES_DB:-securegpt_db}
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY:-session_secret_change_me_32_char_long_key}
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001"
+      REDIS_URL: "redis://redis:6379/0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin-backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: securegpt-admin-backend
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      APP_NAME: "DLP Shield Admin API"
+      APP_ENV: "development"
+      DEBUG: "true"
+      SECRET_KEY: ${SECRET_KEY:-change_this_to_a_secure_32_character_key_1234}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-securegpt}:${POSTGRES_PASSWORD:-securegpt_secret}@postgres:5432/${POSTGRES_DB:-securegpt_db}
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY:-session_secret_change_me_32_char_long_key}
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001"
+      REDIS_URL: "redis://redis:6379/0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: packages/secure-gpt-dashboard/Dockerfile
+      args:
+        NEXT_PUBLIC_APP_MODE: standard
+        NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+        NEXT_PUBLIC_API_URL: http://localhost:3000
+    container_name: securegpt-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  admin-dashboard:
+    build:
+      context: ..
+      dockerfile: packages/secure-gpt-dashboard/Dockerfile
+      args:
+        NEXT_PUBLIC_APP_MODE: admin
+        NEXT_PUBLIC_BACKEND_URL: http://localhost:8001
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+    container_name: securegpt-admin-dashboard
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    depends_on:
+      - admin-backend
+
+volumes:
+  postgres_data:
+  redis_data:

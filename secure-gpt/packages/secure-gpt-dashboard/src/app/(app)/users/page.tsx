@@ -105,9 +105,9 @@ export default function UsersPage() {
       if (statusFilter === 'suspended') params.is_active = false
 
       const result = await apiGetPaginated<AdminUser>('/admin/users', params)
-      setUsers(result.data)
-      setTotal(result.pagination.total)
-      setTotalPages(result.pagination.total_pages)
+      setUsers(result.data ?? [])
+      setTotal(result.pagination?.total ?? (result.data?.length || 0))
+      setTotalPages(result.pagination?.total_pages ?? (Math.ceil((result.data?.length || 0) / pageSize) || 1))
       // Clear selection on page or filter change
       setSelectedIds([])
     } catch (err: any) {
@@ -115,7 +115,8 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, debouncedSearch, roleFilter, statusFilter, toast])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, debouncedSearch, roleFilter, statusFilter])
 
   useEffect(() => {
     void loadUsers()

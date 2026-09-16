@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogIn, Clock } from 'lucide-react'
+import { LogIn, Clock, ShieldAlert } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopNav } from '@/components/layout/TopNav'
@@ -38,7 +38,50 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
+  const isSuperAdmin = user?.role === 'super_admin' || user?.role === 'platform_super_admin'
+  const isAdminMode = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
+
   if (!user && !sessionExpired) return null
+
+  // Super Admin check on admin.securegpt.rkavach.com
+  if (isAdminMode && user && !isSuperAdmin) {
+    const standardUrl = process.env.NODE_ENV === 'production' ? 'https://securegpt.rkavach.com' : 'http://localhost:3000'
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)] px-4 py-12">
+        <div className="max-w-md w-full rounded-2xl bg-[var(--bg-surface-1)] border border-[var(--border)] p-8 text-center shadow-xl space-y-6 animate-fade-in">
+          <div className="size-16 rounded-2xl mx-auto flex items-center justify-center bg-[var(--danger-light)] text-[var(--danger)] border border-[var(--danger-border)]">
+            <ShieldAlert size={32} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              Super Admin Access Required
+            </h1>
+            <p className="text-sm mt-2 text-[var(--text-secondary)] leading-relaxed">
+              This console is restricted to Super Administrators. Your account (<span className="font-semibold text-[var(--text-primary)]">{user.email}</span>) does not have global administrative privileges.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <a
+              href={standardUrl}
+              className="w-full h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-sm transition-all"
+            >
+              Go to SecureGPT Dashboard
+            </a>
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/login'
+                }
+              }}
+              className="w-full h-10 rounded-xl text-sm font-semibold flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] border border-[var(--border)] transition-all"
+            >
+              Sign in with another account
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen h-dvh overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">

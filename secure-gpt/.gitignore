@@ -18,6 +18,7 @@ dist-chrome/
 dist-firefox/
 build/
 .next/
+.next-admin/
 out/
 .turbo/
 

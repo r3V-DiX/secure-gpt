@@ -33,7 +33,6 @@ VENV_PYTHON="$VENV_PATH/bin/python"
 VENV_UVICORN="$VENV_PATH/bin/uvicorn"
 
 SECURE_GPT_DIR="$ROOT_DIR/secure-gpt"
-ADMIN_DIR="$ROOT_DIR/secure-gpt-admin"
 
 # Process IDs
 PID_BE=0
@@ -131,7 +130,7 @@ PID_BE=$!
 # 2. Start SecureGPT Admin Backend (Port 8001)
 log "$MAGENTA" "STARTING" "SecureGPT Admin Backend on http://localhost:8001"
 (
-    cd "$ADMIN_DIR/backend"
+    cd "$SECURE_GPT_DIR/backend"
     exec "$VENV_UVICORN" app.main:app --reload --host 0.0.0.0 --port 8001
 ) 2>&1 | sed -e "s/^/$(echo -e "${MAGENTA}[ADMIN-BE:8001]${NC} ")/" &
 PID_ADMIN_BE=$!
@@ -141,6 +140,10 @@ log "$CYAN" "STARTING" "SecureGPT Dashboard on http://localhost:3000"
 (
     cd "$SECURE_GPT_DIR/packages/secure-gpt-dashboard"
     export PORT=3000
+    export NEXT_DIST_DIR=.next
+    export NEXT_PUBLIC_APP_MODE=standard
+    export NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+    export NEXT_PUBLIC_API_URL=http://localhost:3000
     exec npm run dev -- -p $PORT
 ) 2>&1 | sed -e "s/^/$(echo -e "${CYAN}[FE:3000]${NC} ")/" &
 PID_FE=$!
@@ -148,8 +151,12 @@ PID_FE=$!
 # 4. Start SecureGPT Admin Dashboard (Port 3001)
 log "$YELLOW" "STARTING" "SecureGPT Admin Dashboard on http://localhost:3001"
 (
-    cd "$ADMIN_DIR/packages/secure-gpt-dashboard"
+    cd "$SECURE_GPT_DIR/packages/secure-gpt-dashboard"
     export PORT=3001
+    export NEXT_DIST_DIR=.next-admin
+    export NEXT_PUBLIC_APP_MODE=admin
+    export NEXT_PUBLIC_BACKEND_URL=http://localhost:8001
+    export NEXT_PUBLIC_API_URL=http://localhost:3001
     exec npm run dev -- -p $PORT
 ) 2>&1 | sed -e "s/^/$(echo -e "${YELLOW}[ADMIN-FE:3001]${NC} ")/" &
 PID_ADMIN_FE=$!
