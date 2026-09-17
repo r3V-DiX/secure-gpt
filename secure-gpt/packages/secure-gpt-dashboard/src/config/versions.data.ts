@@ -18,6 +18,36 @@ export interface VersionItem {
 
 export const BASELINE_VERSIONS: VersionItem[] = [
   {
+    version: '1.1.4',
+    date: 'September 17, 2026',
+    status: 'Production Stable',
+    tag: 'Interactive Role Tours & High-Contrast Visual Engine',
+    commit: 'prod-v1.1.4',
+    summary: 'Modular role-based onboarding tours & Get Started workflows across Super Admin, Org Admin, Employee, and Personal User personas, alongside enterprise-grade typography contrast enhancements and real-time extension telemetry synchronization.',
+    info: 'SecureGPT Core Platform v1.1.4 delivers modular role-specific guided onboarding with React Joyride, high-contrast accessible design tokens across light and dark themes, and live bidirectional telemetry synchronization.',
+    whatsNew: [
+      'Modular role-specific interactive Joyride tours customized dynamically for Super Admin, Org Admin, Employee, and Personal User accounts.',
+      'Dedicated Get Started onboarding checklists with real-time status tracking tailored to user roles.',
+      'High-contrast typography and design token upgrades ensuring strict WCAG AAA contrast across all KPI cards, sidebars, and empty states.',
+      'Live cloud telemetry sync in Chrome extension popup mirroring dashboard analytics in real time.',
+      'Enterprise rate metrics visualization with color-coded progress indicators for Allow, Block, and Mask efficiency.',
+    ],
+    changedFunctionality: [
+      'Refactored onboarding tour configs into modular role-specific definitions without single-file bloat.',
+      'Updated extension log ingestion to automatically capture and associate organization tenancy metadata.',
+      'Scoped dashboard telemetry queries to aggregate multi-tenant user and department activity accurately.',
+    ],
+    improvements: [
+      'Crystal-clear readability on all metric numbers and subtitle elements in both light and dark modes.',
+      'Instant responsive state updates when toggling protection or changing organization scopes.',
+    ],
+    problemsSolved: [
+      'Fixed faint and low-opacity subtitle text on sidebar brand headers and version tags.',
+      'Resolved metric disparity between extension session counters and dashboard analytics.',
+      'Prevented unwanted dark mode styles from applying when light theme is active.',
+    ],
+  },
+  {
     version: '1.1.3',
     date: 'September 16, 2026',
     status: 'Production Stable',
@@ -142,6 +172,36 @@ export const BASELINE_VERSIONS: VersionItem[] = [
 ]
 
 export const ADMIN_VERSIONS: VersionItem[] = [
+  {
+    version: '1.1.4',
+    date: 'September 17, 2026',
+    status: 'Production Stable',
+    tag: 'Role-Specific Joyride Tours & Theme Contrast Overhaul',
+    commit: 'admin-v1.1.4',
+    summary: 'Modular role-guided Joyride onboarding tours for Super Admins and Org Admins, high-contrast WCAG AAA theme variables, and real-time extension telemetry synchronization across organization consoles.',
+    info: 'SecureGPT Admin Console v1.1.4 introduces modular persona onboarding tours for administrative roles, crystal-clear typography contrast, and live organization event telemetry sync.',
+    whatsNew: [
+      'Modular interactive Joyride tours customized specifically for Super Admin and Org Admin workflows.',
+      'Dedicated Get Started onboarding checklists with real-time progress indicators tailored to administrative permissions.',
+      'High-contrast visual design system tokens resolving low-opacity text on rate cards, sidebars, and subheaders.',
+      'Live bidirectional telemetry sync reflecting extension activity in real-time across administrative dashboards.',
+      'Refined KPI rate card indicators with system theme CSS variables for high-contrast light and dark mode viewing.',
+    ],
+    changedFunctionality: [
+      'Split tour configurations into modular role-based files avoiding monolithic tour definitions.',
+      'Scoped admin telemetry aggregations dynamically by organization ID with tenant boundary validation.',
+      'Standardized theme token variables across all administrative stats, headers, and rate indicators.',
+    ],
+    improvements: [
+      'WCAG AAA compliance across all administrative metrics, chart legends, and navigation headers.',
+      'Instant responsive telemetry updates when switching between department and organization views.',
+    ],
+    problemsSolved: [
+      'Fixed faint and unreadable text on KPI rate cards and brand subtitles in light mode.',
+      'Resolved data inconsistency between extension counters and admin dashboard analytics.',
+      'Fixed unintended dark mode class styling applying in light mode.',
+    ],
+  },
   {
     version: '1.1.3',
     date: 'September 16, 2026',

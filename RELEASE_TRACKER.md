@@ -6,6 +6,30 @@ Single source of truth for deployments, releases, database migrations, and compo
 
 ## Release History
 
+### [v1.1.4] - Interactive Role Tours, WCAG Theme Contrast & Extension Telemetry Sync
+- **Date**: 2026-09-17
+- **Commit**: `prod-v1.1.4`
+- **Environment**: Production (`ap-south-1`)
+- **Status**: Production Stable
+- **Components**: `secure-gpt-backend` `1.1.4`, `securegpt-admin-backend` `1.1.4`, `secure-gpt-dashboard` `1.1.4`, `securegpt-admin-frontend` `1.1.4`, `@securegpt/extension` `1.2.2`
+
+#### What Was Added & Improved
+- **Modular Role-Specific Joyride Tours**: Dynamic interactive product tours and tailored onboarding checklists across Super Admin, Org Admin, Employee, and Personal User personas.
+- **High-Contrast Theme Overhaul**: System CSS variable tokens guaranteeing strict WCAG AAA contrast across all metric counters, KPI cards, sidebars, and subheaders in both light and dark themes.
+- **Real-Time Extension Telemetry Sync**: Real-time cloud sync reflecting in-browser prompt protection telemetry accurately on user and admin dashboards with organization tenancy scoping.
+- **Component Parity**: Upgraded core platform and admin consoles to `v1.1.4` while maintaining extension stability at `1.2.2`.
+
+#### Component Matrix
+| Component | Service Name | Version | Image / Artifact |
+|---|---|---|---|
+| User Backend API | `secure-gpt-backend` | `1.1.4` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-backend:prod-latest` |
+| Admin Backend API | `securegpt-admin-backend` | `1.1.4` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-backend:prod-latest` |
+| User Dashboard | `secure-gpt-dashboard` | `1.1.4` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/secure-gpt-dashboard:prod-latest` |
+| Admin Frontend | `securegpt-admin-frontend` | `1.1.4` | `443370715886.dkr.ecr.ap-south-1.amazonaws.com/securegpt-admin-frontend:prod-latest` |
+| Chrome Extension | `@securegpt/extension` | `1.2.2` | Chrome Web Store / dist archive |
+
+---
+
 ### [v1.1.3] - Enterprise Scale Roster & Bulk Operations Suite
 - **Date**: 2026-09-16
 - **Commit**: `prod-v1.1.3`

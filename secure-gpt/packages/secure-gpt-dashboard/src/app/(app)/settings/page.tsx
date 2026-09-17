@@ -161,7 +161,7 @@ export default function SettingsPage() {
             <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>SecureGPT Dashboard</span>
             <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-md"
               style={{ background: 'var(--accent-light)', color: 'var(--accent-text)' }}>
-              v1.1.2
+              v1.1.4
             </span>
           </div>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>

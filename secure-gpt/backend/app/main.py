@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version="1.1.2",
+    version=settings.app_version,
     description="DLP Shield — Data Loss Prevention API",
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,

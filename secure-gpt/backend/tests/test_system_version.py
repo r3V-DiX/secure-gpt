@@ -10,7 +10,7 @@ async def test_system_version_endpoint():
         assert res.status_code == 200
         data = res.json()
         assert data["status"] == "ok"
-        assert data["version"] == "1.1.2"
+        assert data["version"] == "1.1.4"
         assert "commit" in data
         assert "buildTime" in data
         assert "components" in data

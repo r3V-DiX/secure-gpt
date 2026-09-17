@@ -349,7 +349,7 @@ export default function LoginPage() {
             <Link href="/versions" className="hover:text-[var(--accent)] hover:underline transition-colors flex items-center gap-1">
               <span>Version History</span>
               <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] font-semibold">
-                v1.1.2
+                v1.1.4
               </span>
             </Link>
             <span>•</span>

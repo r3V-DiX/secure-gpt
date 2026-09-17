@@ -34,21 +34,21 @@ export function VersionHistorySection() {
       label: 'Baseline Product',
       icon: <Layers size={16} />,
       count: BASELINE_VERSIONS.length,
-      badge: 'v1.1.2',
+      badge: `v${BASELINE_VERSIONS[0]?.version || '1.1.4'}`,
     },
     {
       key: 'admin',
       label: 'Admin Console',
       icon: <Server size={16} />,
       count: ADMIN_VERSIONS.length,
-      badge: 'v1.1.2',
+      badge: `v${ADMIN_VERSIONS[0]?.version || '1.1.4'}`,
     },
     {
       key: 'extension',
       label: 'Chrome Extension',
       icon: <ShieldCheck size={16} />,
       count: EXTENSION_VERSIONS.length,
-      badge: 'v1.2.1',
+      badge: `v${EXTENSION_VERSIONS[0]?.version || '1.2.2'}`,
     },
   ]
 

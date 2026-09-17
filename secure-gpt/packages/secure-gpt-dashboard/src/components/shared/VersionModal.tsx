@@ -122,7 +122,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Dashboard</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.dashboard || '1.1.2'}
+                    v{data.components?.dashboard || '1.1.4'}
                   </span>
                 </div>
 
@@ -132,7 +132,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Extension</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.extension || '1.2.1'}
+                    v{data.components?.extension || '1.2.2'}
                   </span>
                 </div>
               </div>
@@ -160,7 +160,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
       <ModalFooter>
         <div className="flex items-center justify-between w-full">
           <a
-            href="/#versions"
+            href="/versions"
             onClick={onClose}
             className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
           >
