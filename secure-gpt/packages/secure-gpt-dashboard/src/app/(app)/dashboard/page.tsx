@@ -181,7 +181,7 @@ export default function DashboardPage() {
         <div className="stagger-4 animate-fade-in">
           <StatCard
             label="Warned"
-            value={stats?.cancelledCount ?? 0}
+            value={stats?.warnedCount ?? stats?.cancelledCount ?? 0}
             sub="User bypassed warning"
             accent="amber"
             icon={<AlertTriangle size={14} />}
@@ -365,11 +365,10 @@ export default function DashboardPage() {
         {/* Entity types */}
         <div className="card p-5 animate-fade-in stagger-1">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest"
-              style={{ color: 'var(--text-tertiary)' }}>
+            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               Top Entity Types
             </h2>
-            <TrendingUp size={13} style={{ color: 'var(--text-tertiary)' }} />
+            <TrendingUp size={14} className="text-[var(--text-secondary)]" />
           </div>
 
           {loading ? (
@@ -384,7 +383,7 @@ export default function DashboardPage() {
           ) : stats?.topEntityTypes.length === 0 ? (
             <EmptyState label="No detections yet" />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {stats?.topEntityTypes.slice(0, 8).map((item, i) => {
                 const max = stats.topEntityTypes[0]?.count ?? 1
                 const pct = Math.round((item.count / max) * 100)
@@ -392,27 +391,25 @@ export default function DashboardPage() {
                   <div key={item.type} className="group">
                     <div className="flex justify-between items-center mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-semibold w-4 text-right shrink-0"
-                          style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[11px] font-bold w-4 text-right shrink-0 text-[var(--text-secondary)]">
                           {i + 1}
                         </span>
-                        <span className="text-xs font-mono font-medium"
+                        <span className="text-[12.5px] font-mono font-semibold"
                           style={{ color: 'var(--text-primary)' }}>
                           {item.type}
                         </span>
                       </div>
-                      <span className="text-xs tabular-nums font-medium"
-                        style={{ color: 'var(--text-secondary)' }}>
+                      <span className="text-[12px] tabular-nums font-bold text-[var(--text-secondary)]">
                         {item.count.toLocaleString()}
                       </span>
                     </div>
-                    <div className="h-1.5 rounded-full overflow-hidden"
+                    <div className="h-2 rounded-full overflow-hidden"
                       style={{ background: 'var(--bg-surface-3)' }}>
                       <div
                         className="h-full rounded-full transition-all duration-700 ease-out"
                         style={{
                           width: `${pct}%`,
-                          background: 'linear-gradient(90deg, var(--accent) 0%, #818cf8 100%)',
+                          background: 'linear-gradient(90deg, var(--accent) 0%, #6366f1 100%)',
                           animationDelay: `${i * 80}ms`,
                         }}
                       />
@@ -427,11 +424,10 @@ export default function DashboardPage() {
         {/* Top domains */}
         <div className="card p-5 animate-fade-in stagger-2">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest"
-              style={{ color: 'var(--text-tertiary)' }}>
+            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               Active Domains
             </h2>
-            <Activity size={13} style={{ color: 'var(--text-tertiary)' }} />
+            <Activity size={14} className="text-[var(--text-secondary)]" />
           </div>
 
           {loading ? (
@@ -451,14 +447,15 @@ export default function DashboardPage() {
                 <div key={item.domain}
                   className="flex justify-between items-center py-2.5 group hover:px-1 transition-all duration-150 rounded"
                   style={{ animationDelay: `${i * 50}ms` }}>
-                  <span className="text-xs font-mono truncate"
+                  <span className="text-[12.5px] font-mono font-semibold truncate"
                     style={{ color: 'var(--text-primary)' }}>
                     {item.domain}
                   </span>
-                  <span className="text-xs tabular-nums font-semibold ml-3 shrink-0 px-2 py-0.5 rounded-full"
+                  <span className="text-xs tabular-nums font-bold ml-3 shrink-0 px-2.5 py-0.5 rounded-full"
                     style={{
                       background: 'var(--accent-light)',
                       color: 'var(--accent-text)',
+                      border: '1px solid var(--accent-border)'
                     }}>
                     {item.count}
                   </span>
@@ -472,12 +469,11 @@ export default function DashboardPage() {
         <div className="card p-5 animate-fade-in stagger-3">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-[11px] font-semibold uppercase tracking-widest"
-                style={{ color: 'var(--text-tertiary)' }}>
+              <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 Events Over Time
               </h2>
               {!loading && stats && (stats.eventsByDay?.length ?? 0) > 0 && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="text-xs font-semibold mt-0.5 text-[var(--text-secondary)]">
                   {(stats.eventsByDay ?? []).reduce((s, d) => s + d.count, 0).toLocaleString()} total
                 </p>
               )}
@@ -506,7 +502,7 @@ export default function DashboardPage() {
                               borderColor: 'var(--border-2)',
                               boxShadow: 'var(--shadow-lg)'
                             }}>
-                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-tertiary)' }}>
+                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-secondary)' }}>
                               {new Date(payload[0].payload.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                             </p>
                             <p className="text-sm font-bold" style={{ color: 'var(--accent-text)' }}>
@@ -541,8 +537,7 @@ export default function DashboardPage() {
                 {([(stats?.eventsByDay ?? [])[0], (stats?.eventsByDay ?? [])[Math.floor((stats?.eventsByDay ?? []).length / 2)], (stats?.eventsByDay ?? [])[(stats?.eventsByDay ?? []).length - 1]])
                   .filter((d): d is { date: string; count: number } => d !== undefined)
                   .map((d, i) => (
-                    <span key={i} className="text-[9px] font-mono font-medium"
-                      style={{ color: 'var(--text-tertiary)' }}>
+                    <span key={i} className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">
                       {new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </span>
                   ))}
@@ -559,28 +554,31 @@ export default function DashboardPage() {
             label="Allow rate"
             value={stats.totalEvents > 0
               ? `${Math.round((stats.allowedCount / stats.totalEvents) * 100)}%`
-              : '—'
+              : '0%'
             }
-            sub="Events that passed through"
+            sub="Passed cleanly"
             accent="green"
+            icon={<ShieldCheck size={15} />}
           />
           <QuickStat
             label="Block rate"
             value={stats.totalEvents > 0
               ? `${Math.round((stats.blockedCount / stats.totalEvents) * 100)}%`
-              : '—'
+              : '0%'
             }
-            sub="Events stopped by policy"
+            sub="Stopped by policy"
             accent="red"
+            icon={<Ban size={15} />}
           />
           <QuickStat
             label="Mask rate"
             value={stats.totalEvents > 0
               ? `${Math.round((stats.maskedCount / stats.totalEvents) * 100)}%`
-              : '—'
+              : '0%'
             }
-            sub="Events with PII redacted"
+            sub="PII redacted"
             accent="indigo"
+            icon={<Sparkles size={15} />}
           />
         </div>
       )}
@@ -591,31 +589,105 @@ export default function DashboardPage() {
 /* ── Sub-components ──────────────────────────────────────────────────────── */
 
 function QuickStat({
-  label, value, sub, accent,
+  label, value, sub, accent, icon,
 }: {
   label: string
   value: string
   sub: string
   accent: 'green' | 'red' | 'indigo'
+  icon?: React.ReactNode
 }) {
-  const colors = {
-    green:  { bg: 'from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-transparent', border: 'border-emerald-100/80 dark:border-emerald-500/15', text: 'text-slate-900 dark:text-white', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.08)] hover:border-emerald-300 dark:hover:border-emerald-500/30' },
-    red:    { bg: 'from-red-50/50 to-white dark:from-red-950/20 dark:to-transparent', border: 'border-red-100/80 dark:border-red-500/15', text: 'text-slate-900 dark:text-white', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(239,68,68,0.08)] hover:border-red-300 dark:hover:border-red-500/30' },
-    indigo: { bg: 'from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-transparent', border: 'border-indigo-100/80 dark:border-indigo-500/15', text: 'text-slate-900 dark:text-white', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(79,70,229,0.08)] hover:border-indigo-300 dark:hover:border-indigo-500/30' },
+  const config = {
+    green: {
+      border: 'var(--success-border)',
+      bg: 'var(--success-light)',
+      accentColor: 'var(--success)',
+      bar: 'var(--success)',
+    },
+    red: {
+      border: 'var(--danger-border)',
+      bg: 'var(--danger-light)',
+      accentColor: 'var(--danger)',
+      bar: 'var(--danger)',
+    },
+    indigo: {
+      border: 'var(--accent-border)',
+      bg: 'var(--accent-light)',
+      accentColor: 'var(--accent)',
+      bar: 'var(--accent)',
+    },
   }[accent]
 
+  const numericValue = parseInt(value.replace('%', '')) || 0
+
   return (
-    <div className={`rounded-2xl p-4 border bg-gradient-to-br ${colors.bg} ${colors.border} ${colors.glow} transition-all duration-300 group`}>
-      <p className="text-[10.5px] font-bold uppercase tracking-wider mb-1.5"
-        style={{ color: 'var(--text-secondary)' }}>
-        {label}
-      </p>
-      <p className={`text-2xl font-bold tracking-tight leading-none group-hover:scale-[1.01] transition-transform duration-200 ${colors.text}`}>
-        {value}
-      </p>
-      <p className="text-xs mt-2 font-medium" style={{ color: 'var(--text-secondary)' }}>
-        {sub}
-      </p>
+    <div
+      className="card p-5 transition-all duration-200 flex flex-col justify-between gap-3 group hover:-translate-y-0.5"
+      style={{
+        background: 'var(--bg-surface)',
+        borderColor: 'var(--border)',
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          {icon && (
+            <div
+              className="size-7 rounded-lg flex items-center justify-center shrink-0 border"
+              style={{
+                background: config.bg,
+                borderColor: config.border,
+                color: config.accentColor,
+              }}
+            >
+              {icon}
+            </div>
+          )}
+          <span
+            className="text-[12px] font-bold uppercase tracking-wider"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {label}
+          </span>
+        </div>
+        <span
+          className="text-[10.5px] font-bold px-2 py-0.5 rounded-full border"
+          style={{
+            background: config.bg,
+            borderColor: config.border,
+            color: config.accentColor,
+          }}
+        >
+          Rate
+        </span>
+      </div>
+
+      <div className="flex items-baseline justify-between mt-1">
+        <div
+          className="text-[32px] font-extrabold tracking-tight leading-none"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {value}
+        </div>
+        <div
+          className="text-xs font-semibold"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {sub}
+        </div>
+      </div>
+
+      <div
+        className="h-2 w-full rounded-full overflow-hidden mt-1"
+        style={{ background: 'var(--bg-surface-3)' }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${Math.min(100, Math.max(0, numericValue))}%`,
+            background: config.bar,
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -624,7 +696,7 @@ function EmptyState({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-10 gap-2">
       <div className="text-2xl opacity-75">📭</div>
-      <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</p>
+      <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</p>
     </div>
   )
 }

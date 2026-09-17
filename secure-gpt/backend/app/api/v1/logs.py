@@ -13,9 +13,10 @@ from app.core.pagination import Pagination
 from app.core.ratelimit import LIMIT_LOGS, LIMIT_LOGS_STATS, limiter
 from app.core.response import paginated, success
 from app.models.audit_log import AuditLog
+from app.models.user import User
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, or_, select
 
 router = APIRouter(prefix="/event-logs", tags=["logs"])
 
@@ -58,7 +59,17 @@ async def list_logs(
     start_date: str | None = Query(None),
     end_date: str | None = Query(None),
 ):
-    query = select(AuditLog).where(AuditLog.user_id == current_user.id)
+    role_str = (current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)).lower()
+    if current_user.org_id and role_str in ("org_admin", "security_admin", "employer", "super_admin", "platform_super_admin"):
+        query = select(AuditLog).where(
+            or_(
+                AuditLog.org_id == current_user.org_id,
+                AuditLog.user_id == current_user.id,
+                AuditLog.user_id.in_(select(User.id).where(User.org_id == current_user.org_id)),
+            )
+        )
+    else:
+        query = select(AuditLog).where(AuditLog.user_id == current_user.id)
 
     if action:
         query = query.where(AuditLog.action_taken == action.upper())
@@ -99,27 +110,33 @@ async def list_logs(
 async def get_log_stats(request: Request, db: DBSession, current_user: CurrentUser):
     """
     Return aggregated detection stats for dashboard KPI cards.
-    FIX: Uses DB-side GROUP BY aggregation instead of loading all rows into memory.
-    entity_types and severities are JSON columns — those still need Python-side
-    aggregation, but we cap the row fetch to last 10k events for safety.
     """
+    if current_user.org_id:
+        user_filter = or_(
+            AuditLog.org_id == current_user.org_id,
+            AuditLog.user_id == current_user.id,
+            AuditLog.user_id.in_(select(User.id).where(User.org_id == current_user.org_id)),
+        )
+    else:
+        user_filter = (AuditLog.user_id == current_user.id)
+
     # DB-side action aggregation
     action_rows = await db.execute(
         select(AuditLog.action_taken, func.count().label("cnt"))
-        .where(AuditLog.user_id == current_user.id)
+        .where(user_filter)
         .group_by(AuditLog.action_taken)
     )
     action_counts = {row.action_taken.value: row.cnt for row in action_rows}
 
     total_result = await db.execute(
-        select(func.count()).where(AuditLog.user_id == current_user.id)
+        select(func.count()).where(user_filter)
     )
     total = total_result.scalar_one()
 
     # DB-side platform aggregation
     platform_rows = await db.execute(
         select(AuditLog.llm_platform, func.count().label("cnt"))
-        .where(AuditLog.user_id == current_user.id)
+        .where(user_filter)
         .group_by(AuditLog.llm_platform)
         .order_by(desc("cnt"))
         .limit(10)
@@ -129,7 +146,7 @@ async def get_log_stats(request: Request, db: DBSession, current_user: CurrentUs
     # DB-side domain aggregation
     domain_rows = await db.execute(
         select(AuditLog.domain, func.count().label("cnt"))
-        .where(AuditLog.user_id == current_user.id, AuditLog.domain.isnot(None))
+        .where(user_filter, AuditLog.domain.isnot(None))
         .group_by(AuditLog.domain)
         .order_by(desc("cnt"))
         .limit(10)
@@ -137,10 +154,9 @@ async def get_log_stats(request: Request, db: DBSession, current_user: CurrentUs
     top_domains = [{"domain": r.domain, "count": r.cnt} for r in domain_rows]
 
     # entity_types is a JSON array column — needs Python-side unpack.
-    # Cap at 10k rows to prevent OOM on large datasets.
     entity_result = await db.execute(
         select(AuditLog.entity_types)
-        .where(AuditLog.user_id == current_user.id)
+        .where(user_filter)
         .limit(10_000)
     )
     entity_counts: dict[str, int] = {}
@@ -159,6 +175,7 @@ async def get_log_stats(request: Request, db: DBSession, current_user: CurrentUs
             "blockedCount": action_counts.get("BLOCK", 0),
             "maskedCount": action_counts.get("MASK", 0),
             "warnedCount": action_counts.get("WARN_ALLOW", 0),
+            "cancelledCount": action_counts.get("WARN_ALLOW", 0),
             "allowedCount": action_counts.get("ALLOW", 0),
             "topEntityTypes": top_entity_types,
             "topPlatforms": top_platforms,
@@ -184,7 +201,6 @@ async def get_dashboard_stats(
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     since = today - timedelta(days=days - 1)
 
-    from app.models.user import User, UserRole
     from app.models.org import Organisation
     from app.models.department import Department
     from app.models.rbac import UserRoleAssignment, Role
@@ -216,7 +232,11 @@ async def get_dashboard_stats(
     elif current_user.org_id:
         role_scope = "organization"
         where = [
-            AuditLog.org_id == current_user.org_id,
+            or_(
+                AuditLog.org_id == current_user.org_id,
+                AuditLog.user_id == current_user.id,
+                AuditLog.user_id.in_(select(User.id).where(User.org_id == current_user.org_id)),
+            ),
             AuditLog.timestamp >= since,
         ]
     else:
@@ -399,6 +419,7 @@ async def get_dashboard_stats(
             "maskedCount": action_counts.get("MASK", 0),
             "allowedCount": action_counts.get("ALLOW", 0),
             "blockedCount": action_counts.get("BLOCK", 0),
+            "warnedCount": action_counts.get("WARN_ALLOW", 0),
             "cancelledCount": action_counts.get("WARN_ALLOW", 0),
             "topEntityTypes": top_entity_types,
             "topDomains": top_domains,

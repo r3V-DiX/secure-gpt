@@ -73,8 +73,12 @@ async def ingest_log_batch(
     inserted = 0
     from app.models.user import User
     user_email = None
+    org_id = None
     if user_id:
-        user_email = (await db.execute(select(User.email).where(User.id == user_id))).scalar()
+        user_res = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+        if user_res:
+            user_email = user_res.email
+            org_id = user_res.org_id
 
     for event in events:
         event_id = event.get("eventId") or event.get("event_id")
@@ -101,6 +105,7 @@ async def ingest_log_batch(
             event_id=event_id,
             user_id=user_id,
             user_email=user_email,
+            org_id=org_id,
             action_taken=_parse_action(event.get("actionTaken") or event.get("action_taken", "ALLOW")),
             category_triggered=event.get("categoryTriggered") or event.get("category_triggered", "PII"),
             detection_type=event.get("detectionType") or event.get("detection_type", "unknown"),

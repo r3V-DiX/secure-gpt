@@ -175,6 +175,12 @@ export const stateStorage = {
     }
   },
 
+  async setSessionStats(stats: { blockCount: number; maskCount: number; warnCount: number }): Promise<void> {
+    await localStorageExt.set('sessionBlockCount', stats.blockCount)
+    await localStorageExt.set('sessionMaskCount', stats.maskCount)
+    await localStorageExt.set('sessionWarnCount', stats.warnCount)
+  },
+
   async resetSessionStats(): Promise<void> {
     await localStorageExt.set('sessionBlockCount', 0)
     await localStorageExt.set('sessionMaskCount', 0)

@@ -87,6 +87,7 @@ export async function signOut(): Promise<void> {
     // Even if backend call fails, clear local state
   } finally {
     await authStorage.clearAuth()
+    await stateStorage.resetSessionStats()
     // Broadcast auth lost to popup and all active tabs
     chrome.runtime.sendMessage({ type: 'AUTH_LOST' }).catch(() => {})
     try {

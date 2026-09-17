@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/features/auth/hooks/use-auth'
 import { stateStorage, policyStorage, localStorageExt } from '@/lib/storage/storage'
 import { DASHBOARD_URL } from '@/config/api.config'
+import apiClient from '@/lib/api/client'
 
 export function Popup() {
   const { user, loading, isLoggedIn, login, loginWithEmail, logout, reload } = useAuth()
@@ -15,15 +16,33 @@ export function Popup() {
 
   const loadState = useCallback(async () => {
     const active = await stateStorage.isActive()
-    const s = await stateStorage.getSessionStats()
+    let s = await stateStorage.getSessionStats()
     setIsActive(active)
+
+    if (isLoggedIn) {
+      try {
+        const res = await apiClient.get<{ success: boolean; data: { blockedCount?: number; maskedCount?: number; warnedCount?: number; cancelledCount?: number } }>('/api/v1/event-logs/stats')
+        if (res.data?.data) {
+          const d = res.data.data
+          s = {
+            blockCount: d.blockedCount ?? s.blockCount,
+            maskCount: d.maskedCount ?? s.maskCount,
+            warnCount: d.warnedCount ?? d.cancelledCount ?? s.warnCount,
+          }
+          await stateStorage.setSessionStats(s)
+        }
+      } catch {
+        // Fallback to local session storage if offline or during sync
+      }
+    }
+
     setStats(s as typeof stats)
 
     const version = await policyStorage.getPolicyVersion()
     const syncedAt = await localStorageExt.get<string>('policyLastSyncedAt')
     setPolicyVersion(version)
     setLastSyncedAt(syncedAt)
-  }, [])
+  }, [isLoggedIn])
 
   const handleSync = useCallback(async () => {
     setIsSyncing(true)

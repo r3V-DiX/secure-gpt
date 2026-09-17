@@ -82,6 +82,7 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
 
   const tokens = accentTokens[accent]
   const hasTrend = trend !== undefined
+  const displayValue = (value !== undefined && value !== null) ? (typeof value === 'number' ? value.toLocaleString() : value) : '0'
 
   const content = (
     <div className={`card p-5 flex flex-col gap-3 bg-gradient-to-br ${tokens.bg} border ${tokens.border} ${tokens.glow} transition-all duration-300 group ${href ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}>
@@ -98,8 +99,11 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
       </div>
 
       {/* Value */}
-      <div className={`text-[32px] font-extrabold tracking-tight leading-none transition-transform duration-200 group-hover:scale-[1.01] ${tokens.value}`}>
-        {typeof value === 'number' ? value.toLocaleString() : value}
+      <div
+        className="text-[32px] font-extrabold tracking-tight leading-none transition-transform duration-200 group-hover:scale-[1.01]"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        {displayValue}
       </div>
 
       {/* Sub row */}
