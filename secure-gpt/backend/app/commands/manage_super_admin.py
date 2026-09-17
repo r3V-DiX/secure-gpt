@@ -37,7 +37,7 @@ async def manage_admin(email: str, action: str):
                     full_name=email.split("@")[0].replace(".", " ").title(),
                     role=UserRole.SUPER_ADMIN,
                     is_active=True,
-                    is_verified=True,
+                    privacy_accepted=True,
                 )
                 session.add(user)
                 await session.flush()
