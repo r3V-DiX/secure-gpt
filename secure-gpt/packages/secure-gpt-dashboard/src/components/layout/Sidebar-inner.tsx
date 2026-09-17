@@ -162,7 +162,7 @@ export function SidebarInner({
                     DLP
                   </span>
                 </div>
-                <span className="text-[11px] text-[var(--text-muted)] mt-0.5 truncate leading-none">
+                <span className="text-[11px] font-semibold text-[var(--sidebar-subtext)] mt-0.5 truncate leading-none">
                   Data Security Engine
                 </span>
               </div>
@@ -375,14 +375,14 @@ export function SidebarInner({
           <button
             type="button"
             onClick={() => setVersionModalOpen(true)}
-            className="w-full px-2 pt-1.5 pb-1 flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono border-t border-[var(--sidebar-border)]/50 mt-1 hover:bg-[var(--sidebar-hover-bg)] rounded transition-colors group cursor-pointer"
+            className="w-full px-2 pt-1.5 pb-1 flex items-center justify-between text-[10.5px] text-[var(--sidebar-subtext)] font-mono font-medium border-t border-[var(--sidebar-border)]/50 mt-1 hover:bg-[var(--sidebar-hover-bg)] rounded transition-colors group cursor-pointer"
             title="Click to check live system & component versions"
           >
             <span className="flex items-center gap-1 group-hover:text-[var(--sidebar-text-active)]">
               <span className="size-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
               v1.1.3
             </span>
-            <span className="opacity-60 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity">
+            <span className="opacity-75 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity font-semibold">
               Status ↗
             </span>
           </button>

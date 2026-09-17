@@ -47,9 +47,9 @@
 
   /* ── High Contrast Typography ── */
   --text-primary:   hsl(var(--brand-h), 55%, 11%);
-  --text-secondary: hsl(var(--brand-h), 32%, 36%);
-  --text-tertiary:  hsl(var(--brand-h), 22%, 45%);
-  --text-muted:     #94a3b8;
+  --text-secondary: hsl(var(--brand-h), 35%, 26%);
+  --text-tertiary:  hsl(var(--brand-h), 28%, 36%);
+  --text-muted:     #475569;
 
   /* ── Nav & Shell ── */
   --nav-bg:         hsla(0, 0%, 100%, 0.88);
@@ -60,13 +60,13 @@
   /* ── Sidebar (Clean Light Slate Theme in Light Mode) ── */
   --sidebar-bg:           #ffffff;
   --sidebar-border:       #e2e8f0;
-  --sidebar-text:         #475569;
+  --sidebar-text:         #334155;
   --sidebar-text-active:  #0f172a;
   --sidebar-active-bg:    #eff6ff;
   --sidebar-hover-bg:     #f8fafc;
   --sidebar-accent:       #2563eb;
-  --sidebar-group-label:  #64748b;
-  --sidebar-subtext:      #64748b;
+  --sidebar-group-label:  #475569;
+  --sidebar-subtext:      #475569;
 
   /* ── On-dark utilities (for dark footer / CTA / stat strip) ── */
   --on-dark-full:   #ffffff;
@@ -139,9 +139,9 @@
 
   /* ── High Contrast Typography ── */
   --text-primary:   #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-tertiary:  #94a3b8;
-  --text-muted:     #64748b;
+  --text-secondary: #e2e8f0;
+  --text-tertiary:  #cbd5e1;
+  --text-muted:     #94a3b8;
 
   /* ── Nav & Shell ── */
   --nav-bg:         rgba(13, 19, 34, 0.92);
@@ -149,13 +149,13 @@
   /* ── Sidebar (Dark Mode) ── */
   --sidebar-bg:           #080c18;
   --sidebar-border:       rgba(255, 255, 255, 0.08);
-  --sidebar-text:         #cbd5e1;
+  --sidebar-text:         #e2e8f0;
   --sidebar-text-active:  #ffffff;
   --sidebar-active-bg:    rgba(56, 189, 248, 0.16);
   --sidebar-hover-bg:     rgba(255, 255, 255, 0.06);
   --sidebar-accent:       #38bdf8;
-  --sidebar-group-label:  #94a3b8;
-  --sidebar-subtext:      #94a3b8;
+  --sidebar-group-label:  #cbd5e1;
+  --sidebar-subtext:      #cbd5e1;
 
   /* ── Semantic Status Colors ── */
   --success:        #34d399;

@@ -18,7 +18,7 @@ interface StatCardProps {
 const accentTokens: Record<Accent, { icon: string; value: string; bg: string; border: string; glow: string; iconBg: string }> = {
   indigo: {
     icon: 'text-indigo-600 dark:text-indigo-400',
-    value: 'text-indigo-700 dark:text-indigo-300',
+    value: 'text-slate-900 dark:text-white',
     bg: 'from-indigo-50/70 to-white dark:from-indigo-950/30 dark:to-transparent',
     border: 'border-indigo-200/80 dark:border-indigo-500/20',
     glow: 'hover:shadow-[0_8px_30px_-4px_rgba(79,70,229,0.12)] hover:border-indigo-400 dark:hover:border-indigo-500/40',
@@ -26,7 +26,7 @@ const accentTokens: Record<Accent, { icon: string; value: string; bg: string; bo
   },
   blue: {
     icon: 'text-sky-600 dark:text-sky-400',
-    value: 'text-sky-700 dark:text-sky-300',
+    value: 'text-slate-900 dark:text-white',
     bg: 'from-sky-50/70 to-white dark:from-sky-950/30 dark:to-transparent',
     border: 'border-sky-200/80 dark:border-sky-500/20',
     glow: 'hover:shadow-[0_8px_30px_-4px_rgba(14,165,233,0.12)] hover:border-sky-400 dark:hover:border-sky-500/40',
@@ -34,7 +34,7 @@ const accentTokens: Record<Accent, { icon: string; value: string; bg: string; bo
   },
   green: {
     icon: 'text-emerald-600 dark:text-emerald-400',
-    value: 'text-emerald-700 dark:text-emerald-300',
+    value: 'text-slate-900 dark:text-white',
     bg: 'from-emerald-50/70 to-white dark:from-emerald-950/30 dark:to-transparent',
     border: 'border-emerald-200/80 dark:border-emerald-500/20',
     glow: 'hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.12)] hover:border-emerald-400 dark:hover:border-emerald-500/40',
@@ -42,7 +42,7 @@ const accentTokens: Record<Accent, { icon: string; value: string; bg: string; bo
   },
   amber: {
     icon: 'text-amber-600 dark:text-amber-400',
-    value: 'text-amber-700 dark:text-amber-300',
+    value: 'text-slate-900 dark:text-white',
     bg: 'from-amber-50/70 to-white dark:from-amber-950/30 dark:to-transparent',
     border: 'border-amber-200/80 dark:border-amber-500/20',
     glow: 'hover:shadow-[0_8px_30px_-4px_rgba(245,158,11,0.12)] hover:border-amber-400 dark:hover:border-amber-500/40',
@@ -50,7 +50,7 @@ const accentTokens: Record<Accent, { icon: string; value: string; bg: string; bo
   },
   red: {
     icon: 'text-rose-600 dark:text-rose-400',
-    value: 'text-rose-700 dark:text-rose-300',
+    value: 'text-slate-900 dark:text-white',
     bg: 'from-rose-50/70 to-white dark:from-rose-950/30 dark:to-transparent',
     border: 'border-rose-200/80 dark:border-rose-500/20',
     glow: 'hover:shadow-[0_8px_30px_-4px_rgba(239,68,68,0.12)] hover:border-rose-400 dark:hover:border-rose-500/40',
@@ -58,7 +58,7 @@ const accentTokens: Record<Accent, { icon: string; value: string; bg: string; bo
   },
   purple: {
     icon: 'text-purple-600 dark:text-purple-400',
-    value: 'text-purple-700 dark:text-purple-300',
+    value: 'text-slate-900 dark:text-white',
     bg: 'from-purple-50/70 to-white dark:from-purple-950/30 dark:to-transparent',
     border: 'border-purple-200/80 dark:border-purple-500/20',
     glow: 'hover:shadow-[0_8px_30px_-4px_rgba(139,92,246,0.12)] hover:border-purple-400 dark:hover:border-purple-500/40',
@@ -105,7 +105,7 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
       {/* Sub row */}
       <div className="flex items-center justify-between gap-2">
         {sub && (
-          <span className="text-[12.5px] font-medium text-[var(--text-tertiary)]">
+          <span className="text-[12.5px] font-semibold text-[var(--text-secondary)]">
             {sub}
           </span>
         )}

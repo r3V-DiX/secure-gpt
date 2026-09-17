@@ -599,21 +599,21 @@ function QuickStat({
   accent: 'green' | 'red' | 'indigo'
 }) {
   const colors = {
-    green:  { bg: 'from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-transparent', border: 'border-emerald-100/80 dark:border-emerald-500/15', text: 'text-emerald-600 dark:text-emerald-400', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.08)] hover:border-emerald-300 dark:hover:border-emerald-500/30' },
-    red:    { bg: 'from-red-50/50 to-white dark:from-red-950/20 dark:to-transparent', border: 'border-red-100/80 dark:border-red-500/15', text: 'text-red-600 dark:text-red-400', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(239,68,68,0.08)] hover:border-red-300 dark:hover:border-red-500/30' },
-    indigo: { bg: 'from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-transparent', border: 'border-indigo-100/80 dark:border-indigo-500/15', text: 'text-indigo-600 dark:text-indigo-400', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(79,70,229,0.08)] hover:border-indigo-300 dark:hover:border-indigo-500/30' },
+    green:  { bg: 'from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-transparent', border: 'border-emerald-100/80 dark:border-emerald-500/15', text: 'text-slate-900 dark:text-white', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.08)] hover:border-emerald-300 dark:hover:border-emerald-500/30' },
+    red:    { bg: 'from-red-50/50 to-white dark:from-red-950/20 dark:to-transparent', border: 'border-red-100/80 dark:border-red-500/15', text: 'text-slate-900 dark:text-white', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(239,68,68,0.08)] hover:border-red-300 dark:hover:border-red-500/30' },
+    indigo: { bg: 'from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-transparent', border: 'border-indigo-100/80 dark:border-indigo-500/15', text: 'text-slate-900 dark:text-white', glow: 'hover:shadow-[0_8px_30px_-4px_rgba(79,70,229,0.08)] hover:border-indigo-300 dark:hover:border-indigo-500/30' },
   }[accent]
 
   return (
     <div className={`rounded-2xl p-4 border bg-gradient-to-br ${colors.bg} ${colors.border} ${colors.glow} transition-all duration-300 group`}>
-      <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
-        style={{ color: 'var(--text-tertiary)' }}>
+      <p className="text-[10.5px] font-bold uppercase tracking-wider mb-1.5"
+        style={{ color: 'var(--text-secondary)' }}>
         {label}
       </p>
       <p className={`text-2xl font-bold tracking-tight leading-none group-hover:scale-[1.01] transition-transform duration-200 ${colors.text}`}>
         {value}
       </p>
-      <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+      <p className="text-xs mt-2 font-medium" style={{ color: 'var(--text-secondary)' }}>
         {sub}
       </p>
     </div>
@@ -623,8 +623,8 @@ function QuickStat({
 function EmptyState({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-10 gap-2">
-      <div className="text-2xl opacity-30">📭</div>
-      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
+      <div className="text-2xl opacity-75">📭</div>
+      <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</p>
     </div>
   )
 }
