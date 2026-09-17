@@ -6,19 +6,19 @@ on:
     branches:
       - main
     paths:
-      - 'secure-gpt-admin/packages/secure-gpt-dashboard/**'
-      - 'secure-gpt-admin/packages/shared/**'
-      - 'secure-gpt-admin/package*.json'
-      - 'secure-gpt-admin/tsconfig.base.json'
+      - 'secure-gpt/packages/secure-gpt-dashboard/**'
+      - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt/package*.json'
+      - 'secure-gpt/tsconfig.base.json'
       - '.github/workflows/admin-dashboard-ci.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'secure-gpt-admin/packages/secure-gpt-dashboard/**'
-      - 'secure-gpt-admin/packages/shared/**'
-      - 'secure-gpt-admin/package*.json'
-      - 'secure-gpt-admin/tsconfig.base.json'
+      - 'secure-gpt/packages/secure-gpt-dashboard/**'
+      - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt/package*.json'
+      - 'secure-gpt/tsconfig.base.json'
       - '.github/workflows/admin-dashboard-ci.yml'
 
 jobs:
@@ -31,8 +31,8 @@ jobs:
         include:
           - name: Admin Frontend
             image: securegpt-admin-frontend
-            context: ./secure-gpt-admin
-            dockerfile: ./secure-gpt-admin/packages/secure-gpt-dashboard/Dockerfile
+            context: ./secure-gpt
+            dockerfile: ./secure-gpt/packages/secure-gpt-dashboard/Dockerfile
             backend_url_secret: PROD_ADMIN_NEXT_PUBLIC_BACKEND_URL
             api_url_secret: PROD_ADMIN_NEXT_PUBLIC_API_URL
 
@@ -91,8 +91,8 @@ jobs:
           build-args: |
             NEXT_PUBLIC_BACKEND_URL=${{ secrets[matrix.backend_url_secret] }}
             NEXT_PUBLIC_API_URL=${{ secrets[matrix.api_url_secret] }}
+            NEXT_PUBLIC_APP_MODE=admin
             NODE_ENV=production
-          no-cache: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

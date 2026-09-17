@@ -6,14 +6,16 @@ on:
     branches:
       - main
     paths:
-      - 'secure-gpt-admin/backend/**'
-      - 'secure-gpt-admin/packages/shared/**'
+      - 'secure-gpt/backend/**'
+      - 'secure-gpt/packages/shared/**'
+      - '.github/workflows/admin-backend-ci.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'secure-gpt-admin/backend/**'
-      - 'secure-gpt-admin/packages/shared/**'
+      - 'secure-gpt/backend/**'
+      - 'secure-gpt/packages/shared/**'
+      - '.github/workflows/admin-backend-ci.yml'
 
 jobs:
   build-and-push:
@@ -25,8 +27,8 @@ jobs:
         include:
           - name: Admin Backend
             image: securegpt-admin-backend
-            context: ./secure-gpt-admin/backend
-            dockerfile: ./secure-gpt-admin/backend/Dockerfile
+            context: ./secure-gpt/backend
+            dockerfile: ./secure-gpt/backend/Dockerfile
 
     permissions:
       contents: read
