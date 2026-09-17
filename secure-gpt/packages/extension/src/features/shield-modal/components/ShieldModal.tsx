@@ -50,13 +50,53 @@ export function ShieldModal({
   useEffect(() => {
     const el = modalRef.current
     if (!el) return
-    const focusable = el.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-    focusable[0]?.focus()
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
+
+    // Find all focusable elements within the modal
+    const getFocusable = () =>
+      Array.from(
+        el.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      )
+
+    const focusable = getFocusable()
+    if (focusable.length > 0) {
+      focusable[0].focus()
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onCancel()
+        return
+      }
+
+      if (e.key === 'Tab') {
+        const currentFocusable = getFocusable()
+        if (currentFocusable.length === 0) return
+
+        const firstElement = currentFocusable[0]
+        const lastElement = currentFocusable[currentFocusable.length - 1]
+
+        if (e.shiftKey) {
+          // Shift + Tab
+          if (document.activeElement === firstElement || !el.contains(document.activeElement)) {
+            e.preventDefault()
+            lastElement.focus()
+          }
+        } else {
+          // Tab
+          if (document.activeElement === lastElement || !el.contains(document.activeElement)) {
+            e.preventDefault()
+            firstElement.focus()
+          }
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown, true)
+    return () => document.removeEventListener('keydown', handleKeyDown, true)
   }, [onCancel])
 
   const { diff } = previewMasking(originalText, result.entities)
@@ -87,7 +127,7 @@ export function ShieldModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="shield-modal-title"
-        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-slide-up"
       >
         <div className="modal-card" onClick={(e) => e.stopPropagation()}>
 
@@ -102,7 +142,7 @@ export function ShieldModal({
                 {totalItems} {totalItems === 1 ? 'item' : 'items'} found · {readOnly ? 'monitored by policy' : 'review before sending'}
               </p>
             </div>
-            <button className="close-btn" onClick={onCancel} aria-label="Close">✕</button>
+            <button className="close-btn" onClick={onCancel} aria-label="Close modal">✕</button>
           </div>
 
           {/* ── Scrollable body ── */}

@@ -1,70 +1,11 @@
-// ─────────────────────────────────────────────
-// DOM Utils
-// Platform-specific input selectors + image paste helpers
-// ─────────────────────────────────────────────
+// packages/extension/src/content/dom-utils.ts
+// DOM element discovery, selector resolution, and text extraction
 
-// Each LLM platform uses different DOM structures
-// These selectors target the main text input area
+import { INPUT_SELECTORS } from './platform-selectors.constants'
+export * from './platform-selectors.constants'
+export * from './dom-dispatcher'
 
-const INPUT_SELECTORS = [
-  // ChatGPT
-  '#prompt-textarea',
-  'div[contenteditable="true"][data-id="root"]',
-  'div[contenteditable="true"].ProseMirror',
-  'div[contenteditable="true"]',
-  // Gemini
-  'div.ql-editor[contenteditable="true"]',
-  'rich-textarea div[contenteditable="true"]',
-  // Claude
-  'div[contenteditable="true"].ProseMirror',
-  // Copilot
-  'textarea#searchbox',
-  'div[contenteditable="true"]#searchbox',
-  // Perplexity
-  'textarea[placeholder*="Ask"]',
-  'textarea[placeholder*="anything"]',
-  // Meta AI
-  'div[contenteditable="true"][role="textbox"]',
-  // Mistral Le Chat
-  'textarea[placeholder*="Ask"]',
-  'textarea[data-testid="chat-input"]',
-  // Poe
-  'textarea[placeholder*="Talk to"]',
-  'div[class*="ChatMessageInputContainer"] textarea',
-  // DeepSeek
-  'textarea#chat-input',
-  'textarea[placeholder*="DeepSeek"]',
-  'div[contenteditable="true"]#chat-input',
-  // v0.dev
-  'textarea[placeholder*="Ask v0"]',
-  'textarea[placeholder*="What can I help you build"]',
-  // Replit
-  'div[class*="replit-ui"] textarea',
-  'textarea[placeholder*="Reply to agent"]',
-  // HuggingChat
-  'textarea[placeholder*="Ask anything"]',
-  'textarea[enterkeyhint="send"]',
-  // Phind
-  'textarea[placeholder*="Ask Phind"]',
-  'textarea[aria-label="Search"]',
-  // Notion AI
-  'div[placeholder*="Ask AI"]',
-  'div[class*="notion-ai-prompt-input"]',
-  // Jasper AI
-  'textarea[placeholder*="Ask Jasper"]',
-  'div[contenteditable="true"][data-slate-editor="true"]',
-  // Copy.ai
-  'textarea[placeholder*="Enter prompt"]',
-  'textarea[data-testid="chat-textarea"]',
-  // Cursor Web
-  'textarea[placeholder*="Plan, code"]',
-  // Generic fallback
-  'textarea[placeholder]',
-  'div[contenteditable="true"][role="textbox"]',
-  'div[contenteditable="true"]',
-]
-
-const BUTTON_SELECTORS = [
+export const BUTTON_SELECTORS = [
   'button[data-testid$="send-button"]',
   'button[aria-label*="Send"]',
   'button[aria-label*="Submit"]',
@@ -76,10 +17,8 @@ const BUTTON_SELECTORS = [
   'button[data-testid*="composer-button"]',
   'button[aria-label*="Generate"]',
   'button[data-testid="send-button"]',
-  // Perplexity-specific
   'button:has(svg path[d*="M13.22"])',
   'button.bg-accentMain',
-  // DeepSeek / Mistral
   'div[role="button"][aria-label*="Send"]',
 ]
 
@@ -99,27 +38,27 @@ export function findSendButton(): HTMLButtonElement | null {
  * walk up to find the actual contenteditable/textarea root.
  */
 export function findEditableRoot(target: EventTarget | null): HTMLElement | null {
-  if (!target || !(target instanceof Element)) return null;
+  if (!target || !(target instanceof Element)) return null
 
-  if (target.tagName === 'TEXTAREA') return target as HTMLElement;
+  if (target.tagName === 'TEXTAREA') return target as HTMLElement
 
   const ce = target.closest<HTMLElement>(
     '[contenteditable="true"],[contenteditable="plaintext-only"],[contenteditable=""],[role="textbox"],[role="combobox"]'
-  );
-  if (ce) return ce;
+  )
+  if (ce) return ce
 
-  return null;
+  return null
 }
 
 /**
- * Specifically look for the main chat input editor on LLM sites using known selectors.
+ * Look for the main chat input editor on LLM sites using known selectors.
  * Fallback for when we don't have an event target.
  */
 export function findMainEditor(): HTMLElement | null {
   // 1. Try focused element first
-  const active = document.activeElement;
-  const root = findEditableRoot(active);
-  if (root && isVisible(root)) return root;
+  const active = document.activeElement
+  const root = findEditableRoot(active)
+  if (root && isVisible(root)) return root
 
   // 2. Try known selectors
   for (const selector of INPUT_SELECTORS) {
@@ -127,7 +66,7 @@ export function findMainEditor(): HTMLElement | null {
     if (el && isVisible(el)) return el
   }
 
-  return null;
+  return null
 }
 
 export function extractText(el: HTMLElement): string {
@@ -139,8 +78,7 @@ export function extractText(el: HTMLElement): string {
   return (el.innerText ?? el.textContent ?? '').replace(/\n$/, '').trim()
 }
 
-
-function isVisible(el: HTMLElement): boolean {
+export function isVisible(el: HTMLElement): boolean {
   const rect = el.getBoundingClientRect()
   const style = window.getComputedStyle(el)
 
@@ -157,7 +95,6 @@ function isVisible(el: HTMLElement): boolean {
 export function getInputContainer(): HTMLElement | null {
   const input = findMainEditor()
   if (!input) return null
-  // Walk up to find a suitable container
   return (
     input.closest('form') ??
     input.parentElement?.parentElement ??
@@ -185,154 +122,4 @@ export function injectBanner(banner: HTMLElement): void {
 
 export function removeAllBanners(): void {
   document.querySelectorAll('[data-securegpt-banner]').forEach((el) => el.remove())
-}
-
-// ── Image paste re-injection ──────────────────
-
-/**
- * Shared bypass set — elements added here will be ignored by all
- * interceptors in the next tick, preventing infinite loops when
- * the extension re-dispatches a masked asset.
- */
-export const bypassSet = new WeakSet<Element>()
-
-/**
- * Helper: convert a data URL to a Blob.
- * Tries fetch() first (fastest); falls back to manual base64 decoding
- * if Content Security Policy blocks fetch of a data URL.
- */
-async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
-  try {
-    const res = await fetch(dataUrl)
-    return await res.blob()
-  } catch {
-    const [header, base64] = dataUrl.split(',')
-    const mimeType = header?.split(':')?.[1]?.split(';')?.[0] ?? 'image/png'
-    const bytes = atob(base64 ?? '')
-    const arr = new Uint8Array(bytes.length)
-    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i)
-    return new Blob([arr], { type: mimeType })
-  }
-}
-
-/**
- * Re-inject a (possibly redacted) image into the LLM chat box by dispatching
- * a synthetic ClipboardEvent with the image File attached.
- */
-export async function dispatchImagePaste(el: HTMLElement, dataUrl: string): Promise<void> {
-  bypassSet.add(el)
-  el.focus()
-  const blob = await dataUrlToBlob(dataUrl)
-  const file = new File([blob], 'masked_image.png', { type: blob.type })
-  const dt = new DataTransfer()
-  dt.items.add(file)
-  el.dispatchEvent(
-    new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true, composed: true })
-  )
-  setTimeout(() => bypassSet.delete(el), 50)
-}
-
-/**
- * Re-inject a redacted non-image file (e.g. a PDF) the same way.
- */
-export async function dispatchFilePaste(
-  el: HTMLElement,
-  dataUrl: string,
-  fileName: string,
-  mimeType: string
-): Promise<void> {
-  bypassSet.add(el)
-  el.focus()
-  const blob = await dataUrlToBlob(dataUrl)
-  const file = new File([blob], fileName, { type: mimeType })
-  const dt = new DataTransfer()
-  dt.items.add(file)
-  el.dispatchEvent(
-    new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true, composed: true })
-  )
-  setTimeout(() => bypassSet.delete(el), 50)
-}
-
-/**
- * Attempts to clear existing image/file attachments from the site's UI.
- * This is a safeguard to remove the unredacted original upload before we inject the masked one.
- */
-export async function clearAttachments() {
-  const selectors = [
-    'button[aria-label*="Remove"]',
-    'button[aria-label*="Cancel"]',
-    'button[aria-label*="Clear"]',
-    '.X-button', 
-    '[class*="remove-button"]',
-    '[class*="CancelButton"]',
-    // Targeted: small absolute buttons with SVGs (common for thumbnails)
-    'button.absolute:has(svg):not([aria-label*="Send"]):not([aria-label*="Submit"])', 
-    'button:has(svg[class*="icon-sm"])', 
-  ];
-    
-  let cleared = 0;
-  for (const sel of selectors) {
-    try {
-      const btns = document.querySelectorAll<HTMLElement>(sel);
-      for (const btn of btns) {
-        // Guard: skip buttons that look like the Send/Submit button
-        const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
-        const testid = (btn.getAttribute('data-testid') || '').toLowerCase();
-        if (aria.includes('send') || aria.includes('submit') || testid.includes('send') || testid.includes('composer-button')) {
-          continue;
-        }
-
-        if (btn.offsetParent !== null) { 
-          btn.click();
-          cleared++;
-        }
-      }
-    } catch (_e) {
-      // ignore
-    }
-  }
-    
-  // Level 2 Heuristics: Search every button or role="button"
-  // Bug 11 fix: removed '.group' from the container selector. The Tailwind '.group'
-  // class is used everywhere on LLM platforms (message rows, reaction containers,
-  // sidebar items) — matching it was accidentally clicking copy/edit/reaction buttons
-  // near any image in the page, not just attachment remove buttons.
-  if (cleared === 0) {
-    const clickables = document.querySelectorAll('button, [role="button"]');
-    for (const btn of Array.from(clickables) as HTMLElement[]) {
-      const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
-      const testid = (btn.getAttribute('data-testid') || '').toLowerCase();
-      if (aria.includes('send') || aria.includes('submit') || testid.includes('send') || testid.includes('composer-button')) {
-        continue;
-      }
-
-      const rect = btn.getBoundingClientRect();
-      if (rect.width > 0 && rect.width < 60 && rect.height > 0 && rect.height < 60 && btn.offsetParent !== null) {
-
-        // Only look inside semantically meaningful attachment containers
-        const container = btn.closest('[class*="attachment"], [class*="file"], [data-testid*="attachment"], li');
-        if (container) {
-          const hasImage = !!container.querySelector('img, canvas, video, [style*="background-image"]');
-          if (hasImage) {
-            btn.click();
-            cleared++;
-            continue;
-          }
-        }
-
-        const previousSib = btn.previousElementSibling;
-        const nextSib = btn.nextElementSibling;
-        if ((previousSib && (previousSib.tagName === 'IMG' || previousSib.tagName === 'CANVAS')) ||
-            (nextSib && (nextSib.tagName === 'IMG' || nextSib.tagName === 'CANVAS'))) {
-          btn.click();
-          cleared++;
-        }
-      }
-    }
-  }
-
-  console.info(`[SecureGPT] clearAttachments: clicked ${cleared} remove/cancel buttons.`);
-  if (cleared > 0) {
-    await new Promise(r => setTimeout(r, 600)); 
-  }
 }

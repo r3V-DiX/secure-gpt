@@ -2,6 +2,7 @@
 // Modal Manager
 // Injects and manages the ShieldModal in LLM pages
 // Uses a Shadow DOM to isolate styles from the host page
+// Automatically synchronizes Light / Dark themes with host site
 // ─────────────────────────────────────────────
 
 import { createRoot, type Root } from 'react-dom/client'
@@ -11,6 +12,32 @@ import { getModalStyles } from './modal-styles'
 
 let modalRoot: Root | null = null
 let shadowHost: HTMLElement | null = null
+
+function detectHostIsDark(): boolean {
+  try {
+    // 1. Check root classes on host document (ChatGPT, Claude, etc.)
+    const docEl = document.documentElement
+    const body = document.body
+    if (
+      docEl.classList.contains('dark') ||
+      docEl.classList.contains('theme-dark') ||
+      body.classList.contains('dark') ||
+      body.classList.contains('theme-dark') ||
+      docEl.getAttribute('data-theme') === 'dark' ||
+      body.getAttribute('data-theme') === 'dark'
+    ) {
+      return true
+    }
+
+    // 2. Check system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return true
+    }
+  } catch {
+    // ignore
+  }
+  return false
+}
 
 // onDecision(proceed, masked, acknowledged)
 //   proceed:      true = user wants to send (either masked or directly)
@@ -32,6 +59,12 @@ export function showShieldModal(
   shadowHost.setAttribute('data-securegpt', 'true')
   shadowHost.setAttribute('data-securegpt-modal', 'true')
   shadowHost.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;'
+
+  // Apply dark mode class to host if host page or OS is dark
+  if (detectHostIsDark()) {
+    shadowHost.classList.add('dark')
+  }
+
   document.body.appendChild(shadowHost)
 
   const shadow = shadowHost.attachShadow({ mode: 'open' })

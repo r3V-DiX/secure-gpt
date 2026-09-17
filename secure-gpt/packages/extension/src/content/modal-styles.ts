@@ -1,17 +1,108 @@
 // packages/extension/src/content/modal-styles.ts
+// Unified Dark & Light theme tokens and component styles for ShieldModal
 
 export function getModalStyles(): string {
   return `
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :host { all: initial; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    :host {
+      all: initial;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      
+      /* Light Mode Palette */
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-2: #f1f5f9;
+      --bg-surface-3: #e2e8f0;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-tertiary: #64748b;
+      --text-muted: #94a3b8;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-light: #eff6ff;
+      --accent-border: #bfdbfe;
+      --accent-text: #1d4ed8;
+      --shadow-modal: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+
+      --cat-red-bg: #fef2f2;
+      --cat-red-border: #fecaca;
+      --cat-red-text: #b91c1c;
+      --cat-red-dot: #f87171;
+
+      --cat-amber-bg: #fffbeb;
+      --cat-amber-border: #fde68a;
+      --cat-amber-text: #b45309;
+      --cat-amber-dot: #fbbf24;
+
+      --cat-purple-bg: #faf5ff;
+      --cat-purple-border: #e9d5ff;
+      --cat-purple-text: #7e22ce;
+      --cat-purple-dot: #c084fc;
+
+      --cat-blue-bg: #eff6ff;
+      --cat-blue-border: #bfdbfe;
+      --cat-blue-text: #1d4ed8;
+      --cat-blue-dot: #60a5fa;
+
+      --entity-row-bg: rgba(255, 255, 255, 0.85);
+      --entity-code-bg: rgba(0, 0, 0, 0.05);
+      --entity-code-text: #1e293b;
+    }
+
+    :host(.dark) {
+      /* Dark Obsidian Cyber Palette */
+      --bg-base: #070a12;
+      --bg-surface: #0d1322;
+      --bg-surface-2: #131c31;
+      --bg-surface-3: #1b2742;
+      --border: rgba(255, 255, 255, 0.10);
+      --border-strong: rgba(255, 255, 255, 0.20);
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-tertiary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --accent-light: rgba(56, 189, 248, 0.15);
+      --accent-border: rgba(56, 189, 248, 0.30);
+      --accent-text: #7dd3fc;
+      --shadow-modal: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.08);
+
+      --cat-red-bg: rgba(239, 68, 68, 0.12);
+      --cat-red-border: rgba(239, 68, 68, 0.30);
+      --cat-red-text: #fca5a5;
+      --cat-red-dot: #f87171;
+
+      --cat-amber-bg: rgba(245, 158, 11, 0.12);
+      --cat-amber-border: rgba(245, 158, 11, 0.30);
+      --cat-amber-text: #fcd34d;
+      --cat-amber-dot: #fbbf24;
+
+      --cat-purple-bg: rgba(168, 85, 247, 0.12);
+      --cat-purple-border: rgba(168, 85, 247, 0.30);
+      --cat-purple-text: #d8b4fe;
+      --cat-purple-dot: #c084fc;
+
+      --cat-blue-bg: rgba(59, 130, 246, 0.12);
+      --cat-blue-border: rgba(59, 130, 246, 0.30);
+      --cat-blue-text: #93c5fd;
+      --cat-blue-dot: #60a5fa;
+
+      --entity-row-bg: rgba(19, 28, 49, 0.85);
+      --entity-code-bg: rgba(0, 0, 0, 0.40);
+      --entity-code-text: #f1f5f9;
+    }
 
     /* ── Tailwind utility classes used by ShieldModal ── */
     .fixed { position: fixed; }
     .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
     .z-\\[9998\\] { z-index: 9998; }
     .z-\\[9999\\] { z-index: 9999; }
-    .bg-black\\/40 { background-color: rgba(0,0,0,0.45); }
-    .backdrop-blur-sm { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .bg-black\\/40 { background-color: rgba(0,0,0,0.55); }
+    .backdrop-blur-sm { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
     .flex { display: flex; }
     .flex-col { flex-direction: column; }
     .flex-1 { flex: 1 1 0%; }
@@ -23,31 +114,31 @@ export function getModalStyles(): string {
     .p-4 { padding: 1rem; }
 
     /* ── Category color classes ── */
-    .bg-red-50    { background-color: #fef2f2; }
-    .bg-amber-50  { background-color: #fffbeb; }
-    .bg-purple-50 { background-color: #faf5ff; }
-    .bg-blue-50   { background-color: #eff6ff; }
-    .border-red-200    { border-color: #fecaca; }
-    .border-amber-200  { border-color: #fde68a; }
-    .border-purple-200 { border-color: #e9d5ff; }
-    .border-blue-200   { border-color: #bfdbfe; }
-    .text-red-700    { color: #b91c1c; }
-    .text-amber-700  { color: #b45309; }
-    .text-purple-700 { color: #7e22ce; }
-    .text-blue-700   { color: #1d4ed8; }
-    .bg-red-400    { background-color: #f87171; }
-    .bg-amber-400  { background-color: #fbbf24; }
-    .bg-purple-400 { background-color: #c084fc; }
-    .bg-blue-400   { background-color: #60a5fa; }
+    .bg-red-50    { background-color: var(--cat-red-bg); }
+    .bg-amber-50  { background-color: var(--cat-amber-bg); }
+    .bg-purple-50 { background-color: var(--cat-purple-bg); }
+    .bg-blue-50   { background-color: var(--cat-blue-bg); }
+    .border-red-200    { border-color: var(--cat-red-border); }
+    .border-amber-200  { border-color: var(--cat-amber-border); }
+    .border-purple-200 { border-color: var(--cat-purple-border); }
+    .border-blue-200   { border-color: var(--cat-blue-border); }
+    .text-red-700    { color: var(--cat-red-text); }
+    .text-amber-700  { color: var(--cat-amber-text); }
+    .text-purple-700 { color: var(--cat-purple-text); }
+    .text-blue-700   { color: var(--cat-blue-text); }
+    .bg-red-400    { background-color: var(--cat-red-dot); }
+    .bg-amber-400  { background-color: var(--cat-amber-dot); }
+    .bg-purple-400 { background-color: var(--cat-purple-dot); }
+    .bg-blue-400   { background-color: var(--cat-blue-dot); }
 
     /* ── Modal card ── */
     .modal-card {
-      background: #ffffff;
+      background: var(--bg-surface);
       border-radius: 16px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
-      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: var(--shadow-modal);
+      border: 1px solid var(--border);
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       max-height: 82vh;
       display: flex;
       flex-direction: column;
@@ -61,28 +152,30 @@ export function getModalStyles(): string {
       align-items: flex-start;
       gap: 12px;
       padding: 18px 18px 14px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
     .shield-icon-wrap {
       width: 38px; height: 38px;
-      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      background: var(--accent-light);
+      border: 1px solid var(--accent-border);
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
       font-size: 17px;
       flex-shrink: 0;
+      color: var(--accent-text);
       box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
     .modal-title {
       font-size: 14px;
       font-weight: 650;
-      color: #0f172a;
+      color: var(--text-primary);
       line-height: 1.3;
       letter-spacing: -0.01em;
     }
     .modal-subtitle {
       font-size: 11.5px;
-      color: #94a3b8;
+      color: var(--text-tertiary);
       margin-top: 2px;
       line-height: 1.4;
     }
@@ -90,7 +183,7 @@ export function getModalStyles(): string {
       background: transparent !important;
       border: none !important;
       cursor: pointer;
-      color: #94a3b8;
+      color: var(--text-muted);
       font-size: 16px;
       line-height: 1;
       padding: 4px;
@@ -99,7 +192,7 @@ export function getModalStyles(): string {
       transition: color 0.15s, background 0.15s;
       display: flex; align-items: center; justify-content: center;
     }
-    .close-btn:hover { color: #475569; background: #f1f5f9 !important; }
+    .close-btn:hover { color: var(--text-primary); background: var(--bg-surface-2) !important; }
 
     /* ── Body ── */
     .modal-body {
@@ -112,7 +205,7 @@ export function getModalStyles(): string {
     }
     .modal-body::-webkit-scrollbar { width: 4px; }
     .modal-body::-webkit-scrollbar-track { background: transparent; }
-    .modal-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+    .modal-body::-webkit-scrollbar-thumb { background: var(--bg-surface-3); border-radius: 4px; }
 
     /* ── Category card ── */
     .category-card {
@@ -138,7 +231,7 @@ export function getModalStyles(): string {
     .category-count {
       font-size: 10px;
       font-weight: 600;
-      opacity: 0.7;
+      opacity: 0.8;
     }
 
     /* ── Entity rows ── */
@@ -147,9 +240,10 @@ export function getModalStyles(): string {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255,255,255,0.75);
+      background: var(--entity-row-bg);
       border-radius: 7px;
       padding: 6px 10px;
+      border: 1px solid var(--border);
     }
     .entity-dot {
       width: 6px; height: 6px;
@@ -158,7 +252,7 @@ export function getModalStyles(): string {
     }
     .entity-type {
       font-size: 11px;
-      color: #64748b;
+      color: var(--text-secondary);
       flex-shrink: 0;
       text-transform: capitalize;
       min-width: 80px;
@@ -166,27 +260,27 @@ export function getModalStyles(): string {
     .entity-value {
       font-size: 11px;
       font-family: ui-monospace, 'SF Mono', Consolas, monospace;
-      color: #1e293b;
-      background: rgba(0,0,0,0.05);
+      color: var(--entity-code-text);
+      background: var(--entity-code-bg);
       padding: 2px 6px;
       border-radius: 4px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 160px;
+      max-width: 170px;
     }
 
     /* ── Masking preview ── */
     .preview-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 12px;
     }
     .preview-label {
       font-size: 10.5px;
       font-weight: 600;
-      color: #94a3b8;
+      color: var(--text-tertiary);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       margin-bottom: 6px;
@@ -194,15 +288,16 @@ export function getModalStyles(): string {
     .preview-text {
       font-size: 12px;
       font-family: ui-monospace, 'SF Mono', Consolas, monospace;
-      color: #475569;
+      color: var(--text-secondary);
       line-height: 1.6;
       max-height: 90px;
       overflow-y: auto;
       word-break: break-word;
     }
     .masked-token {
-      background: #fde68a;
-      color: #78350f;
+      background: var(--cat-amber-bg);
+      color: var(--cat-amber-text);
+      border: 1px solid var(--cat-amber-border);
       padding: 1px 4px;
       border-radius: 4px;
       font-weight: 600;
@@ -211,8 +306,9 @@ export function getModalStyles(): string {
     /* ── Footer ── */
     .modal-footer {
       padding: 12px 18px 14px;
-      border-top: 1px solid #f1f5f9;
+      border-top: 1px solid var(--border);
       flex-shrink: 0;
+      background: var(--bg-surface);
     }
     .footer-actions {
       display: flex;
@@ -221,7 +317,7 @@ export function getModalStyles(): string {
     }
     .footer-note {
       font-size: 10.5px;
-      color: #cbd5e1;
+      color: var(--text-muted);
       text-align: center;
       margin-top: 10px;
     }
@@ -246,29 +342,28 @@ export function getModalStyles(): string {
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .btn-primary {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      background: var(--accent);
       color: #fff;
       border: none;
-      box-shadow: 0 1px 3px rgba(37,99,235,0.4), 0 0 0 0 rgba(37,99,235,0);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
     .btn-primary:hover {
-      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-      box-shadow: 0 2px 8px rgba(37,99,235,0.45);
+      background: var(--accent-hover);
       transform: translateY(-0.5px);
     }
     .btn-secondary {
-      background: #ffffff;
-      color: #374151;
-      border: 1px solid #e5e7eb;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border-strong);
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+    .btn-secondary:hover { background: var(--bg-surface-2); border-color: var(--border-strong); }
     .btn-ghost {
       background: transparent;
-      color: #6b7280;
+      color: var(--text-secondary);
       border: none;
     }
-    .btn-ghost:hover { background: #f3f4f6; color: #374151; }
+    .btn-ghost:hover { background: var(--bg-surface-2); color: var(--text-primary); }
     .btn-full { flex: 1; }
 
     /* ── Animation ── */
@@ -277,7 +372,6 @@ export function getModalStyles(): string {
       to   { opacity: 1; transform: translateY(0)   scale(1); }
     }
 
-    /* ── Residual Tailwind utilities (backdrop, positioning) ── */
     .animate-slide-up { animation: slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
   `
 }

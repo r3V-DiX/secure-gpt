@@ -12,8 +12,38 @@ let currentText = ''
 let currentPolicyConfig: PIIConfig | null = null
 let isPopoverOpen = false
 
+function detectHostIsDark(): boolean {
+  try {
+    const docEl = document.documentElement
+    const body = document.body
+    if (
+      docEl.classList.contains('dark') ||
+      docEl.classList.contains('theme-dark') ||
+      body.classList.contains('dark') ||
+      body.classList.contains('theme-dark') ||
+      docEl.getAttribute('data-theme') === 'dark' ||
+      body.getAttribute('data-theme') === 'dark'
+    ) {
+      return true
+    }
+
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return true
+    }
+  } catch {
+    // ignore
+  }
+  return false
+}
+
 function ensureGaugeElement(): { host: HTMLElement; shadow: ShadowRoot } {
   if (gaugeHostEl && gaugeShadowRoot && document.body.contains(gaugeHostEl)) {
+    // Update dark mode class if changed
+    if (detectHostIsDark()) {
+      gaugeHostEl.classList.add('dark')
+    } else {
+      gaugeHostEl.classList.remove('dark')
+    }
     return { host: gaugeHostEl, shadow: gaugeShadowRoot }
   }
 
@@ -30,6 +60,10 @@ function ensureGaugeElement(): { host: HTMLElement; shadow: ShadowRoot } {
     'opacity: 0',
     'transform: scale(0.95)',
   ].join(';')
+
+  if (detectHostIsDark()) {
+    host.classList.add('dark')
+  }
 
   const shadow = host.attachShadow({ mode: 'open' })
   shadow.innerHTML = GAUGE_TEMPLATE
@@ -162,25 +196,25 @@ export function updateRadialRiskGauge(
     }
   }
 
-  const progressCircle = shadow.getElementById('progress-circle') as SVGCircleElement | null
-  const gaugeLabel = shadow.getElementById('gauge-label')
-  const gaugeStatus = shadow.getElementById('gauge-status')
-  const entityListBox = shadow.getElementById('entity-list-box')
+  const riskCircle = shadow.getElementById('risk-circle') as SVGCircleElement | null
+  const riskPercentage = shadow.getElementById('risk-percentage')
+  const riskStatus = shadow.getElementById('risk-status')
+  const findingsList = shadow.getElementById('findings-list')
 
-  if (progressCircle && gaugeLabel && gaugeStatus) {
+  if (riskCircle && riskPercentage && riskStatus) {
     const circumference = 44
     const offset = circumference - (percent / 100) * circumference
-    progressCircle.style.strokeDashoffset = String(offset)
-    progressCircle.style.stroke = color
-    gaugeLabel.innerText = percent + '%'
-    gaugeLabel.style.color = color
-    gaugeStatus.innerText = status
+    riskCircle.style.strokeDashoffset = String(offset)
+    riskCircle.style.stroke = color
+    riskPercentage.innerText = percent + '%'
+    riskPercentage.style.color = color
+    riskStatus.innerText = status
   }
 
-  if (entityListBox) {
+  if (findingsList) {
     if (entities.length === 0) {
-      entityListBox.innerHTML = `
-        <div style="color:#94a3b8; font-size:10.5px; text-align:center; padding: 6px 0;">
+      findingsList.innerHTML = `
+        <div style="color:var(--gauge-subtext); font-size:10.5px; text-align:center; padding: 6px 0;">
           No sensitive data detected in prompt.
         </div>
       `
@@ -192,12 +226,12 @@ export function updateRadialRiskGauge(
         counts[label] = (counts[label] || 0) + 1
       }
 
-      entityListBox.innerHTML = Object.entries(counts)
+      findingsList.innerHTML = Object.entries(counts)
         .map(
           ([label, count]) => `
-          <div class="entity-item">
-            <span class="entity-name">${label}</span>
-            <span class="entity-count">${count} found</span>
+          <div class="finding-item">
+            <span class="finding-type">${label}</span>
+            <span class="finding-badge" style="background:var(--popover-btn-bg); color:var(--popover-btn-text);">${count} found</span>
           </div>
         `
         )

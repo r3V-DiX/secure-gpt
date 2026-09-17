@@ -1,13 +1,14 @@
 // packages/extension/src/content/interceptor.ts
-// Interceptor — hooks into LLM page submit events
+// Interceptor — hooks into LLM page submit, input, and focus events
 
 import { findEditableRoot, findMainEditor, extractText, bypassSet } from './dom-utils'
 import { updateRadialRiskGauge, hideRadialRiskGauge } from './radial-risk-gauge'
-import { handleFileScan, handleImagePasteInternal, isOfficeFile, isMaskableOffice } from './file-scanner'
+import { isOfficeFile, isMaskableOffice } from './file-scanner'
 export { isOfficeFile, isMaskableOffice }
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
 import { isExtensionContextValid, handleSubmit, getMostRestrictiveAction, type SubmitContext } from './submit-handler'
 export { getMostRestrictiveAction }
+import { handleGlobalPaste, handleGlobalFileChange, handleGlobalDrop, type FileListenerContext } from './file-drop-listener'
 
 let currentPolicy: PIIConfig
 let preAllowedText = ''
@@ -31,19 +32,39 @@ const submitContext: SubmitContext = {
   getPendingCount,
 }
 
+const fileListenerContext: FileListenerContext = {
+  getCurrentPolicy: () => currentPolicy,
+  ocrCache,
+  incPending,
+  decPending,
+  getPendingCount,
+}
+
 export function setupInterceptor(policy: PIIConfig): void {
   currentPolicy = policy
   teardown()
   attachGlobalListeners()
 }
 
+function onGlobalPaste(ev: ClipboardEvent): void {
+  handleGlobalPaste(ev, fileListenerContext)
+}
+
+function onGlobalFileChange(ev: Event): void {
+  handleGlobalFileChange(ev, fileListenerContext)
+}
+
+function onGlobalDrop(ev: DragEvent): void {
+  handleGlobalDrop(ev, fileListenerContext)
+}
+
 function attachGlobalListeners(): void {
   window.addEventListener('keydown', handleGlobalKeyDown, true)
   window.addEventListener('click', handleGlobalClick, true)
   window.addEventListener('submit', handleGlobalSubmit, true)
-  window.addEventListener('paste', handleGlobalPaste, true)
-  window.addEventListener('change', handleGlobalFileChange, true)
-  window.addEventListener('drop', handleGlobalDrop, true)
+  window.addEventListener('paste', onGlobalPaste, true)
+  window.addEventListener('change', onGlobalFileChange, true)
+  window.addEventListener('drop', onGlobalDrop, true)
   window.addEventListener('input', handleGlobalInput, true)
   window.addEventListener('focusin', handleGlobalFocus, true)
   window.addEventListener('focusout', handleGlobalBlur, true)
@@ -194,86 +215,12 @@ export function teardown(): void {
   window.removeEventListener('keydown', handleGlobalKeyDown, true)
   window.removeEventListener('click', handleGlobalClick, true)
   window.removeEventListener('submit', handleGlobalSubmit, true)
-  window.removeEventListener('paste', handleGlobalPaste, true)
-  window.removeEventListener('change', handleGlobalFileChange, true)
-  window.removeEventListener('drop', handleGlobalDrop, true)
+  window.removeEventListener('paste', onGlobalPaste, true)
+  window.removeEventListener('change', onGlobalFileChange, true)
+  window.removeEventListener('drop', onGlobalDrop, true)
   window.removeEventListener('input', handleGlobalInput, true)
   window.removeEventListener('focusin', handleGlobalFocus, true)
   window.removeEventListener('focusout', handleGlobalBlur, true)
   document.querySelectorAll('[data-securegpt]').forEach((el) => el.remove())
   hideRadialRiskGauge()
-}
-
-function handleGlobalPaste(ev: ClipboardEvent): void {
-  if (!ev.isTrusted) return
-  const items = ev.clipboardData?.items
-  if (!items) return
-
-  let targetItem: DataTransferItem | null = null
-  const itemList = Array.from(items as unknown as DataTransferItem[])
-  for (const item of itemList) {
-    const blob = item.kind === 'file' ? item.getAsFile() : null
-    if (item.type.startsWith('image/') || item.type === 'application/pdf' || (blob && isOfficeFile(blob))) {
-      targetItem = item
-      break
-    }
-  }
-  if (!targetItem) return
-
-  const el = findEditableRoot(ev.target) ?? findEditableRoot(document.activeElement)
-  if (!el || bypassSet.has(el)) return
-
-  ev.preventDefault()
-  ev.stopImmediatePropagation()
-
-  const blob = targetItem.getAsFile()
-  if (!blob) return
-
-  const isPdf = targetItem.type === 'application/pdf' || blob.name.toLowerCase().endsWith('.pdf')
-  const isOffice = isOfficeFile(blob)
-
-  if (isPdf || isOffice) {
-    void handleFileScan(el as HTMLElement, blob, currentPolicy, ocrCache, incPending, decPending, getPendingCount)
-  } else {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const imgUrl = reader.result as string
-      void handleImagePasteInternal(el as HTMLElement, imgUrl, currentPolicy, ocrCache, incPending, decPending, getPendingCount)
-    }
-    reader.readAsDataURL(blob)
-  }
-}
-
-function handleGlobalFileChange(ev: Event): void {
-  if (!ev.isTrusted) return
-  const target = ev.target as HTMLInputElement
-  if (target.type !== 'file' || !target.files?.length) return
-
-  const file = target.files[0]
-  if (!file) return
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf') && !isOfficeFile(file)) return
-
-  const el = findMainEditor() ?? document.body as HTMLElement
-  if (bypassSet.has(el)) return
-
-  ev.stopImmediatePropagation()
-  target.value = ''
-  void handleFileScan(el, file, currentPolicy, ocrCache, incPending, decPending, getPendingCount)
-}
-
-function handleGlobalDrop(ev: DragEvent): void {
-  if (!ev.isTrusted) return
-  const files = ev.dataTransfer?.files
-  if (!files?.length) return
-
-  const file = files[0]
-  if (!file) return
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf') && !isOfficeFile(file)) return
-
-  const el = findMainEditor() ?? document.body as HTMLElement
-  if (bypassSet.has(el)) return
-
-  ev.preventDefault()
-  ev.stopImmediatePropagation()
-  void handleFileScan(el, file, currentPolicy, ocrCache, incPending, decPending, getPendingCount)
 }
