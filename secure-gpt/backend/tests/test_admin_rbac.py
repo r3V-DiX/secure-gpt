@@ -18,3 +18,9 @@ async def test_admin_rbac_routes_registered():
 
         resp_logs = await ac.get("/api/v1/admin/system-logs")
         assert resp_logs.status_code in (401, 403)
+
+        resp_orgs = await ac.get("/api/v1/admin/orgs")
+        assert resp_orgs.status_code in (401, 403)
+
+        resp_org_verify = await ac.post("/api/v1/admin/orgs/verify", json={"org_id": "dummy"})
+        assert resp_org_verify.status_code in (401, 403)

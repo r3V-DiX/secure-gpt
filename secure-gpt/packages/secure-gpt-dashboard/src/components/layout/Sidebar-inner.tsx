@@ -7,7 +7,7 @@ import { clsx } from 'clsx'
 import {
   LayoutDashboard, FileText, ShieldCheck,
   User, Settings, LogOut, Users, Sparkles, ShieldAlert,
-  PanelLeftClose, PanelLeft, X, Sun, Moon, Shield, History, Key, ClipboardList, Database
+  PanelLeftClose, PanelLeft, X, Sun, Moon, Shield, History, Key, ClipboardList, Database, Building2
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/contexts/theme-context'
@@ -82,6 +82,7 @@ const SUPER_ADMIN_NAV_GROUPS: NavGroup[] = [
   {
     label: 'Access & Governance',
     items: [
+      { label: 'Organizations', href: '/organizations', icon: Building2, superAdminOnly: true },
       { label: 'Policy Rules', href: '/policy', icon: ShieldCheck },
       { label: 'Global Users', href: '/users', icon: Users, superAdminOnly: true },
       { label: 'Roles', href: '/roles', icon: Shield, superAdminOnly: true },

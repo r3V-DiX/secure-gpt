@@ -7,6 +7,7 @@ import { useDashboard } from '@/features/dashboard/hooks/use-dashboard'
 import { useAuth } from '@/contexts/auth-context'
 import { useProfile } from '@/features/profile/hooks/use-profile'
 import { StatCard } from '@/components/shared/StatCard'
+import { OrgOnboardingBanner } from '@/features/onboarding/components/OrgOnboardingBanner'
 import {
   BarChart,
   Bar,
@@ -55,6 +56,8 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-7 animate-fade-in pb-8">
+      {/* ── Enterprise Organization Setup Reminder Banner ──────────── */}
+      <OrgOnboardingBanner />
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between flex-wrap gap-3 pt-1">

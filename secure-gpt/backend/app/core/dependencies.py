@@ -110,11 +110,19 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-def require_roles(*roles: UserRole):
+def require_roles(*roles: UserRole | str):
     """Factory that returns a dependency enforcing one of the given roles."""
+    normalized_roles = set()
+    for r in roles:
+        if isinstance(r, (list, tuple, set)):
+            for sub in r:
+                normalized_roles.add(sub.value if hasattr(sub, "value") else str(sub).lower())
+        else:
+            normalized_roles.add(r.value if hasattr(r, "value") else str(r).lower())
 
     async def _check(current_user: CurrentUser) -> User:
-        if current_user.role not in roles:
+        user_role_val = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role).lower()
+        if user_role_val not in normalized_roles:
             raise Forbidden()
         return current_user
 
