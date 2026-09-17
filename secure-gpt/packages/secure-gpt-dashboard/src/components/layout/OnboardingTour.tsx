@@ -1,32 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Joyride, STATUS, Step, TooltipRenderProps } from 'react-joyride'
+import { useState, useEffect, useMemo } from 'react'
+import { Joyride, STATUS, TooltipRenderProps } from 'react-joyride'
 import { CheckCircle2, ChevronRight, X, Compass, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
+import { getTourStepsForRole, resolveTourRole, type TourRole } from '@/features/onboarding/config/tour.data'
 
-const TOUR_STEPS: Step[] = [
-  {
-    target: '#tour-get-started',
-    content: 'Start here! Follow our step-by-step guide to verify your organization domain, deploy the extension, and configure DLP protection.',
-    placement: 'right',
-  },
-  {
-    target: '#tour-dashboard',
-    content: 'Your real-time command center. Monitor protected prompts, sensitive data redactions, and team activity at a glance.',
-    placement: 'right',
-  },
-  {
-    target: '#tour-event-logs',
-    content: 'Audit every prompt and detection. Inspect exactly which PII, API keys, or confidential files were intercepted.',
-    placement: 'right',
-  },
-  {
-    target: '#tour-policy',
-    content: "Customize zero-trust data boundaries. Tune sensitivity thresholds or configure custom regex rules across your company.",
-    placement: 'right',
-  }
-]
+const IS_ADMIN_MODE = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
 
 function CustomTooltip({
   index,
@@ -105,8 +85,11 @@ export function OnboardingTour() {
   const [run, setRun] = useState(false)
   const [showPrompt, setShowPrompt] = useState(false)
 
-  const tourCompletedKey = user?.id ? `securegpt_tour_completed_${user.id}` : null
-  const promptDismissedKey = user?.id ? `securegpt_tour_prompt_dismissed_${user.id}` : null
+  const activeRole: TourRole = useMemo(() => resolveTourRole(user, IS_ADMIN_MODE), [user])
+  const steps = useMemo(() => getTourStepsForRole(activeRole), [activeRole])
+
+  const tourCompletedKey = user?.id ? `securegpt_tour_completed_${activeRole}_${user.id}` : null
+  const promptDismissedKey = user?.id ? `securegpt_tour_prompt_dismissed_${activeRole}_${user.id}` : null
 
   // Check if first-time user should see the subtle bottom prompt
   useEffect(() => {
@@ -181,10 +164,22 @@ export function OnboardingTour() {
 
             <div className="flex-1 min-w-0 pr-4">
               <h4 className="text-xs font-bold text-[var(--text-primary)]">
-                Take a quick platform tour?
+                {activeRole === 'super_admin'
+                  ? 'Take a Super Admin Console Tour?'
+                  : activeRole === 'org_admin'
+                  ? 'Take an Enterprise Setup Tour?'
+                  : activeRole === 'employee'
+                  ? 'Take a Quick Employee Tour?'
+                  : 'Take a Quick Platform Tour?'}
               </h4>
               <p className="text-[11.5px] text-[var(--text-secondary)] mt-0.5 leading-relaxed">
-                Learn the core telemetry views and enterprise DLP controls in under 1 minute.
+                {activeRole === 'super_admin'
+                  ? 'Learn how to inspect tenants, configure global permissions, and audit platform streams.'
+                  : activeRole === 'org_admin'
+                  ? 'Learn the core telemetry views, team provisioning, and enterprise DLP controls in under 1 minute.'
+                  : activeRole === 'employee'
+                  ? 'Learn how SecureGPT protects your AI prompts and view your company’s compliance status.'
+                  : 'Learn how to install the extension, mask sensitive data, and configure privacy rules in under 1 minute.'}
               </p>
 
               <div className="flex items-center gap-2 mt-3">
@@ -225,7 +220,7 @@ export function OnboardingTour() {
         continuous
         run={run}
         scrollToFirstStep
-        steps={TOUR_STEPS}
+        steps={steps}
         tooltipComponent={CustomTooltip}
         options={{
           skipBeacon: true,

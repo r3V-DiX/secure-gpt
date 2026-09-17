@@ -1,14 +1,20 @@
 'use client'
-// src/app/(app)/get-started/page.tsx
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Circle, CircleCheck, PartyPopper, RefreshCw } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useProfile } from '@/features/profile/hooks/use-profile'
-import { USER_STEPS, ORG_ADMIN_STEPS, type Step } from '@/features/onboarding/config/steps.data'
+import {
+  getChecklistForRole,
+  resolveChecklistRole,
+  type ChecklistRole,
+  type Step,
+} from '@/features/onboarding/config/steps.data'
 import { renderStepAction } from '@/features/onboarding/components/StepActionRenderer'
 import { apiGet } from '@/lib/api/client'
+
+const IS_ADMIN_MODE = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
 
 interface OrgCurrentResponse {
   id: string
@@ -25,16 +31,25 @@ export default function GetStartedPage() {
   const [orgLoading, setOrgLoading] = useState(true)
   const [manualDone, setManualDone] = useState<string[]>([])
 
-  const isOrgAdmin = user?.role === 'org_admin' || user?.role === 'super_admin' || user?.role === 'platform_super_admin'
-  const activeSteps: Step[] = isOrgAdmin ? ORG_ADMIN_STEPS : USER_STEPS
+  const currentRole: ChecklistRole = useMemo(
+    () => resolveChecklistRole(user, IS_ADMIN_MODE),
+    [user]
+  )
 
-  const storageKey = user?.id ? `securegpt:get-started:done:${user.id}` : 'securegpt:get-started:done'
+  const { title, subtitle, steps: activeSteps } = useMemo(
+    () => getChecklistForRole(currentRole),
+    [currentRole]
+  )
+
+  const storageKey = user?.id
+    ? `securegpt:get-started:done:${currentRole}:${user.id}`
+    : `securegpt:get-started:done:${currentRole}`
 
   // Fetch current org for dynamic status detection
   useEffect(() => {
     let isMounted = true
     async function loadOrg() {
-      if (!isOrgAdmin) {
+      if (currentRole !== 'org_admin') {
         setOrgLoading(false)
         return
       }
@@ -53,7 +68,7 @@ export default function GetStartedPage() {
     return () => {
       isMounted = false
     }
-  }, [isOrgAdmin])
+  }, [currentRole])
 
   // Load user-scoped manual checklist state
   useEffect(() => {
@@ -103,37 +118,48 @@ export default function GetStartedPage() {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap pt-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            Get Started, {firstName} 👋
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              {title}, {firstName} 👋
+            </h1>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)]">
+              {currentRole === 'super_admin'
+                ? 'Super Admin'
+                : currentRole === 'org_admin'
+                ? 'Org Admin'
+                : currentRole === 'employee'
+                ? 'Employee'
+                : 'Personal'}
+            </span>
+          </div>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            {isOrgAdmin
-              ? 'Complete enterprise domain verification, deploy protection, and configure organizational policies.'
-              : 'Set up SecureGPT in a few minutes — install, connect, and start protecting your AI chats.'}
+            {subtitle}
           </p>
         </div>
 
-        {/* Connection status */}
-        <div
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium"
-          style={{
-            background: 'var(--bg-surface)',
-            borderColor: devicesLoading ? 'var(--border)' : devices.length > 0 ? 'var(--success-border)' : 'var(--warning-border)',
-            color: devicesLoading ? 'var(--text-secondary)' : devices.length > 0 ? 'var(--success)' : 'var(--warning)',
-          }}
-        >
-          <span
-            className="size-1.5 rounded-full"
+        {/* Connection status (for roles with device integration) */}
+        {currentRole !== 'super_admin' && (
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium"
             style={{
-              background: devicesLoading ? 'var(--text-tertiary)' : devices.length > 0 ? 'var(--success)' : 'var(--warning)',
+              background: 'var(--bg-surface)',
+              borderColor: devicesLoading ? 'var(--border)' : devices.length > 0 ? 'var(--success-border)' : 'var(--warning-border)',
+              color: devicesLoading ? 'var(--text-secondary)' : devices.length > 0 ? 'var(--success)' : 'var(--warning)',
             }}
-          />
-          {devicesLoading
-            ? 'Checking connection…'
-            : devices.length > 0
-            ? `${devices.length} device${devices.length === 1 ? '' : 's'} connected`
-            : 'No device connected yet'}
-        </div>
+          >
+            <span
+              className="size-1.5 rounded-full"
+              style={{
+                background: devicesLoading ? 'var(--text-tertiary)' : devices.length > 0 ? 'var(--success)' : 'var(--warning)',
+              }}
+            />
+            {devicesLoading
+              ? 'Checking connection…'
+              : devices.length > 0
+              ? `${devices.length} device${devices.length === 1 ? '' : 's'} connected`
+              : 'No device connected yet'}
+          </div>
+        )}
       </div>
 
       {/* ── Progress card ───────────────────────────────────────────────── */}
@@ -173,7 +199,7 @@ export default function GetStartedPage() {
         </div>
         <p className="text-xs mt-2.5" style={{ color: 'var(--text-tertiary)' }}>
           {allDone
-            ? 'Everything is set up. You’re protected — happy prompting!'
+            ? 'Everything is set up. You’re ready to proceed!'
             : 'Track real-time setup progress or toggle steps once configured.'}
         </p>
       </div>
@@ -182,7 +208,10 @@ export default function GetStartedPage() {
       <div className="space-y-4">
         {activeSteps.map((step, i) => {
           const isDone = isStepDone(step.id)
-          const isAutoVerified = (step.id === 'verify_domain' && isDone) || ((step.id === 'install' || step.id === 'connect') && devices.length > 0)
+          const isAutoVerified =
+            Boolean(step.autoDetectable) &&
+            ((step.id === 'verify_domain' && isDone) ||
+              ((step.id === 'install' || step.id === 'connect') && devices.length > 0))
           const Icon = step.icon
 
           return (
@@ -245,7 +274,7 @@ export default function GetStartedPage() {
                     </button>
                   </div>
 
-                  {/* Action */}
+                  {/* Action CTA */}
                   <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
                     {renderStepAction(step.id)}
                   </div>
@@ -280,12 +309,14 @@ export default function GetStartedPage() {
               You're all set!
             </h3>
             <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-              Your organization and browsers are protected. Head to the dashboard to monitor live telemetry.
+              {currentRole === 'super_admin'
+                ? 'Platform setup verification complete. Proceed to the Global Console.'
+                : 'Your setup is complete and your AI interactions are protected.'}
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
             <Link
-              href="/event-logs"
+              href={currentRole === 'super_admin' ? '/organizations' : '/event-logs'}
               className="px-4 py-2 rounded-xl text-xs font-semibold border transition-all hover:brightness-105"
               style={{
                 background: 'var(--bg-surface)',
@@ -293,7 +324,7 @@ export default function GetStartedPage() {
                 color: 'var(--text-primary)',
               }}
             >
-              View Event Log
+              {currentRole === 'super_admin' ? 'Organizations' : 'View Event Log'}
             </Link>
             <Link
               href="/dashboard"

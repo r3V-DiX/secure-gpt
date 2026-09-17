@@ -1,4 +1,16 @@
-import { Download, ExternalLink, Activity, SlidersHorizontal, Globe2, Users, ShieldCheck } from 'lucide-react'
+import {
+  Download,
+  ExternalLink,
+  Activity,
+  SlidersHorizontal,
+  Globe2,
+  Users,
+  ShieldCheck,
+  Shield,
+  Building2,
+  Database,
+  FileCheck2,
+} from 'lucide-react'
 import Link from 'next/link'
 
 export const CHROME_STORE_URL =
@@ -6,6 +18,92 @@ export const CHROME_STORE_URL =
 
 export function renderStepAction(id: string) {
   switch (id) {
+    // ── Super Admin Actions ──
+    case 'review_tenants':
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/organizations"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          >
+            <Building2 size={13} />
+            Manage Organizations
+          </Link>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Inspect tenant health, DNS verification status, and user volume.
+          </p>
+        </div>
+      )
+
+    case 'manage_roles':
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/roles"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          >
+            <Shield size={13} />
+            Review RBAC Matrix
+          </Link>
+          <Link
+            href="/permissions"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all hover:brightness-105"
+            style={{
+              background: 'var(--bg-surface-2)',
+              borderColor: 'var(--border-2)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            View Permissions
+          </Link>
+        </div>
+      )
+
+    case 'configure_master_policy':
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/policy"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          >
+            <SlidersHorizontal size={13} />
+            Configure Master Policies
+          </Link>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Set baseline detection rules across all client organizations.
+          </p>
+        </div>
+      )
+
+    case 'inspect_audit_stream':
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/audit"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          >
+            <Database size={13} />
+            Open Audit Trail
+          </Link>
+          <Link
+            href="/system-logs"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all hover:brightness-105"
+            style={{
+              background: 'var(--bg-surface-2)',
+              borderColor: 'var(--border-2)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            System Logs
+          </Link>
+        </div>
+      )
+
+    // ── Org Admin Actions ──
     case 'verify_domain':
       return (
         <div className="flex flex-wrap items-center gap-3">
@@ -126,6 +224,23 @@ export function renderStepAction(id: string) {
               “my email is test@company.com”
             </span>{' '}
             to ChatGPT or Claude to see real-time blocking.
+          </p>
+        </div>
+      )
+
+    case 'review_policy_guidelines':
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/policy"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          >
+            <FileCheck2 size={13} />
+            View Active Organization Policies
+          </Link>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Policies configured by your organization admin apply automatically.
           </p>
         </div>
       )
