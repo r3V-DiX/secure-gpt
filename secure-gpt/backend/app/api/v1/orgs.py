@@ -113,7 +113,7 @@ async def verify_domain(body: OrgVerifyDomainRequest, db: DBSession, current_use
     if not org:
         raise NotFound("Organization not found")
 
-    from app.services.org_service import verify_dns_txt_record
+    from app.services.org_service import verify_dns_txt_record, migrate_domain_personal_users_to_employees
     
     is_valid = await verify_dns_txt_record(org.domain, org.dns_txt_token)
     if not is_valid:
@@ -123,6 +123,9 @@ async def verify_domain(body: OrgVerifyDomainRequest, db: DBSession, current_use
 
     org.status = OrgStatus.ACTIVE
     org.domain_verified_at = datetime.now(timezone.utc)
+    
+    # Auto-migrate all personal accounts under this domain into employees
+    migrated_count = await migrate_domain_personal_users_to_employees(db, org.id, org.domain)
     await db.commit()
 
     return success(
@@ -131,8 +134,9 @@ async def verify_domain(body: OrgVerifyDomainRequest, db: DBSession, current_use
             "domain": org.domain,
             "status": org.status,
             "verified_at": org.domain_verified_at.isoformat(),
+            "migrated_users_count": migrated_count,
         },
-        message="Domain ownership successfully verified! Organization is now ACTIVE.",
+        message=f"Domain ownership successfully verified! Organization is now ACTIVE. {migrated_count} existing domain users were migrated to employee accounts.",
     )
 
 
@@ -236,14 +240,34 @@ async def invite_user(body: OrgInviteUserRequest, db: DBSession, current_user: C
             message=f"Existing user '{target_user.email}' was automatically enrolled into {org.name}.",
         )
     else:
-        # User not yet registered — in production dispatch invitation email token
+        # Create OrgInvitation record for unregistered user
+        from app.models.org_invitation import OrgInvitation, InvitationStatus
+        from datetime import timedelta
+        import secrets
+
+        token = secrets.token_urlsafe(32)
+        invitation = OrgInvitation(
+            org_id=org.id,
+            email=body.email.strip().lower(),
+            role=body.role or "employee",
+            department_id=body.department_id,
+            token=token,
+            status=InvitationStatus.PENDING,
+            invited_by=current_user.id,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        )
+        db.add(invitation)
+        await db.commit()
+
         return success(
             data={
                 "email": body.email.lower(),
-                "status": "invitation_dispatched",
+                "status": "invitation_created",
                 "org_id": org.id,
+                "token": token,
+                "invite_url": f"/login?invite={token}",
             },
-            message=f"Invitation sent to '{body.email}'. User will be bound to {org.name} upon signing up.",
+            message=f"Invitation created and dispatched for '{body.email}'. User will be bound to {org.name} upon signing up.",
         )
 
 

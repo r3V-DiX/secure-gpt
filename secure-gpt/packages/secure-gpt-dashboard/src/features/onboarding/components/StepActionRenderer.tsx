@@ -1,4 +1,4 @@
-import { Download, ExternalLink, Activity, SlidersHorizontal } from 'lucide-react'
+import { Download, ExternalLink, Activity, SlidersHorizontal, Globe2, Users, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 
 export const CHROME_STORE_URL =
@@ -6,6 +6,40 @@ export const CHROME_STORE_URL =
 
 export function renderStepAction(id: string) {
   switch (id) {
+    case 'verify_domain':
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/onboarding"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          >
+            <Globe2 size={13} />
+            Verify DNS TXT Record
+          </Link>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Publish challenge token to DNS to enable automatic employee domain protection.
+          </p>
+        </div>
+      )
+
+    case 'invite_team':
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/team"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          >
+            <Users size={13} />
+            Manage Team & Invitations
+          </Link>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Send invite links or organize employees by department.
+          </p>
+        </div>
+      )
+
     case 'install':
       return (
         <div className="flex flex-wrap items-center gap-3">
@@ -46,9 +80,9 @@ export function renderStepAction(id: string) {
               </span>
               Click{' '}
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Sign in with Google
+                Sign in with OTP or SSO
               </span>{' '}
-              — use the same account as this dashboard.
+              — use the same email as this dashboard.
             </li>
             <li>
               <span className="font-bold mr-1" style={{ color: 'var(--text-tertiary)' }}>
@@ -89,9 +123,9 @@ export function renderStepAction(id: string) {
           <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
             Try sending{' '}
             <span className="font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              “my email is john.doe@acme.com”
+              “my email is test@company.com”
             </span>{' '}
-            to a supported AI platform.
+            to ChatGPT or Claude to see real-time blocking.
           </p>
         </div>
       )
@@ -104,7 +138,7 @@ export function renderStepAction(id: string) {
           style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
         >
           <SlidersHorizontal size={13} />
-          Review your policy
+          Configure DLP Policies
         </Link>
       )
 
@@ -124,7 +158,7 @@ export function renderStepAction(id: string) {
             View Event Log
           </Link>
           <Link
-            href="/settings"
+            href="/incidents"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all hover:brightness-105"
             style={{
               background: 'var(--bg-surface-2)',
@@ -132,8 +166,8 @@ export function renderStepAction(id: string) {
               color: 'var(--text-primary)',
             }}
           >
-            <SlidersHorizontal size={13} />
-            Settings & devices
+            <ShieldCheck size={13} />
+            Incidents Stream
           </Link>
         </div>
       )

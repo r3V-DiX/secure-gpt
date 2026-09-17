@@ -1,13 +1,19 @@
 'use client'
 
-import React from 'react'
-import { UserPlus, Download, Users, RefreshCw, ArrowLeft, Sparkles, Copy, Check } from 'lucide-react'
+import React, { useState } from 'react'
+import { UserPlus, Download, Users, RefreshCw, ArrowLeft, Sparkles, Copy, Check, ExternalLink, MailCheck } from 'lucide-react'
+
+export interface InvitedItem {
+  email: string
+  status: 'auto_enrolled' | 'invitation_created'
+  invite_url?: string
+}
 
 interface TeamDeploymentStepProps {
   domain: string
   inviteEmails: string
   setInviteEmails: (val: string) => void
-  invitedList: string[]
+  invitedList: InvitedItem[]
   sendingInvites: boolean
   onSendInvites: (e: React.FormEvent) => void
   onBack: () => void
@@ -24,13 +30,21 @@ export function TeamDeploymentStep({
   onBack,
   onFinish,
 }: TeamDeploymentStepProps) {
-  const [copiedId, setCopiedId] = React.useState(false)
+  const [copiedId, setCopiedId] = useState(false)
+  const [copiedUrlIndex, setCopiedUrlIndex] = useState<number | null>(null)
   const extensionId = 'jblnbphkjikjghckgehbbidbcfjgnomf'
 
   function handleCopyId() {
     navigator.clipboard.writeText(extensionId)
     setCopiedId(true)
     setTimeout(() => setCopiedId(false), 2000)
+  }
+
+  function handleCopyInviteUrl(url: string, index: number) {
+    const fullUrl = `${window.location.origin}${url}`
+    navigator.clipboard.writeText(fullUrl)
+    setCopiedUrlIndex(index)
+    setTimeout(() => setCopiedUrlIndex(null), 2000)
   }
 
   return (
@@ -90,23 +104,45 @@ export function TeamDeploymentStep({
           </form>
 
           {invitedList.length > 0 && (
-            <div className="pt-2 border-t space-y-1" style={{ borderColor: 'var(--border)' }}>
-              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--success)' }}>
-                Sent:
+            <div className="pt-3 border-t space-y-2" style={{ borderColor: 'var(--border)' }}>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--success)] flex items-center gap-1">
+                <MailCheck size={12} />
+                <span>Invitations Dispatched ({invitedList.length})</span>
               </span>
-              <div className="flex flex-wrap gap-1">
-                {invitedList.map((em, i) => (
-                  <span
+              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                {invitedList.map((item, i) => (
+                  <div
                     key={i}
-                    className="text-[10px] px-2 py-0.5 rounded-md font-mono border"
+                    className="flex items-center justify-between p-2 rounded-xl text-[11px] font-mono border"
                     style={{
-                      background: 'var(--success-light)',
-                      borderColor: 'var(--success-border)',
-                      color: 'var(--success)',
+                      background: 'var(--bg-surface)',
+                      borderColor: 'var(--border)',
                     }}
                   >
-                    {em}
-                  </span>
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="text-[var(--text-primary)] font-medium truncate">{item.email}</span>
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-sans border border-emerald-500/20">
+                        {item.status === 'auto_enrolled' ? 'Enrolled' : 'Invited'}
+                      </span>
+                    </div>
+
+                    {item.invite_url && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopyInviteUrl(item.invite_url!, i)}
+                        className="p-1 rounded-lg border text-[10px] flex items-center gap-1 shrink-0 cursor-pointer hover:bg-[var(--bg-surface-2)] transition-colors"
+                        style={{
+                          borderColor: 'var(--border)',
+                          color: copiedUrlIndex === i ? 'var(--success)' : 'var(--text-tertiary)',
+                        }}
+                        title="Copy direct invite link"
+                      >
+                        {copiedUrlIndex === i ? <Check size={11} /> : <Copy size={11} />}
+                        <span className="font-sans">{copiedUrlIndex === i ? 'Copied Link' : 'Copy Link'}</span>
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

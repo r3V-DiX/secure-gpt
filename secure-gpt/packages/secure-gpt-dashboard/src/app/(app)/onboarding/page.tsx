@@ -49,7 +49,7 @@ export default function OrgOnboardingPage() {
   // Step 4 State
   const [inviteEmails, setInviteEmails] = useState('')
   const [sendingInvites, setSendingInvites] = useState(false)
-  const [invitedList, setInvitedList] = useState<string[]>([])
+  const [invitedList, setInvitedList] = useState<Array<{ email: string; status: 'auto_enrolled' | 'invitation_created'; invite_url?: string }>>([])
 
   useEffect(() => {
     async function loadOrg() {
@@ -80,27 +80,38 @@ export default function OrgOnboardingPage() {
   async function handleSaveOrgProfile(e: React.FormEvent) {
     e.preventDefault()
     if (!orgName.trim() || !adminEmail.trim()) {
-      toast.error('Please enter an organization name and admin email.')
+      toast.error('Please enter both organization name and admin email.')
       return
     }
 
     setRegistering(true)
     try {
-      if (!org) {
-        const res = await apiPost<CurrentOrg>('/orgs/register', {
-          name: orgName.trim(),
-          admin_email: adminEmail.trim(),
-        })
-        if (res) {
-          setOrg(res)
-          toast.success('Organization profile created!')
-        }
-      } else {
-        toast.success('Organization details confirmed.')
-      }
+      const res = await apiPost<{
+        org_id: string
+        name: string
+        domain: string
+        admin_email: string
+        dns_txt_token: string
+        status: string
+      }>('/orgs/register', {
+        name: orgName.trim(),
+        admin_email: adminEmail.trim(),
+      })
+
+      setOrg({
+        id: res.org_id,
+        name: res.name,
+        domain: res.domain,
+        admin_email: res.admin_email,
+        status: res.status as any,
+        dns_txt_token: res.dns_txt_token,
+        domain_verified_at: null,
+        created_at: new Date().toISOString(),
+      })
+      toast.success('Organization details saved!')
       setCurrentStepIndex(1)
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save organization profile.')
+      toast.error(err.message || 'Failed to save organization.')
     } finally {
       setRegistering(false)
     }
@@ -162,9 +173,16 @@ export default function OrgOnboardingPage() {
       let sentCount = 0
       for (const email of emails) {
         try {
-          await apiPost('/orgs/invite', { email })
+          const res = await apiPost<{ email: string; status: 'auto_enrolled' | 'invitation_created'; invite_url?: string }>('/orgs/invite', { email })
           sentCount++
-          setInvitedList((prev) => [...prev, email])
+          setInvitedList((prev) => [
+            ...prev,
+            {
+              email,
+              status: res?.status || 'invitation_created',
+              invite_url: res?.invite_url,
+            },
+          ])
         } catch {}
       }
       toast.success(`Sent invitations to ${sentCount} team member${sentCount > 1 ? 's' : ''}!`)
@@ -243,6 +261,10 @@ export default function OrgOnboardingPage() {
             onVerify={handleVerifyDNS}
             onBack={() => setCurrentStepIndex(0)}
             onContinue={() => setCurrentStepIndex(2)}
+            onVerifyLater={() => {
+              toast.info('Verification deferred. You can complete DNS verification anytime from the dashboard banner.')
+              router.push('/dashboard')
+            }}
           />
         )}
 

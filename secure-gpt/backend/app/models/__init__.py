@@ -22,10 +22,13 @@ from app.models.rbac import (
     AuditStatus,
 )
 from app.models.otp_code import OTPCode
+from app.models.org_invitation import OrgInvitation, InvitationStatus
 
 __all__ = [
     "Organisation",
     "OrgStatus",
+    "OrgInvitation",
+    "InvitationStatus",
     "Department",
     "User",
     "UserRole",

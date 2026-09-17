@@ -9,6 +9,7 @@ import { Building2, UserCheck, User } from 'lucide-react'
 import { EmailOtpForm } from '@/features/auth/components/EmailOtpForm'
 import { OAuthButtons } from '@/features/auth/components/OAuthButtons'
 import { DevQuickBypass } from '@/features/auth/components/DevQuickBypass'
+import { PendingDomainModal } from '@/features/auth/components/PendingDomainModal'
 
 export default function LoginPage() {
   const [roleType, setRoleType] = useState<'employer' | 'employee' | 'user'>('employer')
@@ -18,6 +19,10 @@ export default function LoginPage() {
   const [otpCode, setOtpCode] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
+
+  // Pending Domain Choice Modal State
+  const [pendingDomainOrg, setPendingDomainOrg] = useState<{ orgName: string; domain: string } | null>(null)
+  const [personalSignupLoading, setPersonalSignupLoading] = useState(false)
 
   // Dev Quick-Bypass State
   const [devEmail, setDevEmail] = useState('admin@blackvector.online')
@@ -68,22 +73,47 @@ export default function LoginPage() {
   }
 
   // ── Verify Email OTP ────────────────────────────────────────────────────────
-  async function handleVerifyOTP(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleVerifyOTP(e: React.FormEvent, forcePersonal = false) {
+    if (e?.preventDefault) e.preventDefault()
     if (!otpCode.trim()) return
     try {
-      setOtpLoading(true)
-      await apiPost('/auth/otp/verify', {
+      if (forcePersonal) {
+        setPersonalSignupLoading(true)
+      } else {
+        setOtpLoading(true)
+      }
+
+      const res = await apiPost<{
+        requires_domain_choice?: boolean
+        org_name?: string
+        domain?: string
+        redirect_url?: string
+      }>('/auth/otp/verify', {
         email: email.trim(),
         code: otpCode.trim(),
         role_type: roleType,
+        force_personal: forcePersonal,
       })
+
+      if (res?.requires_domain_choice) {
+        setPendingDomainOrg({
+          orgName: res.org_name || 'Your Company',
+          domain: res.domain || email.split('@')[1] || '',
+        })
+        return
+      }
+
       toast.success('Signed in successfully!')
-      window.location.href = '/callback'
+      if (res?.redirect_url) {
+        window.location.href = res.redirect_url
+      } else {
+        window.location.href = '/callback'
+      }
     } catch (err: any) {
       toast.error(err.message || 'Invalid or expired OTP')
     } finally {
       setOtpLoading(false)
+      setPersonalSignupLoading(false)
     }
   }
 
@@ -117,6 +147,21 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{ background: 'var(--bg-base)' }}
     >
+      {/* Pending Domain Choice Modal */}
+      {pendingDomainOrg && (
+        <PendingDomainModal
+          orgName={pendingDomainOrg.orgName}
+          domain={pendingDomainOrg.domain}
+          loading={personalSignupLoading}
+          onContinuePersonal={() => handleVerifyOTP({ preventDefault: () => {} } as any, true)}
+          onCancel={() => {
+            setPendingDomainOrg(null)
+            setOtpSent(false)
+            setOtpCode('')
+          }}
+        />
+      )}
+
       {/* Background Grid Pattern */}
       <div
         className="absolute inset-0 pointer-events-none"

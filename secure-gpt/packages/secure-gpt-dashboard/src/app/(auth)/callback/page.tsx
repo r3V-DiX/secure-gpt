@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { apiGet } from "@/lib/api/client"
 import { ShieldCheck } from "lucide-react"
 
 export default function CallbackPage() {
@@ -11,7 +12,20 @@ export default function CallbackPage() {
 
   useEffect(() => {
     refresh()
-      .then(() => {
+      .then(async (user) => {
+        // If employer / org admin has an unverified organization or is setting up, route to /onboarding
+        const isOrgAdmin = user?.role === 'org_admin' || user?.role === 'employer'
+        if (isOrgAdmin) {
+          try {
+            const org = await apiGet<{ status?: string; domain_verified_at?: string } | null>('/orgs/current')
+            if (org && (org.status === 'PENDING_VERIFICATION' || !org.domain_verified_at)) {
+              router.replace('/onboarding')
+              return
+            }
+          } catch {
+            // fallback
+          }
+        }
         router.replace("/dashboard")
       })
       .catch(() => router.replace("/login?error=oauth_failed"))

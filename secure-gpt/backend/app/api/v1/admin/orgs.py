@@ -220,18 +220,21 @@ async def manual_verify_organization(
     org.domain_verified_at = datetime.now(timezone.utc)
     org.is_active = True
 
+    from app.services.org_service import migrate_domain_personal_users_to_employees
+    migrated_count = await migrate_domain_personal_users_to_employees(db, org.id, org.domain)
+
     await log_admin_action(
         db,
         request=request,
         user=current_user,
         action="org:manual_verify",
         module=PermissionModule.ORGANISATION,
-        description=f"Super Admin manual domain verification override for '{org.name}' ({org.domain})",
+        description=f"Super Admin manual domain verification override for '{org.name}' ({org.domain}). Migrated {migrated_count} domain users.",
         entity_id=org.id,
         entity_type="Organisation",
         entity_name=org.name,
         before_state={"status": old_status},
-        after_state={"status": "ACTIVE", "domain_verified_at": org.domain_verified_at.isoformat()},
+        after_state={"status": "ACTIVE", "domain_verified_at": org.domain_verified_at.isoformat(), "migrated_users": migrated_count},
         risk_level=RiskLevel.HIGH
     )
 
@@ -243,9 +246,10 @@ async def manual_verify_organization(
             "name": org.name,
             "domain": org.domain,
             "status": "ACTIVE",
-            "domain_verified_at": org.domain_verified_at.isoformat()
+            "domain_verified_at": org.domain_verified_at.isoformat(),
+            "migrated_users_count": migrated_count,
         },
-        message=f"Organization '{org.name}' domain has been manually verified."
+        message=f"Organization '{org.name}' domain has been manually verified ({migrated_count} users migrated)."
     )
 
 

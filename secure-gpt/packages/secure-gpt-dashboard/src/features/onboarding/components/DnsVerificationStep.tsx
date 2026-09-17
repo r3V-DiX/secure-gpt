@@ -13,6 +13,7 @@ interface DnsVerificationStepProps {
   onVerify: () => void
   onBack: () => void
   onContinue: () => void
+  onVerifyLater?: () => void
 }
 
 export function DnsVerificationStep({
@@ -24,6 +25,7 @@ export function DnsVerificationStep({
   onVerify,
   onBack,
   onContinue,
+  onVerifyLater,
 }: DnsVerificationStepProps) {
   const [copied, setCopied] = useState(false)
 
@@ -134,7 +136,20 @@ export function DnsVerificationStep({
         </table>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+      {!isVerified && (
+        <div
+          className="p-3.5 rounded-xl border text-xs"
+          style={{
+            background: 'var(--bg-surface-2)',
+            borderColor: 'var(--border)',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <span className="font-semibold text-[var(--text-primary)]">Optional Verification:</span> You can verify DNS now for instant employee auto-enrollment, or choose <strong className="text-[var(--text-primary)]">"Verify Later"</strong> below to explore the dashboard. <em>Note: Until verified, enterprise policy enforcement and employee auto-enrollment remain paused.</em>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
         <button
           type="button"
           onClick={onBack}
@@ -149,15 +164,32 @@ export function DnsVerificationStep({
           <span>Back</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onContinue}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 cursor-pointer"
-          style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
-        >
-          <span>Continue to Policy Presets</span>
-          <ArrowRight size={14} />
-        </button>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          {onVerifyLater && !isVerified && (
+            <button
+              type="button"
+              onClick={onVerifyLater}
+              className="px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:bg-[var(--bg-surface-2)]"
+              style={{
+                background: 'transparent',
+                borderColor: 'var(--border)',
+                color: 'var(--text-tertiary)',
+              }}
+            >
+              Verify Later (Restricted Mode)
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onContinue}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 cursor-pointer"
+            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          >
+            <span>Continue to Policy Presets</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
       </div>
     </div>
   )

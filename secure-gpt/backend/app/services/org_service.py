@@ -90,3 +90,42 @@ async def verify_dns_txt_record(domain: str, expected_token: str) -> bool:
         pass
 
     return False
+
+
+async def migrate_domain_personal_users_to_employees(db, org_id: str, domain: str) -> int:
+    """
+    When an organization's DNS is verified, automatically migrates all existing
+    personal accounts (role: USER) under that domain to role: EMPLOYEE linked to org_id,
+    and safely disables their personal DLP policies.
+    """
+    from app.models.user import User, UserRole
+    from app.models.policy import Policy
+    from sqlalchemy import select, update
+
+    # Find users whose email ends with @{domain} and role is USER or unlinked
+    domain_suffix = f"%@{domain.lower()}"
+    res = await db.execute(
+        select(User).where(
+            User.email.ilike(domain_suffix),
+            User.org_id.is_(None) | (User.org_id == org_id),
+            User.role == UserRole.USER
+        )
+    )
+    users_to_migrate = res.scalars().all()
+    count = len(users_to_migrate)
+
+    for u in users_to_migrate:
+        u.org_id = org_id
+        u.role = UserRole.EMPLOYEE
+
+        # Disable personal policies in favor of organization policies
+        await db.execute(
+            update(Policy)
+            .where(Policy.user_id == u.id)
+            .values(is_disabled_by_org=True)
+        )
+
+    if count > 0:
+        await db.flush()
+
+    return count

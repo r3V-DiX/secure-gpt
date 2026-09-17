@@ -3,37 +3,78 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Circle, CircleCheck, PartyPopper } from 'lucide-react'
+import { Circle, CircleCheck, PartyPopper, RefreshCw } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useProfile } from '@/features/profile/hooks/use-profile'
-import { STORAGE_KEY, USER_STEPS, ORG_ADMIN_STEPS, type Step } from '@/features/onboarding/config/steps.data'
+import { USER_STEPS, ORG_ADMIN_STEPS, type Step } from '@/features/onboarding/config/steps.data'
 import { renderStepAction } from '@/features/onboarding/components/StepActionRenderer'
+import { apiGet } from '@/lib/api/client'
+
+interface OrgCurrentResponse {
+  id: string
+  name: string
+  domain: string | null
+  status: 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED'
+  domain_verified_at: string | null
+}
 
 export default function GetStartedPage() {
   const { user } = useAuth()
   const { devices, loading: devicesLoading } = useProfile()
-  const [done, setDone] = useState<string[]>([])
+  const [org, setOrg] = useState<OrgCurrentResponse | null>(null)
+  const [orgLoading, setOrgLoading] = useState(true)
+  const [manualDone, setManualDone] = useState<string[]>([])
 
   const isOrgAdmin = user?.role === 'org_admin' || user?.role === 'super_admin' || user?.role === 'platform_super_admin'
   const activeSteps: Step[] = isOrgAdmin ? ORG_ADMIN_STEPS : USER_STEPS
 
+  const storageKey = user?.id ? `securegpt:get-started:done:${user.id}` : 'securegpt:get-started:done'
+
+  // Fetch current org for dynamic status detection
+  useEffect(() => {
+    let isMounted = true
+    async function loadOrg() {
+      if (!isOrgAdmin) {
+        setOrgLoading(false)
+        return
+      }
+      try {
+        const res = await apiGet<OrgCurrentResponse | null>('/orgs/current')
+        if (isMounted && res) {
+          setOrg(res)
+        }
+      } catch {
+        // silent
+      } finally {
+        if (isMounted) setOrgLoading(false)
+      }
+    }
+    loadOrg()
+    return () => {
+      isMounted = false
+    }
+  }, [isOrgAdmin])
+
+  // Load user-scoped manual checklist state
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
+      const raw = localStorage.getItem(storageKey)
       if (raw) {
         const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) setDone(parsed.filter((x) => typeof x === 'string'))
+        if (Array.isArray(parsed)) setManualDone(parsed.filter((x) => typeof x === 'string'))
+      } else {
+        setManualDone([])
       }
     } catch {
-      /* storage unavailable — ignore */
+      /* ignore */
     }
-  }, [])
+  }, [storageKey])
 
-  function toggleStep(id: string) {
-    setDone((prev) => {
+  function toggleManualStep(id: string) {
+    setManualDone((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+        localStorage.setItem(storageKey, JSON.stringify(next))
       } catch {
         /* ignore */
       }
@@ -41,7 +82,18 @@ export default function GetStartedPage() {
     })
   }
 
-  const completed = activeSteps.filter((s) => done.includes(s.id)).length
+  // Determine dynamic completion status per step
+  function isStepDone(id: string): boolean {
+    if (id === 'verify_domain') {
+      return Boolean(org?.status === 'ACTIVE' && org?.domain_verified_at)
+    }
+    if (id === 'install' || id === 'connect') {
+      if (devices.length > 0) return true
+    }
+    return manualDone.includes(id)
+  }
+
+  const completed = activeSteps.filter((s) => isStepDone(s.id)).length
   const pct = Math.round((completed / activeSteps.length) * 100)
   const allDone = completed === activeSteps.length
   const firstName = user?.fullName?.split(' ')[0] ?? 'there'
@@ -55,7 +107,9 @@ export default function GetStartedPage() {
             Get Started, {firstName} 👋
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Set up SecureGPT in a few minutes — install, connect, and start protecting your AI chats.
+            {isOrgAdmin
+              ? 'Complete enterprise domain verification, deploy protection, and configure organizational policies.'
+              : 'Set up SecureGPT in a few minutes — install, connect, and start protecting your AI chats.'}
           </p>
         </div>
 
@@ -120,15 +174,17 @@ export default function GetStartedPage() {
         <p className="text-xs mt-2.5" style={{ color: 'var(--text-tertiary)' }}>
           {allDone
             ? 'Everything is set up. You’re protected — happy prompting!'
-            : 'Mark each step as you complete it. Your progress is saved on this browser.'}
+            : 'Track real-time setup progress or toggle steps once configured.'}
         </p>
       </div>
 
       {/* ── Step cards ──────────────────────────────────────────────────── */}
       <div className="space-y-4">
         {activeSteps.map((step, i) => {
-          const isDone = done.includes(step.id)
+          const isDone = isStepDone(step.id)
+          const isAutoVerified = (step.id === 'verify_domain' && isDone) || ((step.id === 'install' || step.id === 'connect') && devices.length > 0)
           const Icon = step.icon
+
           return (
             <div
               key={step.id}
@@ -154,12 +210,19 @@ export default function GetStartedPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                        <span className="mr-1.5 font-mono text-xs align-baseline" style={{ color: 'var(--text-tertiary)' }}>
-                          {i + 1}.
-                        </span>
-                        {step.title}
-                      </h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                          <span className="mr-1.5 font-mono text-xs align-baseline" style={{ color: 'var(--text-tertiary)' }}>
+                            {i + 1}.
+                          </span>
+                          {step.title}
+                        </h2>
+                        {isAutoVerified && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                            Live Auto-Detected
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                         {step.description}
                       </p>
@@ -167,7 +230,7 @@ export default function GetStartedPage() {
 
                     {/* Mark done toggle */}
                     <button
-                      onClick={() => toggleStep(step.id)}
+                      onClick={() => toggleManualStep(step.id)}
                       aria-pressed={isDone}
                       aria-label={isDone ? `Mark "${step.title}" as not done` : `Mark "${step.title}" as done`}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition-all shrink-0 cursor-pointer hover:brightness-105"
@@ -217,7 +280,7 @@ export default function GetStartedPage() {
               You're all set!
             </h3>
             <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-              Your browser is protected. Head to the dashboard to watch detections, or the event log to dig into what was caught.
+              Your organization and browsers are protected. Head to the dashboard to monitor live telemetry.
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
