@@ -9,7 +9,7 @@
 // ─────────────────────────────────────────────
 
 import axios from 'axios'
-import { authStorage, localStorageExt } from '@/lib/storage/storage'
+import { authStorage, stateStorage, localStorageExt } from '@/lib/storage/storage'
 import { API_ENDPOINTS } from '@/config/api.config'
 import type { User } from '@securegpt/shared/types'
 
@@ -116,6 +116,11 @@ export async function getCurrentUser(): Promise<User | null> {
 // ── Register device with backend ──────────────
 export async function registerDevice(): Promise<string | null> {
   try {
+    const loggedIn = await authStorage.isLoggedIn()
+    if (!loggedIn) {
+      return null
+    }
+
     const cachedDeviceId = await localStorageExt.get<string>('deviceId')
     const payload = {
       name: `${getBrowserName()} Extension`,
@@ -154,12 +159,14 @@ export async function registerDevice(): Promise<string | null> {
 }
 
 export async function sendDeviceHeartbeat(): Promise<void> {
+  const loggedIn = await authStorage.isLoggedIn()
+  if (!loggedIn) {
+    return
+  }
+
   const cachedDeviceId = await localStorageExt.get<string>('deviceId')
   if (!cachedDeviceId) {
-    const loggedIn = await authStorage.isLoggedIn()
-    if (loggedIn) {
-      void registerDevice()
-    }
+    void registerDevice()
     return
   }
 
