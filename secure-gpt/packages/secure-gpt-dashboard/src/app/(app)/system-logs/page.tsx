@@ -69,7 +69,7 @@ export default function SystemLogsPage() {
           <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading system logs...</span>
         </div>
       ) : logs.length === 0 ? (
-        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl p-12 text-center flex flex-col items-center gap-2 shadow-lg">
+        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md p-12 text-center flex flex-col items-center gap-2 shadow-lg">
           <Database className="size-12" style={{ color: 'var(--text-tertiary)', opacity: 0.6 }} />
           <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No system logs recorded</h3>
           <p className="text-[11px] max-w-xs" style={{ color: 'var(--text-tertiary)' }}>
@@ -77,7 +77,7 @@ export default function SystemLogsPage() {
           </p>
         </div>
       ) : (
-        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-xl">
+        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

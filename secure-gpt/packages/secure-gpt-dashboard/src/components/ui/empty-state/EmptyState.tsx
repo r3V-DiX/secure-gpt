@@ -20,7 +20,7 @@ export function EmptyState({
 
   return (
     <div
-      className={`flex flex-col items-center justify-center text-center p-8 rounded-2xl border border-dashed ${className}`}
+      className={`flex flex-col items-center justify-center text-center p-8 rounded-md border border-dashed ${className}`}
       style={{
         background: 'var(--bg-surface-2)',
         borderColor: 'var(--border-2)',
@@ -28,7 +28,7 @@ export function EmptyState({
     >
       {IconOrNode && (
         <div
-          className="size-12 rounded-2xl flex items-center justify-center mb-3.5 shadow-sm"
+          className="size-12 rounded-md flex items-center justify-center mb-3.5 shadow-sm"
           style={{
             background: 'var(--bg-surface)',
             border: '1px solid var(--border)',

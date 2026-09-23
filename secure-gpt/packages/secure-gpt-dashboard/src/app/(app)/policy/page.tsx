@@ -86,10 +86,10 @@ export default function PolicyPage() {
           <div className="skeleton h-8 w-64 rounded-xl" />
           <div className="skeleton h-4 w-96 rounded-lg" />
         </div>
-        <div className="skeleton h-24 rounded-2xl" />
+        <div className="skeleton h-24 rounded-md" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="skeleton h-48 rounded-2xl" />
+            <div key={i} className="skeleton h-48 rounded-md" />
           ))}
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function PolicyPage() {
         {/* ── High-Level Policy Metrics Strip ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div
-            className="p-4 rounded-2xl border flex items-center justify-between"
+            className="p-4 rounded-md border flex items-center justify-between"
             style={{
               background: 'var(--bg-surface)',
               borderColor: 'var(--border-2)',
@@ -195,7 +195,7 @@ export default function PolicyPage() {
           </div>
 
           <div
-            className="p-4 rounded-2xl border flex items-center justify-between"
+            className="p-4 rounded-md border flex items-center justify-between"
             style={{
               background: 'var(--bg-surface)',
               borderColor: 'var(--border-2)',
@@ -214,7 +214,7 @@ export default function PolicyPage() {
           </div>
 
           <div
-            className="p-4 rounded-2xl border flex items-center justify-between"
+            className="p-4 rounded-md border flex items-center justify-between"
             style={{
               background: 'var(--bg-surface)',
               borderColor: 'var(--border-2)',

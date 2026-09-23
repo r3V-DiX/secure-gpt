@@ -1,11 +1,13 @@
 'use client'
 // src/app/(app)/settings/page.tsx
 import { useState } from 'react'
-import { Download, Loader2, LogOut, ShieldCheck, Database, Info, Lock, Monitor, Cpu } from 'lucide-react'
+import { Download, LogOut, ShieldCheck, Database, Info, Lock, Monitor, Cpu } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useProfile } from '@/features/profile/hooks/use-profile'
 import { useToast } from '@/contexts/toast-context'
 import { useLogoutConfirm, Modal } from '@/components/ui/modal/modal'
+import { Button } from '@/components/ui/button/button'
+import { AlertIcon } from '@/components/icons'
 import { downloadLogsCsv } from '@/lib/utils/export'
 import { apiDelete } from '@/lib/api/client'
 import { RegisteredDevicesPanel } from '@/features/profile/components/registered-devices-panel'
@@ -87,24 +89,14 @@ export default function SettingsPage() {
         </div>
 
         <div className="px-5 py-4">
-          <button
+          <Button
+            variant="secondary"
             onClick={handleLogout}
-            disabled={loggingOut}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              background: 'var(--bg-surface-2)',
-              borderColor: 'var(--border-2)',
-              color: 'var(--text-primary)',
-            }}
-            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-strong)'}
-            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'}
+            loading={loggingOut}
+            icon={<LogOut size={13} />}
           >
-            {loggingOut
-              ? <Loader2 size={13} className="animate-spin" />
-              : <LogOut size={13} />
-            }
-            {loggingOut ? 'Signing out…' : 'Sign out'}
-          </button>
+            Sign out
+          </Button>
           <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
             You'll be asked to confirm before signing out.
           </p>
@@ -124,21 +116,14 @@ export default function SettingsPage() {
           <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
             Download all your detection event logs as a CSV file. Includes timestamps, actions, categories, and entity types.
           </p>
-          <button
+          <Button
+            variant="secondary"
             onClick={handleExport}
-            disabled={exporting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              background: 'var(--bg-surface-2)',
-              borderColor: 'var(--border-2)',
-              color: 'var(--text-primary)',
-            }}
-            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-strong)'}
-            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'}
+            loading={exporting}
+            icon={<Download size={13} />}
           >
-            {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-            {exporting ? 'Exporting…' : 'Export my logs (CSV)'}
-          </button>
+            Export my logs (CSV)
+          </Button>
         </div>
       </Section>
 
@@ -172,7 +157,7 @@ export default function SettingsPage() {
       </Section>
 
       {/* Danger Zone */}
-      <div className="rounded-2xl border overflow-hidden mt-6"
+      <div className="rounded-md border overflow-hidden mt-6"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--danger-border)', boxShadow: 'var(--shadow-card)' }}>
         <div className="px-5 py-3 border-b flex items-center gap-2"
           style={{ borderColor: 'var(--danger-border)', background: 'var(--danger-light)' }}>
@@ -212,7 +197,10 @@ export default function SettingsPage() {
             </p>
             <div className="p-3.5 rounded-xl border text-[11px] space-y-1.5"
               style={{ background: 'var(--danger-light)', borderColor: 'var(--danger-border)', color: 'var(--danger)' }}>
-              <p className="font-semibold">⚠️ Data Retention & Deletion Policy:</p>
+              <p className="font-semibold flex items-center gap-1.5">
+                <AlertIcon size={14} className="shrink-0 text-[var(--danger)]" />
+                Data Retention & Deletion Policy:
+              </p>
               <ul className="list-disc pl-4 space-y-0.5">
                 <li>Account and telemetry data will be retained for 3 years for compliance audits.</li>
                 <li>Associated security and access logs will be permanently deleted after 30 days.</li>
@@ -248,7 +236,7 @@ function Section({ icon, title, children }: {
   icon: React.ReactNode; title: string; children: React.ReactNode
 }) {
   return (
-    <div className="rounded-2xl border overflow-hidden"
+    <div className="rounded-md border overflow-hidden"
       style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
       <div className="px-5 py-3 border-b flex items-center gap-2"
         style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}>

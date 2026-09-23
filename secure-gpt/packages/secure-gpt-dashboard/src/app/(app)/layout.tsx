@@ -48,8 +48,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const standardUrl = process.env.NODE_ENV === 'production' ? 'https://securegpt.rkavach.com' : 'http://localhost:3000'
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)] px-4 py-12">
-        <div className="max-w-md w-full rounded-2xl bg-[var(--bg-surface-1)] border border-[var(--border)] p-8 text-center shadow-xl space-y-6 animate-fade-in">
-          <div className="size-16 rounded-2xl mx-auto flex items-center justify-center bg-[var(--danger-light)] text-[var(--danger)] border border-[var(--danger-border)]">
+        <div className="max-w-md w-full rounded-md bg-[var(--bg-surface-1)] border border-[var(--border)] p-8 text-center shadow-xl space-y-6 animate-fade-in">
+          <div className="size-16 rounded-md mx-auto flex items-center justify-center bg-[var(--danger-light)] text-[var(--danger)] border border-[var(--danger-border)]">
             <ShieldAlert size={32} />
           </div>
           <div>
@@ -112,7 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Modal open={sessionExpired} onClose={dismissExpired} size="sm" closeOnBackdrop={false}>
         <div className="p-6 flex flex-col items-center text-center gap-4">
           <div
-            className="size-14 rounded-2xl flex items-center justify-center shrink-0 bg-[var(--warning-light)] border border-[var(--warning-border)] text-[var(--warning)]"
+            className="size-14 rounded-md flex items-center justify-center shrink-0 bg-[var(--warning-light)] border border-[var(--warning-border)] text-[var(--warning)]"
           >
             <Clock size={24} />
           </div>

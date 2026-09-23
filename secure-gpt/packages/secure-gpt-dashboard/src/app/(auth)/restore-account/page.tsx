@@ -112,7 +112,7 @@ export default function RestoreAccountPage() {
 
       {/* Card */}
       <div
-        className="relative w-full max-w-[440px] rounded-2xl p-8 text-center"
+        className="relative w-full max-w-[440px] rounded-md p-8 text-center"
         style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-2)',
@@ -121,7 +121,7 @@ export default function RestoreAccountPage() {
       >
         <div className="flex justify-center mb-6">
           <div
-            className="size-14 rounded-2xl flex items-center justify-center text-[var(--warning)]"
+            className="size-14 rounded-md flex items-center justify-center text-[var(--warning)]"
             style={{
               background: 'var(--warning-light)',
               border: '1px solid var(--warning-border)',

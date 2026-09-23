@@ -106,7 +106,7 @@ export function UserCsvImportModal({ open, onClose, onSuccess }: UserCsvImportMo
 
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all hover:bg-[var(--bg-surface-2)] flex flex-col items-center justify-center gap-2"
+            className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-all hover:bg-[var(--bg-surface-2)] flex flex-col items-center justify-center gap-2"
             style={{ borderColor: file ? 'var(--accent)' : 'var(--border-2)' }}
           >
             <input

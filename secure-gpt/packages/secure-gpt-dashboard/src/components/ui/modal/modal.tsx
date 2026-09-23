@@ -143,13 +143,13 @@ export function Modal({
             <div
                 ref={panelRef}
                 className={clsx(
-                    'relative w-full rounded-2xl animate-modal-in',
+                    'relative w-full rounded-lg animate-modal-in',
                     sizeClasses[size],
                 )}
                 style={{
                     background: 'var(--bg-surface)',
                     border: '1px solid var(--border-2)',
-                    boxShadow: 'var(--shadow-modal)',
+                    boxShadow: 'var(--shadow-lg)',
                 }}
             >
                 {children}
@@ -271,7 +271,7 @@ function ConfirmModal({
         <Modal open onClose={onCancel} size="sm" closeOnBackdrop={!loading}>
             <div className="p-6 flex flex-col items-center text-center gap-4">
                 <div
-                    className="size-14 rounded-2xl flex items-center justify-center shrink-0"
+                    className="size-14 rounded-lg flex items-center justify-center shrink-0"
                     style={{
                         background: cfg.iconBg,
                         border: `1.5px solid ${cfg.iconBorder}`,

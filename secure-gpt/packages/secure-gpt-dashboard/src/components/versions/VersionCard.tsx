@@ -6,7 +6,7 @@ import { VersionItem } from '@/config/versions.data'
 export function VersionCard({ item }: { item: VersionItem }) {
   return (
     <article
-      className="rounded-3xl border overflow-hidden transition-all duration-300 shadow-sm"
+      className="rounded-lg border overflow-hidden transition-all duration-300 shadow-sm"
       style={{
         background: 'var(--bg-surface)',
         borderColor: 'var(--border)',
@@ -91,7 +91,7 @@ export function VersionCard({ item }: { item: VersionItem }) {
       <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 1. What was Added New */}
         <div
-          className="p-6 rounded-2xl border"
+          className="p-6 rounded-md border"
           style={{
             background: 'var(--bg-base)',
             borderColor: 'var(--border)',
@@ -118,7 +118,7 @@ export function VersionCard({ item }: { item: VersionItem }) {
 
         {/* 2. What Functionality Changed */}
         <div
-          className="p-6 rounded-2xl border"
+          className="p-6 rounded-md border"
           style={{
             background: 'var(--bg-base)',
             borderColor: 'var(--border)',
@@ -145,7 +145,7 @@ export function VersionCard({ item }: { item: VersionItem }) {
 
         {/* 3. What was Improved */}
         <div
-          className="p-6 rounded-2xl border"
+          className="p-6 rounded-md border"
           style={{
             background: 'var(--bg-base)',
             borderColor: 'var(--border)',
@@ -172,7 +172,7 @@ export function VersionCard({ item }: { item: VersionItem }) {
 
         {/* 4. What Problem Solved */}
         <div
-          className="p-6 rounded-2xl border"
+          className="p-6 rounded-md border"
           style={{
             background: 'var(--bg-base)',
             borderColor: 'var(--border)',

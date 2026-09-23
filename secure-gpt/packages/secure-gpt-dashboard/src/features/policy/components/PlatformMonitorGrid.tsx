@@ -124,7 +124,7 @@ export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: P
       </div>
 
       <div
-        className="rounded-2xl border p-4 sm:p-5 space-y-4"
+        className="rounded-md border p-4 sm:p-5 space-y-4"
         style={{
           background: 'var(--bg-surface)',
           borderColor: 'var(--border-2)',

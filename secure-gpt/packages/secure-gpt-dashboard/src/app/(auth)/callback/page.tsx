@@ -38,7 +38,7 @@ export default function CallbackPage() {
     >
       {/* Animated logo */}
       <div
-        className="size-14 rounded-2xl flex items-center justify-center"
+        className="size-14 rounded-md flex items-center justify-center"
         style={{
           background: 'var(--accent-light)',
           border: '1px solid var(--accent-border)',

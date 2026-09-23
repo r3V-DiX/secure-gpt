@@ -46,7 +46,7 @@ export function OrgVerificationCard({ currentOrg, user, onVerified }: OrgVerific
 
   return (
     <div
-      className="rounded-2xl p-6 border transition-all"
+      className="rounded-md p-6 border transition-all"
       style={{
         background: 'var(--bg-surface)',
         borderColor: 'var(--border)',

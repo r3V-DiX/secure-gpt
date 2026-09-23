@@ -149,12 +149,12 @@ export default function TeamPage() {
   if (loading && !users.length) {
     return (
       <div className="space-y-6 animate-fade-in max-w-6xl">
-        <div className="skeleton h-10 w-64 rounded-2xl" />
-        <div className="skeleton h-44 rounded-3xl" />
+        <div className="skeleton h-10 w-64 rounded-md" />
+        <div className="skeleton h-44 rounded-lg" />
         <div className="grid grid-cols-3 gap-4">
-          <div className="skeleton h-32 rounded-2xl" />
-          <div className="skeleton h-32 rounded-2xl" />
-          <div className="skeleton h-32 rounded-2xl" />
+          <div className="skeleton h-32 rounded-md" />
+          <div className="skeleton h-32 rounded-md" />
+          <div className="skeleton h-32 rounded-md" />
         </div>
       </div>
     )
@@ -236,7 +236,7 @@ export default function TeamPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {departments.length === 0 ? (
             <div
-              className="col-span-full p-8 text-center border border-dashed rounded-2xl"
+              className="col-span-full p-8 text-center border border-dashed rounded-md"
               style={{ borderColor: 'var(--border-2)', background: 'var(--bg-surface)' }}
             >
               <div
@@ -261,7 +261,7 @@ export default function TeamPage() {
               return (
                 <div
                   key={dept.id}
-                  className="p-5 rounded-2xl border transition-all flex flex-col justify-between group hover:border-[var(--accent)] hover:shadow-md"
+                  className="p-5 rounded-md border transition-all flex flex-col justify-between group hover:border-[var(--accent)] hover:shadow-md"
                   style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
                 >
                   <div>

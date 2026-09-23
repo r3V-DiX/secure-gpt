@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/contexts/theme-context'
+import { useSystemVersion } from '@/contexts/system-version-context'
 import { Avatar } from '@/components/shared/Avatar'
 import { VersionModal } from '@/components/shared/VersionModal'
 import { useLogoutConfirm } from '@/components/ui/modal/modal'
@@ -118,6 +119,7 @@ export function SidebarInner({
   const confirmLogout = useLogoutConfirm()
   const { toast } = useToast()
   const { theme, toggleTheme } = useTheme()
+  const { currentVersion } = useSystemVersion()
   const [versionModalOpen, setVersionModalOpen] = useState(false)
 
   if (!user) return null
@@ -380,7 +382,7 @@ export function SidebarInner({
           >
             <span className="flex items-center gap-1 group-hover:text-[var(--sidebar-text-active)]">
               <span className="size-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-              v1.1.4
+              v{currentVersion}
             </span>
             <span className="opacity-75 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity font-semibold">
               Status ↗

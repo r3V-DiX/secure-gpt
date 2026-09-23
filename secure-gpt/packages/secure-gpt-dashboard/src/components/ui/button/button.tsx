@@ -21,16 +21,16 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  primary:   'bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white border-transparent shadow-sm',
+  primary:   'bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white border-transparent shadow-xs',
   secondary: 'bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-2)]',
   danger:    'bg-[var(--danger-light)] hover:bg-[var(--danger-light)] text-[var(--danger)] border border-[var(--danger-border)]',
   ghost:     'bg-transparent hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-transparent',
 }
 
 const sizeClasses: Record<Size, string> = {
-  sm: 'h-7 px-3 text-xs gap-1.5 rounded-lg',
-  md: 'h-8 px-4 text-sm gap-2 rounded-lg',
-  lg: 'h-10 px-5 text-sm gap-2 rounded-xl',
+  sm: 'h-7 px-2.5 text-xs gap-1.5 rounded-md font-medium',
+  md: 'h-8 px-3 text-xs gap-1.5 rounded-md font-medium',
+  lg: 'h-9 px-4 text-xs gap-2 rounded-md font-medium',
 }
 
 export function Button({
@@ -40,10 +40,10 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center font-semibold border',
-        'transition-all duration-150 select-none cursor-pointer',
+        'inline-flex items-center justify-center border',
+        'transition-all duration-120 select-none cursor-pointer',
         'disabled:opacity-50 disabled:cursor-not-allowed',
-        'focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1',
+        'focus-visible:ring-1 focus-visible:ring-[var(--accent)] focus-visible:outline-none',
         variantClasses[variant],
         sizeClasses[size],
         fullWidth && 'w-full',

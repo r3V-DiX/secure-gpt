@@ -52,7 +52,7 @@ export default function TermsPage() {
             </p>
           </div>
 
-          <article className="rounded-2xl border animate-fade-in" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}>
+          <article className="rounded-md border animate-fade-in" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}>
 
             {/* Intro callout */}
             <div className="px-8 pt-8 pb-6 border-b" style={{ borderColor: 'var(--border)' }}>

@@ -11,17 +11,13 @@ import {
   ArrowLeft,
   History,
 } from 'lucide-react'
-import {
-  TabKey,
-  VersionItem,
-  BASELINE_VERSIONS,
-  ADMIN_VERSIONS,
-  EXTENSION_VERSIONS,
-} from '@/config/versions.data'
+import { TabKey, VersionItem } from '@/config/versions.data'
 import { VersionCard } from '@/components/versions/VersionCard'
+import { useSystemVersion } from '@/contexts/system-version-context'
 
 export default function DedicatedVersionsPage() {
-  const { user, loading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const { currentVersion, adminVersion, extensionVersion, releases, loading } = useSystemVersion()
   const [activeTab, setActiveTab] = useState<TabKey>('baseline')
 
   const tabs: { key: TabKey; label: string; icon: React.ReactNode; badge: string; description: string }[] = [
@@ -29,31 +25,26 @@ export default function DedicatedVersionsPage() {
       key: 'baseline',
       label: 'Baseline Product',
       icon: <Layers size={16} />,
-      badge: `v${BASELINE_VERSIONS[0]?.version || '1.1.4'}`,
+      badge: `v${currentVersion}`,
       description: 'Core backend, API gateway, telemetry, and DLP engine infrastructure.',
     },
     {
       key: 'admin',
       label: 'Admin Version History',
       icon: <Server size={16} />,
-      badge: `v${ADMIN_VERSIONS[0]?.version || '1.1.4'}`,
+      badge: `v${adminVersion}`,
       description: 'Administrative console, RBAC, tenant management, and audit logging.',
     },
     {
       key: 'extension',
       label: 'Extension Version',
       icon: <ShieldCheck size={16} />,
-      badge: `${EXTENSION_VERSIONS.length} releases (v${EXTENSION_VERSIONS[0]?.version || '1.2.2'})`,
+      badge: `${releases.extension?.length || 0} releases (v${extensionVersion})`,
       description: 'Browser-native DLP extension, WASM scanner, and DOM interception.',
     },
   ]
 
-  const activeVersions: VersionItem[] =
-    activeTab === 'baseline'
-      ? BASELINE_VERSIONS
-      : activeTab === 'admin'
-      ? ADMIN_VERSIONS
-      : EXTENSION_VERSIONS
+  const activeVersions: VersionItem[] = releases[activeTab] || []
 
   return (
     <div
@@ -136,7 +127,7 @@ export default function DedicatedVersionsPage() {
           </div>
 
           {/* Three Main Tabs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-1.5 rounded-2xl border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-1.5 rounded-md border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
             {tabs.map((t) => {
               const isActive = activeTab === t.key
               return (

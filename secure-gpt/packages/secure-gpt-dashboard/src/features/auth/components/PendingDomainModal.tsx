@@ -21,7 +21,7 @@ export function PendingDomainModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div
-        className="w-full max-w-md rounded-2xl border p-6 shadow-2xl relative animate-scale-in"
+        className="w-full max-w-md rounded-lg border p-6 shadow-2xl relative animate-scale-in"
         style={{
           background: 'var(--bg-surface)',
           borderColor: 'var(--border-2)',

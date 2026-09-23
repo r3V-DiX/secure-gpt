@@ -202,15 +202,15 @@ export default function RolesPage() {
   })
 
   return (
-    <div className="flex-1 space-y-6 w-full animate-fade-in pb-12">
+    <div className="flex-1 space-y-6 w-full animate-fade-in pb-8">
       {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
             <Shield className="text-[var(--accent)] size-5 shrink-0" />
             Security Roles
           </h1>
-          <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm mt-1 text-[var(--text-secondary)]">
             Configure Dynamic Security Roles, assign custom granular permissions, and control user scopes.
           </p>
         </div>
@@ -234,7 +234,7 @@ export default function RolesPage() {
             return (
               <div
                 key={role.id}
-                className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-lg transition-all"
+                className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-lg transition-all"
                 style={{ opacity: role.isActive ? 1 : 0.65 }}
               >
                 {/* Main Row */}

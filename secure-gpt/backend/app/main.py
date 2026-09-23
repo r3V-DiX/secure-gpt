@@ -27,6 +27,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+from app.core.database import engine, Base, AsyncSessionLocal
+from app.core.seed_releases import seed_system_releases_if_empty
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s [%s]", settings.app_name, settings.app_env)
@@ -34,6 +37,11 @@ async def lifespan(app: FastAPI):
         if settings.debug:
             await conn.run_sync(Base.metadata.create_all)
             logger.info("Database tables synced (dev mode)")
+    
+    # Auto-seed system releases if empty
+    async with AsyncSessionLocal() as session:
+        await seed_system_releases_if_empty(session)
+
     yield
     await engine.dispose()
     logger.info("Shutdown complete")

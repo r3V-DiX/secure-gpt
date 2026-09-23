@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { apiGet } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
 import { Badge } from '@/components/ui/badge/badge'
+import { Button } from '@/components/ui/button/button'
 import { Shield, Search, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
 import type { Permission } from '@/types'
 
@@ -97,15 +98,15 @@ export default function PermissionsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-6 w-full animate-fade-in pb-12">
+    <div className="flex-1 space-y-6 w-full animate-fade-in pb-8">
       {/* Header */}
       <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
             <Shield className="text-[var(--accent)] size-5 shrink-0" />
             Granular Permissions
           </h1>
-          <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm mt-1 text-[var(--text-secondary)]">
             Overview of the dynamic API action matrix across the SecureGPT platform (Read Only).
           </p>
         </div>
@@ -113,35 +114,37 @@ export default function PermissionsPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-[var(--bg-surface-2)] rounded-xl px-3 border border-[var(--border-2)] focus-within:border-white/20 transition-all h-10">
-          <Search size={14} style={{ color: 'var(--text-tertiary)' }} />
+        <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-[var(--bg-surface)] rounded-xl px-3 border border-[var(--border-2)] focus-within:border-[var(--accent)] transition-all h-9">
+          <Search size={14} className="text-[var(--text-tertiary)]" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search permissions..."
-            className="flex-1 bg-transparent outline-none text-xs text-white placeholder:text-[var(--text-tertiary)]"
+            className="flex-1 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] border-none"
           />
         </div>
         <select
           value={riskFilter}
           onChange={e => setRisk(e.target.value)}
-          className="h-10 px-3 bg-[var(--bg-surface-2)] rounded-xl border border-[var(--border-2)] text-xs text-white outline-none cursor-pointer"
+          className="h-9 px-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-2)] text-xs text-[var(--text-primary)] outline-none cursor-pointer"
         >
           {RISK_FILTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => setExpanded(new Set(Object.keys(grouped)))}
-          className="h-10 px-4 rounded-xl border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-xs font-semibold text-white hover:bg-white/5 transition-colors cursor-pointer"
         >
           Expand All
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => setExpanded(new Set())}
-          className="h-10 px-4 rounded-xl border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-xs font-semibold text-white hover:bg-white/5 transition-colors cursor-pointer"
         >
           Collapse All
-        </button>
+        </Button>
       </div>
 
       {loading ? (
@@ -158,7 +161,7 @@ export default function PermissionsPage() {
             const highCount = perms.filter(p => p.riskLevel === 'HIGH').length
 
             return (
-              <div key={module} className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-lg">
+              <div key={module} className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-lg">
                 <button
                   onClick={() => toggleExpand(module)}
                   className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors text-left"
@@ -234,7 +237,7 @@ export default function PermissionsPage() {
       )}
 
       {Object.keys(filteredGrouped).length === 0 && !loading && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-2)] rounded-2xl py-16 flex flex-col items-center gap-3">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-2)] rounded-md py-16 flex flex-col items-center gap-3">
           <Shield size={22} style={{ color: 'var(--text-tertiary)', opacity: 0.5 }} />
           <p className="text-sm font-semibold" style={{ color: 'var(--text-tertiary)' }}>No permissions match your filters</p>
         </div>

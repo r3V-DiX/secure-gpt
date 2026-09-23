@@ -87,7 +87,7 @@ export function UserBulkActionsBar({
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-2xl backdrop-blur-xl animate-slide-up">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-md bg-[var(--bg-surface)] border border-[var(--border)] shadow-2xl backdrop-blur-xl animate-slide-up">
         <div className="flex items-center gap-2 border-r border-[var(--border)] pr-3 text-xs font-semibold text-[var(--text-primary)]">
           <span className="size-5 rounded-full bg-[var(--accent)] text-white text-[10px] flex items-center justify-center font-bold">
             {selectedCount}

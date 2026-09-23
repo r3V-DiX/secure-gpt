@@ -11,6 +11,6 @@ export default [
     },
   },
   {
-    ignores: [".next/**", "out/**", "build/**", "next-env.d.ts"],
+    ignores: [".next/**", ".next-admin/**", "out/**", "build/**", "dist/**", "next-env.d.ts"],
   },
 ];

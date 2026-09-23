@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button/button';
 import { useAuth } from '@/contexts/auth-context';
+import { useSystemVersion } from '@/contexts/system-version-context';
 import {
   BarChart3,
   Globe,
@@ -51,6 +52,7 @@ const ALL_HERO_PLATFORMS = [
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
+  const { currentVersion } = useSystemVersion();
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-base)', fontFamily: 'var(--font-poppins), Poppins, system-ui, sans-serif' }}>
@@ -88,7 +90,7 @@ export default function LandingPage() {
                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
               <span>Versions</span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] font-semibold">
-                v1.1.4
+                v{currentVersion}
               </span>
             </Link>
           </div>
@@ -267,7 +269,7 @@ export default function LandingPage() {
 
               {/* Mock browser UI */}
               <div className="relative">
-                <div className="rounded-2xl overflow-hidden shadow-2xl border"
+                <div className="rounded-md overflow-hidden shadow-2xl border"
                      style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
                   <div className="flex items-center gap-2 px-4 py-3 border-b"
                        style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
@@ -375,7 +377,7 @@ export default function LandingPage() {
               ].map(p => (
                 <div
                   key={p.id}
-                  className="p-5 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 shadow-xs flex flex-col justify-between"
+                  className="p-5 rounded-md border transition-all duration-200 hover:-translate-y-0.5 shadow-xs flex flex-col justify-between"
                   style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
                 >
                   <div>
@@ -451,7 +453,7 @@ export default function LandingPage() {
 
         {/* ── CTA ── */}
         <section className="py-28 px-6">
-          <div className="max-w-5xl mx-auto rounded-3xl p-12 md:p-20 text-center relative overflow-hidden text-white"
+          <div className="max-w-5xl mx-auto rounded-lg p-12 md:p-20 text-center relative overflow-hidden text-white"
                style={{ background: 'linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-mid) 50%, var(--accent) 100%)' }}>
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 border"
@@ -523,7 +525,7 @@ export default function LandingPage() {
                 <li><a href="#how-it-works" style={{ color: 'inherit' }}>How it works</a></li>
                 <li><a href="#platforms" style={{ color: 'inherit' }}>Supported Platforms (17)</a></li>
                 <li><a href="#threat-coverage" style={{ color: 'inherit' }}>Threat coverage</a></li>
-                <li><Link href="/versions" style={{ color: 'var(--brand-light)' }}>Version History (v1.1.4)</Link></li>
+                <li><Link href="/versions" style={{ color: 'var(--brand-light)' }}>Version History (v{currentVersion})</Link></li>
                 <li><a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-light)' }}>Chrome Extension ↗</a></li>
                 <li><Link href="/dashboard" style={{ color: 'inherit' }}>Dashboard</Link></li>
               </ul>
@@ -569,7 +571,7 @@ export default function LandingPage() {
 
 function FeatureCard({ icon, iconBg, title, desc }: { icon: React.ReactNode; iconBg: string; title: string; desc: string }) {
   return (
-    <div className="p-7 rounded-2xl border transition-all duration-300 group hover:-translate-y-1"
+    <div className="p-7 rounded-md border transition-all duration-300 group hover:-translate-y-1"
          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}
          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent-border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; }}
          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-card)'; }}>
@@ -600,7 +602,7 @@ function Step({ number, title, desc }: { number: string; title: string; desc: st
 
 function ThreatCard({ icon, iconBg, category, items }: { icon: React.ReactNode; iconBg: string; category: string; items: string[] }) {
   return (
-    <div className="p-6 rounded-2xl border" style={{ background: 'var(--bg-base)', borderColor: 'var(--border)' }}>
+    <div className="p-6 rounded-md border" style={{ background: 'var(--bg-base)', borderColor: 'var(--border)' }}>
       <div className="size-10 rounded-xl flex items-center justify-center mb-4" style={{ background: iconBg }}>
         {icon}
       </div>
@@ -619,7 +621,7 @@ function ThreatCard({ icon, iconBg, category, items }: { icon: React.ReactNode; 
 
 function TrustCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="p-6 rounded-2xl border flex gap-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+    <div className="p-6 rounded-md border flex gap-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
       <div className="size-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
            style={{ background: 'var(--bg-surface-2)' }}>
         {icon}

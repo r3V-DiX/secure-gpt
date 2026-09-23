@@ -31,7 +31,7 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-lg"
+      <div className="rounded-md border overflow-hidden transition-all duration-300 hover:shadow-lg"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}>
         <table className="w-full text-sm border-collapse">
           <thead>

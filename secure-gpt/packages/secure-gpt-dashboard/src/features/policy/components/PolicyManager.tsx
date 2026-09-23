@@ -273,7 +273,7 @@ export function SaveBar({
       }}
     >
       <div
-        className="flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-2xl border"
+        className="flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-md border"
         style={{
           background: 'var(--bg-surface)',
           borderColor: 'var(--border-2)',

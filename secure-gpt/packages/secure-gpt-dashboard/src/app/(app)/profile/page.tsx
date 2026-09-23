@@ -8,6 +8,7 @@ import { apiDelete } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
 import { Modal, useDangerConfirm } from '@/components/ui/modal/modal'
 import { EmptyState } from '@/components/ui/empty-state/EmptyState'
+import { AlertIcon } from '@/components/icons'
 
 export default function ProfilePage() {
     const { user, devices, loading, removeDevice } = useProfile()
@@ -31,9 +32,9 @@ export default function ProfilePage() {
     if (loading) {
         return (
             <div className="max-w-[720px] space-y-4 animate-fade-in">
-                <div className="skeleton h-36 rounded-2xl" />
-                <div className="skeleton h-52 rounded-2xl" />
-                <div className="skeleton h-40 rounded-2xl" />
+                <div className="skeleton h-36 rounded-md" />
+                <div className="skeleton h-52 rounded-md" />
+                <div className="skeleton h-40 rounded-md" />
             </div>
         )
     }
@@ -54,7 +55,7 @@ export default function ProfilePage() {
             </div>
 
             {/* User card */}
-            <div className="rounded-2xl border p-6 flex items-center gap-5"
+            <div className="rounded-md border p-6 flex items-center gap-5"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
                 <Avatar src={user.avatarUrl} name={user.fullName} email={user.email} size="lg" />
                 <div className="min-w-0 flex-1">
@@ -86,7 +87,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Account details */}
-            <div className="rounded-2xl border overflow-hidden"
+            <div className="rounded-md border overflow-hidden"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
                 <div className="px-5 py-3 border-b" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}>
                     <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
@@ -116,7 +117,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Devices */}
-            <div className="rounded-2xl border overflow-hidden"
+            <div className="rounded-md border overflow-hidden"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
                 <div className="px-5 py-3 border-b flex items-center justify-between"
                     style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}>
@@ -208,7 +209,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Danger Zone */}
-            <div className="rounded-2xl border overflow-hidden mt-6"
+            <div className="rounded-md border overflow-hidden mt-6"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--danger-border)', boxShadow: 'var(--shadow-card)' }}>
                 <div className="px-5 py-3 border-b animate-fade-in" style={{ borderColor: 'var(--danger-border)', background: 'var(--danger-light)' }}>
                     <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--danger)' }}>
@@ -247,7 +248,10 @@ export default function ProfilePage() {
                         </p>
                         <div className="p-3.5 rounded-xl border text-[11px] space-y-1.5"
                             style={{ background: 'var(--danger-light)', borderColor: 'var(--danger-border)', color: 'var(--danger)' }}>
-                            <p className="font-semibold">⚠️ Data Retention & Deletion Policy:</p>
+                            <p className="font-semibold flex items-center gap-1.5">
+                                <AlertIcon size={14} className="shrink-0 text-[var(--danger)]" />
+                                Data Retention & Deletion Policy:
+                            </p>
                             <ul className="list-disc pl-4 space-y-0.5">
                                 <li>Account and telemetry data will be retained for 3 years for compliance audits.</li>
                                 <li>Associated security and access logs will be permanently deleted after 30 days.</li>

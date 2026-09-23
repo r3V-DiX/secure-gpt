@@ -85,7 +85,7 @@ export function TeamBulkActionsBar({
     <>
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in">
         <div
-          className="flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md"
+          className="flex items-center gap-3 px-4 py-3 rounded-md shadow-2xl border backdrop-blur-md"
           style={{
             background: 'var(--bg-surface)',
             borderColor: 'var(--accent-border)',

@@ -2,6 +2,9 @@
 'use client'
 import { clsx } from 'clsx'
 
+import { Inbox } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state/EmptyState'
+
 export interface Column<T> {
   key: string
   label: string
@@ -22,20 +25,19 @@ export function DataTable<T>({
   columns, data, loading, emptyMessage = 'No data found', rowKey, onRowClick,
 }: DataTableProps<T>) {
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border"
+    <div className="w-full overflow-x-auto rounded-md border"
       style={{
         background: 'var(--bg-surface)',
         borderColor: 'var(--border)',
-        boxShadow: 'var(--shadow-card)',
       }}>
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full text-xs border-collapse">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
             {columns.map(col => (
               <th
                 key={col.key}
                 style={{ width: col.width, background: 'var(--bg-surface-2)' }}
-                className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest whitespace-nowrap"
+                className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
               >
                 <span style={{ color: 'var(--text-tertiary)' }}>{col.label}</span>
               </th>
@@ -55,13 +57,13 @@ export function DataTable<T>({
             ))
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-16 text-center">
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-3xl opacity-30">📭</span>
-                  <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                    {emptyMessage}
-                  </p>
-                </div>
+              <td colSpan={columns.length} className="px-4 py-8">
+                <EmptyState
+                  icon={Inbox}
+                  title="No records found"
+                  description={emptyMessage}
+                  className="border-none !bg-transparent p-4"
+                />
               </td>
             </tr>
           ) : (
@@ -82,8 +84,7 @@ export function DataTable<T>({
                 }}
               >
                 {columns.map(col => (
-                  <td key={col.key} className="px-4 py-3 whitespace-nowrap"
-                    style={{ color: 'var(--text-secondary)' }}>
+                  <td key={col.key} className="px-3.5 py-2.5 whitespace-nowrap text-[var(--text-secondary)]">
                     {col.render(row)}
                   </td>
                 ))}

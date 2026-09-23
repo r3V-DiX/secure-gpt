@@ -210,8 +210,8 @@ export default function OrgOnboardingPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap pt-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            Enterprise Setup 👋
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+            Enterprise Setup
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Configure corporate domain verification, apply zero-trust DLP policy presets, and roll out browser protection.

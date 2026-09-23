@@ -345,7 +345,7 @@ export default function UsersPage() {
       </div>
 
       {/* Enterprise Search & Filter Toolbar */}
-      <div className="p-3.5 rounded-2xl border border-[var(--border-2)] bg-[var(--bg-surface)] flex flex-col md:flex-row items-center gap-3">
+      <div className="p-3.5 rounded-md border border-[var(--border-2)] bg-[var(--bg-surface)] flex flex-col md:flex-row items-center gap-3">
         {/* Search input */}
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[var(--text-tertiary)]" />
@@ -407,13 +407,13 @@ export default function UsersPage() {
 
       {/* Users Table */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl shadow-xl">
+        <div className="flex flex-col items-center justify-center py-20 gap-3 border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md shadow-xl">
           <Loader2 className="animate-spin text-[var(--accent)] size-8" />
           <span className="text-sm text-[var(--text-tertiary)]">Loading user roster...</span>
         </div>
       ) : users.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 px-4 border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl shadow-xl text-center space-y-3">
-          <div className="size-12 rounded-2xl bg-[var(--bg-surface-2)] border border-[var(--border)] flex items-center justify-center text-[var(--text-tertiary)]">
+        <div className="flex flex-col items-center justify-center py-16 px-4 border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md shadow-xl text-center space-y-3">
+          <div className="size-12 rounded-md bg-[var(--bg-surface-2)] border border-[var(--border)] flex items-center justify-center text-[var(--text-tertiary)]">
             <Users size={24} />
           </div>
           <h3 className="text-sm font-bold text-[var(--text-primary)]">No Users Found</h3>
@@ -438,7 +438,7 @@ export default function UsersPage() {
           )}
         </div>
       ) : (
-        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-xl">
+        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

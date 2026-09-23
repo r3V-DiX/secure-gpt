@@ -180,7 +180,7 @@ export default function AdminOrganizationsPage() {
     return (
       <div className="flex h-[70vh] items-center justify-center p-4">
         <div className="max-w-md text-center space-y-4">
-          <div className="size-12 rounded-2xl bg-rose-500/10 text-rose-500 mx-auto flex items-center justify-center">
+          <div className="size-12 rounded-md bg-rose-500/10 text-rose-500 mx-auto flex items-center justify-center">
             <ShieldAlert size={24} />
           </div>
           <h2 className="text-xl font-bold text-[var(--text-primary)]">Access Denied</h2>
@@ -444,7 +444,7 @@ export default function AdminOrganizationsPage() {
       {/* ── New Organization Modal ───────────────────────────────── */}
       {createModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 md:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6 md:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex size-8 items-center justify-center rounded-xl bg-[var(--accent-light)] text-[var(--accent)] font-bold">

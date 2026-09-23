@@ -122,7 +122,7 @@ export function TeamMemberTable({
 
       {/* ── Enterprise Filter Bar ──────────────────────────────────── */}
       <div
-        className="p-3 rounded-2xl border flex flex-col md:flex-row items-stretch md:items-center gap-3"
+        className="p-3 rounded-md border flex flex-col md:flex-row items-stretch md:items-center gap-3"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
       >
         {/* Search Bar */}
@@ -159,10 +159,10 @@ export function TeamMemberTable({
             style={{ borderColor: 'var(--border-2)' }}
           >
             <option value="">All Departments</option>
-            <option value="unassigned">🏢 Unassigned Only</option>
+            <option value="unassigned">Unassigned Only</option>
             {departments.map((d) => (
               <option key={d.id} value={d.id}>
-                📁 {d.name} {d.members_count !== undefined ? `(${d.members_count})` : ''}
+                {d.name} {d.members_count !== undefined ? `(${d.members_count})` : ''}
               </option>
             ))}
           </select>
@@ -186,7 +186,7 @@ export function TeamMemberTable({
 
       {/* ── Team Table ─────────────────────────────────────────────── */}
       <div
-        className="border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg"
+        className="border rounded-md overflow-hidden transition-all duration-300 hover:shadow-lg"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
       >
         <table className="w-full text-left text-xs">
@@ -330,10 +330,10 @@ export function TeamMemberTable({
                         onChange={(e) => onAssignDepartment(u.id, e.target.value || null)}
                         className="px-2.5 py-1 text-xs font-semibold rounded-lg border bg-[var(--bg-surface-2)] text-[var(--text-primary)] border-[var(--border)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
                       >
-                        <option value="">🏢 General Org Policy</option>
+                        <option value="">General Org Policy</option>
                         {departments.map((d) => (
                           <option key={d.id} value={d.id}>
-                            📁 {d.name}
+                            {d.name}
                           </option>
                         ))}
                       </select>

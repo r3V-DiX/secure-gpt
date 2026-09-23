@@ -30,7 +30,7 @@ export default function NotFound() {
         </p>
 
         <div
-          className="mt-2 size-12 rounded-2xl flex items-center justify-center mb-5"
+          className="mt-2 size-12 rounded-md flex items-center justify-center mb-5"
           style={{
             background: 'var(--danger-light)',
             border: '1px solid var(--danger-border)',

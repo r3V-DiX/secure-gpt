@@ -21,7 +21,7 @@ function CustomTooltip({
   return (
     <div
       {...tooltipProps}
-      className="bg-[var(--bg-surface)] border border-[var(--border-2)] shadow-2xl rounded-2xl w-80 max-w-sm overflow-hidden animate-scale-in"
+      className="bg-[var(--bg-surface)] border border-[var(--border-2)] shadow-2xl rounded-md w-80 max-w-sm overflow-hidden animate-scale-in"
       style={{
         boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)',
       }}
@@ -151,7 +151,7 @@ export function OnboardingTour() {
       {showPrompt && !run && (
         <div className="fixed bottom-6 right-6 z-40 max-w-sm w-full animate-slide-up">
           <div
-            className="p-4 rounded-2xl border shadow-xl flex items-start gap-3.5 relative"
+            className="p-4 rounded-md border shadow-xl flex items-start gap-3.5 relative"
             style={{
               background: 'var(--bg-surface)',
               borderColor: 'var(--border-2)',

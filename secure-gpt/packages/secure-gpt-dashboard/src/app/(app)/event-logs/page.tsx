@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useEventLog } from '@/features/event-log/hooks/use-event-log'
 import { EventLogTable } from '@/features/event-log/components/EventLogTable'
 import { EventLogFilters } from '@/features/event-log/components/EventLogFilters'
-import { Download, Loader2 } from 'lucide-react'
+import { Download } from 'lucide-react'
+import { Button } from '@/components/ui/button/button'
 import { downloadLogsCsv } from '@/lib/utils/export'
 
 export default function LogsPage() {
@@ -50,19 +51,15 @@ export default function LogsPage() {
           </p>
         </div>
 
-        <button 
+        <Button 
+          variant="primary"
+          size="sm"
           onClick={handleExport}
-          disabled={exporting}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ 
-            background: 'var(--accent)', 
-            borderColor: 'var(--accent-border)', 
-            color: 'white' 
-          }}
+          loading={exporting}
+          icon={<Download size={13} />}
         >
-          {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-          {exporting ? 'Exporting...' : 'Export CSV'}
-        </button>
+          Export CSV
+        </Button>
       </div>
 
       {error && (

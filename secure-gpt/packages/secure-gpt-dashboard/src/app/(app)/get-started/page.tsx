@@ -119,8 +119,8 @@ export default function GetStartedPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap pt-1">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              {title}, {firstName} 👋
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+              {title}, {firstName}
             </h1>
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)]">
               {currentRole === 'super_admin'
@@ -178,7 +178,7 @@ export default function GetStartedPage() {
                   border: '1px solid var(--success-border)',
                 }}
               >
-                Complete 🎉
+                Complete
               </span>
             )}
           </div>
@@ -226,7 +226,7 @@ export default function GetStartedPage() {
               <div className="flex gap-4">
                 {/* Step icon */}
                 <div
-                  className="size-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors duration-300"
+                  className="size-11 rounded-md flex items-center justify-center shrink-0 transition-colors duration-300"
                   style={{
                     background: isDone ? 'var(--success-light)' : 'var(--accent-light)',
                     border: `1.5px solid ${isDone ? 'var(--success-border)' : 'var(--accent-border)'}`,
@@ -288,14 +288,14 @@ export default function GetStartedPage() {
       {/* ── Completion banner ───────────────────────────────────────────── */}
       {allDone && (
         <div
-          className="rounded-2xl border p-6 flex flex-col sm:flex-row items-center gap-4 animate-fade-in"
+          className="rounded-md border p-6 flex flex-col sm:flex-row items-center gap-4 animate-fade-in"
           style={{
             background: 'linear-gradient(135deg, var(--success-light) 0%, var(--bg-surface) 60%)',
             borderColor: 'var(--success-border)',
           }}
         >
           <div
-            className="size-12 rounded-2xl flex items-center justify-center shrink-0"
+            className="size-12 rounded-md flex items-center justify-center shrink-0"
             style={{
               background: 'var(--success-light)',
               border: '1.5px solid var(--success-border)',

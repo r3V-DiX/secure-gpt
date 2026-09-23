@@ -183,39 +183,39 @@ export default function LoginPage() {
 
       {/* Card */}
       <div
-        className="relative w-full max-w-[440px] rounded-3xl p-8 shadow-2xl transition-all border"
+        className="relative w-full max-w-[420px] rounded-lg p-7 transition-all border"
         style={{
           background: 'var(--bg-surface)',
-          borderColor: 'var(--border-2)',
-          boxShadow: '0 20px 40px -15px rgba(0,0,0,0.08)',
+          borderColor: 'var(--border)',
+          boxShadow: 'var(--shadow-md)',
         }}
       >
         {/* Logo */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="size-11 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden shrink-0" style={{ background: '#091a2a' }}>
+          <div className="size-9 rounded-md flex items-center justify-center border overflow-hidden shrink-0" style={{ background: '#091a2a', borderColor: 'var(--border)' }}>
             <img src="/rivedix_logo.png" alt="Rivedix Logo" className="w-full h-full object-contain p-1" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-base font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              <p className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 SecureGPT
               </p>
               {isAdminMode && (
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-500 border border-indigo-500/20">
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[var(--accent-light)] text-[var(--accent)] border border-[var(--accent-border)]">
                   Admin
                 </span>
               )}
             </div>
-            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
               {isAdminMode ? 'Super Admin & Governance Console' : 'Enterprise DLP & Privacy Platform'}
             </p>
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
+        <h1 className="text-xl font-bold tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
           {isAdminMode ? 'Sign in to Admin Console' : 'Sign in to SecureGPT'}
         </h1>
-        <p className="text-xs mb-6" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs mb-5" style={{ color: 'var(--text-secondary)' }}>
           {isAdminMode
             ? 'Enter your Super Admin credentials to access the global control plane.'
             : 'Choose your login role and authentication method'}
@@ -227,7 +227,7 @@ export default function LoginPage() {
             <label className="text-xs font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>
               I am signing in as:
             </label>
-            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+            <div className="grid grid-cols-3 gap-1 p-1 rounded-md border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -235,10 +235,10 @@ export default function LoginPage() {
                   setDevPersona('employer')
                   setDevEmail('admin@acmecorp.com')
                 }}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                   roleType === 'employer'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+                    ? 'bg-[var(--accent)] text-white shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <Building2 size={13} /> Employer
@@ -251,10 +251,10 @@ export default function LoginPage() {
                   setDevPersona('employee')
                   setDevEmail('developer@acmecorp.com')
                 }}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                   roleType === 'employee'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+                    ? 'bg-[var(--accent)] text-white shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <UserCheck size={13} /> Employee
@@ -267,10 +267,10 @@ export default function LoginPage() {
                   setDevPersona('user')
                   setDevEmail('john.doe@gmail.com')
                 }}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                   roleType === 'user'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-white/60'
+                    ? 'bg-[var(--accent)] text-white shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <User size={13} /> Personal

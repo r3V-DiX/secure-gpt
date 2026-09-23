@@ -56,43 +56,43 @@ export function OrgOnboardingBanner() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-4 md:p-5 mb-6 shadow-sm transition-all">
+    <div className="relative overflow-hidden rounded-md border border-amber-500/30 bg-amber-500/5 p-4 mb-6 transition-all">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
-          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-500 dark:text-amber-400">
-            <ShieldAlert size={20} />
+          <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-amber-500/15 text-amber-500 dark:text-amber-400">
+            <ShieldAlert size={18} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-[14px] font-bold text-[var(--text-primary)]">
+              <h4 className="text-[13.5px] font-bold text-[var(--text-primary)]">
                 Complete Enterprise Organization Setup
               </h4>
-              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10.5px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10.5px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/30">
                 Action Required
               </span>
             </div>
-            <p className="mt-1 text-[13px] text-[var(--text-secondary)] leading-relaxed max-w-2xl">
+            <p className="mt-1 text-[12.5px] text-[var(--text-secondary)] leading-relaxed max-w-2xl">
               Your organization <strong className="text-[var(--text-primary)] font-semibold">{org.name}</strong> ({org.domain || 'pending domain'}) requires DNS TXT verification before employee auto-enrollment and enterprise policy presets can be enforced.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-end">
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
           <Link
             href="/onboarding"
-            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold bg-[var(--accent)] text-white hover:opacity-90 transition-all shadow-sm shadow-[var(--accent)]/20"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold bg-[var(--accent)] text-white hover:opacity-90 transition-all shadow-xs"
           >
             <span>Complete Setup</span>
-            <ArrowRight size={15} />
+            <ArrowRight size={14} />
           </Link>
 
           <button
             type="button"
             onClick={() => setDismissed(true)}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] rounded-xl transition-colors"
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] rounded-md transition-colors"
             title="Dismiss for this session"
           >
-            <X size={17} />
+            <X size={15} />
           </button>
         </div>
       </div>

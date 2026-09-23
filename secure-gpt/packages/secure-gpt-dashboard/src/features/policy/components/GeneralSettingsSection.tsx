@@ -59,11 +59,10 @@ export function GeneralSettingsSection({ config, isAdmin, onUpdateField }: Props
       </div>
 
       <div
-        className="rounded-2xl border divide-y divide-[var(--border)] overflow-hidden"
+        className="rounded-md border divide-y divide-[var(--border)] overflow-hidden"
         style={{
           background: 'var(--bg-surface)',
-          borderColor: 'var(--border-2)',
-          boxShadow: 'var(--shadow-card)',
+          borderColor: 'var(--border)',
         }}
       >
         {settings.map(({ key, label, desc, icon, badge }) => {
@@ -71,14 +70,14 @@ export function GeneralSettingsSection({ config, isAdmin, onUpdateField }: Props
           return (
             <div
               key={key}
-              className={`flex items-center justify-between gap-4 p-4 sm:p-5 transition-colors ${
+              className={`flex items-center justify-between gap-4 p-3.5 sm:p-4 transition-colors ${
                 isAdmin ? 'cursor-pointer hover:bg-[var(--bg-surface-2)]' : 'cursor-default'
               }`}
               onClick={isAdmin ? () => onUpdateField(key, !isEnabled) : undefined}
             >
-              <div className="flex items-start gap-3.5 min-w-0">
+              <div className="flex items-start gap-3 min-w-0">
                 <span
-                  className="p-2 rounded-xl border shrink-0 mt-0.5"
+                  className="p-1.5 rounded-md border shrink-0 mt-0.5"
                   style={{
                     background: 'var(--bg-surface-2)',
                     borderColor: 'var(--border)',

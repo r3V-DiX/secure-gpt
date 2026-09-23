@@ -3,6 +3,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { ToastProvider } from "@/contexts/toast-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { ModalProvider } from "@/components/ui/modal/modal";
+import { SystemVersionProvider } from "@/contexts/system-version-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,11 +28,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
-            <ToastProvider>
-              <ModalProvider>
-                {children}
-              </ModalProvider>
-            </ToastProvider>
+            <SystemVersionProvider>
+              <ToastProvider>
+                <ModalProvider>
+                  {children}
+                </ModalProvider>
+              </ToastProvider>
+            </SystemVersionProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

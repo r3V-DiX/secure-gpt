@@ -25,21 +25,12 @@ export function PolicyScopeSelector({
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border p-4 sm:p-5 transition-all"
+      className="relative overflow-hidden rounded-md border p-3.5 sm:p-4 transition-all"
       style={{
         background: 'var(--bg-surface)',
-        borderColor: isOrg ? 'var(--border-2)' : 'var(--accent-border)',
-        boxShadow: 'var(--shadow-card)',
+        borderColor: isOrg ? 'var(--border)' : 'var(--accent-border)',
       }}
     >
-      {/* Subtle background glow */}
-      <div
-        className="absolute -right-16 -top-16 w-48 h-48 rounded-full pointer-events-none opacity-20 blur-3xl transition-all"
-        style={{
-          background: isOrg ? 'var(--accent)' : 'var(--info)',
-        }}
-      />
-
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
         <div className="space-y-1">
           <div className="flex items-center gap-2">

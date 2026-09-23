@@ -23,6 +23,7 @@ from app.models.rbac import (
 )
 from app.models.otp_code import OTPCode
 from app.models.org_invitation import OrgInvitation, InvitationStatus
+from app.models.system_release import SystemRelease
 
 __all__ = [
     "Organisation",
@@ -53,4 +54,5 @@ __all__ = [
     "RiskLevel",
     "AuditStatus",
     "OTPCode",
+    "SystemRelease",
 ]

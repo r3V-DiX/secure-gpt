@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useProfile } from '@/features/profile/hooks/use-profile'
 import { StatCard } from '@/components/shared/StatCard'
 import { OrgOnboardingBanner } from '@/features/onboarding/components/OrgOnboardingBanner'
+import { InboxIcon } from '@/components/icons'
 import {
   BarChart,
   Bar,
@@ -62,9 +63,8 @@ export default function DashboardPage() {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between flex-wrap gap-3 pt-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight leading-tight"
-            style={{ color: 'var(--text-primary)' }}>
-            {greeting}, {firstName} 👋
+          <h1 className="text-2xl font-bold tracking-tight leading-tight text-[var(--text-primary)]">
+            {greeting}, {firstName}
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             {isSuperAdmin
@@ -89,18 +89,18 @@ export default function DashboardPage() {
       {/* ── Onboarding banner (extension not connected) ──────────────────── */}
       {showOnboarding && (
         <div
-          className="relative overflow-hidden rounded-2xl border p-5 animate-fade-in"
+          className="relative overflow-hidden rounded-md border p-4 animate-fade-in"
           style={{
-            background: 'linear-gradient(135deg, var(--accent-light) 0%, var(--bg-surface) 65%)',
+            background: 'var(--bg-surface)',
             borderColor: 'var(--accent-border)',
           }}
         >
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div
-              className="size-11 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 4px 12px var(--accent-glow)' }}
+              className="size-9 rounded-md flex items-center justify-center shrink-0"
+              style={{ background: 'var(--accent)', color: '#fff' }}
             >
-              <Rocket size={20} />
+              <Rocket size={18} />
             </div>
             <div className="flex-1">
               <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -113,8 +113,8 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 shrink-0">
               <Link
                 href="/get-started"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110"
-                style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white transition-all hover:brightness-110"
+                style={{ background: 'var(--accent)' }}
               >
                 <Sparkles size={13} />
                 Get Started
@@ -122,8 +122,8 @@ export default function DashboardPage() {
               <button
                 onClick={dismissOnboarding}
                 aria-label="Dismiss onboarding"
-                className="size-8 rounded-xl flex items-center justify-center border transition-all hover:brightness-105 cursor-pointer"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-tertiary)' }}
+                className="size-7 rounded-md flex items-center justify-center border transition-all hover:bg-[var(--bg-surface-2)] cursor-pointer"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
               >
                 <X size={14} />
               </button>
@@ -695,8 +695,10 @@ function QuickStat({
 function EmptyState({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-10 gap-2">
-      <div className="text-2xl opacity-75">📭</div>
-      <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</p>
+      <div className="size-10 rounded-xl flex items-center justify-center bg-[var(--bg-surface-2)] border border-[var(--border)] text-[var(--text-tertiary)]">
+        <InboxIcon size={20} />
+      </div>
+      <p className="text-xs font-semibold text-[var(--text-secondary)]">{label}</p>
     </div>
   )
 }

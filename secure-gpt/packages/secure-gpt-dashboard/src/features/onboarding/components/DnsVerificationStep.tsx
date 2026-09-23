@@ -52,7 +52,7 @@ export function DnsVerificationStep({
 
       {/* Verification Status Banner */}
       <div
-        className="p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        className="p-4 rounded-lg border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
         style={{
           background: isVerified ? 'var(--success-light)' : 'var(--warning-light)',
           borderColor: isVerified ? 'var(--success-border)' : 'var(--warning-border)',
@@ -89,7 +89,7 @@ export function DnsVerificationStep({
       </div>
 
       {/* DNS Challenge Table */}
-      <div className="overflow-hidden rounded-2xl border" style={{ borderColor: 'var(--border)' }}>
+      <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--border)' }}>
         <table className="w-full text-left text-xs">
           <thead
             className="text-[10px] font-bold uppercase tracking-wider border-b"

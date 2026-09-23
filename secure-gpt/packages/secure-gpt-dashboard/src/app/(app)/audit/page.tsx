@@ -57,31 +57,28 @@ export default function AuditLogsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-6 w-full animate-fade-in pb-12">
+    <div className="flex-1 space-y-6 w-full animate-fade-in pb-8">
       {/* Header */}
       <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
             <ClipboardList className="text-[var(--accent)] size-5 shrink-0" />
             System Audit Logs
           </h1>
-          <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm mt-1 text-[var(--text-secondary)]">
             Track who logged in/out, check device fingerprints, monitor suspicious actions, and export data for ML model training.
           </p>
         </div>
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={handleExport}
-          disabled={exporting || logs.length === 0}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-          style={{
-            background: 'var(--accent)',
-            borderColor: 'var(--accent-border)',
-            color: 'white',
-          }}
+          loading={exporting}
+          disabled={logs.length === 0}
+          icon={<Download size={13} />}
         >
-          {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-          {exporting ? 'Exporting...' : 'Export CSV'}
-        </button>
+          Export CSV
+        </Button>
       </div>
 
       {loading ? (
@@ -90,7 +87,7 @@ export default function AuditLogsPage() {
           <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading authentication audit logs...</span>
         </div>
       ) : logs.length === 0 ? (
-        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl p-12 text-center flex flex-col items-center gap-2 shadow-lg">
+        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md p-12 text-center flex flex-col items-center gap-2 shadow-lg">
           <ClipboardList className="size-12" style={{ color: 'var(--text-tertiary)', opacity: 0.6 }} />
           <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No authentication events</h3>
           <p className="text-[11px] max-w-xs" style={{ color: 'var(--text-tertiary)' }}>
@@ -98,7 +95,7 @@ export default function AuditLogsPage() {
           </p>
         </div>
       ) : (
-        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-xl">
+        <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

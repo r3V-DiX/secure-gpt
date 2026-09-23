@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex flex-col items-center justify-center min-h-[320px] gap-4 p-8 text-center">
           <div
-            className="size-12 rounded-2xl flex items-center justify-center"
+            className="size-12 rounded-md flex items-center justify-center"
             style={{
               background: 'var(--danger-light)',
               border: '1px solid var(--danger-border)',

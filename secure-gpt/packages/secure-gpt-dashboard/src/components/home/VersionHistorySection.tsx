@@ -17,15 +17,11 @@ import {
   ShieldAlert,
   Zap,
 } from 'lucide-react'
-import {
-  TabKey,
-  VersionItem,
-  BASELINE_VERSIONS,
-  ADMIN_VERSIONS,
-  EXTENSION_VERSIONS,
-} from '@/config/versions.data'
+import { TabKey, VersionItem } from '@/config/versions.data'
+import { useSystemVersion } from '@/contexts/system-version-context'
 
 export function VersionHistorySection() {
+  const { currentVersion, adminVersion, extensionVersion, releases, loading } = useSystemVersion()
   const [activeTab, setActiveTab] = useState<TabKey>('baseline')
 
   const tabs: { key: TabKey; label: string; icon: React.ReactNode; count: number; badge: string }[] = [
@@ -33,31 +29,26 @@ export function VersionHistorySection() {
       key: 'baseline',
       label: 'Baseline Product',
       icon: <Layers size={16} />,
-      count: BASELINE_VERSIONS.length,
-      badge: `v${BASELINE_VERSIONS[0]?.version || '1.1.4'}`,
+      count: releases.baseline?.length || 0,
+      badge: `v${currentVersion}`,
     },
     {
       key: 'admin',
       label: 'Admin Console',
       icon: <Server size={16} />,
-      count: ADMIN_VERSIONS.length,
-      badge: `v${ADMIN_VERSIONS[0]?.version || '1.1.4'}`,
+      count: releases.admin?.length || 0,
+      badge: `v${adminVersion}`,
     },
     {
       key: 'extension',
       label: 'Chrome Extension',
       icon: <ShieldCheck size={16} />,
-      count: EXTENSION_VERSIONS.length,
-      badge: `v${EXTENSION_VERSIONS[0]?.version || '1.2.2'}`,
+      count: releases.extension?.length || 0,
+      badge: `v${extensionVersion}`,
     },
   ]
 
-  const activeVersions: VersionItem[] =
-    activeTab === 'baseline'
-      ? BASELINE_VERSIONS
-      : activeTab === 'admin'
-      ? ADMIN_VERSIONS
-      : EXTENSION_VERSIONS
+  const activeVersions: VersionItem[] = releases[activeTab] || []
 
   return (
     <section id="versions" className="py-24 border-t" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
@@ -86,7 +77,7 @@ export function VersionHistorySection() {
         {/* Tab Selection Navigation */}
         <div className="flex justify-center mb-10">
           <div
-            className="p-1.5 rounded-2xl border flex items-center gap-1.5 flex-wrap justify-center"
+            className="p-1.5 rounded-md border flex items-center gap-1.5 flex-wrap justify-center"
             style={{
               background: 'var(--bg-base)',
               borderColor: 'var(--border)',
@@ -130,7 +121,7 @@ export function VersionHistorySection() {
           {activeVersions.map((item) => (
             <div
               key={item.version}
-              className="rounded-3xl border overflow-hidden transition-all duration-300"
+              className="rounded-lg border overflow-hidden transition-all duration-300"
               style={{
                 background: 'var(--bg-base)',
                 borderColor: 'var(--border)',
@@ -204,7 +195,7 @@ export function VersionHistorySection() {
               <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 1. What Added New */}
                 <div
-                  className="p-6 rounded-2xl border flex flex-col justify-between"
+                  className="p-6 rounded-md border flex flex-col justify-between"
                   style={{
                     background: 'var(--bg-surface)',
                     borderColor: 'var(--border)',
@@ -233,7 +224,7 @@ export function VersionHistorySection() {
 
                 {/* 2. What Functionality Changed */}
                 <div
-                  className="p-6 rounded-2xl border flex flex-col justify-between"
+                  className="p-6 rounded-md border flex flex-col justify-between"
                   style={{
                     background: 'var(--bg-surface)',
                     borderColor: 'var(--border)',
@@ -262,7 +253,7 @@ export function VersionHistorySection() {
 
                 {/* 3. What was Improved */}
                 <div
-                  className="p-6 rounded-2xl border flex flex-col justify-between"
+                  className="p-6 rounded-md border flex flex-col justify-between"
                   style={{
                     background: 'var(--bg-surface)',
                     borderColor: 'var(--border)',
@@ -291,7 +282,7 @@ export function VersionHistorySection() {
 
                 {/* 4. What Problem Solved */}
                 <div
-                  className="p-6 rounded-2xl border flex flex-col justify-between"
+                  className="p-6 rounded-md border flex flex-col justify-between"
                   style={{
                     background: 'var(--bg-surface)',
                     borderColor: 'var(--border)',

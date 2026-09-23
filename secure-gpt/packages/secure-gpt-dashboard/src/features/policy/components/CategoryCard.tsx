@@ -19,25 +19,26 @@ import { BUILTIN_RULES_BY_CATEGORY } from '@securegpt/shared/constants'
 import { ActionPicker } from './ActionSelector'
 import { ChipInput } from './KeywordsEditor'
 import { AddEditRuleModal, Toggle, FieldRow } from './PolicyManager'
+import { CardIcon, UserProfileIcon, SecurityLock, IdeaIcon, FolderIcon } from '@/components/icons'
 
-const CATEGORY_META: Record<string, { icon: string; title: string; desc: string }> = {
+const CATEGORY_META: Record<string, { icon: React.ReactNode; title: string; desc: string }> = {
   FINANCIAL: {
-    icon: '💳',
+    icon: <CardIcon size={18} className="text-[var(--accent)]" />,
     title: 'Financial & Payment Data',
     desc: 'Credit cards, IBANs, bank accounts, routing numbers, and cryptowallets',
   },
   PII: {
-    icon: '👤',
+    icon: <UserProfileIcon size={18} className="text-[var(--info)]" />,
     title: 'Personally Identifiable Info',
     desc: 'Social security numbers, passports, phone numbers, emails, and full names',
   },
   CONFIDENTIAL: {
-    icon: '🔐',
+    icon: <SecurityLock size={18} className="text-[var(--warning)]" />,
     title: 'Secrets & API Credentials',
     desc: 'API keys, private RSA certificates, JWT tokens, and database credentials',
   },
   IP: {
-    icon: '💡',
+    icon: <IdeaIcon size={18} className="text-[var(--violet)]" />,
     title: 'Intellectual Property & Code',
     desc: 'Proprietary source code, internal schemas, patents, and internal trade secrets',
   },
@@ -116,7 +117,7 @@ export function CategoryWorkspace(props: PolicyWorkspaceProps) {
   return (
     <>
       <div
-        className="rounded-2xl border overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[560px]"
+        className="rounded-md border overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[560px]"
         style={{
           background: 'var(--bg-surface)',
           borderColor: 'var(--border-2)',
@@ -153,7 +154,7 @@ export function CategoryWorkspace(props: PolicyWorkspaceProps) {
               const cConfig = configCategories[cat]
               if (!cConfig) return null
               const isSelected = cat === activeCategoryName
-              const cMeta = CATEGORY_META[cat] ?? { icon: '📁', title: cat, desc: '' }
+              const cMeta = CATEGORY_META[cat] ?? { icon: <FolderIcon size={18} className="text-[var(--text-tertiary)]" />, title: cat, desc: '' }
               const cBuiltin = BUILTIN_RULES_BY_CATEGORY[cat] ?? []
               const cDisabled = cBuiltin.filter((r) => cConfig.ruleOverrides?.[r.id]?.enabled === false).length
               const cActiveCount = (cBuiltin.length - cDisabled) + (cConfig.customRules ?? []).filter(r => r.enabled !== false).length
