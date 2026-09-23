@@ -34,11 +34,11 @@ from app.core.seed_releases import seed_system_releases_if_empty
 async def lifespan(app: FastAPI):
     logger.info("Starting %s [%s]", settings.app_name, settings.app_env)
     async with engine.begin() as conn:
-        if settings.debug:
-            await conn.run_sync(Base.metadata.create_all)
-            logger.info("Database tables synced (dev mode)")
+        # Create any missing tables (e.g. system_releases) safely
+        await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables verified/synced")
     
-    # Auto-seed system releases if empty
+    # Auto-seed/synchronize system releases on startup
     async with AsyncSessionLocal() as session:
         await seed_system_releases_if_empty(session)
 
