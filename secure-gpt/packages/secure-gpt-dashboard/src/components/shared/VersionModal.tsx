@@ -36,7 +36,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
       const res = await apiClient.get<VersionData>('/system/version')
       setData(res.data)
     } catch (err: any) {
-      setError(err?.message || 'Failed to fetch version info')
+      setError(err?.message ?? 'Failed to fetch version info')
     } finally {
       setLoading(false)
     }
@@ -112,7 +112,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Backend API</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.backend || data.version}
+                    v{data.components?.backend ?? data.version}
                   </span>
                 </div>
 
@@ -122,7 +122,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Dashboard</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.dashboard || '1.1.4'}
+                    v{data.components?.dashboard ?? 'Not Available'}
                   </span>
                 </div>
 
@@ -132,7 +132,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Extension</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.extension || '1.2.2'}
+                    v{data.components?.extension ?? 'Not Available'}
                   </span>
                 </div>
               </div>

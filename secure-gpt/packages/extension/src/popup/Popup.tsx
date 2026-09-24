@@ -106,10 +106,10 @@ export function Popup() {
       {/* Header */}
       <div className="bg-[#060d1f] px-4 py-3 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center font-black text-white text-sm shadow-[0_2px_8px_rgba(99,102,241,0.35)]">
-            R
+          <div className="w-7 h-7 bg-[#091a2a] rounded-lg flex items-center justify-center p-0.5 border border-slate-700/40 shadow-sm">
+            <img src="/icons/icon48.png" alt="SecureGPT" className="w-full h-full object-contain" />
           </div>
-          <span className="text-white text-[15.5px] font-bold tracking-tight">Rivedix</span>
+          <span className="text-white text-[15.5px] font-bold tracking-tight">Secure<span className="text-blue-500">GPT</span></span>
         </div>
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${isActive ? 'bg-green-500/15 border-green-500/20' : 'bg-amber-500/15 border-amber-500/20'}`}>
           <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]' : 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)]'}`} />
@@ -212,7 +212,12 @@ export function Popup() {
       {/* Footer */}
       <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
         <span className="text-[10px] font-bold text-slate-400">v{chrome.runtime.getManifest().version}</span>
-        <span className="text-[10px] font-bold text-slate-400">rivedix.com</span>
+        <button 
+          onClick={() => chrome.tabs.create({ url: `${DASHBOARD_URL}/versions` })}
+          className="text-[10px] font-bold text-slate-400 hover:text-blue-600 hover:underline transition-colors"
+        >
+          SecureGPT DLP
+        </button>
       </div>
     </div>
   )
@@ -253,10 +258,10 @@ function LoginView({
 
   return (
     <div className="w-[320px] px-6 py-10 flex flex-col items-center bg-[#f0f4ff] font-[var(--font-poppins)] text-center shadow-2xl rounded-xl">
-      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-3xl font-black text-white mb-5 shadow-[0_8px_20px_rgba(99,102,241,0.4)] border border-blue-400/30">
-        R
+      <div className="w-16 h-16 bg-[#091a2a] rounded-2xl flex items-center justify-center p-2 mb-5 shadow-[0_8px_20px_rgba(99,102,241,0.4)] border border-slate-700/40">
+        <img src="/icons/icon128.png" alt="SecureGPT" className="w-full h-full object-contain" />
       </div>
-      <div className="text-[20px] font-black text-slate-900 tracking-tight mb-2">Rivedix</div>
+      <div className="text-[20px] font-black text-slate-900 tracking-tight mb-2">Secure<span className="text-blue-600">GPT</span></div>
       <div className="text-[12.5px] font-semibold text-slate-600 leading-relaxed mb-8 max-w-[240px]">
         Sign in to enforce data privacy and secure your AI interactions.
       </div>
