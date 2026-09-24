@@ -10,6 +10,9 @@ import {
   EXTENSION_VERSIONS,
 } from '@/config/versions.data'
 
+const getVersion = (version: VersionItem[]) => 
+  version[0]?.version ?? 'Not Available'
+
 export interface SystemVersionContextType {
   currentVersion: string
   adminVersion: string
@@ -21,9 +24,9 @@ export interface SystemVersionContextType {
 }
 
 const SystemVersionContext = createContext<SystemVersionContextType>({
-  currentVersion: BASELINE_VERSIONS[0]?.version || '1.1.5',
-  adminVersion: ADMIN_VERSIONS[0]?.version || '1.1.5',
-  extensionVersion: EXTENSION_VERSIONS[0]?.version || '1.2.2',
+  currentVersion: getVersion(BASELINE_VERSIONS),
+  adminVersion: getVersion(ADMIN_VERSIONS),
+  extensionVersion: getVersion(EXTENSION_VERSIONS),
   releases: {
     baseline: BASELINE_VERSIONS,
     admin: ADMIN_VERSIONS,
@@ -35,9 +38,9 @@ const SystemVersionContext = createContext<SystemVersionContextType>({
 })
 
 export function SystemVersionProvider({ children }: { children: React.ReactNode }) {
-  const [currentVersion, setCurrentVersion] = useState<string>(BASELINE_VERSIONS[0]?.version || '1.1.5')
-  const [adminVersion, setAdminVersion] = useState<string>(ADMIN_VERSIONS[0]?.version || '1.1.5')
-  const [extensionVersion, setExtensionVersion] = useState<string>(EXTENSION_VERSIONS[0]?.version || '1.2.2')
+  const [currentVersion, setCurrentVersion] = useState<string>(getVersion(BASELINE_VERSIONS))
+  const [adminVersion, setAdminVersion] = useState<string>(getVersion(ADMIN_VERSIONS))
+  const [extensionVersion, setExtensionVersion] = useState<string>(getVersion(EXTENSION_VERSIONS))
   const [releases, setReleases] = useState<Record<TabKey, VersionItem[]>>({
     baseline: BASELINE_VERSIONS,
     admin: ADMIN_VERSIONS,
@@ -76,14 +79,18 @@ export function SystemVersionProvider({ children }: { children: React.ReactNode 
       }
     } catch (err: any) {
       // Fallback silently to static seed data
-      setError(err?.message || 'Failed to sync live releases')
+      setError(err?.message ?? 'Failed to sync live releases')
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    void fetchReleases()
+    const timeoutId = window.setTimeout(() => {
+      void fetchReleases()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [fetchReleases])
 
   return (

@@ -10,8 +10,10 @@ import { EmailOtpForm } from '@/features/auth/components/EmailOtpForm'
 import { OAuthButtons } from '@/features/auth/components/OAuthButtons'
 import { DevQuickBypass } from '@/features/auth/components/DevQuickBypass'
 import { PendingDomainModal } from '@/features/auth/components/PendingDomainModal'
+import { useSystemVersion } from '@/contexts/system-version-context'
 
 export default function LoginPage() {
+  const { currentVersion } = useSystemVersion()
   const [roleType, setRoleType] = useState<'employer' | 'employee' | 'user'>('employer')
 
   // OTP State
@@ -349,7 +351,7 @@ export default function LoginPage() {
             <Link href="/versions" className="hover:text-[var(--accent)] hover:underline transition-colors flex items-center gap-1">
               <span>Version History</span>
               <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] font-semibold">
-                v1.1.4
+                v{currentVersion}
               </span>
             </Link>
             <span>•</span>

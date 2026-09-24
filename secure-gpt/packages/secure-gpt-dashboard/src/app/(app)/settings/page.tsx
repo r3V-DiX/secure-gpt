@@ -11,8 +11,10 @@ import { AlertIcon } from '@/components/icons'
 import { downloadLogsCsv } from '@/lib/utils/export'
 import { apiDelete } from '@/lib/api/client'
 import { RegisteredDevicesPanel } from '@/features/profile/components/registered-devices-panel'
+import { useSystemVersion } from '@/contexts/system-version-context'
 
 export default function SettingsPage() {
+  const { currentVersion } = useSystemVersion()
   const { user, logout } = useAuth()
   const { toast } = useToast()
   const confirmLogout = useLogoutConfirm()
@@ -146,7 +148,7 @@ export default function SettingsPage() {
             <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>SecureGPT Dashboard</span>
             <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-md"
               style={{ background: 'var(--accent-light)', color: 'var(--accent-text)' }}>
-              v1.1.4
+              v{currentVersion}
             </span>
           </div>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>

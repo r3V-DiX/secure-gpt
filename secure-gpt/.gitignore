@@ -108,3 +108,4 @@ packages/extension/*.zip
 .agents/
 skills-lock.json
 script.md
+research/
