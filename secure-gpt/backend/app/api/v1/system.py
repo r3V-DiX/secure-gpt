@@ -18,10 +18,10 @@ router = APIRouter(prefix="/system", tags=["system"])
 @router.get("/version", summary="Get application build & release version")
 async def get_system_version(db: AsyncSession = Depends(get_db)):
     """Returns live deployed build version, environment, and latest component versions."""
-    # Query latest versions from database with fallback
-    backend_ver = "1.1.5"
-    extension_ver = "1.2.2"
-    dashboard_ver = "1.1.5"
+    # Query latest versions from database with settings fallback
+    backend_ver = settings.app_version
+    extension_ver = settings.extension_version
+    dashboard_ver = settings.dashboard_version
 
     try:
         # Latest baseline / backend
@@ -54,7 +54,7 @@ async def get_system_version(db: AsyncSession = Depends(get_db)):
         "app": settings.app_name,
         "env": settings.app_env,
         "version": backend_ver,
-        "commit": settings.git_commit or "prod-v1.1.5",
+        "commit": settings.git_commit or f"prod-v{backend_ver}",
         "buildTime": settings.build_time,
         "components": {
             "backend": backend_ver,
@@ -88,9 +88,9 @@ async def get_releases(db: AsyncSession = Depends(get_db)):
 
         # If DB had entries, return them
         if any(len(v) > 0 for v in grouped.values()):
-            latest_baseline = grouped["baseline"][0]["version"] if grouped["baseline"] else "1.1.5"
-            latest_extension = grouped["extension"][0]["version"] if grouped["extension"] else "1.2.2"
-            latest_admin = grouped["admin"][0]["version"] if grouped["admin"] else "1.1.5"
+            latest_baseline = grouped["baseline"][0]["version"] if grouped["baseline"] else settings.app_version
+            latest_extension = grouped["extension"][0]["version"] if grouped["extension"] else settings.extension_version
+            latest_admin = grouped["admin"][0]["version"] if grouped["admin"] else settings.app_version
             return {
                 "status": "ok",
                 "currentVersion": latest_baseline,
@@ -128,13 +128,17 @@ async def get_releases(db: AsyncSession = Depends(get_db)):
             "orderIndex": item.get("order_index", 0),
         })
 
+    latest_fallback_baseline = fallback_grouped["baseline"][0]["version"] if fallback_grouped["baseline"] else settings.app_version
+    latest_fallback_admin = fallback_grouped["admin"][0]["version"] if fallback_grouped["admin"] else settings.app_version
+    latest_fallback_extension = fallback_grouped["extension"][0]["version"] if fallback_grouped["extension"] else settings.extension_version
+
     return {
         "status": "ok",
-        "currentVersion": "1.1.5",
+        "currentVersion": latest_fallback_baseline,
         "components": {
-            "baseline": "1.1.5",
-            "admin": "1.1.5",
-            "extension": "1.2.2",
+            "baseline": latest_fallback_baseline,
+            "admin": latest_fallback_admin,
+            "extension": latest_fallback_extension,
         },
         "releases": fallback_grouped,
     }

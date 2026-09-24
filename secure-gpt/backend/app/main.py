@@ -127,5 +127,5 @@ async def health():
         "status": "ok",
         "app": settings.app_name,
         "env": settings.app_env,
-        "version": "1.0.0",
+        "version": settings.app_version,
     }
