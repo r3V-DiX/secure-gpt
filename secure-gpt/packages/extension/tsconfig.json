@@ -8,6 +8,8 @@
       "@securegpt/shared": ["../shared/src/index.ts"],
       "@securegpt/shared/*": ["../shared/src/*"],
       "@securegpt/detection": ["../detection/src/pipeline.ts"],
+      "@securegpt/ocr": ["../ocr/src/index.ts"],
+      "@securegpt/ocr/*": ["../ocr/src/*"],
       "@/*": ["./src/*"]
     },
     "allowJs": true

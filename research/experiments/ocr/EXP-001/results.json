@@ -1,0 +1,98 @@
+{
+  "timestamp": "2026-09-24T08:51:15.487Z",
+  "engine": "mock",
+  "summary": {
+    "instancesCount": 7,
+    "meanCer": 0.06660231660231661,
+    "meanWer": 0.09276437847866419,
+    "meanRecall": 1,
+    "meanPrecision": 1,
+    "meanLatencyMs": 1
+  },
+  "details": [
+    {
+      "id": "ocr-001",
+      "title": "Income Tax PAN Card (Scan)",
+      "cer": 0,
+      "wer": 0,
+      "expectedEntitiesCount": 1,
+      "detectedEntitiesCount": 1,
+      "truePositives": 1,
+      "recall": 1,
+      "precision": 1,
+      "latencyMs": 3
+    },
+    {
+      "id": "ocr-002",
+      "title": "PAN Card with Glyph Confusion (0 instead of O, I instead of 1)",
+      "cer": 0.25,
+      "wer": 0.2857142857142857,
+      "expectedEntitiesCount": 1,
+      "detectedEntitiesCount": 1,
+      "truePositives": 1,
+      "recall": 1,
+      "precision": 1,
+      "latencyMs": 2
+    },
+    {
+      "id": "ocr-003",
+      "title": "Aadhaar Card with Verhoeff Checksum & OCR Noise",
+      "cer": 0.21621621621621623,
+      "wer": 0.36363636363636365,
+      "expectedEntitiesCount": 1,
+      "detectedEntitiesCount": 1,
+      "truePositives": 1,
+      "recall": 1,
+      "precision": 1,
+      "latencyMs": 1
+    },
+    {
+      "id": "ocr-004",
+      "title": "Indian Passport Data Page",
+      "cer": 0,
+      "wer": 0,
+      "expectedEntitiesCount": 1,
+      "detectedEntitiesCount": 1,
+      "truePositives": 1,
+      "recall": 1,
+      "precision": 1,
+      "latencyMs": 1
+    },
+    {
+      "id": "ocr-005",
+      "title": "Financial Document Invoice with PII",
+      "cer": 0,
+      "wer": 0,
+      "expectedEntitiesCount": 3,
+      "detectedEntitiesCount": 3,
+      "truePositives": 3,
+      "recall": 1,
+      "precision": 1,
+      "latencyMs": 1
+    },
+    {
+      "id": "ocr-006",
+      "title": "Medical Report with Health ID",
+      "cer": 0,
+      "wer": 0,
+      "expectedEntitiesCount": 1,
+      "detectedEntitiesCount": 1,
+      "truePositives": 1,
+      "recall": 1,
+      "precision": 1,
+      "latencyMs": 1
+    },
+    {
+      "id": "ocr-007",
+      "title": "Technical Architecture Document with API Credentials",
+      "cer": 0,
+      "wer": 0,
+      "expectedEntitiesCount": 2,
+      "detectedEntitiesCount": 2,
+      "truePositives": 2,
+      "recall": 1,
+      "precision": 1,
+      "latencyMs": 0
+    }
+  ]
+}

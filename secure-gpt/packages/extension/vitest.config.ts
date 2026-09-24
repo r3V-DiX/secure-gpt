@@ -14,6 +14,7 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src'),
       '@securegpt/shared': resolve(__dirname, '../shared/src'),
+      '@securegpt/ocr': resolve(__dirname, '../ocr/src'),
       '@securegpt/detection': resolve(__dirname, '../detection/src/pipeline.ts'),
     },
   },

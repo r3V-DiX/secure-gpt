@@ -60,7 +60,7 @@ export function ShieldModal({
       )
 
     const focusable = getFocusable()
-    if (focusable.length > 0) {
+    if (focusable.length > 0 && focusable[0]) {
       focusable[0].focus()
     }
 
@@ -83,13 +83,13 @@ export function ShieldModal({
           // Shift + Tab
           if (document.activeElement === firstElement || !el.contains(document.activeElement)) {
             e.preventDefault()
-            lastElement.focus()
+            lastElement?.focus()
           }
         } else {
           // Tab
           if (document.activeElement === lastElement || !el.contains(document.activeElement)) {
             e.preventDefault()
-            firstElement.focus()
+            firstElement?.focus()
           }
         }
       }

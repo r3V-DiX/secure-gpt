@@ -1,0 +1,30 @@
+{
+  "name": "@securegpt/ocr",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SecureGPT client-side OCR engine, universal image preprocessor, and accuracy recovery pipeline",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./preprocessor": "./src/preprocessor/index.ts",
+    "./engines": "./src/engines/index.ts",
+    "./postprocessor": "./src/postprocessor/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "evaluate": "node --loader ts-node/esm scripts/evaluate_ocr.ts"
+  },
+  "dependencies": {
+    "@securegpt/shared": "*",
+    "tesseract.js": "^5.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

@@ -22,7 +22,9 @@
       "@securegpt/shared/constants": ["./packages/shared/src/constants/index.ts"],
       "@securegpt/shared/utils/*": ["./packages/shared/src/utils/*"],
       "@securegpt/detection": ["./packages/detection/src/pipeline.ts"],
-      "@securegpt/detection/*": ["./packages/detection/src/*"] 
+      "@securegpt/detection/*": ["./packages/detection/src/*"],
+      "@securegpt/ocr": ["./packages/ocr/src/index.ts"],
+      "@securegpt/ocr/*": ["./packages/ocr/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "build"]
