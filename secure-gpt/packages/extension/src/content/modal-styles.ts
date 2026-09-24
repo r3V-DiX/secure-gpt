@@ -338,6 +338,10 @@ export function getModalStyles(): string {
       transition: all 0.15s ease;
       white-space: nowrap;
       letter-spacing: -0.01em;
+      outline: none;
+    }
+    button:focus-visible {
+      box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent);
     }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 

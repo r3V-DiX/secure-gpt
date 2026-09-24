@@ -16,23 +16,23 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
       display: flex;
       align-items: center;
       gap: 7px;
-      background: rgba(15, 23, 42, 0.92);
+      background: #ffffff;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.16);
+      border: 1px solid #e2e8f0;
       padding: 6px 12px 6px 10px;
       border-radius: 9999px;
-      color: #f8fafc;
+      color: #0f172a;
       cursor: pointer;
       user-select: none;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0,0,0,0.04);
       transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .floating-pill:hover {
-      background: rgba(15, 23, 42, 0.98);
-      border-color: rgba(59, 130, 246, 0.5);
+      background: #f8fafc;
+      border-color: #2563eb;
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
     }
 
     .shield-icon {
@@ -63,11 +63,11 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
       bottom: calc(100% + 10px);
       right: 0;
       width: 280px;
-      background: #0f172a;
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       border-radius: 14px;
       padding: 14px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0,0,0,0.04);
       display: none;
       flex-direction: column;
       gap: 10px;
@@ -86,12 +86,12 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
       align-items: center;
       justify-content: space-between;
       padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid #f1f5f9;
     }
     .flyout-title {
       font-size: 12px;
       font-weight: 700;
-      color: #f1f5f9;
+      color: #0f172a;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -99,15 +99,15 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
     .flyout-close {
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: #64748b;
       font-size: 13px;
       cursor: pointer;
       padding: 2px 4px;
       border-radius: 4px;
     }
     .flyout-close:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.1);
+      color: #0f172a;
+      background: #f1f5f9;
     }
 
     .flyout-body {
@@ -120,21 +120,23 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
       align-items: center;
       justify-content: space-between;
       font-size: 11px;
-      background: rgba(255, 255, 255, 0.05);
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
       padding: 6px 10px;
       border-radius: 8px;
     }
     .info-label {
-      color: #94a3b8;
+      color: #64748b;
       font-weight: 500;
     }
     .info-value {
-      color: #f8fafc;
+      color: #0f172a;
       font-weight: 600;
     }
     .badge-success {
-      color: #34d399;
-      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 10px;
@@ -215,7 +217,7 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
     .backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.7);
+      background: rgba(15, 23, 42, 0.45);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       display: flex;
@@ -231,13 +233,13 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
     }
 
     .modal-card {
-      background: #0f172a;
-      color: #f8fafc;
-      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
       border-radius: 20px;
       width: 100%;
       max-width: 440px;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04);
       overflow: hidden;
       animation: slide-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -251,20 +253,20 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
       display: flex;
       align-items: flex-start;
       gap: 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid #f1f5f9;
     }
     .shield-badge {
       width: 42px;
       height: 42px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-      border: 1px solid rgba(59, 130, 246, 0.4);
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 20px;
       flex-shrink: 0;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
     }
     .header-content {
       flex: 1;
@@ -272,18 +274,18 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
     .modal-title {
       font-size: 15px;
       font-weight: 750;
-      color: #ffffff;
+      color: #0f172a;
       letter-spacing: -0.01em;
     }
     .modal-subtitle {
       font-size: 12px;
-      color: #94a3b8;
+      color: #64748b;
       margin-top: 3px;
     }
     .close-btn {
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: #64748b;
       font-size: 14px;
       cursor: pointer;
       padding: 4px;
@@ -291,7 +293,8 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
       transition: color 0.15s;
     }
     .close-btn:hover {
-      color: #fff;
+      color: #0f172a;
+      background: #f1f5f9;
     }
 
     .modal-body {
@@ -305,8 +308,8 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
       padding: 10px 14px;
       border-radius: 12px;
     }
@@ -317,18 +320,18 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
     .feature-title {
       font-size: 12px;
       font-weight: 700;
-      color: #f1f5f9;
+      color: #0f172a;
     }
     .feature-desc {
       font-size: 11px;
-      color: #94a3b8;
+      color: #64748b;
       margin-top: 2px;
       line-height: 1.4;
     }
 
     .modal-footer {
       padding: 14px 22px 20px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid #f1f5f9;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -338,7 +341,7 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
       align-items: center;
       gap: 8px;
       font-size: 11.5px;
-      color: #94a3b8;
+      color: #64748b;
       cursor: pointer;
       user-select: none;
     }
@@ -350,19 +353,23 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
     .btn-understood {
       width: 100%;
       padding: 9px 16px;
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      background: #2563eb;
       color: #ffffff;
       font-size: 12.5px;
       font-weight: 700;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
       transition: all 0.15s ease;
+      outline: none;
     }
     .btn-understood:hover {
-      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      background: #1d4ed8;
       transform: translateY(-0.5px);
+    }
+    .btn-understood:focus-visible {
+      box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #2563eb;
     }
   </style>
 

@@ -60,11 +60,6 @@ export function showShieldModal(
   shadowHost.setAttribute('data-securegpt-modal', 'true')
   shadowHost.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;'
 
-  // Apply dark mode class to host if host page or OS is dark
-  if (detectHostIsDark()) {
-    shadowHost.classList.add('dark')
-  }
-
   document.body.appendChild(shadowHost)
 
   const shadow = shadowHost.attachShadow({ mode: 'open' })

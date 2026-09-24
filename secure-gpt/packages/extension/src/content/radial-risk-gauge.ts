@@ -38,12 +38,6 @@ function detectHostIsDark(): boolean {
 
 function ensureGaugeElement(): { host: HTMLElement; shadow: ShadowRoot } {
   if (gaugeHostEl && gaugeShadowRoot && document.body.contains(gaugeHostEl)) {
-    // Update dark mode class if changed
-    if (detectHostIsDark()) {
-      gaugeHostEl.classList.add('dark')
-    } else {
-      gaugeHostEl.classList.remove('dark')
-    }
     return { host: gaugeHostEl, shadow: gaugeShadowRoot }
   }
 
@@ -60,10 +54,6 @@ function ensureGaugeElement(): { host: HTMLElement; shadow: ShadowRoot } {
     'opacity: 0',
     'transform: scale(0.95)',
   ].join(';')
-
-  if (detectHostIsDark()) {
-    host.classList.add('dark')
-  }
 
   const shadow = host.attachShadow({ mode: 'open' })
   shadow.innerHTML = GAUGE_TEMPLATE

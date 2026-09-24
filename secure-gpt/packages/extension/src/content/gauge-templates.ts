@@ -29,26 +29,6 @@ export const GAUGE_TEMPLATE = `
       --popover-btn-text: #ffffff;
     }
 
-    :host(.dark) {
-      /* Dark Mode */
-      --gauge-bg: rgba(13, 19, 34, 0.94);
-      --gauge-border: rgba(255, 255, 255, 0.14);
-      --gauge-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
-      --gauge-text: #f8fafc;
-      --gauge-subtext: #94a3b8;
-      --gauge-bg-circle: rgba(255, 255, 255, 0.15);
-      
-      --popover-bg: #0d1322;
-      --popover-border: rgba(255, 255, 255, 0.12);
-      --popover-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
-      --popover-title: #f1f5f9;
-      --popover-item-bg: rgba(19, 28, 49, 0.85);
-      --popover-item-border: rgba(255, 255, 255, 0.08);
-      --popover-item-text: #cbd5e1;
-      --popover-btn-bg: #38bdf8;
-      --popover-btn-hover: #0ea5e9;
-      --popover-btn-text: #0f172a;
-    }
     
     .gauge-wrapper {
       position: relative;
@@ -229,10 +209,14 @@ export const GAUGE_TEMPLATE = `
       gap: 4px;
       transition: all 0.15s ease;
       margin-top: 2px;
+      outline: none;
     }
     .inspect-btn:hover {
       background: var(--popover-btn-hover);
       transform: translateY(-0.5px);
+    }
+    .inspect-btn:focus-visible {
+      box-shadow: 0 0 0 2px var(--popover-bg), 0 0 0 4px var(--popover-btn-bg);
     }
   </style>
 
