@@ -60,9 +60,9 @@ export default function OrgOnboardingPage() {
           setOrgName(res.name || '')
           setOrgDomain(res.domain || '')
           setAdminEmail(res.admin_email || user?.email || '')
-          if (res.status === 'ACTIVE') {
+          if (res.domain_verified_at || (res.status === 'ACTIVE' && res.domain_verified_at)) {
             setCurrentStepIndex(2)
-          } else if (res.status === 'PENDING_VERIFICATION') {
+          } else {
             setCurrentStepIndex(1)
           }
         } else if (user?.email) {
@@ -260,7 +260,7 @@ export default function OrgOnboardingPage() {
           <DnsVerificationStep
             domain={org?.domain || orgDomain}
             dnsToken={org?.dns_txt_token || ''}
-            isVerified={Boolean(org?.domain_verified_at || org?.status === 'ACTIVE')}
+            isVerified={Boolean(org?.domain_verified_at)}
             verifiedAt={org?.domain_verified_at || null}
             verifying={verifyingDomain}
             onVerify={handleVerifyDNS}

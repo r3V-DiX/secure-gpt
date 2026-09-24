@@ -70,7 +70,9 @@ export function DnsVerificationStep({
             </h4>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               {isVerified
-                ? `Verified on ${new Date(verifiedAt || '').toLocaleDateString()}`
+                ? (verifiedAt && !isNaN(new Date(verifiedAt).getTime())
+                    ? `Verified on ${new Date(verifiedAt).toLocaleDateString()}`
+                    : 'Domain ownership successfully verified')
                 : 'Publish the record below and click "Verify DNS Record" to validate.'}
             </p>
           </div>

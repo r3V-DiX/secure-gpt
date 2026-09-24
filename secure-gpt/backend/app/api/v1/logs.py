@@ -355,37 +355,55 @@ async def get_dashboard_stats(
             })
     elif current_user.org_id:
         # Org Admin / Security Admin -> Top Employees in their Organization
-        emp_filter = [
-            AuditLog.timestamp >= since,
-            User.org_id == current_user.org_id,
-        ]
-
-        emp_stats_query = (
-            select(
-                User.email,
-                User.full_name,
-                Department.name.label("department_name"),
-                func.count(AuditLog.id).label("cnt")
+        # Regular Employees -> Privacy protected: they do not see coworker DLP violation leaderboards
+        is_org_admin = role_str in ("org_admin", "employer", "security_admin")
+        if not is_org_admin:
+            org_admin_role_res = await db.execute(
+                select(Role)
+                .join(UserRoleAssignment, UserRoleAssignment.role_id == Role.id)
+                .where(
+                    UserRoleAssignment.user_id == current_user.id,
+                    UserRoleAssignment.is_active == True,
+                    Role.slug.in_(("org_admin", "employer", "security_admin")),
+                )
             )
-            .join(AuditLog, AuditLog.user_id == User.id)
-            .outerjoin(Department, Department.id == User.department_id)
-            .where(*emp_filter)
-            .group_by(User.email, User.full_name, Department.name)
-            .order_by(desc("cnt"))
-            .limit(5)
-        )
-        emp_rows = (await db.execute(emp_stats_query)).all()
-        for idx, row in enumerate(emp_rows):
-            top_employees.append({
-                "email": row.email,
-                "name": row.full_name or row.email.split("@")[0].replace(".", " ").title(),
-                "dept": row.department_name or "General",
-                "count": row.cnt,
-                "role": "Team Member",
-                "color": palette[idx % len(palette)],
-            })
+            if org_admin_role_res.scalar_one_or_none():
+                is_org_admin = True
 
-        # Top Departments in their Organization
+        if is_org_admin:
+            emp_filter = [
+                AuditLog.timestamp >= since,
+                User.org_id == current_user.org_id,
+            ]
+
+            emp_stats_query = (
+                select(
+                    User.email,
+                    User.full_name,
+                    Department.name.label("department_name"),
+                    func.count(AuditLog.id).label("cnt")
+                )
+                .join(AuditLog, AuditLog.user_id == User.id)
+                .outerjoin(Department, Department.id == User.department_id)
+                .where(*emp_filter)
+                .group_by(User.email, User.full_name, Department.name)
+                .order_by(desc("cnt"))
+                .limit(5)
+            )
+            emp_rows = (await db.execute(emp_stats_query)).all()
+            for idx, row in enumerate(emp_rows):
+                top_employees.append({
+                    "email": row.email,
+                    "name": row.full_name or row.email.split("@")[0].replace(".", " ").title(),
+                    "dept": row.department_name or "General",
+                    "count": row.cnt,
+                    "role": "Team Member",
+                    "color": palette[idx % len(palette)],
+                })
+        else:
+            top_employees = []
+
+        # Top Departments in their Organization (visible to all org members)
         dept_filter = [
             AuditLog.timestamp >= since,
             Department.org_id == current_user.org_id,
