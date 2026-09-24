@@ -3,6 +3,7 @@
 import React from 'react'
 import { Settings2, FileSearch, ShieldCheck, MailCheck, Eye, Sparkles } from 'lucide-react'
 import type { PIIConfig } from '@/types'
+import { Toggle } from './PolicyManager'
 
 interface Props {
   config: PIIConfig
@@ -108,21 +109,11 @@ export function GeneralSettingsSection({ config, isAdmin, onUpdateField }: Props
                 </div>
               </div>
 
-              {/* Switch Toggle */}
-              <div
-                className="relative w-11 h-6 rounded-full transition-all duration-200 shrink-0 pointer-events-none"
-                style={{
-                  background: isEnabled ? 'var(--accent)' : 'var(--bg-surface-3)',
-                  boxShadow: isEnabled ? '0 0 10px var(--accent-glow)' : 'none',
-                }}
-              >
-                <span
-                  className="absolute top-1 left-1 size-4 bg-white rounded-full shadow-sm transition-transform duration-200"
-                  style={{
-                    transform: isEnabled ? 'translateX(20px)' : 'translateX(0)',
-                  }}
-                />
-              </div>
+              <Toggle
+                on={isEnabled}
+                onChange={(en) => onUpdateField(key, en)}
+                disabled={!isAdmin}
+              />
             </div>
           )
         })}

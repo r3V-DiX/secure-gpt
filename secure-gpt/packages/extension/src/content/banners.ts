@@ -10,12 +10,36 @@ import { PII_CATEGORY_LABELS } from '@securegpt/shared/constants'
 type BannerType = 'block' | 'mask' | 'warn' | 'allow' | 'loading' | 'loading_pdf'
 
 const BANNER_STYLES: Record<BannerType, { bg: string; border: string; icon: string }> = {
-  block: { bg: '#fff5f5', border: '#D32F2F', icon: '🚫' },
-  mask: { bg: '#fffbf0', border: '#F57C00', icon: '⚠️' },
-  warn: { bg: '#fff8f0', border: '#E65100', icon: '⚠️' },
-  allow: { bg: '#f0f8ff', border: '#1565C0', icon: 'ℹ️' },
-  loading: { bg: '#f8f9fa', border: '#78909c', icon: '⏳' },
-  loading_pdf: { bg: '#f8f9fa', border: '#78909c', icon: '⏳' },
+  block: {
+    bg: '#fef2f2',
+    border: '#dc2626',
+    icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>',
+  },
+  mask: {
+    bg: '#fffbeb',
+    border: '#d97706',
+    icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/></svg>',
+  },
+  warn: {
+    bg: '#fffbeb',
+    border: '#d97706',
+    icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+  },
+  allow: {
+    bg: '#eff6ff',
+    border: '#2563eb',
+    icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+  },
+  loading: {
+    bg: '#f8fafc',
+    border: '#64748b',
+    icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin-animation"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+  },
+  loading_pdf: {
+    bg: '#f8fafc',
+    border: '#64748b',
+    icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin-animation"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+  },
 }
 
 const BANNER_MESSAGES: Record<BannerType, (category: string, count: number) => string> = {
@@ -26,7 +50,6 @@ const BANNER_MESSAGES: Record<BannerType, (category: string, count: number) => s
   loading: (_cat, _n) => `Scanning image for sensitive context... Please wait.`,
   loading_pdf: (_cat, _n) => `Scanning and redacting PDF document... Please wait.`,
 }
-
 
 let acknowledgeCallback: ((proceed: boolean) => void) | null = null
 
@@ -50,14 +73,14 @@ export function showBanner(
   banner.style.cssText = `
     position: relative;
     width: 100%;
-    padding: 12px 16px;
+    padding: 10px 14px;
     background: ${style.bg};
-    border-left: 4px solid ${style.border};
+    border-left: 3px solid ${style.border};
     border-radius: 6px;
     margin-bottom: 8px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px;
-    color: #1a1a1a;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 12.5px;
+    color: #0f172a;
     display: flex;
     align-items: center;
     justify-content: space-between;

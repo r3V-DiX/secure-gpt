@@ -3,7 +3,7 @@
 export const INDICATOR_TEMPLATE = (platformLabel: string) => `
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :host { all: initial; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    :host { all: initial; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     .indicator-wrap {
       position: relative;
@@ -36,8 +36,10 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
     }
 
     .shield-icon {
-      font-size: 14px;
-      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2563eb;
     }
     .pill-text {
       font-size: 11.5px;
@@ -51,6 +53,9 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
       background: #10b981;
       box-shadow: 0 0 8px #10b981;
       animation: pulse-dot 2s infinite ease-in-out;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .status-dot { animation: none; }
     }
     @keyframes pulse-dot {
       0%, 100% { transform: scale(1); opacity: 1; }
@@ -174,15 +179,26 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
 
   <div class="indicator-wrap">
     <div class="floating-pill" id="indicator-pill" title="SecureGPT Active • Click for Protection Details">
-      <span class="shield-icon">🛡️</span>
+      <span class="shield-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </span>
       <span class="pill-text">SecureGPT</span>
       <span class="status-dot"></span>
     </div>
 
     <div class="flyout-menu" id="flyout-menu">
       <div class="flyout-header">
-        <span class="flyout-title">🛡️ Active DLP Protection</span>
-        <button class="flyout-close" id="flyout-close-btn">✕</button>
+        <span class="flyout-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          Active DLP Protection
+        </span>
+        <button class="flyout-close" id="flyout-close-btn" aria-label="Close">✕</button>
       </div>
 
       <div class="flyout-body">
@@ -202,7 +218,12 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
 
       <div class="flyout-actions">
         <button class="btn-action btn-primary" id="open-guide-btn">
-          📖 View Protection Guide
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+          View Protection Details
         </button>
       </div>
     </div>
@@ -212,7 +233,7 @@ export const INDICATOR_TEMPLATE = (platformLabel: string) => `
 export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :host { all: initial; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    :host { all: initial; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     .backdrop {
       position: fixed;
@@ -236,7 +257,7 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
       background: #ffffff;
       color: #0f172a;
       border: 1px solid #e2e8f0;
-      border-radius: 20px;
+      border-radius: 12px;
       width: 100%;
       max-width: 440px;
       box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04);
@@ -358,9 +379,9 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
       font-size: 12.5px;
       font-weight: 700;
       border: none;
-      border-radius: 10px;
+      border-radius: 6px;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
       transition: all 0.15s ease;
       outline: none;
     }
@@ -376,17 +397,26 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
   <div class="backdrop" id="modal-backdrop">
     <div class="modal-card" id="welcome-modal-card">
       <div class="modal-header">
-        <div class="shield-badge">🛡️</div>
+        <div class="shield-badge">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
         <div class="header-content">
           <h2 class="modal-title">SecureGPT Protection Active</h2>
           <p class="modal-subtitle">Enterprise Data Loss Prevention is active on <b>${platformLabel}</b></p>
         </div>
-        <button class="close-btn" id="modal-close-btn">✕</button>
+        <button class="close-btn" id="modal-close-btn" aria-label="Close">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="feature-item">
-          <span class="feature-icon">⚡</span>
+          <span class="feature-icon" style="color: #2563eb; display: flex;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </span>
           <div>
             <p class="feature-title">Live Keystroke &amp; Prompt Scanning</p>
             <p class="feature-desc">Intercepts and redacts PII, credentials, API keys, and corporate secrets before they reach the model.</p>
@@ -394,7 +424,12 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
         </div>
 
         <div class="feature-item">
-          <span class="feature-icon">📄</span>
+          <span class="feature-icon" style="color: #2563eb; display: flex;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </span>
           <div>
             <p class="feature-title">Document &amp; File OCR Redaction</p>
             <p class="feature-desc">Scans and redacts uploaded PDF, Office documents, and pasted screenshots in real-time.</p>
@@ -402,7 +437,21 @@ export const WELCOME_MODAL_TEMPLATE = (platformLabel: string) => `
         </div>
 
         <div class="feature-item">
-          <span class="feature-icon">🏢</span>
+          <span class="feature-icon" style="color: #2563eb; display: flex;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+              <path d="M9 22v-4h6v4"/>
+              <path d="M8 6h.01"/>
+              <path d="M16 6h.01"/>
+              <path d="M12 6h.01"/>
+              <path d="M12 10h.01"/>
+              <path d="M12 14h.01"/>
+              <path d="M16 10h.01"/>
+              <path d="M16 14h.01"/>
+              <path d="M8 10h.01"/>
+              <path d="M8 14h.01"/>
+            </svg>
+          </span>
           <div>
             <p class="feature-title">Organization Policy Compliance</p>
             <p class="feature-desc">Automatically synchronizes with your team's DLP policies and audit requirements.</p>

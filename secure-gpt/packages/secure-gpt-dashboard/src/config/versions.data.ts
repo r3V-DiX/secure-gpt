@@ -359,6 +359,34 @@ export const ADMIN_VERSIONS: VersionItem[] = [
 
 export const EXTENSION_VERSIONS: VersionItem[] = [
   {
+    version: '1.2.3',
+    date: 'September 24, 2026',
+    status: 'Production Stable',
+    tag: 'Design System Harmonization & Vector In-Page Modals',
+    commit: 'prod-v1.2.3-ext',
+    summary: 'Synchronized design tokens with dashboard, replaced OS emojis with clean vector SVGs across all in-page modals, automated dark host detection, and enhanced touch targets and accessibility.',
+    info: 'SecureGPT Chrome Extension v1.2.3 delivers complete visual and design system parity with the SecureGPT Web Dashboard, featuring unified Plus Jakarta Sans typography, WCAG AA/AAA compliant color tokens, vector iconography, and improved responsive touch ergonomics.',
+    whatsNew: [
+      'Harmonized design tokens: full alignment of color palette, focus rings, and Plus Jakarta Sans typography with main web application.',
+      'Vector iconography overhaul: replaced OS emojis with crisp, lightweight vector SVGs across Shield Modal, Warning Banners, Radial Gauges, and Site Indicators.',
+      'Automatic host dark mode detection dynamically applied to in-page Shadow DOM host overlays.',
+      'Touch target ergonomics: guaranteed minimum 24px interactive boundaries across all action badges, buttons, and switches.',
+    ],
+    changedFunctionality: [
+      'Standardized core UI components (Button, Card, Badge, Toggle, StatusIndicator) using unified cn() utility.',
+      'Added explicit aria-label attributes to dev mode inputs and pause protection buttons for screen reader compliance.',
+    ],
+    improvements: [
+      'Zero host style leakage with tightened Shadow DOM styles and CSS variable scoping.',
+      'Accessible high-contrast stat text across all card states in popup interface.',
+      'Smooth transition animations honoring user prefers-reduced-motion preferences.',
+    ],
+    problemsSolved: [
+      'Fixed visual fragmentation between extension popup and web dashboard UI components.',
+      'Resolved low-contrast text visibility on warning and block badges in dark-themed web LLM platforms.',
+    ],
+  },
+  {
     version: '1.2.2',
     date: 'September 17, 2026',
     status: 'Production Stable',

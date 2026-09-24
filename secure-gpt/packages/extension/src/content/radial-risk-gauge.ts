@@ -46,6 +46,9 @@ function ensureGaugeElement(): { host: HTMLElement; shadow: ShadowRoot } {
 
   const host = document.createElement('div')
   host.id = 'securegpt-risk-gauge-host'
+  if (detectHostIsDark()) {
+    host.classList.add('dark')
+  }
   host.style.cssText = [
     'position: absolute',
     'z-index: 2147483640',

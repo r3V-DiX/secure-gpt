@@ -5,6 +5,9 @@ import {
   getCurrentUser,
   fetchCurrentUser,
   signInWithGoogle,
+  signInWithMicrosoft,
+  requestEmailOtp,
+  verifyEmailOtp,
   signInWithEmail,
   signOut,
   registerDevice,
@@ -45,6 +48,19 @@ export function useAuth() {
     await signInWithGoogle()
   }
 
+  async function loginWithMicrosoft() {
+    await signInWithMicrosoft()
+  }
+
+  async function sendOtp(email: string) {
+    await requestEmailOtp(email)
+  }
+
+  async function verifyOtp(email: string, code: string) {
+    const fresh = await verifyEmailOtp(email, code)
+    setUser(fresh)
+  }
+
   async function loginWithEmail(email: string) {
     const fresh = await signInWithEmail(email)
     setUser(fresh)
@@ -60,6 +76,9 @@ export function useAuth() {
     loading,
     isLoggedIn: !!user,
     login,
+    loginWithMicrosoft,
+    sendOtp,
+    verifyOtp,
     loginWithEmail,
     logout,
     reload: loadAuth,

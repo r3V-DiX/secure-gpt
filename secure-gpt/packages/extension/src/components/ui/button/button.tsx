@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 
 import React from 'react'
-import { clsx } from 'clsx'
+import { cn } from '@/lib/cn'
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
 type Size = 'sm' | 'md' | 'lg'
@@ -17,16 +17,16 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<Variant, string> = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 border-transparent shadow-sm',
-  secondary: 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200 shadow-sm',
-  danger: 'bg-red-600 text-white hover:bg-red-700 border-transparent shadow-sm',
-  ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 border-transparent',
+  primary:   'bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white border-transparent shadow-xs',
+  secondary: 'bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-2)]',
+  danger:    'bg-[var(--danger-light)] hover:bg-[var(--danger-light)] text-[var(--danger)] border border-[var(--danger-border)]',
+  ghost:     'bg-transparent hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-transparent',
 }
 
 const sizeStyles: Record<Size, string> = {
-  sm: 'h-7 px-3 text-xs gap-1.5',
-  md: 'h-9 px-4 text-sm gap-2',
-  lg: 'h-11 px-6 text-sm gap-2',
+  sm: 'h-7 px-2.5 text-xs gap-1.5 rounded-md font-medium',
+  md: 'h-8 px-3 text-xs gap-1.5 rounded-md font-medium',
+  lg: 'h-9 px-4 text-xs gap-2 rounded-md font-medium',
 }
 
 export function Button({
@@ -42,11 +42,11 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={clsx(
-        'inline-flex items-center justify-center font-medium rounded-lg border',
-        'transition-all duration-150 select-none',
+      className={cn(
+        'inline-flex items-center justify-center border',
+        'transition-all duration-120 select-none cursor-pointer',
         'disabled:opacity-50 disabled:cursor-not-allowed',
-        'focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1',
+        'focus-visible:ring-1 focus-visible:ring-[var(--accent)] focus-visible:outline-none',
         variantStyles[variant],
         sizeStyles[size],
         fullWidth && 'w-full',
@@ -56,9 +56,9 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span className="size-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : icon ? (
-        <span className="w-4 h-4 flex-shrink-0">{icon}</span>
+        <span className="size-4 shrink-0 flex items-center justify-center">{icon}</span>
       ) : null}
       {children}
     </button>

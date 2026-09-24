@@ -59,6 +59,9 @@ export function showShieldModal(
   shadowHost.setAttribute('data-securegpt', 'true')
   shadowHost.setAttribute('data-securegpt-modal', 'true')
   shadowHost.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;'
+  if (detectHostIsDark()) {
+    shadowHost.classList.add('dark')
+  }
 
   document.body.appendChild(shadowHost)
 

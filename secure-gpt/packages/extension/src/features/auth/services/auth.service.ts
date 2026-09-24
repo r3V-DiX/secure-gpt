@@ -46,10 +46,46 @@ export async function fetchCurrentUser(): Promise<User | null> {
 }
 
 // ── Open Google OAuth in a new tab ────────────
-// Goes through dashboard (/api/v1/auth/google) NOT backend directly.
-// This way the cookie is set on localhost:3000, shared with the dashboard.
 export async function signInWithGoogle(): Promise<void> {
   await chrome.tabs.create({ url: `${DASHBOARD_URL}/api/v1/auth/google` })
+}
+
+// ── Open Microsoft OAuth in a new tab ─────────
+export async function signInWithMicrosoft(): Promise<void> {
+  await chrome.tabs.create({ url: `${DASHBOARD_URL}/api/v1/auth/microsoft` })
+}
+
+// ── Request Email OTP ─────────────────────────
+export async function requestEmailOtp(email: string): Promise<void> {
+  await dashboardClient.post(API_ENDPOINTS.AUTH_OTP_REQUEST, {
+    email: email.trim(),
+    role_type: 'user',
+  })
+}
+
+// ── Verify Email OTP ──────────────────────────
+export async function verifyEmailOtp(email: string, code: string): Promise<User | null> {
+  await dashboardClient.post(API_ENDPOINTS.AUTH_OTP_VERIFY, {
+    email: email.trim(),
+    code: code.trim(),
+    role_type: 'user',
+    force_personal: true,
+  })
+  const user = await fetchCurrentUser()
+  if (user) {
+    chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS', user }).catch(() => {})
+    try {
+      const tabs = await chrome.tabs.query({})
+      for (const t of tabs) {
+        if (t.id) {
+          chrome.tabs.sendMessage(t.id, { type: 'AUTH_SUCCESS' }).catch(() => {})
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return user
 }
 
 // ── Sign in with test email (Dev only) ─────────

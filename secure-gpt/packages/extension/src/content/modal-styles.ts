@@ -7,7 +7,7 @@ export function getModalStyles(): string {
     
     :host {
       all: initial;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       
       /* Light Mode Palette */
       --bg-base: #f8fafc;
@@ -134,7 +134,7 @@ export function getModalStyles(): string {
     /* ── Modal card ── */
     .modal-card {
       background: var(--bg-surface);
-      border-radius: 16px;
+      border-radius: 12px;
       box-shadow: var(--shadow-modal);
       border: 1px solid var(--border);
       width: 100%;
@@ -325,17 +325,17 @@ export function getModalStyles(): string {
     /* ── Buttons ── */
     button {
       cursor: pointer;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 12.5px;
+      font-family: inherit;
+      font-size: 12px;
       font-weight: 600;
-      border-radius: 8px;
-      padding: 0 14px;
-      height: 32px;
+      border-radius: 6px;
+      padding: 0 12px;
+      height: 30px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 5px;
-      transition: all 0.15s ease;
+      transition: all 0.12s ease;
       white-space: nowrap;
       letter-spacing: -0.01em;
       outline: none;

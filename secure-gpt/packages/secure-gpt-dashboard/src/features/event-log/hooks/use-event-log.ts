@@ -1,10 +1,12 @@
 'use client'
 // src/features/event-log/hooks/use-event-log.ts
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '@/contexts/auth-context'
 import { fetchMyLogs, type LogFilters } from '../services/event-log.service'
 import type { AuditLog, Pagination } from '@/types'
 
 export function useEventLog(initialFilters: LogFilters = {}) {
+  const { user } = useAuth()
   const [data, setData] = useState<AuditLog[]>([])
   const [pagination, setPagination] = useState<Pagination>({
     page: 1, page_size: 20, total: 0, total_pages: 1, has_next: false, has_prev: false,
@@ -35,16 +37,16 @@ export function useEventLog(initialFilters: LogFilters = {}) {
 
   useEffect(() => { void load(filters) }, [filters, load])
 
-  // Real-time auto-refresh polling (every 5 seconds) when on the first page
+  // Real-time auto-refresh polling (every 5 seconds) when on the first page and authenticated
   useEffect(() => {
-    if (filters.page !== 1) return
+    if (filters.page !== 1 || !user) return
 
     const interval = setInterval(() => {
       void load(filters, true)
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [filters, load])
+  }, [filters, load, user])
 
   // AFTER
   const updateFilters = (updates: { [K in keyof LogFilters]?: LogFilters[K] | undefined }) =>

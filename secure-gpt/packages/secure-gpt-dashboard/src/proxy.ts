@@ -12,7 +12,7 @@ export function proxy(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
-    pathname.match(/\.(png|svg|jpg|ico|webp)$/)
+    pathname.match(/\.(png|svg|jpg|ico|webp|webmanifest|xml|txt|json)$/)
   ) {
     return NextResponse.next()
   }

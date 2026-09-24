@@ -9,6 +9,9 @@ export const DASHBOARD_URL =
 
 export const API_ENDPOINTS = {
   AUTH_GOOGLE: '/api/v1/auth/google',
+  AUTH_MICROSOFT: '/api/v1/auth/microsoft',
+  AUTH_OTP_REQUEST: '/api/v1/auth/otp/request',
+  AUTH_OTP_VERIFY: '/api/v1/auth/otp/verify',
   AUTH_ME: '/api/v1/auth/me',
   AUTH_LOGOUT: '/api/v1/auth/logout',
   DEVICE_REGISTER: '/api/v1/devices',

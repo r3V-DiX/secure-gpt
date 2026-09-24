@@ -3,49 +3,86 @@
 // ─────────────────────────────────────────────
 
 import React from 'react'
-import { clsx } from 'clsx'
+import { cn } from '@/lib/cn'
 
-interface CardProps {
-  children: React.ReactNode
-  className?: string
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   padding?: 'sm' | 'md' | 'lg' | 'none'
   border?: boolean
   hover?: boolean
-  onClick?: () => void
+  interactive?: boolean
 }
 
 const paddingMap = { sm: 'p-3', md: 'p-4', lg: 'p-6', none: '' }
 
-export function Card({ children, className, padding = 'md', border = true, hover, onClick }: CardProps) {
+export function Card({
+  children,
+  className,
+  padding = 'md',
+  border = true,
+  hover,
+  interactive,
+  ...props
+}: CardProps) {
   return (
     <div
-      onClick={onClick}
-      className={clsx(
-        'bg-white rounded-xl',
-        border && 'border border-gray-100',
-        'shadow-sm',
+      className={cn(
+        'bg-[var(--bg-surface)] text-[var(--text-primary)] rounded-md transition-colors',
+        border && 'border border-[var(--border)]',
         paddingMap[padding],
-        hover && 'hover:border-gray-200 hover:shadow-md transition-all duration-150 cursor-pointer',
+        (hover || interactive) && 'hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface-2)] cursor-pointer transition-all duration-120',
         className
       )}
+      {...props}
     >
       {children}
     </div>
   )
 }
 
-export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
+export function CardHeader({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={clsx('flex items-center justify-between mb-3', className)}>
+    <div
+      className={cn(
+        'flex items-center justify-between pb-3 border-b border-[var(--border)]',
+        className
+      )}
+      {...props}
+    >
       {children}
     </div>
   )
 }
 
-export function CardTitle({ children, className }: { children: React.ReactNode; className?: string }) {
+export function CardTitle({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={clsx('text-sm font-semibold text-gray-800', className)}>
+    <h3
+      className={cn(
+        'text-xs sm:text-sm font-bold text-[var(--text-primary)]',
+        className
+      )}
+      {...props}
+    >
       {children}
     </h3>
+  )
+}
+
+export function CardContent({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('pt-3', className)} {...props}>
+      {children}
+    </div>
   )
 }

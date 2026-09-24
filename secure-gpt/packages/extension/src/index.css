@@ -1,26 +1,112 @@
 @import "tailwindcss";
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap');
+
 :root {
-  --font-poppins: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  
-  /* Light Mode (Default & Strict Consistent Theme) */
-  --bg-popup: #ffffff;
+  --font-jakarta: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-poppins: 'Poppins', system-ui, sans-serif;
+  --font-dm-mono: 'DM Mono', monospace;
+
+  /* Brand primitives */
+  --brand-h: 220;
+  --brand-s: 75%;
+
+  /* Accent scale */
+  --accent: hsl(var(--brand-h), var(--brand-s), 48%);
+  --accent-hover: hsl(var(--brand-h), var(--brand-s), 40%);
+  --accent-light: hsl(var(--brand-h), 60%, 96%);
+  --accent-border: hsl(var(--brand-h), 55%, 80%);
+  --accent-text: hsl(var(--brand-h), var(--brand-s), 48%);
+  --accent-glow: hsla(var(--brand-h), var(--brand-s), 48%, 0.12);
+
+  /* Surfaces (Light) */
+  --bg-base: hsl(var(--brand-h), 55%, 97%);
   --bg-surface: #ffffff;
-  --bg-surface-soft: #f8fafc;
-  --bg-surface-subtle: #f0f4ff;
-  --border-subtle: #e2e8f0;
-  --border-card: #f1f5f9;
-  
-  --text-main: #0f172a;
-  --text-secondary: #475569;
+  --bg-surface-2: hsl(var(--brand-h), 50%, 95%);
+  --bg-surface-3: hsl(var(--brand-h), 45%, 91%);
+
+  /* Borders */
+  --border: hsl(var(--brand-h), 42%, 86%);
+  --border-2: hsl(var(--brand-h), 42%, 80%);
+  --border-strong: hsl(var(--brand-h), 45%, 65%);
+
+  /* Typography */
+  --text-primary: hsl(var(--brand-h), 55%, 11%);
+  --text-secondary: hsl(var(--brand-h), 35%, 26%);
+  --text-tertiary: hsl(var(--brand-h), 28%, 36%);
   --text-muted: #64748b;
-  
+
+  /* Semantic Status Colors */
+  --success: #059669;
+  --success-light: rgba(5, 150, 105, 0.08);
+  --success-border: rgba(5, 150, 105, 0.20);
+
+  --warning: #d97706;
+  --warning-light: rgba(217, 119, 6, 0.08);
+  --warning-border: rgba(217, 119, 6, 0.20);
+
+  --danger: #dc2626;
+  --danger-light: rgba(220, 38, 38, 0.08);
+  --danger-border: rgba(220, 38, 38, 0.20);
+
+  --info: #0284c7;
+  --info-light: rgba(2, 132, 199, 0.08);
+  --info-border: rgba(2, 132, 199, 0.20);
+
+  /* Backward-compatible aliases for extension components */
+  --bg-popup: var(--bg-surface);
+  --bg-surface-soft: var(--bg-surface-2);
+  --bg-surface-subtle: var(--bg-surface-3);
+  --border-subtle: var(--border);
+  --border-card: var(--border-2);
+  --text-main: var(--text-primary);
+  --header-bg: #091a2a;
+  --brand-primary: var(--accent);
+  --brand-secondary: var(--accent-hover);
+  --brand-light: var(--accent-light);
+  --brand-border: var(--accent-border);
+  --brand-text: var(--accent-text);
+}
+
+.dark {
+  --accent: #38bdf8;
+  --accent-hover: #0ea5e9;
+  --accent-light: rgba(56, 189, 248, 0.14);
+  --accent-border: rgba(56, 189, 248, 0.28);
+  --accent-text: #7dd3fc;
+  --accent-glow: rgba(56, 189, 248, 0.20);
+
+  --bg-base: #070a12;
+  --bg-surface: #0d1322;
+  --bg-surface-2: #131c31;
+  --bg-surface-3: #1b2742;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-2: rgba(255, 255, 255, 0.14);
+  --border-strong: rgba(255, 255, 255, 0.24);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #e2e8f0;
+  --text-tertiary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --success: #34d399;
+  --success-light: rgba(52, 211, 153, 0.14);
+  --success-border: rgba(52, 211, 153, 0.28);
+
+  --warning: #fbbf24;
+  --warning-light: rgba(251, 191, 36, 0.14);
+  --warning-border: rgba(251, 191, 36, 0.28);
+
+  --danger: #f87171;
+  --danger-light: rgba(248, 113, 113, 0.14);
+  --danger-border: rgba(248, 113, 113, 0.28);
+
+  --info: #38bdf8;
+  --info-light: rgba(56, 189, 248, 0.14);
+  --info-border: rgba(56, 189, 248, 0.28);
+
   --header-bg: #060d1f;
-  --brand-primary: #2563eb;
-  --brand-secondary: #1d4ed8;
-  --brand-light: #eff6ff;
-  --brand-border: #bfdbfe;
-  --brand-text: #1d4ed8;
 }
 
 * {
@@ -30,7 +116,7 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: var(--font-poppins);
+  font-family: var(--font-jakarta);
   -webkit-font-smoothing: antialiased;
   background-color: var(--bg-popup);
   color: var(--text-main);

@@ -23,16 +23,16 @@ export function ThemeToggle({ className = '', variant = 'icon' }: ThemeTogglePro
                 className={`
           flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium
           w-full border border-transparent
-          text-[var(--text-3)] hover:text-[var(--text-2)]
-          hover:bg-[var(--surface-3)]
+          text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]
+          hover:bg-[var(--bg-surface-3)]
           transition-colors duration-150
           ${className}
         `}
-                style={{ fontFamily: 'var(--font)' }}
+                style={{ fontFamily: 'var(--font-jakarta)' }}
             >
                 {isDark
-                    ? <Sun size={14} className="shrink-0 text-[var(--amber)]" />
-                    : <Moon size={14} className="shrink-0 text-[var(--text-3)]" />
+                    ? <Sun size={14} className="shrink-0 text-[var(--warning)]" />
+                    : <Moon size={14} className="shrink-0 text-[var(--text-tertiary)]" />
                 }
                 <span>{isDark ? 'Light mode' : 'Dark mode'}</span>
             </button>
@@ -46,12 +46,12 @@ export function ThemeToggle({ className = '', variant = 'icon' }: ThemeTogglePro
             className={`
         relative size-7 flex items-center justify-center rounded-lg
         border border-[var(--border-2)]
-        bg-[var(--surface-2)] hover:bg-[var(--surface-3)]
-        text-[var(--text-3)] hover:text-[var(--text-2)]
+        bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)]
+        text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]
         transition-all duration-150 shrink-0
         ${className}
       `}
-            style={{ fontFamily: 'var(--font)' }}
+            style={{ fontFamily: 'var(--font-jakarta)' }}
         >
             <span
                 className="absolute transition-all duration-200"

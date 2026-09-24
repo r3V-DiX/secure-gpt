@@ -6,6 +6,26 @@ Single source of truth for deployments, releases, database migrations, and compo
 
 ## Release History
 
+### [v1.2.3-ext] - Extension UI/UX Consistency & Design System Harmonization
+- **Date**: 2026-09-24
+- **Commit**: `prod-v1.2.3-ext`
+- **Environment**: Production Extension
+- **Status**: Production Stable
+- **Components**: `@securegpt/extension` `1.2.3`
+
+#### What Was Added & Improved
+- **Design Token Harmonization**: Synchronized extension theme tokens (`--accent`, `--bg-surface`, `--border`, font `Plus Jakarta Sans`) with SecureGPT Dashboard web app.
+- **Component Consistency**: Migrated `Button`, `Card`, `Badge`, `Toggle`, and `StatusIndicator` to shared `cn()` utility (`clsx` + `twMerge`), consistent border radius (`rounded-md`), and unified density sizing.
+- **Vector SVG In-Page Modals**: Replaced OS emojis with crisp vector SVGs across Shield Modal, Warning Banners, Radial Gauges, and Site Indicators.
+- **Dark Mode & Accessibility**: Enabled automatic host dark mode detection in shadow DOM overlays, enhanced color contrast to meet WCAG AA/AAA, expanded minimum touch target dimensions ($\ge 24\text{px}$), and added `aria-label` accessibility attributes.
+
+#### Component Matrix
+| Component | Service Name | Version | Image / Artifact |
+|---|---|---|---|
+| Chrome Extension | `@securegpt/extension` | `1.2.3` | Chrome Web Store / dist archive |
+
+---
+
 ### [v1.1.4] - Interactive Role Tours, WCAG Theme Contrast & Extension Telemetry Sync
 - **Date**: 2026-09-17
 - **Commit**: `prod-v1.1.4`

@@ -2,7 +2,7 @@
 // Toggle Component
 // ─────────────────────────────────────────────
 
-import { clsx } from 'clsx'
+import { cn } from '@/lib/cn'
 
 interface ToggleProps {
   checked: boolean
@@ -20,27 +20,28 @@ export function Toggle({ checked, onChange, disabled, size = 'md', label }: Togg
     : (checked ? 'translate-x-5' : 'translate-x-0.5')
 
   return (
-    <label className={clsx('inline-flex items-center gap-2 cursor-pointer', disabled && 'opacity-50 cursor-not-allowed')}>
+    <label className={cn('inline-flex items-center gap-2 cursor-pointer select-none', disabled && 'opacity-50 cursor-not-allowed')}>
       <button
+        type="button"
         role="switch"
         aria-checked={checked}
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
-        className={clsx(
-          'relative inline-flex items-center rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1',
+        className={cn(
+          'relative inline-flex items-center rounded-full transition-colors duration-200 focus-visible:ring-1 focus-visible:ring-[var(--accent)] focus-visible:outline-none cursor-pointer disabled:cursor-not-allowed',
           trackSize,
-          checked ? 'bg-blue-600' : 'bg-gray-200'
+          checked ? 'bg-[var(--accent)] shadow-[0_0_8px_var(--accent-glow)]' : 'bg-[var(--bg-surface-3)] border border-[var(--border)]'
         )}
       >
         <span
-          className={clsx(
-            'absolute inline-block rounded-full bg-white shadow-sm transition-transform duration-200',
+          className={cn(
+            'absolute inline-block rounded-full bg-white shadow-xs transition-transform duration-200',
             thumbSize,
             thumbTranslate
           )}
         />
       </button>
-      {label && <span className="text-sm text-gray-700">{label}</span>}
+      {label && <span className="text-xs text-[var(--text-secondary)] font-medium">{label}</span>}
     </label>
   )
 }
