@@ -60,6 +60,11 @@ export default function OrgOnboardingPage() {
           setOrgName(res.name || '')
           setOrgDomain(res.domain || '')
           setAdminEmail(res.admin_email || user?.email || '')
+          if (res.status === 'ACTIVE') {
+            setCurrentStepIndex(2)
+          } else if (res.status === 'PENDING_VERIFICATION') {
+            setCurrentStepIndex(1)
+          }
         } else if (user?.email) {
           setAdminEmail(user.email)
           const domainPart = user.email.split('@')[1] || ''

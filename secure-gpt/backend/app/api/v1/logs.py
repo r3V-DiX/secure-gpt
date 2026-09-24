@@ -353,11 +353,12 @@ async def get_dashboard_stats(
                 "action": "Platform Threat Detections",
                 "color": palette[idx % len(palette)],
             })
-    else:
+    elif current_user.org_id:
         # Org Admin / Security Admin -> Top Employees in their Organization
-        emp_filter = [AuditLog.timestamp >= since]
-        if current_user.org_id:
-            emp_filter.append(User.org_id == current_user.org_id)
+        emp_filter = [
+            AuditLog.timestamp >= since,
+            User.org_id == current_user.org_id,
+        ]
 
         emp_stats_query = (
             select(
@@ -385,9 +386,10 @@ async def get_dashboard_stats(
             })
 
         # Top Departments in their Organization
-        dept_filter = [AuditLog.timestamp >= since]
-        if current_user.org_id:
-            dept_filter.append(Department.org_id == current_user.org_id)
+        dept_filter = [
+            AuditLog.timestamp >= since,
+            Department.org_id == current_user.org_id,
+        ]
 
         dept_stats_query = (
             select(
@@ -411,6 +413,10 @@ async def get_dashboard_stats(
                 "action": "DLP Policy Triggers",
                 "color": palette[idx % len(palette)],
             })
+    else:
+        # Personal User (no org) -> zero team or department leaks
+        top_employees = []
+        top_departments = []
 
     return success(
         data={

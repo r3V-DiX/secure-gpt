@@ -49,9 +49,53 @@ async def register_organisation(request: Request, body: OrgRegisterRequest, db: 
         )
 
     # Check if domain already registered
-    existing_org = await db.execute(select(Organisation).where(Organisation.domain == domain))
-    if existing_org.scalar_one_or_none():
-        raise BadRequest(message=f"An organization is already registered for domain '{domain}'.")
+    existing_org_res = await db.execute(select(Organisation).where(Organisation.domain == domain))
+    existing_org = existing_org_res.scalar_one_or_none()
+
+    if existing_org:
+        if existing_org.status == OrgStatus.ACTIVE:
+            raise BadRequest(
+                message=f"An active organization is already verified for domain '{domain}'. Please contact your administrator for an invitation."
+            )
+
+        # If organization is PENDING_VERIFICATION, update name/admin_email and return challenge instructions
+        if body.name and body.name.strip():
+            existing_org.name = body.name.strip()
+        existing_org.admin_email = body.admin_email.strip().lower()
+        if not existing_org.dns_txt_token:
+            existing_org.dns_txt_token = generate_dns_txt_token()
+
+        # Link admin user if exists
+        user_res = await db.execute(select(User).where(User.email == existing_org.admin_email))
+        admin_user = user_res.scalar_one_or_none()
+        if admin_user:
+            admin_user.org_id = existing_org.id
+            admin_user.role = UserRole.ORG_ADMIN
+            await db.execute(
+                update(Policy)
+                .where(Policy.user_id == admin_user.id)
+                .values(is_disabled_by_org=True)
+            )
+        await db.commit()
+        await db.refresh(existing_org)
+
+        return success(
+            data={
+                "org_id": existing_org.id,
+                "name": existing_org.name,
+                "domain": existing_org.domain,
+                "admin_email": existing_org.admin_email,
+                "status": existing_org.status,
+                "dns_txt_token": existing_org.dns_txt_token,
+                "dns_verification_instructions": {
+                    "record_type": "TXT",
+                    "host": existing_org.domain,
+                    "value": existing_org.dns_txt_token,
+                },
+                "created_at": existing_org.created_at.isoformat(),
+            },
+            message="Organization registration resumed. Please add the DNS TXT challenge record to verify domain ownership.",
+        )
 
     dns_token = generate_dns_txt_token()
 
@@ -112,6 +156,14 @@ async def verify_domain(body: OrgVerifyDomainRequest, db: DBSession, current_use
     org = res.scalar_one_or_none()
     if not org:
         raise NotFound("Organization not found")
+
+    # Role & Organization check
+    is_super = current_user.role in [UserRole.SUPER_ADMIN, UserRole.PLATFORM_SUPER_ADMIN]
+    if not is_super:
+        if current_user.role != UserRole.ORG_ADMIN:
+            raise Forbidden("Only Organization Administrators can verify domain ownership.")
+        if current_user.org_id != org.id:
+            raise Forbidden("You cannot verify domain ownership for an organization you do not administer.")
 
     from app.services.org_service import verify_dns_txt_record, migrate_domain_personal_users_to_employees
     

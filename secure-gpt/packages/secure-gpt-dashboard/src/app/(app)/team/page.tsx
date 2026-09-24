@@ -1,7 +1,7 @@
 'use client'
 // packages/secure-gpt-dashboard/src/app/(app)/team/page.tsx
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTeam } from '@/features/team/hooks/use-team'
 import {
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
 import { useAuth } from '@/contexts/auth-context'
+import { useToast } from '@/contexts/toast-context'
 import { apiPost } from '@/lib/api/client'
 
 import { OrgVerificationCard } from './components/OrgVerificationCard'
@@ -22,7 +23,19 @@ import { TeamCsvImportModal } from './components/TeamCsvImportModal'
 
 export default function TeamPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const { toast } = useToast()
+
+  useEffect(() => {
+    if (authLoading || !user) return
+    const isOrgAdminOrSuper =
+      ['super_admin', 'platform_super_admin', 'org_admin', 'security_admin', 'employer'].includes(user.role) ||
+      Boolean(user.orgId)
+    if (!isOrgAdminOrSuper) {
+      toast.error('Team management is restricted to Organization Administrators. Complete Organization Onboarding to set up a team.')
+      router.replace('/dashboard')
+    }
+  }, [user, authLoading, router, toast])
   const {
     users,
     departments,
@@ -145,6 +158,13 @@ export default function TeamPage() {
   const orgDomain = currentOrg?.domain || userDomain
   const rawStatus = String(currentOrg?.status || 'PENDING_VERIFICATION')
   const isOrgActive = rawStatus.toUpperCase().includes('ACTIVE')
+  const isAuthorized =
+    ['super_admin', 'platform_super_admin', 'org_admin', 'security_admin', 'employer'].includes(user?.role || '') ||
+    Boolean(user?.orgId)
+
+  if (!authLoading && !isAuthorized) {
+    return null
+  }
 
   if (loading && !users.length) {
     return (

@@ -21,6 +21,14 @@ class TestOrgAPILogic(unittest.TestCase):
         self.assertTrue(is_public_domain("yahoo.com"))
         self.assertFalse(is_public_domain("acmecorp.com"))
 
+    def test_pending_vs_active_org_behavior(self):
+        from app.models.org import OrgStatus
+        # Pending verification allows resuming
+        pending_status = OrgStatus.PENDING_VERIFICATION
+        active_status = OrgStatus.ACTIVE
+        self.assertEqual(pending_status, "PENDING_VERIFICATION")
+        self.assertEqual(active_status, "ACTIVE")
+
 
 if __name__ == "__main__":
     unittest.main()

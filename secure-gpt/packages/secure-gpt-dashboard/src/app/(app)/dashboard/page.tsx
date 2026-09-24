@@ -270,7 +270,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── Org Admin: Top Users by Threat Interceptions ───────────────── */}
-      {(!isSuperAdmin && (Boolean(stats?.topEmployees && stats.topEmployees.length > 0) || isOrgAdmin)) && (
+      {(!isSuperAdmin && Boolean(user?.orgId) && (Boolean(stats?.topEmployees && stats.topEmployees.length > 0) || isOrgAdmin)) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Top Employees */}
           <div className="card p-5 animate-fade-in">
@@ -622,7 +622,7 @@ function QuickStat({
 
   return (
     <div
-      className="card p-5 transition-all duration-200 flex flex-col justify-between gap-3 group hover:-translate-y-0.5"
+      className="card p-5 transition-all duration-200 flex flex-col justify-between gap-3 group "
       style={{
         background: 'var(--bg-surface)',
         borderColor: 'var(--border)',
