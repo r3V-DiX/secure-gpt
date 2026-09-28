@@ -39,6 +39,7 @@ export default tseslint.config(
       "no-console": ["warn", { "allow": ["warn", "error"] }],
       "react-hooks/set-state-in-effect": "off",
       "@typescript-eslint/ban-ts-comment": "off",
+      "max-lines": ["error", { "max": 300, "skipBlankLines": false, "skipComments": false }],
     },
   }
 );

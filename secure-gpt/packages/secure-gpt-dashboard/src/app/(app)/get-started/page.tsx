@@ -2,16 +2,15 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Circle, CircleCheck, PartyPopper, RefreshCw } from 'lucide-react'
+import { PartyPopper } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useProfile } from '@/features/profile/hooks/use-profile'
 import {
   getChecklistForRole,
   resolveChecklistRole,
   type ChecklistRole,
-  type Step,
 } from '@/features/onboarding/config/steps.data'
-import { renderStepAction } from '@/features/onboarding/components/StepActionRenderer'
+import { StepCard } from '@/features/onboarding/components/StepCard'
 import { apiGet } from '@/lib/api/client'
 
 const IS_ADMIN_MODE = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
@@ -28,7 +27,6 @@ export default function GetStartedPage() {
   const { user } = useAuth()
   const { devices, loading: devicesLoading } = useProfile()
   const [org, setOrg] = useState<OrgCurrentResponse | null>(null)
-  const [orgLoading, setOrgLoading] = useState(true)
   const [manualDone, setManualDone] = useState<string[]>([])
 
   const currentRole: ChecklistRole = useMemo(
@@ -45,12 +43,10 @@ export default function GetStartedPage() {
     ? `securegpt:get-started:done:${currentRole}:${user.id}`
     : `securegpt:get-started:done:${currentRole}`
 
-  // Fetch current org for dynamic status detection
   useEffect(() => {
     let isMounted = true
     async function loadOrg() {
       if (currentRole !== 'org_admin') {
-        setOrgLoading(false)
         return
       }
       try {
@@ -59,9 +55,7 @@ export default function GetStartedPage() {
           setOrg(res)
         }
       } catch {
-        // silent
-      } finally {
-        if (isMounted) setOrgLoading(false)
+        // Fallback gracefully
       }
     }
     loadOrg()
@@ -70,66 +64,65 @@ export default function GetStartedPage() {
     }
   }, [currentRole])
 
-  // Load user-scoped manual checklist state
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey)
       if (raw) {
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) setManualDone(parsed.filter((x) => typeof x === 'string'))
+        setManualDone(JSON.parse(raw))
       } else {
         setManualDone([])
       }
     } catch {
-      /* ignore */
+      setManualDone([])
     }
   }, [storageKey])
 
-  function toggleManualStep(id: string) {
+  function isStepDone(stepId: string): boolean {
+    if (stepId === 'verify_domain') {
+      if (org?.domain_verified_at) return true
+    }
+    if (stepId === 'install' || stepId === 'connect') {
+      if (!devicesLoading && devices.length > 0) return true
+    }
+    return manualDone.includes(stepId)
+  }
+
+  function toggleManualStep(stepId: string) {
     setManualDone((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      const next = prev.includes(stepId)
+        ? prev.filter((id) => id !== stepId)
+        : [...prev, stepId]
       try {
         localStorage.setItem(storageKey, JSON.stringify(next))
       } catch {
-        /* ignore */
+        // Ignore localStorage quota errors
       }
       return next
     })
   }
 
-  // Determine dynamic completion status per step
-  function isStepDone(id: string): boolean {
-    if (id === 'verify_domain') {
-      return Boolean(org?.status === 'ACTIVE' && org?.domain_verified_at)
-    }
-    if (id === 'install' || id === 'connect') {
-      if (devices.length > 0) return true
-    }
-    return manualDone.includes(id)
-  }
-
   const completed = activeSteps.filter((s) => isStepDone(s.id)).length
   const pct = Math.round((completed / activeSteps.length) * 100)
   const allDone = completed === activeSteps.length
-  const firstName = user?.fullName?.split(' ')[0] ?? 'there'
 
   return (
-    <div className="w-full space-y-6 animate-fade-in pb-10">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap pt-1">
+    <div className="w-full space-y-6 animate-fade-in pb-12">
+      {/* ── Page header ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-              {title}, {firstName}
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              {title}
             </h1>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)]">
-              {currentRole === 'super_admin'
-                ? 'Super Admin'
-                : currentRole === 'org_admin'
-                ? 'Org Admin'
-                : currentRole === 'employee'
-                ? 'Employee'
-                : 'Personal'}
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider"
+              style={{
+                background: 'var(--accent-light)',
+                borderColor: 'var(--accent-border)',
+                color: 'var(--accent-text)',
+              }}
+            >
+              {currentRole.replace('_', ' ')}
             </span>
           </div>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
@@ -137,14 +130,13 @@ export default function GetStartedPage() {
           </p>
         </div>
 
-        {/* Connection status (for roles with device integration) */}
         {currentRole !== 'super_admin' && (
           <div
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-md border text-xs font-semibold shrink-0"
             style={{
               background: 'var(--bg-surface)',
-              borderColor: devicesLoading ? 'var(--border)' : devices.length > 0 ? 'var(--success-border)' : 'var(--warning-border)',
-              color: devicesLoading ? 'var(--text-secondary)' : devices.length > 0 ? 'var(--success)' : 'var(--warning)',
+              borderColor: 'var(--border)',
+              color: 'var(--text-secondary)',
             }}
           >
             <span
@@ -212,75 +204,16 @@ export default function GetStartedPage() {
             Boolean(step.autoDetectable) &&
             ((step.id === 'verify_domain' && isDone) ||
               ((step.id === 'install' || step.id === 'connect') && devices.length > 0))
-          const Icon = step.icon
 
           return (
-            <div
+            <StepCard
               key={step.id}
-              className="card p-5 animate-fade-in"
-              style={{
-                animationDelay: `${i * 60}ms`,
-                borderColor: isDone ? 'var(--success-border)' : undefined,
-              }}
-            >
-              <div className="flex gap-4">
-                {/* Step icon */}
-                <div
-                  className="size-11 rounded-md flex items-center justify-center shrink-0 transition-colors duration-300"
-                  style={{
-                    background: isDone ? 'var(--success-light)' : 'var(--accent-light)',
-                    border: `1.5px solid ${isDone ? 'var(--success-border)' : 'var(--accent-border)'}`,
-                    color: isDone ? 'var(--success)' : 'var(--accent-text)',
-                  }}
-                >
-                  <Icon size={19} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                          <span className="mr-1.5 font-mono text-xs align-baseline" style={{ color: 'var(--text-tertiary)' }}>
-                            {i + 1}.
-                          </span>
-                          {step.title}
-                        </h2>
-                        {isAutoVerified && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                            Live Auto-Detected
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                        {step.description}
-                      </p>
-                    </div>
-
-                    {/* Mark done toggle */}
-                    <button
-                      onClick={() => toggleManualStep(step.id)}
-                      aria-pressed={isDone}
-                      aria-label={isDone ? `Mark "${step.title}" as not done` : `Mark "${step.title}" as done`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition-all shrink-0 cursor-pointer hover:brightness-105"
-                      style={{
-                        background: isDone ? 'var(--success-light)' : 'var(--bg-surface-2)',
-                        borderColor: isDone ? 'var(--success-border)' : 'var(--border-2)',
-                        color: isDone ? 'var(--success)' : 'var(--text-tertiary)',
-                      }}
-                    >
-                      {isDone ? <CircleCheck size={13} /> : <Circle size={13} />}
-                      {isDone ? 'Done' : 'Mark done'}
-                    </button>
-                  </div>
-
-                  {/* Action CTA */}
-                  <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-                    {renderStepAction(step.id)}
-                  </div>
-                </div>
-              </div>
-            </div>
+              step={step}
+              index={i}
+              isDone={isDone}
+              isAutoVerified={isAutoVerified}
+              onToggle={toggleManualStep}
+            />
           )
         })}
       </div>

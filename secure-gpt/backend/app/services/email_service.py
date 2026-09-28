@@ -12,9 +12,6 @@ logger = logging.getLogger(__name__)
 
 def _send_smtp_sync(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
     """Sync SMTP sender run in a separate thread."""
-    import dotenv
-    dotenv.load_dotenv(override=True)
-    
     smtp_host = os.getenv("SMTP_HOST")
     smtp_port = os.getenv("SMTP_PORT")
     smtp_username = os.getenv("SMTP_USERNAME")
@@ -73,46 +70,34 @@ def _send_smtp_sync(to_email: str, subject: str, html_content: str, text_content
 
 async def send_otp_email(to_email: str, otp_code: str) -> bool:
     """Sends OTP email asynchronously using Resend API or falls back to SMTP."""
-    import dotenv
-    dotenv.load_dotenv(override=True)
-    
+    from app.services.email_renderer import render_email_template
+
     resend_api_key = os.getenv("RESEND_API_KEY")
     email_from = os.getenv("EMAIL_FROM", "support@rkavach.com")
     
-    subject = f"{otp_code} is your SecureGPT login code"
+    # Security requirement: OTP should not be visible in Subject line
+    subject = "Your SecureGPT verification code"
     text_content = (
         f"Your SecureGPT login verification code is: {otp_code}\n\n"
         f"This code will expire in 10 minutes. Do not share it with anyone.\n\n"
         f"If you did not request this, you can ignore this email.\n"
     )
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f5f6; padding: 20px; }}
-            .card {{ background: #ffffff; border: 1px solid #e1e8ed; border-radius: 12px; padding: 30px; max-width: 480px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
-            .logo {{ font-size: 20px; font-weight: bold; color: #1e40af; margin-bottom: 24px; text-align: center; }}
-            .title {{ font-size: 18px; font-weight: bold; color: #111827; margin-bottom: 8px; }}
-            .desc {{ font-size: 14px; color: #4b5563; line-height: 1.5; margin-bottom: 24px; }}
-            .otp-container {{ background: #f3f4f6; border-radius: 8px; padding: 16px; text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #1e40af; margin-bottom: 24px; }}
-            .footer {{ font-size: 11px; color: #9ca3af; text-align: center; margin-top: 24px; border-top: 1px solid #f3f4f6; padding-top: 16px; }}
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <div class="logo">SecureGPT</div>
-            <div class="title">Verification Code</div>
-            <div class="desc">Please use the following 6-digit code to log in to the SecureGPT Admin Dashboard. This code is valid for 10 minutes.</div>
-            <div class="otp-container">{otp_code}</div>
-            <div class="desc">If you did not request this code, you can safely ignore this email.</div>
-            <div class="footer">SecureGPT DLP Solutions &copy; 2026</div>
-        </div>
-    </body>
-    </html>
-    """
+    html_content = render_email_template(
+        "emails/otp.html",
+        {
+            "title": "Your SecureGPT Verification Code",
+            "otp_code": otp_code,
+            "expires_in_minutes": 10,
+        },
+    )
+    return await send_email_dispatch(to_email, subject, html_content, text_content)
+
+
+async def send_email_dispatch(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Dispatches email asynchronously via Resend API or falls back to SMTP."""
+    resend_api_key = os.getenv("RESEND_API_KEY")
+    email_from = os.getenv("EMAIL_FROM", "support@rkavach.com")
 
     if resend_api_key:
         import httpx
@@ -132,14 +117,14 @@ async def send_otp_email(to_email: str, otp_code: str) -> bool:
                         "text": text_content
                     }
                 )
-                if resp.status_code == 200 or resp.status_code == 201:
+                if resp.status_code in (200, 201):
                     logger.info(f"Successfully sent email to {to_email} via Resend")
                     return True
                 else:
                     logger.error(f"Resend returned status code {resp.status_code}: {resp.text}")
         except Exception as e:
             logger.error(f"Failed to send email via Resend: {str(e)}")
-            
+
     return await asyncio.to_thread(
         _send_smtp_sync, to_email, subject, html_content, text_content
     )
@@ -147,9 +132,6 @@ async def send_otp_email(to_email: str, otp_code: str) -> bool:
 
 async def send_deactivation_email(to_email: str) -> bool:
     """Sends immediate account deactivation/deletion scheduling email."""
-    import dotenv
-    dotenv.load_dotenv(override=True)
-    
     resend_api_key = os.getenv("RESEND_API_KEY")
     email_from = os.getenv("EMAIL_FROM", "support@rkavach.com")
     
@@ -188,33 +170,5 @@ async def send_deactivation_email(to_email: str) -> bool:
     </html>
     """
 
-    if resend_api_key:
-        import httpx
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.post(
-                    "https://api.resend.com/emails",
-                    headers={
-                        "Authorization": f"Bearer {resend_api_key}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "from": f"SecureGPT <{email_from}>",
-                        "to": [to_email],
-                        "subject": subject,
-                        "html": html_content,
-                        "text": text_content
-                    }
-                )
-                if resp.status_code in (200, 201):
-                    logger.info(f"Successfully sent deactivation email to {to_email} via Resend")
-                    return True
-                else:
-                    logger.error(f"Resend returned status code {resp.status_code}: {resp.text}")
-        except Exception as e:
-            logger.error(f"Failed to send deactivation email via Resend: {str(e)}")
-            
-    return await asyncio.to_thread(
-        _send_smtp_sync, to_email, subject, html_content, text_content
-    )
+    return await send_email_dispatch(to_email, subject, html_content, text_content)
 

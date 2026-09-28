@@ -1,103 +1,22 @@
 'use client'
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { clsx } from 'clsx'
-import {
-  LayoutDashboard, FileText, ShieldCheck,
-  User, Settings, LogOut, Users, Sparkles, ShieldAlert,
-  PanelLeftClose, PanelLeft, X, Sun, Moon, Shield, History, Key, ClipboardList, Database, Building2
-} from 'lucide-react'
+import { PanelLeftClose, PanelLeft, X } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/contexts/theme-context'
 import { useSystemVersion } from '@/contexts/system-version-context'
-import { Avatar } from '@/components/shared/Avatar'
 import { VersionModal } from '@/components/shared/VersionModal'
 import { useLogoutConfirm } from '@/components/ui/modal/modal'
 import { useToast } from '@/contexts/toast-context'
+import { STANDARD_NAV_GROUPS, SUPER_ADMIN_NAV_GROUPS } from './sidebar.config'
+import { SidebarFooter } from './SidebarFooter'
 
-export interface NavItemConfig {
-  label: string
-  href: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
-  exact?: boolean
-  adminOnly?: boolean
-  superAdminOnly?: boolean
-  badge?: string
-}
-
-export interface NavGroup {
-  label: string
-  items: NavItemConfig[]
-}
+export * from './sidebar.config'
 
 const IS_ADMIN_MODE = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
-
-const STANDARD_NAV_GROUPS: NavGroup[] = [
-  {
-    label: 'Overview',
-    items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
-      { label: 'Get Started', href: '/get-started', icon: Sparkles, badge: 'Setup' },
-    ],
-  },
-  {
-    label: 'Security & Telemetry',
-    items: [
-      { label: 'Incidents Stream', href: '/incidents', icon: ShieldAlert },
-      { label: 'Event Log', href: '/event-logs', icon: FileText },
-    ],
-  },
-  {
-    label: 'Governance & Admin',
-    items: [
-      { label: 'Policy Rules', href: '/policy', icon: ShieldCheck },
-      { label: 'Team & Org', href: '/team', icon: Users, adminOnly: true },
-    ],
-  },
-  {
-    label: 'Account',
-    items: [
-      { label: 'Profile', href: '/profile', icon: User },
-      { label: 'Settings', href: '/settings', icon: Settings },
-    ],
-  },
-]
-
-const SUPER_ADMIN_NAV_GROUPS: NavGroup[] = [
-  {
-    label: 'Overview',
-    items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
-    ],
-  },
-  {
-    label: 'Security & Logs',
-    items: [
-      { label: 'Event Logs', href: '/event-logs', icon: FileText },
-      { label: 'Audit Logs', href: '/audit', icon: ClipboardList, superAdminOnly: true },
-      { label: 'System Logs', href: '/system-logs', icon: Database, superAdminOnly: true },
-    ],
-  },
-  {
-    label: 'Access & Governance',
-    items: [
-      { label: 'Organizations', href: '/organizations', icon: Building2, superAdminOnly: true },
-      { label: 'Policy Rules', href: '/policy', icon: ShieldCheck },
-      { label: 'Global Users', href: '/users', icon: Users, superAdminOnly: true },
-      { label: 'Roles', href: '/roles', icon: Shield, superAdminOnly: true },
-      { label: 'Permissions', href: '/permissions', icon: Key, superAdminOnly: true },
-    ],
-  },
-  {
-    label: 'Account & System',
-    items: [
-      { label: 'Profile', href: '/profile', icon: User },
-      { label: 'Settings', href: '/settings', icon: Settings },
-    ],
-  },
-]
 
 interface SidebarInnerProps {
   isMobile?: boolean
@@ -139,7 +58,6 @@ export function SidebarInner({
 
   return (
     <div className="flex flex-col h-full select-none justify-between overflow-hidden">
-      {/* ── Top Header ────────────────────────────────────────── */}
       <div>
         <div className={clsx(
           'flex items-center h-[58px] border-b border-[var(--sidebar-border)] px-3.5 transition-all',
@@ -171,7 +89,6 @@ export function SidebarInner({
             )}
           </Link>
 
-          {/* Desktop Collapse Toggle */}
           {!isMobile && !isCompact && onToggleCollapse && (
             <button
               type="button"
@@ -183,7 +100,6 @@ export function SidebarInner({
             </button>
           )}
 
-          {/* Mobile Close Button */}
           {isMobile && onNavigate && (
             <button
               type="button"
@@ -196,7 +112,6 @@ export function SidebarInner({
           )}
         </div>
 
-        {/* Collapsed rail expand trigger */}
         {isCompact && !isMobile && onToggleCollapse && (
           <div className="flex justify-center py-2 border-b border-[var(--sidebar-border)]">
             <button
@@ -210,7 +125,6 @@ export function SidebarInner({
           </div>
         )}
 
-        {/* ── Navigation Items ─────────────────────────────────── */}
         <nav className="p-2 space-y-4 overflow-y-auto max-h-[calc(100vh-175px)]">
           {(IS_ADMIN_MODE || user?.role === 'super_admin' ? SUPER_ADMIN_NAV_GROUPS : STANDARD_NAV_GROUPS).map((group) => {
             const filteredItems = group.items.filter((item) => {
@@ -292,104 +206,16 @@ export function SidebarInner({
         </nav>
       </div>
 
-      {/* ── Footer Deck (Theme, Profile & Logout) ─────────────── */}
-      <div className="p-2 border-t border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] space-y-1">
-        {/* Theme Toggle Button */}
-        <button
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className={clsx(
-            'flex items-center gap-2.5 w-full px-2.5 py-2 rounded-xl text-[13px] font-medium text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-active)] hover:bg-[var(--sidebar-hover-bg)] transition-colors',
-            isCompact ? 'justify-center px-2' : ''
-          )}
-        >
-          {theme === 'dark' ? (
-            <Sun size={17} className="text-amber-400 shrink-0" />
-          ) : (
-            <Moon size={17} className="text-indigo-500 shrink-0" />
-          )}
-          {!isCompact && (
-            <span className="flex-1 text-left">{theme === 'dark' ? 'Light Theme' : 'Dark Theme'}</span>
-          )}
-        </button>
-
-        {/* User profile & Logout */}
-        <div className={clsx(
-          'flex items-center gap-2 p-1.5 rounded-xl hover:bg-[var(--sidebar-hover-bg)] transition-colors group',
-          isCompact ? 'justify-center p-1' : 'justify-between'
-        )}>
-          <Link
-            href="/profile"
-            onClick={onNavigate}
-            className={clsx(
-              'flex items-center gap-2.5 min-w-0 flex-1',
-              isCompact ? 'justify-center' : ''
-            )}
-            title={user.email}
-          >
-            <Avatar src={user.avatarUrl} name={user.fullName} email={user.email} size="sm" />
-            {!isCompact && (
-              <div className="flex flex-col min-w-0 text-left">
-                <span className="text-[13px] font-semibold text-[var(--sidebar-text-active)] truncate leading-snug">
-                  {user.fullName || 'User'}
-                </span>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <span
-                    className={clsx(
-                      'text-[10px] font-semibold px-1.5 py-0.5 rounded-full border uppercase tracking-wider',
-                      user.role === 'super_admin' || user.role === 'platform_super_admin'
-                        ? 'bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-500/30'
-                        : user.role === 'org_admin' || user.role === 'security_admin'
-                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/30'
-                        : user.role === 'employee'
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/30'
-                        : 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30'
-                    )}
-                  >
-                    {user.role === 'super_admin' || user.role === 'platform_super_admin'
-                      ? 'Super Admin'
-                      : user.role === 'org_admin'
-                      ? 'Org Admin'
-                      : user.role === 'employee'
-                      ? 'Employee'
-                      : user.orgId
-                      ? 'Organization'
-                      : 'Personal User'}
-                  </span>
-                </div>
-              </div>
-            )}
-          </Link>
-
-          {!isCompact && (
-            <button
-              onClick={handleLogout}
-              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
-              title="Sign out"
-            >
-              <LogOut size={16} />
-            </button>
-          )}
-        </div>
-
-        {/* Release Version Tag */}
-        {!isCompact && (
-          <button
-            type="button"
-            onClick={() => setVersionModalOpen(true)}
-            className="w-full px-2 pt-1.5 pb-1 flex items-center justify-between text-[10.5px] text-[var(--sidebar-subtext)] font-mono font-medium border-t border-[var(--sidebar-border)]/50 mt-1 hover:bg-[var(--sidebar-hover-bg)] rounded transition-colors group cursor-pointer"
-            title="Click to check live system & component versions"
-          >
-            <span className="flex items-center gap-1 group-hover:text-[var(--sidebar-text-active)]">
-              <span className="size-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-              v{currentVersion}
-            </span>
-            <span className="opacity-75 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity font-semibold">
-              Status ↗
-            </span>
-          </button>
-        )}
-      </div>
+      <SidebarFooter
+        user={user}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        isCompact={isCompact}
+        onNavigate={onNavigate}
+        handleLogout={handleLogout}
+        currentVersion={currentVersion}
+        setVersionModalOpen={setVersionModalOpen}
+      />
 
       <VersionModal
         open={versionModalOpen}

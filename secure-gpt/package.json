@@ -15,7 +15,8 @@
     "test:extension": "npm run test --workspace=@securegpt/extension",
     "test:detection": "npm run test --workspace=@securegpt/detection",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check-lines": "python3 ../scripts/check_file_length.py --max-lines 300"
   },
   "devDependencies": {
     "eslint": "^9.16.0",

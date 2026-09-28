@@ -1,25 +1,21 @@
 'use client'
-// packages/secure-gpt-dashboard/src/app/(app)/team/page.tsx
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTeam } from '@/features/team/hooks/use-team'
-import {
-  Building2, FolderPlus, Plus, AlertCircle,
-  Layers, SlidersHorizontal, UserPlus
-} from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
 import { useAuth } from '@/contexts/auth-context'
 import { useToast } from '@/contexts/toast-context'
 import { apiPost } from '@/lib/api/client'
 
 import { OrgVerificationCard } from './components/OrgVerificationCard'
-import { DepartmentModal } from './components/DepartmentModal'
-import { MemberInviteModal } from './components/MemberInviteModal'
-import { OrgRegisterModal } from './components/OrgRegisterModal'
 import { TeamMemberTable } from './components/TeamMemberTable'
 import { TeamBulkActionsBar } from './components/TeamBulkActionsBar'
 import { TeamCsvImportModal } from './components/TeamCsvImportModal'
+import { TeamPageHeader } from './components/TeamPageHeader'
+import { DepartmentDeck } from './components/DepartmentDeck'
+import { TeamPageModals } from './components/TeamPageModals'
 
 export default function TeamPage() {
   const router = useRouter()
@@ -184,36 +180,12 @@ export default function TeamPage() {
     <>
       <div className="space-y-8 pb-32 animate-fade-in w-full">
       {/* ── 1. Page Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Building2 className="text-[var(--accent)]" size={24} />
-            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              {currentOrg ? currentOrg.name : 'Team & Organization Admin'}
-            </h1>
-          </div>
-          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            Manage departmental policies, domain verification gating, and employee DLP roster.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {!currentOrg && (
-            <Button variant="primary" size="sm" onClick={() => setOrgRegisterOpen(true)}>
-              <Building2 size={13} className="mr-1.5" /> Register Organization
-            </Button>
-          )}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setDeptOpen(true)}
-            disabled={!isOrgActive}
-            title={!isOrgActive ? 'Verify domain to create departments' : undefined}
-          >
-            <FolderPlus size={13} className="mr-1.5" /> New Department
-          </Button>
-        </div>
-      </div>
+      <TeamPageHeader
+        currentOrg={currentOrg}
+        isOrgActive={isOrgActive}
+        onRegisterOrgClick={() => setOrgRegisterOpen(true)}
+        onNewDeptClick={() => setDeptOpen(true)}
+      />
 
       {error && (
         <div
@@ -233,105 +205,16 @@ export default function TeamPage() {
       />
 
       {/* ── 3. Department Categories Deck ──────────────────────────────── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
-              <Layers size={14} style={{ color: 'var(--accent)' }} /> Department DLP Profiles ({departments.length})
-            </h3>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-              Tier 3 policies customize masking & blocking rules per department (e.g. Engineering vs Finance).
-            </p>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setDeptOpen(true)}
-            disabled={!isOrgActive}
-            title={!isOrgActive ? 'Verify domain to create employee categories' : undefined}
-          >
-            <Plus size={12} className="mr-1" /> Add Category
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {departments.length === 0 ? (
-            <div
-              className="col-span-full p-8 text-center border border-dashed rounded-md"
-              style={{ borderColor: 'var(--border-2)', background: 'var(--bg-surface)' }}
-            >
-              <div
-                className="size-9 rounded-xl mx-auto flex items-center justify-center mb-2"
-                style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
-              >
-                <FolderPlus size={18} />
-              </div>
-              <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
-                No custom departments created yet
-              </p>
-              <p className="text-xs mt-1 max-w-sm mx-auto" style={{ color: 'var(--text-tertiary)' }}>
-                Create categories like <b>Engineering</b>, <b>Finance</b>, or <b>HR</b> to apply specialized masking rules.
-              </p>
-              <Button variant="secondary" size="sm" onClick={() => setDeptOpen(true)} className="mt-3">
-                Create First Department
-              </Button>
-            </div>
-          ) : (
-            departments.map((dept) => {
-              const memberCount = users.filter((u) => u.departmentId === dept.id).length
-              return (
-                <div
-                  key={dept.id}
-                  className="p-5 rounded-md border transition-all flex flex-col justify-between group hover:border-[var(--accent)] hover:shadow-md"
-                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
-                        {dept.name}
-                      </h4>
-                      <span
-                        className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded"
-                        style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }}
-                      >
-                        {memberCount} members
-                      </span>
-                    </div>
-                    <p className="text-xs line-clamp-2 mb-4" style={{ color: 'var(--text-tertiary)' }}>
-                      {dept.description || 'General organizational security policies apply.'}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/policy?department_id=${dept.id}`)}
-                      className="flex-1 px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all cursor-pointer hover:bg-[var(--accent-light)] hover:text-[var(--accent)] hover:border-[var(--accent-border)]"
-                      style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-                    >
-                      <SlidersHorizontal size={12} /> Configure Policy
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!isOrgActive}
-                      onClick={() => {
-                        if (!isOrgActive) return
-                        setSelectedDept(dept.id)
-                        setInviteOpen(true)
-                      }}
-                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1 transition-all cursor-pointer hover:bg-[var(--bg-surface-2)] disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
-                      title={!isOrgActive ? 'Verify domain to invite employees' : 'Invite colleague to this category'}
-                    >
-                      <UserPlus size={12} />
-                    </button>
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
-      </div>
+      <DepartmentDeck
+        departments={departments}
+        users={users}
+        isOrgActive={isOrgActive}
+        onOpenDeptModal={() => setDeptOpen(true)}
+        onOpenInviteWithDept={(deptId) => {
+          setSelectedDept(deptId)
+          setInviteOpen(true)
+        }}
+      />
 
       {/* ── 4. Active Employees Table ─────────────────────────────────────── */}
       <TeamMemberTable
@@ -373,9 +256,9 @@ export default function TeamPage() {
       />
 
       {/* ── 5. Modals ────────────────────────────────────────────────────── */}
-      <MemberInviteModal
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
+      <TeamPageModals
+        inviteOpen={inviteOpen}
+        onCloseInvite={() => setInviteOpen(false)}
         orgDomain={orgDomain}
         isOrgActive={isOrgActive}
         inviteEmail={inviteEmail}
@@ -387,12 +270,8 @@ export default function TeamPage() {
         inviteError={inviteError}
         inviteSuccess={inviteSuccess}
         onInvite={handleInvite}
-      />
-
-      <DepartmentModal
-        open={deptOpen}
-        onClose={() => setDeptOpen(false)}
-        isOrgActive={isOrgActive}
+        deptOpen={deptOpen}
+        onCloseDept={() => setDeptOpen(false)}
         deptName={deptName}
         setDeptName={setDeptName}
         deptDesc={deptDesc}
@@ -400,11 +279,8 @@ export default function TeamPage() {
         deptError={deptError}
         creatingDept={creatingDept}
         onCreateDept={handleCreateDept}
-      />
-
-      <OrgRegisterModal
-        open={orgRegisterOpen}
-        onClose={() => {
+        orgRegisterOpen={orgRegisterOpen}
+        onCloseOrgRegister={() => {
           setOrgRegisterOpen(false)
           setOrgResult(null)
         }}
@@ -416,9 +292,6 @@ export default function TeamPage() {
         orgResult={orgResult}
         registeringOrg={registeringOrg}
         onRegisterOrg={handleRegisterOrg}
-        onCopyToken={(token) => {
-          navigator.clipboard.writeText(token)
-        }}
       />
     </>
   )

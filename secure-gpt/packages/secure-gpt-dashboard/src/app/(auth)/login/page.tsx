@@ -5,11 +5,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { apiPost } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
-import { Building2, UserCheck, User } from 'lucide-react'
 import { EmailOtpForm } from '@/features/auth/components/EmailOtpForm'
 import { OAuthButtons } from '@/features/auth/components/OAuthButtons'
 import { DevQuickBypass } from '@/features/auth/components/DevQuickBypass'
 import { PendingDomainModal } from '@/features/auth/components/PendingDomainModal'
+import { RoleSelector } from '@/features/auth/components/RoleSelector'
+import { LoginFooter } from '@/features/auth/components/LoginFooter'
 import { useSystemVersion } from '@/contexts/system-version-context'
 
 export default function LoginPage() {
@@ -51,7 +52,6 @@ export default function LoginPage() {
     window.location.href = '/api/v1/auth/microsoft'
   }
 
-  // ── Request Email OTP ───────────────────────────────────────────────────────
   async function handleRequestOTP(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim()) return
@@ -59,42 +59,43 @@ export default function LoginPage() {
       toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
       return
     }
+    setOtpLoading(true)
     try {
-      setOtpLoading(true)
-      await apiPost('/auth/otp/request', {
+      await apiPost('/auth/request-otp', {
         email: email.trim(),
         role_type: roleType,
       })
       setOtpSent(true)
-      toast.success('Verification code sent to your email!')
+      toast.success(`Verification code sent to ${email}`)
     } catch (err: any) {
-      toast.error(err.message || 'Failed to send OTP')
+      toast.error(err.message || 'Failed to send verification code')
     } finally {
       setOtpLoading(false)
     }
   }
 
-  // ── Verify Email OTP ────────────────────────────────────────────────────────
-  async function handleVerifyOTP(e: React.FormEvent, forcePersonal = false) {
-    if (e?.preventDefault) e.preventDefault()
-    if (!otpCode.trim()) return
-    try {
-      if (forcePersonal) {
-        setPersonalSignupLoading(true)
-      } else {
-        setOtpLoading(true)
-      }
+  async function handleVerifyOTP(e: React.FormEvent, forcePersonalSignup = false) {
+    if (e && e.preventDefault) e.preventDefault()
+    if (!otpCode.trim() && !forcePersonalSignup) return
 
+    if (forcePersonalSignup) {
+      setPersonalSignupLoading(true)
+    } else {
+      setOtpLoading(true)
+    }
+
+    try {
       const res = await apiPost<{
+        user: any
+        redirect_url?: string
         requires_domain_choice?: boolean
         org_name?: string
         domain?: string
-        redirect_url?: string
-      }>('/auth/otp/verify', {
+      }>('/auth/verify-otp', {
         email: email.trim(),
         code: otpCode.trim(),
         role_type: roleType,
-        force_personal: forcePersonal,
+        force_personal: forcePersonalSignup,
       })
 
       if (res?.requires_domain_choice) {
@@ -119,7 +120,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── Dev Login ───────────────────────────────────────────────────────────────
   async function handleDevLogin(e: React.FormEvent) {
     e.preventDefault()
     if (!devEmail) return
@@ -149,7 +149,6 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{ background: 'var(--bg-base)' }}
     >
-      {/* Pending Domain Choice Modal */}
       {pendingDomainOrg && (
         <PendingDomainModal
           orgName={pendingDomainOrg.orgName}
@@ -164,7 +163,6 @@ export default function LoginPage() {
         />
       )}
 
-      {/* Background Grid Pattern */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -176,14 +174,12 @@ export default function LoginPage() {
         aria-hidden
       />
 
-      {/* Glow blob */}
       <div
         className="absolute w-[500px] h-[500px] rounded-full pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{ background: 'radial-gradient(circle, var(--accent-light) 0%, transparent 70%)' }}
         aria-hidden
       />
 
-      {/* Card */}
       <div
         className="relative w-full max-w-[420px] rounded-lg p-7 transition-all border"
         style={{
@@ -192,7 +188,6 @@ export default function LoginPage() {
           boxShadow: 'var(--shadow-md)',
         }}
       >
-        {/* Logo */}
         <div className="flex items-center gap-3 mb-6">
           <div className="size-9 rounded-md flex items-center justify-center border overflow-hidden shrink-0" style={{ background: '#091a2a', borderColor: 'var(--border)' }}>
             <img src="/rivedix_logo.png" alt="Rivedix Logo" className="w-full h-full object-contain p-1" />
@@ -223,65 +218,15 @@ export default function LoginPage() {
             : 'Choose your login role and authentication method'}
         </p>
 
-        {/* ── Role Selector (Shown only on standard tenant app, hidden on admin portal) ── */}
         {!isAdminMode && (
-          <div className="mb-5">
-            <label className="text-xs font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>
-              I am signing in as:
-            </label>
-            <div className="grid grid-cols-3 gap-1 p-1 rounded-md border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setRoleType('employer')
-                  setDevPersona('employer')
-                  setDevEmail('admin@acmecorp.com')
-                }}
-                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                  roleType === 'employer'
-                    ? 'bg-[var(--accent)] text-white shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <Building2 size={13} /> Employer
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setRoleType('employee')
-                  setDevPersona('employee')
-                  setDevEmail('developer@acmecorp.com')
-                }}
-                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                  roleType === 'employee'
-                    ? 'bg-[var(--accent)] text-white shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <UserCheck size={13} /> Employee
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setRoleType('user')
-                  setDevPersona('user')
-                  setDevEmail('john.doe@gmail.com')
-                }}
-                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                  roleType === 'user'
-                    ? 'bg-[var(--accent)] text-white shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <User size={13} /> Personal
-              </button>
-            </div>
-          </div>
+          <RoleSelector
+            roleType={roleType}
+            setRoleType={setRoleType}
+            setDevPersona={setDevPersona}
+            setDevEmail={setDevEmail}
+          />
         )}
 
-        {/* Privacy Policy Checkbox */}
         <div className="flex items-start gap-2.5 mb-5">
           <input
             id="privacy-checkbox"
@@ -302,7 +247,6 @@ export default function LoginPage() {
           </label>
         </div>
 
-        {/* ── Email OTP Form ──────────────────────────────────────────────── */}
         <EmailOtpForm
           roleType={roleType}
           email={email}
@@ -317,21 +261,18 @@ export default function LoginPage() {
           onVerifyOTP={handleVerifyOTP}
         />
 
-        {/* Divider */}
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
           <span className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--text-secondary)' }}>or</span>
           <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
         </div>
 
-        {/* OAuth buttons */}
         <OAuthButtons
           privacyAccepted={privacyAccepted}
           onGoogle={handleGoogle}
           onMicrosoft={handleMicrosoft}
         />
 
-        {/* Developer Quick-Bypass */}
         {isDev && (
           <DevQuickBypass
             devEmail={devEmail}
@@ -342,28 +283,7 @@ export default function LoginPage() {
           />
         )}
 
-        {/* Footer */}
-        <div className="flex flex-col items-center gap-3 pt-5 mt-5 border-t" style={{ borderColor: 'var(--border)' }}>
-          <Link href="/" className="text-[12px] font-semibold hover:underline" style={{ color: 'var(--text-secondary)' }}>
-            ← Back to home
-          </Link>
-          <div className="flex items-center gap-4 text-[12px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-            <Link href="/versions" className="hover:text-[var(--accent)] hover:underline transition-colors flex items-center gap-1.5">
-              <span>Version History</span>
-              <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] font-bold">
-                v{currentVersion}
-              </span>
-            </Link>
-            <span>•</span>
-            <Link href="/privacy" className="hover:underline">
-              Privacy Policy
-            </Link>
-            <span>•</span>
-            <Link href="/terms" className="hover:underline">
-              Terms
-            </Link>
-          </div>
-        </div>
+        <LoginFooter currentVersion={currentVersion} />
       </div>
     </div>
   )

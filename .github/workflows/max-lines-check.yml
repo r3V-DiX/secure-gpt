@@ -1,0 +1,24 @@
+name: Enforce File Line Limit (Max 300 Lines)
+
+on:
+  push:
+    branches: ["main", "master", "develop"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  check-file-lengths:
+    name: Verify No File Exceeds 300 Lines
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Line Limit Validator
+        run: |
+          python3 scripts/check_file_length.py --max-lines 300

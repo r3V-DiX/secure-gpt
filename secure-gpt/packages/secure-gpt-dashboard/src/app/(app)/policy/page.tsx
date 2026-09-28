@@ -29,6 +29,9 @@ import { SaveBar, AddCategoryModal } from '@/features/policy/components/PolicyMa
 import type { LLMPlatform } from '@securegpt/shared/constants'
 import { BUILTIN_RULES_BY_CATEGORY } from '@securegpt/shared/constants'
 
+import { PolicyMetricsStrip } from '@/features/policy/components/PolicyMetricsStrip'
+import { PolicyHeader } from '@/features/policy/components/PolicyHeader'
+
 const BUILTIN = new Set(['FINANCIAL', 'PII', 'CONFIDENTIAL', 'IP'])
 
 export default function PolicyPage() {
@@ -107,131 +110,22 @@ export default function PolicyPage() {
   return (
     <>
       <div className="space-y-7 pb-28 animate-fade-in">
-        {/* ── Back to Organization / Team link ── */}
-        {departmentId && (
-          <div className="flex items-center gap-2">
-            <Link
-              href="/team"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all hover:bg-[var(--accent-light)] hover:text-[var(--accent)] hover:border-[var(--accent-border)]"
-              style={{
-                background: 'var(--bg-surface)',
-                borderColor: 'var(--border-2)',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <ArrowLeft size={13} /> Back to Team & Organization
-            </Link>
-            <span
-              className="text-xs font-mono px-2.5 py-1 rounded-xl font-bold border"
-              style={{
-                background: 'var(--accent-light)',
-                borderColor: 'var(--accent-border)',
-                color: 'var(--accent-text)',
-              }}
-            >
-              Department Scope: {activeDept?.name || departmentId}
-            </span>
-          </div>
-        )}
-
-        {/* ── Page header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-                Policy Governance
-              </h1>
-              <span
-                className="text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-md border"
-                style={{
-                  background: 'var(--accent-light)',
-                  color: 'var(--accent-text)',
-                  borderColor: 'var(--accent-border)',
-                }}
-              >
-                Engine v2.4
-              </span>
-            </div>
-            <p className="text-xs text-[var(--text-secondary)]">
-              {isAdmin
-                ? 'Configure corporate DLP rules, content masking preferences, and active AI target platforms'
-                : "Inspect your organization's active data loss prevention policies and monitored platforms"}
-            </p>
-          </div>
-
-          {savedAt && !isDirty && isAdmin && (
-            <span
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-xs"
-              style={{
-                background: 'var(--success-light)',
-                borderColor: 'var(--success-border)',
-                color: 'var(--success)',
-              }}
-            >
-              <CheckCircle size={13} /> Saved at {savedAt.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
+        {/* ── Page Header & Department Scope ── */}
+        <PolicyHeader
+          departmentId={departmentId}
+          activeDept={activeDept}
+          isAdmin={isAdmin}
+          savedAt={savedAt}
+          isDirty={isDirty}
+        />
 
         {/* ── High-Level Policy Metrics Strip ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div
-            className="p-4 rounded-md border flex items-center justify-between"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border-2)',
-              boxShadow: 'var(--shadow-card)',
-            }}
-          >
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-semibold text-[var(--text-tertiary)]">Active Categories</p>
-              <p className="text-xl font-bold tabular-nums text-[var(--text-primary)]">
-                {totalActiveCategories} <span className="text-xs font-normal text-[var(--text-muted)]">/ {cats.length} active</span>
-              </p>
-            </div>
-            <span className="p-2 rounded-xl bg-[var(--accent-light)] text-[var(--accent)] border border-[var(--accent-border)]">
-              <ShieldCheck size={18} />
-            </span>
-          </div>
-
-          <div
-            className="p-4 rounded-md border flex items-center justify-between"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border-2)',
-              boxShadow: 'var(--shadow-card)',
-            }}
-          >
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-semibold text-[var(--text-tertiary)]">Hard Blocking Rules</p>
-              <p className="text-xl font-bold tabular-nums text-[var(--danger)]">
-                {totalBlockingCategories} <span className="text-xs font-normal text-[var(--text-muted)]">categories blocking</span>
-              </p>
-            </div>
-            <span className="p-2 rounded-xl bg-[var(--danger-light)] text-[var(--danger)] border border-[var(--danger-border)]">
-              <Lock size={18} />
-            </span>
-          </div>
-
-          <div
-            className="p-4 rounded-md border flex items-center justify-between"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border-2)',
-              boxShadow: 'var(--shadow-card)',
-            }}
-          >
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-semibold text-[var(--text-tertiary)]">Protected AI Apps</p>
-              <p className="text-xl font-bold tabular-nums text-[var(--text-primary)]">
-                {totalMonitoredPlatforms} <span className="text-xs font-normal text-[var(--text-muted)]">/ {PLATFORMS.length} targets</span>
-              </p>
-            </div>
-            <span className="p-2 rounded-xl bg-[var(--success-light)] text-[var(--success)] border border-[var(--success-border)]">
-              <Globe size={18} />
-            </span>
-          </div>
-        </div>
+        <PolicyMetricsStrip
+          totalActiveCategories={totalActiveCategories}
+          totalCategories={cats.length}
+          totalBlockingCategories={totalBlockingCategories}
+          totalMonitoredPlatforms={totalMonitoredPlatforms}
+        />
 
         {/* ── Department / Policy Scope Selector ── */}
         {user?.orgId && (

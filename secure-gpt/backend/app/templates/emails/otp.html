@@ -1,0 +1,97 @@
+{% extends "emails/base.html" %}
+
+{% block title %}{{ title | default('Your SecureGPT Verification Code') }}{% endblock %}
+
+{% block header_badge %}
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="display: inline-table; vertical-align: middle;">
+  <tr>
+    <td style="background-color: #172554; border: 1px solid #1d4ed8; border-radius: 5px; padding: 4px 8px;">
+      <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td style="vertical-align: middle; padding-right: 5px; line-height: 0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+              <path d="M20.9922 11.1833V8.28029C20.9922 6.64029 20.9922 5.82028 20.5881 5.28529C20.184 4.75029 19.2703 4.49056 17.4429 3.9711C16.1944 3.6162 15.0938 3.18863 14.2145 2.79829C13.0156 2.2661 12.4161 2 11.9922 2C11.5682 2 10.9688 2.2661 9.7699 2.79829C8.89057 3.18863 7.79002 3.61619 6.54152 3.9711C4.71411 4.49056 3.80041 4.75029 3.3963 5.28529C2.99219 5.82028 2.99219 6.64029 2.99219 8.28029V11.1833C2.99219 16.8085 8.05496 20.1835 10.5861 21.5194C11.1932 21.8398 11.4968 22 11.9922 22C12.4876 22 12.7911 21.8398 13.3982 21.5194C15.9294 20.1835 20.9922 16.8085 20.9922 11.1833Z" stroke="#93c5fd" stroke-width="1.7" stroke-linecap="round"/>
+              <path d="M8.49219 11.8333C8.49219 11.8333 9.36719 11.8333 10.2422 13.5C10.2422 13.5 13.0216 9.33333 15.4922 8.5" stroke="#93c5fd" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </td>
+          <td style="vertical-align: middle; color: #93c5fd; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.55px; text-transform: uppercase;">
+            Security Verification
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+{% endblock %}
+
+{% block content %}
+<h1 style="margin: 0 0 8px 0; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 21px; font-weight: 700; color: #0f172a; letter-spacing: -0.45px; line-height: 1.3;">
+  Authentication Code
+</h1>
+
+<p style="margin: 0 0 25px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #475569; line-height: 1.65;">
+  We received a request to log in to your SecureGPT account. Enter the verification code below to complete authentication.
+</p>
+
+<!-- OTP Block -->
+<table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom: 22px;">
+  <tr>
+    <td align="center" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 9px; padding: 21px 16px 23px 16px;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1.6px; margin-bottom: 8px;">
+        One-Time Login Code
+      </div>
+      <div class="otp-val" style="font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #1e40af; line-height: 1.2; padding-left: 10px;">
+        {{ otp_code }}
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- Expiration Notice with Hugeicons Time02 -->
+<table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom: 20px;">
+  <tr>
+    <td style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 13px 14px;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td width="24" valign="middle" style="padding-right: 9px; line-height: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+              <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#b45309" stroke-width="1.7"/>
+              <path d="M12.0078 10.5082C11.1794 10.5082 10.5078 11.1798 10.5078 12.0082C10.5078 12.8366 11.1794 13.5082 12.0078 13.5082C12.8362 13.5082 13.5078 12.8366 13.5078 12.0082C13.5078 11.1798 12.8362 10.5082 12.0078 10.5082ZM12.0078 10.5082V6.99902M15.0147 15.0198L13.0661 13.0712" stroke="#b45309" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </td>
+          <td valign="middle">
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; color: #92400e; line-height: 1.5;">
+              <strong style="font-weight: 700;">Code expires in {{ expires_in_minutes | default(10) }} minutes.</strong>
+              <span style="color: #a16207;"> It can only be used once.</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Security Notice with Hugeicons ShieldAlert -->
+<table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+  <tr>
+    <td style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 13px 14px;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td width="24" valign="top" style="padding-right: 9px; padding-top: 1px; line-height: 0;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+              <path d="M11.9922 8L11.9922 12" stroke="#64748b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12.1172 15.75L11.9922 15.75M12.2422 15.75C12.2422 15.8881 12.1303 16 11.9922 16C11.8541 16 11.7422 15.8881 11.7422 15.75C11.7422 15.6119 11.8541 15.5 11.9922 15.5C12.1303 15.5 12.2422 15.6119 12.2422 15.75Z" stroke="#64748b" stroke-width="1.7" stroke-linecap="round"/>
+              <path d="M20.9922 11.1835V8.28041C20.9922 6.64041 20.9922 5.82041 20.5881 5.28541C20.184 4.75042 19.2703 4.49068 17.4429 3.97122C16.1944 3.61632 15.0938 3.18875 14.2145 2.79841C13.0156 2.26622 12.4161 2.00012 11.9922 2.00012C11.5682 2.00012 10.9688 2.26622 9.7699 2.79841C8.89057 3.18875 7.79002 3.61632 6.54152 3.97122C4.71411 4.49068 3.80041 4.75042 3.3963 5.28541C2.99219 5.82041 2.99219 6.64041 2.99219 8.28041V11.1835C2.99219 16.8086 8.05496 20.1836 10.5861 21.5195C11.1932 21.8399 11.4968 22.0001 11.9922 22.0001C12.4876 22.0001 12.7911 21.8399 13.3982 21.5195C15.9294 20.1836 20.9922 16.8086 20.9922 11.1835Z" stroke="#64748b" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </td>
+          <td valign="middle">
+            <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #64748b; line-height: 1.65;">
+              <strong style="color: #475569;">Security Notice:</strong> SecureGPT team members will never ask you for this passcode. If you did not initiate this request, secure your account immediately.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+{% endblock %}

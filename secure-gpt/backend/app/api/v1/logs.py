@@ -1,11 +1,6 @@
 # backend/app/api/v1/logs.py
-# FIX: get_log_stats() and get_dashboard_stats() previously loaded ALL logs
-# into Python memory with no LIMIT — causes OOM at scale.
-# Fixed with DB-side aggregation using GROUP BY + func.count().
-
 import csv
 import io
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from app.core.dependencies import CurrentUser, DBSession
@@ -14,6 +9,11 @@ from app.core.ratelimit import LIMIT_LOGS, LIMIT_LOGS_STATS, limiter
 from app.core.response import paginated, success
 from app.models.audit_log import AuditLog
 from app.models.user import User
+from app.api.v1.log_analytics import (
+    check_is_super_admin,
+    aggregate_dashboard_metrics,
+    fetch_leaderboards,
+)
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import desc, func, or_, select
@@ -59,41 +59,31 @@ async def list_logs(
     start_date: str | None = Query(None),
     end_date: str | None = Query(None),
 ):
-    role_str = (current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)).lower()
-    if current_user.org_id and role_str in ("org_admin", "security_admin", "employer", "super_admin", "platform_super_admin"):
-        query = select(AuditLog).where(
-            or_(
-                AuditLog.org_id == current_user.org_id,
-                AuditLog.user_id == current_user.id,
-                AuditLog.user_id.in_(select(User.id).where(User.org_id == current_user.org_id)),
-            )
-        )
-    else:
-        query = select(AuditLog).where(AuditLog.user_id == current_user.id)
+    query = select(AuditLog).where(AuditLog.user_id == current_user.id)
 
     if action:
-        query = query.where(AuditLog.action_taken == action.upper())
+        query = query.where(AuditLog.action_taken == action)
     if category:
-        query = query.where(AuditLog.category_triggered == category.upper())
+        query = query.where(AuditLog.category_triggered == category)
     if platform:
-        query = query.where(AuditLog.llm_platform == platform.lower())
+        query = query.where(AuditLog.llm_platform.ilike(f"%{platform}%"))
     if domain:
         query = query.where(AuditLog.domain.ilike(f"%{domain}%"))
     if start_date:
-        try:
-            query = query.where(AuditLog.timestamp >= datetime.fromisoformat(start_date))
-        except ValueError:
-            pass
+        query = query.where(AuditLog.timestamp >= datetime.fromisoformat(start_date))
     if end_date:
-        try:
-            query = query.where(AuditLog.timestamp <= datetime.fromisoformat(end_date))
-        except ValueError:
-            pass
+        query = query.where(AuditLog.timestamp <= datetime.fromisoformat(end_date))
 
-    count_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    count_result = await db.execute(
+        select(func.count()).select_from(query.subquery())
+    )
     total = count_result.scalar_one()
 
-    query = query.order_by(desc(AuditLog.received_at)).offset(pagination.offset).limit(pagination.limit)
+    query = (
+        query.order_by(desc(AuditLog.received_at))
+        .offset(pagination.offset)
+        .limit(pagination.limit)
+    )
     result = await db.execute(query)
     logs = result.scalars().all()
 
@@ -105,22 +95,15 @@ async def list_logs(
     )
 
 
-@router.get("/stats", summary="Aggregated stats for current user")
+@router.get("/stats", summary="Get aggregated stats for the current user's logs")
 @limiter.limit(LIMIT_LOGS_STATS)
-async def get_log_stats(request: Request, db: DBSession, current_user: CurrentUser):
-    """
-    Return aggregated detection stats for dashboard KPI cards.
-    """
-    if current_user.org_id:
-        user_filter = or_(
-            AuditLog.org_id == current_user.org_id,
-            AuditLog.user_id == current_user.id,
-            AuditLog.user_id.in_(select(User.id).where(User.org_id == current_user.org_id)),
-        )
-    else:
-        user_filter = (AuditLog.user_id == current_user.id)
+async def get_log_stats(
+    request: Request,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    user_filter = AuditLog.user_id == current_user.id
 
-    # DB-side action aggregation
     action_rows = await db.execute(
         select(AuditLog.action_taken, func.count().label("cnt"))
         .where(user_filter)
@@ -128,22 +111,18 @@ async def get_log_stats(request: Request, db: DBSession, current_user: CurrentUs
     )
     action_counts = {row.action_taken.value: row.cnt for row in action_rows}
 
-    total_result = await db.execute(
-        select(func.count()).where(user_filter)
-    )
+    total_result = await db.execute(select(func.count()).where(user_filter))
     total = total_result.scalar_one()
 
-    # DB-side platform aggregation
     platform_rows = await db.execute(
         select(AuditLog.llm_platform, func.count().label("cnt"))
-        .where(user_filter)
+        .where(user_filter, AuditLog.llm_platform.isnot(None))
         .group_by(AuditLog.llm_platform)
         .order_by(desc("cnt"))
         .limit(10)
     )
     top_platforms = [{"platform": r.llm_platform, "count": r.cnt} for r in platform_rows]
 
-    # DB-side domain aggregation
     domain_rows = await db.execute(
         select(AuditLog.domain, func.count().label("cnt"))
         .where(user_filter, AuditLog.domain.isnot(None))
@@ -153,11 +132,8 @@ async def get_log_stats(request: Request, db: DBSession, current_user: CurrentUs
     )
     top_domains = [{"domain": r.domain, "count": r.cnt} for r in domain_rows]
 
-    # entity_types is a JSON array column — needs Python-side unpack.
     entity_result = await db.execute(
-        select(AuditLog.entity_types)
-        .where(user_filter)
-        .limit(10_000)
+        select(AuditLog.entity_types).where(user_filter).limit(10_000)
     )
     entity_counts: dict[str, int] = {}
     for (entity_types,) in entity_result:
@@ -193,42 +169,16 @@ async def get_dashboard_stats(
     current_user: CurrentUser,
     days: int = Query(default=30, ge=1, le=90),
 ):
-    """
-    Full dashboard stats: KPI counts + events_by_day chart data.
-    FIX: Uses DB-side GROUP BY for action/platform/domain counts.
-    """
     now = datetime.now(timezone.utc)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     since = today - timedelta(days=days - 1)
 
-    from app.models.org import Organisation
-    from app.models.department import Department
-    from app.models.rbac import UserRoleAssignment, Role
-
-    is_super_admin = False
+    is_super_admin = await check_is_super_admin(db, current_user)
     role_str = (current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)).lower()
-    if role_str in ("super_admin", "platform_super_admin"):
-        is_super_admin = True
-    else:
-        super_role_res = await db.execute(
-            select(Role)
-            .join(UserRoleAssignment, UserRoleAssignment.role_id == Role.id)
-            .where(
-                UserRoleAssignment.user_id == current_user.id,
-                UserRoleAssignment.is_active == True,
-                Role.slug.in_(("super_admin", "platform_super_admin")),
-            )
-        )
-        if super_role_res.scalar_one_or_none():
-            is_super_admin = True
-
-    palette = ["#ef4444", "#f59e0b", "#6366f1", "#10b981", "#8b5cf6"]
 
     if is_super_admin:
         role_scope = "platform"
-        where = [
-            AuditLog.timestamp >= since,
-        ]
+        where = [AuditLog.timestamp >= since]
     elif current_user.org_id:
         role_scope = "organization"
         where = [
@@ -246,195 +196,10 @@ async def get_dashboard_stats(
             AuditLog.timestamp >= since,
         ]
 
-    # DB-side action counts
-    action_rows = await db.execute(
-        select(AuditLog.action_taken, func.count().label("cnt"))
-        .where(*where)
-        .group_by(AuditLog.action_taken)
+    action_counts, total, top_domains, top_entity_types, events_by_day = await aggregate_dashboard_metrics(
+        db, where, since, days
     )
-    action_counts = {row.action_taken.value: row.cnt for row in action_rows}
-
-    total_result = await db.execute(
-        select(func.count()).where(*where)
-    )
-    total = total_result.scalar_one()
-
-    # DB-side domain aggregation
-    domain_rows = await db.execute(
-        select(AuditLog.domain, func.count().label("cnt"))
-        .where(*where, AuditLog.domain.isnot(None))
-        .group_by(AuditLog.domain)
-        .order_by(desc("cnt"))
-        .limit(8)
-    )
-    top_domains = [{"domain": r.domain, "count": r.cnt} for r in domain_rows]
-
-    # entity_types: JSON column, still needs Python (cap at 10k)
-    entity_result = await db.execute(
-        select(AuditLog.entity_types).where(*where).limit(10_000)
-    )
-    entity_counts: dict[str, int] = {}
-    for (entity_types,) in entity_result:
-        for et in (entity_types or []):
-            entity_counts[et] = entity_counts.get(et, 0) + 1
-
-    top_entity_types = sorted(
-        [{"type": k, "count": v} for k, v in entity_counts.items()],
-        key=lambda x: x["count"], reverse=True
-    )[:8]
-
-    # Events by day — fetch only date + count
-    day_result = await db.execute(
-        select(AuditLog.timestamp).where(*where)
-    )
-    day_counts: dict[str, int] = defaultdict(int)
-    for (ts,) in day_result:
-        day_counts[ts.strftime("%Y-%m-%d")] += 1
-
-    events_by_day = [
-        {"date": (since + timedelta(days=i)).strftime("%Y-%m-%d"),
-         "count": day_counts.get((since + timedelta(days=i)).strftime("%Y-%m-%d"), 0)}
-        for i in range(days)
-    ]
-
-    top_organizations = []
-    top_employees = []
-    top_departments = []
-
-    if is_super_admin:
-        # Platform Super Admin -> Top Organizations by DLP Interceptions
-        org_stats_query = (
-            select(
-                Organisation.id,
-                Organisation.name,
-                Organisation.domain,
-                Organisation.plan,
-                func.count(AuditLog.id).label("cnt")
-            )
-            .join(AuditLog, AuditLog.org_id == Organisation.id)
-            .where(AuditLog.timestamp >= since)
-            .group_by(Organisation.id, Organisation.name, Organisation.domain, Organisation.plan)
-            .order_by(desc("cnt"))
-            .limit(5)
-        )
-        org_rows = (await db.execute(org_stats_query)).all()
-        max_org_cnt = max([r.cnt for r in org_rows], default=1) or 1
-        for idx, r in enumerate(org_rows):
-            top_organizations.append({
-                "id": r.id,
-                "name": r.name,
-                "domain": r.domain,
-                "plan": (r.plan or "enterprise").upper(),
-                "count": r.cnt,
-                "percent": min(100, int((r.cnt / max_org_cnt) * 100)),
-                "color": palette[idx % len(palette)],
-            })
-
-        # Platform-wide top departments
-        dept_stats_query = (
-            select(
-                Department.name,
-                func.count(AuditLog.id).label("cnt")
-            )
-            .join(User, User.department_id == Department.id)
-            .join(AuditLog, AuditLog.user_id == User.id)
-            .where(AuditLog.timestamp >= since)
-            .group_by(Department.name)
-            .order_by(desc("cnt"))
-            .limit(5)
-        )
-        dept_rows = (await db.execute(dept_stats_query)).all()
-        max_dept_cnt = max([r.cnt for r in dept_rows], default=1) or 1
-        for idx, r in enumerate(dept_rows):
-            top_departments.append({
-                "name": r.name,
-                "count": r.cnt,
-                "percent": min(100, int((r.cnt / max_dept_cnt) * 100)),
-                "action": "Platform Threat Detections",
-                "color": palette[idx % len(palette)],
-            })
-    elif current_user.org_id:
-        # Org Admin / Security Admin -> Top Employees in their Organization
-        # Regular Employees -> Privacy protected: they do not see coworker DLP violation leaderboards
-        is_org_admin = role_str in ("org_admin", "employer", "security_admin")
-        if not is_org_admin:
-            org_admin_role_res = await db.execute(
-                select(Role)
-                .join(UserRoleAssignment, UserRoleAssignment.role_id == Role.id)
-                .where(
-                    UserRoleAssignment.user_id == current_user.id,
-                    UserRoleAssignment.is_active == True,
-                    Role.slug.in_(("org_admin", "employer", "security_admin")),
-                )
-            )
-            if org_admin_role_res.scalar_one_or_none():
-                is_org_admin = True
-
-        if is_org_admin:
-            emp_filter = [
-                AuditLog.timestamp >= since,
-                User.org_id == current_user.org_id,
-            ]
-
-            emp_stats_query = (
-                select(
-                    User.email,
-                    User.full_name,
-                    Department.name.label("department_name"),
-                    func.count(AuditLog.id).label("cnt")
-                )
-                .join(AuditLog, AuditLog.user_id == User.id)
-                .outerjoin(Department, Department.id == User.department_id)
-                .where(*emp_filter)
-                .group_by(User.email, User.full_name, Department.name)
-                .order_by(desc("cnt"))
-                .limit(5)
-            )
-            emp_rows = (await db.execute(emp_stats_query)).all()
-            for idx, row in enumerate(emp_rows):
-                top_employees.append({
-                    "email": row.email,
-                    "name": row.full_name or row.email.split("@")[0].replace(".", " ").title(),
-                    "dept": row.department_name or "General",
-                    "count": row.cnt,
-                    "role": "Team Member",
-                    "color": palette[idx % len(palette)],
-                })
-        else:
-            top_employees = []
-
-        # Top Departments in their Organization (visible to all org members)
-        dept_filter = [
-            AuditLog.timestamp >= since,
-            Department.org_id == current_user.org_id,
-        ]
-
-        dept_stats_query = (
-            select(
-                Department.name,
-                func.count(AuditLog.id).label("cnt")
-            )
-            .join(User, User.department_id == Department.id)
-            .join(AuditLog, AuditLog.user_id == User.id)
-            .where(*dept_filter)
-            .group_by(Department.name)
-            .order_by(desc("cnt"))
-            .limit(5)
-        )
-        dept_rows = (await db.execute(dept_stats_query)).all()
-        max_dept_cnt = max([r.cnt for r in dept_rows], default=1) or 1
-        for idx, r in enumerate(dept_rows):
-            top_departments.append({
-                "name": r.name,
-                "count": r.cnt,
-                "percent": min(100, int((r.cnt / max_dept_cnt) * 100)),
-                "action": "DLP Policy Triggers",
-                "color": palette[idx % len(palette)],
-            })
-    else:
-        # Personal User (no org) -> zero team or department leaks
-        top_employees = []
-        top_departments = []
+    top_orgs, top_emps, top_depts = await fetch_leaderboards(db, current_user, is_super_admin, since, role_str)
 
     return success(
         data={
@@ -448,9 +213,9 @@ async def get_dashboard_stats(
             "topEntityTypes": top_entity_types,
             "topDomains": top_domains,
             "eventsByDay": events_by_day,
-            "topOrganizations": top_organizations,
-            "topEmployees": top_employees,
-            "topDepartments": top_departments,
+            "topOrganizations": top_orgs,
+            "topEmployees": top_emps,
+            "topDepartments": top_depts,
         },
         message="Dashboard stats fetched",
     )
@@ -459,11 +224,8 @@ async def get_dashboard_stats(
 @router.get("/export", summary="Export own logs as CSV")
 @limiter.limit(LIMIT_LOGS_STATS)
 async def export_logs(request: Request, db: DBSession, current_user: CurrentUser):
-    """Download all the current user's logs as a CSV file."""
     result = await db.execute(
-        select(AuditLog)
-        .where(AuditLog.user_id == current_user.id)
-        .order_by(desc(AuditLog.received_at))
+        select(AuditLog).where(AuditLog.user_id == current_user.id).order_by(desc(AuditLog.received_at))
     )
     logs = result.scalars().all()
 
@@ -483,7 +245,7 @@ async def export_logs(request: Request, db: DBSession, current_user: CurrentUser
         ])
 
     output.seek(0)
-    filename = f"dlp_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"  # noqa: DTZ005
+    filename = f"dlp_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",

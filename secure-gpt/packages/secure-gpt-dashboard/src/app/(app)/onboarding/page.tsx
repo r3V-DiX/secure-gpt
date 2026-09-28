@@ -2,27 +2,13 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { RefreshCw, Building2 } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useToast } from '@/contexts/toast-context'
 import { apiGet, apiPost } from '@/lib/api/client'
 import { type PolicyPresetKey, POLICY_PRESETS } from '@/features/onboarding/config/org-onboarding.data'
 import { OnboardingStepper } from '@/features/onboarding/components/OnboardingStepper'
-import { OrgProfileStep } from '@/features/onboarding/components/OrgProfileStep'
-import { DnsVerificationStep } from '@/features/onboarding/components/DnsVerificationStep'
-import { PolicyPresetStep } from '@/features/onboarding/components/PolicyPresetStep'
-import { TeamDeploymentStep } from '@/features/onboarding/components/TeamDeploymentStep'
-
-interface CurrentOrg {
-  id: string
-  name: string
-  domain: string | null
-  admin_email: string
-  status: 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED'
-  dns_txt_token: string | null
-  domain_verified_at: string | null
-  created_at: string
-}
+import { OnboardingContent, type CurrentOrg } from '@/features/onboarding/components/OnboardingContent'
 
 export default function OrgOnboardingPage() {
   const router = useRouter()
@@ -240,65 +226,39 @@ export default function OrgOnboardingPage() {
         onSelectStep={(idx) => setCurrentStepIndex(idx)}
       />
 
-      {/* Step Content Card */}
-      <div className="card p-6 md:p-8 animate-fade-in">
-        {currentStepIndex === 0 && (
-          <OrgProfileStep
-            orgName={orgName}
-            setOrgName={setOrgName}
-            orgDomain={orgDomain}
-            setOrgDomain={setOrgDomain}
-            adminEmail={adminEmail}
-            setAdminEmail={setAdminEmail}
-            isExistingOrg={Boolean(org?.domain)}
-            submitting={registering}
-            onSubmit={handleSaveOrgProfile}
-          />
-        )}
-
-        {currentStepIndex === 1 && (
-          <DnsVerificationStep
-            domain={org?.domain || orgDomain}
-            dnsToken={org?.dns_txt_token || ''}
-            isVerified={Boolean(org?.domain_verified_at)}
-            verifiedAt={org?.domain_verified_at || null}
-            verifying={verifyingDomain}
-            onVerify={handleVerifyDNS}
-            onBack={() => setCurrentStepIndex(0)}
-            onContinue={() => setCurrentStepIndex(2)}
-            onVerifyLater={() => {
-              toast.info('Verification deferred. You can complete DNS verification anytime from the dashboard banner.')
-              router.push('/dashboard')
-            }}
-          />
-        )}
-
-        {currentStepIndex === 2 && (
-          <PolicyPresetStep
-            selectedPreset={selectedPreset}
-            setSelectedPreset={setSelectedPreset}
-            saving={savingPolicy}
-            onApply={handleApplyPolicyPreset}
-            onBack={() => setCurrentStepIndex(1)}
-          />
-        )}
-
-        {currentStepIndex === 3 && (
-          <TeamDeploymentStep
-            domain={org?.domain || orgDomain}
-            inviteEmails={inviteEmails}
-            setInviteEmails={setInviteEmails}
-            invitedList={invitedList}
-            sendingInvites={sendingInvites}
-            onSendInvites={handleSendInvites}
-            onBack={() => setCurrentStepIndex(2)}
-            onFinish={() => {
-              toast.success('Enterprise onboarding completed! Welcome to SecureGPT.')
-              router.push('/dashboard')
-            }}
-          />
-        )}
-      </div>
+      {/* Step Content */}
+      <OnboardingContent
+        currentStepIndex={currentStepIndex}
+        setCurrentStepIndex={setCurrentStepIndex}
+        org={org}
+        orgName={orgName}
+        setOrgName={setOrgName}
+        orgDomain={orgDomain}
+        setOrgDomain={setOrgDomain}
+        adminEmail={adminEmail}
+        setAdminEmail={setAdminEmail}
+        registering={registering}
+        handleSaveOrgProfile={handleSaveOrgProfile}
+        verifyingDomain={verifyingDomain}
+        handleVerifyDNS={handleVerifyDNS}
+        selectedPreset={selectedPreset}
+        setSelectedPreset={setSelectedPreset}
+        savingPolicy={savingPolicy}
+        handleApplyPolicyPreset={handleApplyPolicyPreset}
+        inviteEmails={inviteEmails}
+        setInviteEmails={setInviteEmails}
+        invitedList={invitedList}
+        sendingInvites={sendingInvites}
+        handleSendInvites={handleSendInvites}
+        onVerifyLater={() => {
+          toast.info('Verification deferred. You can complete DNS verification anytime from the dashboard banner.')
+          router.push('/dashboard')
+        }}
+        onFinish={() => {
+          toast.success('Enterprise onboarding completed! Welcome to SecureGPT.')
+          router.push('/dashboard')
+        }}
+      />
     </div>
   )
 }

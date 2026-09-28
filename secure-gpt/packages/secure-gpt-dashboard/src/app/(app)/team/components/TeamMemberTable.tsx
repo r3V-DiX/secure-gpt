@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import {
-  Users, Plus, Trash2, Search, Filter, Download, Upload,
-  CheckSquare, Square, MinusSquare, UserCheck, ShieldCheck, X
+  Users, Plus, Download, Upload,
+  CheckSquare, Square, MinusSquare
 } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
 import { useToast } from '@/contexts/toast-context'
@@ -12,6 +12,8 @@ import { EmptyState } from '@/components/ui/empty-state/EmptyState'
 import { Pagination } from '@/components/data-display/pagination'
 import { TeamFilters } from '@/features/team/hooks/use-team'
 import { Pagination as PaginationType, Department, AuthUser } from '@/types'
+import { TeamMemberRow } from './TeamMemberRow'
+import { TeamFilterBar } from './TeamFilterBar'
 
 interface TeamMemberTableProps {
   users: AuthUser[]
@@ -71,6 +73,22 @@ export function TeamMemberTable({
   const allSelected = users.length > 0 && users.every((u) => selectedIds.includes(u.id))
   const someSelected = users.some((u) => selectedIds.includes(u.id)) && !allSelected
 
+  const handleDeleteUser = async (u: AuthUser) => {
+    const confirmed = await confirmDanger({
+      title: `Terminate user ${u.email}?`,
+      description: 'All active sessions and connected devices for this employee will be revoked immediately.',
+      confirmLabel: 'Terminate User',
+    })
+    if (confirmed) {
+      const res = await onDeleteUser(u.id)
+      if (res.success) {
+        toast.success(`User ${u.email} removed.`)
+      } else {
+        toast.error(res.error || 'Failed to remove user')
+      }
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* ── Control Header & Top Actions ───────────────────────────── */}
@@ -121,68 +139,17 @@ export function TeamMemberTable({
       </div>
 
       {/* ── Enterprise Filter Bar ──────────────────────────────────── */}
-      <div
-        className="p-3 rounded-md border flex flex-col md:flex-row items-stretch md:items-center gap-3"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-      >
-        {/* Search Bar */}
-        <div className="relative flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input
-            type="text"
-            placeholder="Search employees by name or email (e.g. sarah, @acme)..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full text-xs pl-8 pr-8 py-2 rounded-xl border bg-[var(--bg-surface-2)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)]"
-            style={{ borderColor: 'var(--border-2)' }}
-          />
-          {searchInput && (
-            <button
-              onClick={() => {
-                setSearchInput('')
-                onUpdateFilters({ search: '' })
-              }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
-
-        {/* Department Filter */}
-        <div className="flex items-center gap-1.5">
-          <Filter size={13} className="text-[var(--text-tertiary)] shrink-0" />
-          <select
-            value={filters.department_id || ''}
-            onChange={(e) => onUpdateFilters({ department_id: e.target.value })}
-            className="text-xs py-2 px-2.5 rounded-xl border bg-[var(--bg-surface-2)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
-            style={{ borderColor: 'var(--border-2)' }}
-          >
-            <option value="">All Departments</option>
-            <option value="unassigned">Unassigned Only</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name} {d.members_count !== undefined ? `(${d.members_count})` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Role Filter */}
-        <div>
-          <select
-            value={filters.role || ''}
-            onChange={(e) => onUpdateFilters({ role: e.target.value })}
-            className="text-xs py-2 px-2.5 rounded-xl border bg-[var(--bg-surface-2)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
-            style={{ borderColor: 'var(--border-2)' }}
-          >
-            <option value="">All Roles</option>
-            <option value="employee">EMPLOYEE</option>
-            <option value="org_admin">ORG_ADMIN</option>
-            <option value="user">USER</option>
-          </select>
-        </div>
-      </div>
+      <TeamFilterBar
+        searchInput={searchInput}
+        filters={filters}
+        departments={departments}
+        onSearchChange={setSearchInput}
+        onClearSearch={() => {
+          setSearchInput('')
+          onUpdateFilters({ search: '' })
+        }}
+        onUpdateFilters={onUpdateFilters}
+      />
 
       {/* ── Team Table ─────────────────────────────────────────────── */}
       <div
@@ -263,120 +230,19 @@ export function TeamMemberTable({
                 </td>
               </tr>
             ) : (
-              users.map((u) => {
-                const isSelected = selectedIds.includes(u.id)
-                return (
-                  <tr
-                    key={u.id}
-                    className={`transition-colors ${
-                      isSelected ? 'bg-[var(--accent-light)]/40' : 'hover:bg-[var(--bg-surface-2)]/60'
-                    }`}
-                  >
-                    <td className="px-4 py-3.5 text-center">
-                      <button
-                        type="button"
-                        onClick={() => onToggleSelect(u.id)}
-                        className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors cursor-pointer"
-                      >
-                        {isSelected ? (
-                          <CheckSquare size={15} className="text-[var(--accent)]" />
-                        ) : (
-                          <Square size={15} />
-                        )}
-                      </button>
-                    </td>
-
-                    <td className="px-5 py-3.5 flex items-center gap-3">
-                      <div
-                        className="size-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
-                        style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
-                      >
-                        {u.email[0].toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                          {u.fullName || u.email.split('@')[0]}
-                        </p>
-                        <p className="text-[11px] font-mono truncate" style={{ color: 'var(--text-secondary)' }}>
-                          {u.email}
-                        </p>
-                      </div>
-                    </td>
-
-                    <td className="px-5 py-3.5">
-                      {currentUser?.role === 'org_admin' || currentUser?.role === 'super_admin' || currentUser?.role === 'platform_super_admin' ? (
-                        <select
-                          value={u.role}
-                          onChange={(e) => onChangeRole(u.id, e.target.value)}
-                          className="ui-select h-8 px-2.5 text-[12px] font-semibold rounded-md border bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-2)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
-                        >
-                          <option value="employee">EMPLOYEE</option>
-                          <option value="org_admin">ORG_ADMIN</option>
-                          <option value="user">USER</option>
-                        </select>
-                      ) : (
-                        <span
-                          className="text-[11px] font-mono font-semibold uppercase px-2.5 py-1 rounded-md"
-                          style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-                        >
-                          {u.role}
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3.5">
-                      <select
-                        value={u.departmentId || ''}
-                        onChange={(e) => onAssignDepartment(u.id, e.target.value || null)}
-                        className="ui-select h-8 px-2.5 text-[12px] font-medium rounded-md border bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-2)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
-                      >
-                        <option value="">General Org Policy</option>
-                        {departments.map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {d.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    <td className="px-5 py-3.5">
-                      <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active Protection
-                      </span>
-                    </td>
-
-                    <td className="px-5 py-3.5 text-right">
-                      {u.id !== currentUser?.id ? (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const confirmed = await confirmDanger({
-                              title: `Terminate user ${u.email}?`,
-                              description: 'All active sessions and connected devices for this employee will be revoked immediately.',
-                              confirmLabel: 'Terminate User',
-                            })
-                            if (confirmed) {
-                              const res = await onDeleteUser(u.id)
-                              if (res.success) {
-                                toast.success(`User ${u.email} removed.`)
-                              } else {
-                                toast.error(res.error || 'Failed to remove user')
-                              }
-                            }
-                          }}
-                          className="p-1.5 rounded-lg border hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-slate-400 hover:text-red-600 cursor-pointer inline-flex items-center justify-center"
-                          style={{ borderColor: 'var(--border-2)' }}
-                          title="Terminate / Remove User"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-[var(--text-muted)] italic">You</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })
+              users.map((u) => (
+                <TeamMemberRow
+                  key={u.id}
+                  user={u}
+                  currentUser={currentUser}
+                  departments={departments}
+                  isSelected={selectedIds.includes(u.id)}
+                  onToggleSelect={onToggleSelect}
+                  onChangeRole={onChangeRole}
+                  onAssignDepartment={onAssignDepartment}
+                  onDeleteClick={handleDeleteUser}
+                />
+              ))
             )}
           </tbody>
         </table>
@@ -391,4 +257,3 @@ export function TeamMemberTable({
     </div>
   )
 }
-

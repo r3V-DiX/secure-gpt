@@ -4,18 +4,21 @@ from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Request, Query
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import select, func, or_, delete, update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, update
 
-from app.core.dependencies import DBSession, CurrentUser, has_permission, require_roles
-from app.core.exceptions import NotFound, BadRequest, Forbidden
+from app.core.dependencies import DBSession, CurrentUser, require_roles
+from app.core.exceptions import NotFound, BadRequest
 from app.core.response import success
 from app.models.org import Organisation, OrgStatus
 from app.models.user import User, UserRole
-from app.models.department import Department
 from app.models.rbac import PermissionModule, RiskLevel
-from app.services.rbac_service import get_user_roles, log_admin_action
-from app.services.org_service import generate_dns_txt_token, extract_domain_from_email
+from app.services.rbac_service import log_admin_action
+from app.services.org_service import (
+    generate_dns_txt_token,
+    extract_domain_from_email,
+    migrate_domain_personal_users_to_employees,
+)
+from app.api.v1.admin.org_queries import fetch_admin_orgs_with_telemetry
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["admin-organizations"])
@@ -51,73 +54,9 @@ async def list_admin_organizations(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0)
 ):
-    stmt = select(Organisation)
-
-    if search:
-        search_filter = f"%{search.strip().lower()}%"
-        stmt = stmt.where(
-            or_(
-                func.lower(Organisation.name).like(search_filter),
-                func.lower(Organisation.domain).like(search_filter),
-                func.lower(Organisation.admin_email).like(search_filter)
-            )
-        )
-
-    if status:
-        stmt = stmt.where(Organisation.status == status)
-
-    # Count total
-    count_stmt = select(func.count()).select_from(stmt.subquery())
-    total_count_res = await db.execute(count_stmt)
-    total = total_count_res.scalar_one()
-
-    # Apply pagination and sorting
-    stmt = stmt.order_by(Organisation.created_at.desc()).offset(offset).limit(limit)
-    res = await db.execute(stmt)
-    orgs = res.scalars().all()
-
-    org_items = []
-    for org in orgs:
-        # Aggregated user count
-        u_count_res = await db.execute(
-            select(
-                func.count(User.id).label("total_users"),
-                func.count(User.id).filter(User.is_active.is_(True)).label("active_users")
-            ).where(User.org_id == org.id)
-        )
-        u_row = u_count_res.first()
-        total_users = u_row[0] if u_row else 0
-        active_users = u_row[1] if u_row else 0
-
-        # Department count
-        dept_count_res = await db.execute(
-            select(func.count(Department.id)).where(Department.org_id == org.id)
-        )
-        dept_count = dept_count_res.scalar_one()
-
-        org_items.append({
-            "id": org.id,
-            "name": org.name,
-            "domain": org.domain,
-            "admin_email": org.admin_email,
-            "status": org.status.value if hasattr(org.status, "value") else str(org.status),
-            "plan": org.plan,
-            "is_active": org.is_active,
-            "dns_txt_token": org.dns_txt_token,
-            "domain_verified_at": org.domain_verified_at.isoformat() if org.domain_verified_at else None,
-            "created_at": org.created_at.isoformat() if org.created_at else None,
-            "user_count": total_users,
-            "active_user_count": active_users,
-            "department_count": dept_count,
-        })
-
+    org_items, total = await fetch_admin_orgs_with_telemetry(db, search, status, limit, offset)
     return success(
-        data={
-            "items": org_items,
-            "total": total,
-            "limit": limit,
-            "offset": offset
-        },
+        data={"items": org_items, "total": total, "limit": limit, "offset": offset},
         message="Organizations fetched successfully"
     )
 
@@ -133,10 +72,7 @@ async def create_admin_organization(
     current_user: CurrentUser,
     db: DBSession
 ):
-    domain = body.domain
-    if not domain:
-        domain = extract_domain_from_email(body.admin_email)
-
+    domain = body.domain or extract_domain_from_email(body.admin_email)
     if domain:
         existing = await db.execute(select(Organisation).where(Organisation.domain == domain))
         if existing.scalar_one_or_none():
@@ -160,14 +96,12 @@ async def create_admin_organization(
     await db.flush()
     await db.refresh(org)
 
-    # Link admin user if already exists
     user_res = await db.execute(select(User).where(User.email == org.admin_email))
     admin_user = user_res.scalar_one_or_none()
     if admin_user:
         admin_user.org_id = org.id
         admin_user.role = UserRole.ORG_ADMIN
 
-    # Log audit entry
     await log_admin_action(
         db,
         request=request,
@@ -181,7 +115,6 @@ async def create_admin_organization(
         after_state={"domain": org.domain, "status": org.status.value, "plan": org.plan},
         risk_level=RiskLevel.HIGH
     )
-
     await db.commit()
 
     return success(
@@ -220,7 +153,6 @@ async def manual_verify_organization(
     org.domain_verified_at = datetime.now(timezone.utc)
     org.is_active = True
 
-    from app.services.org_service import migrate_domain_personal_users_to_employees
     migrated_count = await migrate_domain_personal_users_to_employees(db, org.id, org.domain)
 
     await log_admin_action(
@@ -237,7 +169,6 @@ async def manual_verify_organization(
         after_state={"status": "ACTIVE", "domain_verified_at": org.domain_verified_at.isoformat(), "migrated_users": migrated_count},
         risk_level=RiskLevel.HIGH
     )
-
     await db.commit()
 
     return success(
@@ -277,7 +208,6 @@ async def update_org_status(
 
     old_status = org.status.value if hasattr(org.status, "value") else str(org.status)
     old_active = org.is_active
-
     org.status = body.status
     if body.is_active is not None:
         org.is_active = body.is_active
@@ -296,7 +226,6 @@ async def update_org_status(
         after_state={"status": body.status.value, "is_active": org.is_active},
         risk_level=RiskLevel.HIGH
     )
-
     await db.commit()
 
     return success(
@@ -328,7 +257,6 @@ async def delete_admin_organization(
     org_name = org.name
     org_domain = org.domain
 
-    # Unlink users before deleting
     await db.execute(
         update(User).where(User.org_id == org_id).values(org_id=None, department_id=None)
     )
@@ -349,5 +277,4 @@ async def delete_admin_organization(
 
     await db.delete(org)
     await db.commit()
-
     return success(message=f"Organization '{org_name}' successfully removed.")

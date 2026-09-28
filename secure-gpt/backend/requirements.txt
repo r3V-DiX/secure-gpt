@@ -15,8 +15,9 @@ pydantic==2.9.2
 pydantic-settings==2.5.2
 pydantic[email]
 
-# ── Auth / HTTP ────────────────────────────────────────────────────────────────
+# ── Auth / HTTP / Email ────────────────────────────────────────────────────────
 httpx==0.27.2                  # Async HTTP client for Google OAuth token exchange
+jinja2>=3.0.0                  # HTML email template rendering
 
 # ── Rate limiting ──────────────────────────────────────────────────────────────
 slowapi==0.1.9
