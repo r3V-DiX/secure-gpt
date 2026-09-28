@@ -189,13 +189,13 @@ export function TeamMemberTable({
         className="border rounded-md overflow-hidden transition-all duration-300 hover:shadow-lg"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
       >
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left text-[13px]">
           <thead
-            className="border-b uppercase font-bold tracking-wider"
+            className="border-b uppercase font-bold text-[11px] tracking-wider"
             style={{
               borderColor: 'var(--border)',
               background: 'var(--bg-surface-2)',
-              color: 'var(--text-tertiary)',
+              color: 'var(--text-secondary)',
             }}
           >
             <tr>
@@ -294,10 +294,10 @@ export function TeamMemberTable({
                         {u.email[0].toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                        <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
                           {u.fullName || u.email.split('@')[0]}
                         </p>
-                        <p className="text-xs font-mono truncate" style={{ color: 'var(--text-tertiary)' }}>
+                        <p className="text-[11px] font-mono truncate" style={{ color: 'var(--text-secondary)' }}>
                           {u.email}
                         </p>
                       </div>
@@ -308,7 +308,7 @@ export function TeamMemberTable({
                         <select
                           value={u.role}
                           onChange={(e) => onChangeRole(u.id, e.target.value)}
-                          className="px-2 py-1 text-[11px] font-mono font-bold rounded-lg border bg-[var(--bg-surface-2)] text-[var(--text-primary)] border-[var(--border)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
+                          className="ui-select h-8 px-2.5 text-[12px] font-semibold rounded-md border bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-2)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
                         >
                           <option value="employee">EMPLOYEE</option>
                           <option value="org_admin">ORG_ADMIN</option>
@@ -316,7 +316,7 @@ export function TeamMemberTable({
                         </select>
                       ) : (
                         <span
-                          className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded"
+                          className="text-[11px] font-mono font-semibold uppercase px-2.5 py-1 rounded-md"
                           style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
                         >
                           {u.role}
@@ -328,7 +328,7 @@ export function TeamMemberTable({
                       <select
                         value={u.departmentId || ''}
                         onChange={(e) => onAssignDepartment(u.id, e.target.value || null)}
-                        className="px-2.5 py-1 text-xs font-semibold rounded-lg border bg-[var(--bg-surface-2)] text-[var(--text-primary)] border-[var(--border)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
+                        className="ui-select h-8 px-2.5 text-[12px] font-medium rounded-md border bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-2)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
                       >
                         <option value="">General Org Policy</option>
                         {departments.map((d) => (
@@ -340,7 +340,7 @@ export function TeamMemberTable({
                     </td>
 
                     <td className="px-5 py-3.5">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-500">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
                         <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active Protection
                       </span>
                     </td>

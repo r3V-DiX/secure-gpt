@@ -1,14 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap');
-
 /* src/app/globals.css */
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ─── THEME TOKENS ────────────────────────────────────────────────────────── */
 :root {
-  --font-poppins: 'Poppins', system-ui, sans-serif;
-  --font-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-dm-mono: 'DM Mono', monospace;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-poppins: var(--font-sans);
+  --font-jakarta: var(--font-sans);
+  --font-dm-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* ── Two primitives — the original values ── */
   --brand-h: 220;
@@ -46,11 +45,19 @@
   --border-2:       hsl(var(--brand-h), 42%, 80%);
   --border-strong:  hsl(var(--brand-h), 45%, 65%);
 
-  /* ── High Contrast Typography ── */
-  --text-primary:   hsl(var(--brand-h), 55%, 11%);
-  --text-secondary: hsl(var(--brand-h), 35%, 26%);
-  --text-tertiary:  hsl(var(--brand-h), 28%, 36%);
-  --text-muted:     #475569;
+  /* ── High Contrast Typography (WCAG AAA) ── */
+  --text-primary:   #0f172a; /* Slate 900 */
+  --text-secondary: #334155; /* Slate 700 */
+  --text-tertiary:  #475569; /* Slate 600 */
+  --text-muted:     #64748b; /* Slate 500 */
+
+  /* ── High-Contrast Data Visualization & Chart Tokens ── */
+  --chart-primary:   #2563eb;
+  --chart-secondary: #6366f1;
+  --chart-success:   #059669;
+  --chart-warning:   #d97706;
+  --chart-danger:    #dc2626;
+  --chart-bar-bg:    #e2e8f0;
 
   /* ── Nav & Shell ── */
   --nav-bg:         hsla(0, 0%, 100%, 0.88);
@@ -138,11 +145,19 @@
   --border-2:       rgba(255, 255, 255, 0.14);
   --border-strong:  rgba(255, 255, 255, 0.24);
 
-  /* ── High Contrast Typography ── */
-  --text-primary:   #f8fafc;
-  --text-secondary: #e2e8f0;
-  --text-tertiary:  #cbd5e1;
-  --text-muted:     #94a3b8;
+  /* ── High Contrast Typography (WCAG AAA) ── */
+  --text-primary:   #f8fafc; /* Slate 50 */
+  --text-secondary: #f1f5f9; /* Slate 100 */
+  --text-tertiary:  #cbd5e1; /* Slate 300 */
+  --text-muted:     #94a3b8; /* Slate 400 */
+
+  /* ── High-Contrast Data Visualization & Chart Tokens (Dark) ── */
+  --chart-primary:   #38bdf8;
+  --chart-secondary: #818cf8;
+  --chart-success:   #34d399;
+  --chart-warning:   #fbbf24;
+  --chart-danger:    #f87171;
+  --chart-bar-bg:    #1e293b;
 
   /* ── Nav & Shell ── */
   --nav-bg:         rgba(13, 19, 34, 0.92);
@@ -343,4 +358,22 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 1px var(--accent);
 }
 
-code, .font-mono { font-family: 'DM Mono', monospace; }
+/* ─── UNIFIED ENTERPRISE CUSTOM SELECT ──────────────────────────────────── */
+.ui-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 0.85rem;
+  padding-right: 1.85rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.dark .ui-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+}
+
+code, .font-mono { font-family: var(--font-dm-mono); }
+

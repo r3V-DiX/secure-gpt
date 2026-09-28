@@ -181,7 +181,8 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="space-y-8 pb-32 animate-fade-in w-full">
+    <>
+      <div className="space-y-8 pb-32 animate-fade-in w-full">
       {/* ── 1. Page Header ─────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <div>
@@ -353,8 +354,9 @@ export default function TeamPage() {
         onAssignDepartment={assignDepartment}
         onDeleteUser={deleteUser}
       />
+    </div>
 
-      {/* Floating Bulk Operations Toolbar */}
+      {/* Floating Bulk Operations Toolbar (Rendered outside animated/transformed parent) */}
       <TeamBulkActionsBar
         selectedIds={selectedIds}
         totalCount={pagination.total}
@@ -418,6 +420,6 @@ export default function TeamPage() {
           navigator.clipboard.writeText(token)
         }}
       />
-    </div>
+    </>
   )
 }

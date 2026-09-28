@@ -288,15 +288,15 @@ export default function LoginPage() {
             type="checkbox"
             checked={privacyAccepted}
             onChange={e => setPrivacyAccepted(e.target.checked)}
-            className="mt-0.5 size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            className="mt-0.5 size-4 rounded border-gray-400 text-blue-600 focus:ring-blue-500 cursor-pointer"
           />
-          <label htmlFor="privacy-checkbox" className="text-xs leading-normal select-none cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
+          <label htmlFor="privacy-checkbox" className="text-[12px] leading-normal select-none cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
             I agree to the{' '}
-            <Link href="/privacy" className="underline font-medium hover:text-blue-600 transition-colors" style={{ color: 'var(--text-primary)' }}>
+            <Link href="/privacy" className="underline font-semibold hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text-primary)' }}>
               Privacy Policy
             </Link>{' '}
             and{' '}
-            <Link href="/terms" className="underline font-medium hover:text-blue-600 transition-colors" style={{ color: 'var(--text-primary)' }}>
+            <Link href="/terms" className="underline font-semibold hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text-primary)' }}>
               Terms of Service
             </Link>.
           </label>
@@ -320,7 +320,7 @@ export default function LoginPage() {
         {/* Divider */}
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-          <span className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--text-tertiary)' }}>or</span>
+          <span className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--text-secondary)' }}>or</span>
           <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
         </div>
 
@@ -344,13 +344,13 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="flex flex-col items-center gap-3 pt-5 mt-5 border-t" style={{ borderColor: 'var(--border)' }}>
-          <Link href="/" className="text-xs font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
+          <Link href="/" className="text-[12px] font-semibold hover:underline" style={{ color: 'var(--text-secondary)' }}>
             ← Back to home
           </Link>
-          <div className="flex items-center gap-4 text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
-            <Link href="/versions" className="hover:text-[var(--accent)] hover:underline transition-colors flex items-center gap-1">
+          <div className="flex items-center gap-4 text-[12px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <Link href="/versions" className="hover:text-[var(--accent)] hover:underline transition-colors flex items-center gap-1.5">
               <span>Version History</span>
-              <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] font-semibold">
+              <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] font-bold">
                 v{currentVersion}
               </span>
             </Link>

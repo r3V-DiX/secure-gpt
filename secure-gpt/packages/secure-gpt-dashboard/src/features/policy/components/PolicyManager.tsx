@@ -251,6 +251,7 @@ export function AddEditRuleModal({
 }
 
 import { Undo2, Save, AlertCircle } from 'lucide-react'
+import { FloatingActionBar } from '@/components/shared/FloatingActionBar'
 
 export function SaveBar({
   isDirty,
@@ -264,54 +265,35 @@ export function SaveBar({
   onDiscard: () => void
 }) {
   return (
-    <div
-      className="fixed bottom-6 left-1/2 z-50 transition-all duration-300 ease-out"
-      style={{
-        transform: `translateX(-50%) translateY(${isDirty ? '0' : '96px'})`,
-        opacity: isDirty ? 1 : 0,
-        pointerEvents: isDirty ? 'auto' : 'none',
-      }}
+    <FloatingActionBar
+      visible={isDirty}
+      indicatorColor="var(--warning)"
+      label={saving ? 'Publishing policy…' : 'You have unsaved changes'}
     >
-      <div
-        className="flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-md border"
-        style={{
-          background: 'var(--bg-surface)',
-          borderColor: 'var(--border-2)',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.25), 0 0 0 1px var(--border)',
-        }}
+      <button
+        type="button"
+        onClick={onDiscard}
+        disabled={saving}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-(--bg-surface-2) cursor-pointer"
+        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
       >
-        <span
-          className="size-2 rounded-full shrink-0"
-          style={{ background: 'var(--warning)', boxShadow: '0 0 6px var(--warning)' }}
-        />
-        <p className="text-xs font-medium pr-2" style={{ color: 'var(--text-secondary)' }}>
-          {saving ? 'Publishing policy…' : 'You have unsaved changes'}
-        </p>
-        <button
-          type="button"
-          onClick={onDiscard}
-          disabled={saving}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-(--bg-surface-2) cursor-pointer"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-        >
-          <Undo2 size={11} /> Discard
-        </button>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 cursor-pointer"
-          style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 2px 8px var(--accent-glow)' }}
-        >
-          {saving ? (
-            <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-          ) : (
-            <Save size={11} />
-          )}
-          {saving ? 'Saving…' : 'Save & Publish'}
-        </button>
-      </div>
-    </div>
+        <Undo2 size={11} /> Discard
+      </button>
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={saving}
+        className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 cursor-pointer"
+        style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 2px 8px var(--accent-glow)' }}
+      >
+        {saving ? (
+          <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+        ) : (
+          <Save size={11} />
+        )}
+        {saving ? 'Saving…' : 'Save & Publish'}
+      </button>
+    </FloatingActionBar>
   )
 }
 

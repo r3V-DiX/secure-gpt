@@ -398,15 +398,15 @@ export default function DashboardPage() {
                   <div key={item.type} className="group">
                     <div className="flex justify-between items-center mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold w-4 text-right shrink-0 text-[var(--text-secondary)]">
+                        <span className="text-[11px] font-semibold w-4 text-right shrink-0 text-[var(--text-tertiary)]">
                           {i + 1}
                         </span>
-                        <span className="text-[12.5px] font-mono font-semibold"
+                        <span className="text-[12px] font-mono font-medium"
                           style={{ color: 'var(--text-primary)' }}>
                           {item.type}
                         </span>
                       </div>
-                      <span className="text-[12px] tabular-nums font-bold text-[var(--text-secondary)]">
+                      <span className="text-[12px] tabular-nums font-semibold text-[var(--text-secondary)]">
                         {item.count.toLocaleString()}
                       </span>
                     </div>
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                         className="h-full rounded-full transition-all duration-700 ease-out"
                         style={{
                           width: `${pct}%`,
-                          background: 'linear-gradient(90deg, var(--accent) 0%, #6366f1 100%)',
+                          background: 'linear-gradient(90deg, #2563eb 0%, #4f46e5 100%)',
                           animationDelay: `${i * 80}ms`,
                         }}
                       />
@@ -454,11 +454,11 @@ export default function DashboardPage() {
                 <div key={item.domain}
                   className="flex justify-between items-center py-2.5 group hover:px-1 transition-all duration-150 rounded"
                   style={{ animationDelay: `${i * 50}ms` }}>
-                  <span className="text-[12.5px] font-mono font-semibold truncate"
+                  <span className="text-[12px] font-mono font-medium truncate"
                     style={{ color: 'var(--text-primary)' }}>
                     {item.domain}
                   </span>
-                  <span className="text-xs tabular-nums font-bold ml-3 shrink-0 px-2.5 py-0.5 rounded-full"
+                  <span className="text-[11px] tabular-nums font-semibold ml-3 shrink-0 px-2 py-0.5 rounded-full"
                     style={{
                       background: 'var(--accent-light)',
                       color: 'var(--accent-text)',
@@ -499,21 +499,20 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={128}>
                 <BarChart data={stats?.eventsByDay ?? []}>
                   <Tooltip
-                    cursor={{ fill: 'var(--bg-surface-2)', opacity: 0.4 }}
+                    cursor={{ fill: 'var(--bg-surface-2)', opacity: 0.6 }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="px-3 py-2 rounded-xl border shadow-xl backdrop-blur-md"
+                          <div className="px-3 py-2 rounded-md border shadow-lg"
                             style={{ 
                               background: 'var(--bg-surface)', 
-                              borderColor: 'var(--border-2)',
-                              boxShadow: 'var(--shadow-lg)'
+                              borderColor: 'var(--border-strong)',
                             }}>
-                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-secondary)' }}>
+                            <p className="text-[11px] font-semibold text-[var(--text-secondary)] mb-0.5">
                               {new Date(payload[0].payload.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                             </p>
-                            <p className="text-sm font-bold" style={{ color: 'var(--accent-text)' }}>
-                              {payload[0].value} <span className="text-[10px] font-medium text-[var(--text-secondary)]">events</span>
+                            <p className="text-[14px] font-bold text-[var(--text-primary)]">
+                              {payload[0].value} <span className="text-[11px] font-medium text-[var(--text-tertiary)]">events</span>
                             </p>
                           </div>
                         )
@@ -524,15 +523,16 @@ export default function DashboardPage() {
                   <Bar 
                     dataKey="count" 
                     radius={[4, 4, 0, 0]}
-                    animationDuration={1500}
+                    animationDuration={1200}
                   >
                     {(stats?.eventsByDay ?? []).map((entry, index) => {
                       const max = Math.max(...((stats?.eventsByDay ?? []).map(d => d.count) ?? [1]))
+                      const isMax = entry.count === max
                       return (
                         <Cell 
                           key={`cell-${index}`} 
-                          fill={entry.count === max ? 'var(--accent)' : 'var(--accent-light)'}
-                          stroke={entry.count === max ? 'var(--accent)' : 'var(--accent-border)'}
+                          fill={isMax ? 'var(--chart-primary)' : 'var(--chart-bar-bg)'}
+                          stroke={isMax ? 'var(--chart-primary)' : 'var(--border-2)'}
                           strokeWidth={1}
                         />
                       )

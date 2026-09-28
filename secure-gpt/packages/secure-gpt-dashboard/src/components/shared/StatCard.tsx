@@ -70,7 +70,7 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
     <div className={`card p-4 flex flex-col gap-2.5 bg-[var(--bg-surface)] border ${tokens.border} transition-colors group ${href ? 'cursor-pointer hover:bg-[var(--bg-surface-2)]' : 'cursor-default'}`}>
       {/* Top row */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
           {label}
         </span>
         {icon && (
@@ -82,7 +82,7 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
 
       {/* Value */}
       <div
-        className="text-2xl font-bold tracking-tight leading-none text-[var(--text-primary)]"
+        className="text-[26px] font-bold tracking-tight leading-none text-[var(--text-primary)]"
       >
         {displayValue}
       </div>
@@ -90,13 +90,13 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
       {/* Sub row */}
       <div className="flex items-center justify-between gap-2">
         {sub && (
-          <span className="text-xs text-[var(--text-secondary)]">
+          <span className="text-[11px] font-medium text-[var(--text-tertiary)]">
             {sub}
           </span>
         )}
         {hasTrend && (
-          <div className={`flex items-center gap-1 text-[12px] font-bold ${
-            trend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+          <div className={`flex items-center gap-1 text-[11px] font-bold ${
+            trend >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
           }`}>
             {trend >= 0
               ? <TrendingUp size={13} />

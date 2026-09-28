@@ -228,7 +228,7 @@ export function SidebarInner({
                     {group.label === 'Overview' && (
                       <button
                         onClick={() => window.dispatchEvent(new Event('start-tour'))}
-                        className="text-[10px] font-semibold text-[var(--sidebar-accent)] hover:underline capitalize"
+                        className="text-[11px] font-semibold text-[var(--sidebar-accent)] hover:underline capitalize cursor-pointer"
                       >
                         Tour
                       </button>
@@ -250,10 +250,10 @@ export function SidebarInner({
                         onClick={onNavigate}
                         title={isCompact ? item.label : undefined}
                         className={clsx(
-                          'group flex items-center gap-3 px-2.5 py-2 rounded-xl text-[13.5px] font-semibold transition-all duration-150 relative',
+                          'group flex items-center gap-3 px-2.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 relative',
                           isCompact ? 'justify-center px-2' : '',
                           active
-                            ? 'bg-[var(--sidebar-active-bg)] text-[var(--sidebar-accent)] shadow-sm'
+                            ? 'bg-[var(--sidebar-active-bg)] text-[var(--sidebar-accent)] font-semibold shadow-xs'
                             : 'text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover-bg)] hover:text-[var(--sidebar-text-active)]'
                         )}
                       >
@@ -274,7 +274,7 @@ export function SidebarInner({
                         )}
 
                         {!isCompact && item.badge && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border)]">
+                          <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border)]">
                             {item.badge}
                           </span>
                         )}
@@ -330,20 +330,20 @@ export function SidebarInner({
             <Avatar src={user.avatarUrl} name={user.fullName} email={user.email} size="sm" />
             {!isCompact && (
               <div className="flex flex-col min-w-0 text-left">
-                <span className="text-[13px] font-bold text-[var(--sidebar-text-active)] truncate leading-snug">
+                <span className="text-[13px] font-semibold text-[var(--sidebar-text-active)] truncate leading-snug">
                   {user.fullName || 'User'}
                 </span>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span
                     className={clsx(
-                      'text-[9.5px] font-bold px-1.5 py-0.5 rounded-full border uppercase tracking-wider',
+                      'text-[10px] font-semibold px-1.5 py-0.5 rounded-full border uppercase tracking-wider',
                       user.role === 'super_admin' || user.role === 'platform_super_admin'
-                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                        ? 'bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-500/30'
                         : user.role === 'org_admin' || user.role === 'security_admin'
-                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/30'
                         : user.role === 'employee'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                        : 'bg-slate-500/10 text-slate-400 border-slate-500/30'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/30'
+                        : 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30'
                     )}
                   >
                     {user.role === 'super_admin' || user.role === 'platform_super_admin'

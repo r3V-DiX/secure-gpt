@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { CheckSquare, FolderInput, UserCog, UserMinus, UserCheck, Trash2, X, Loader2 } from 'lucide-react'
+import { FolderInput, UserCog, UserMinus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
 import { Modal, ModalHeader, ModalBody, ModalFooter, useDangerConfirm } from '@/components/ui/modal/modal'
 import { useToast } from '@/contexts/toast-context'
+import { FloatingActionBar } from '@/components/shared/FloatingActionBar'
 import { Department } from '@/types'
 
 interface TeamBulkActionsBarProps {
@@ -33,8 +34,6 @@ export function TeamBulkActionsBar({
 
   const confirmDanger = useDangerConfirm()
   const { toast } = useToast()
-
-  if (selectedIds.length === 0) return null
 
   const handleBulkDeptAssign = async () => {
     setExecuting(true)
@@ -81,65 +80,47 @@ export function TeamBulkActionsBar({
     }
   }
 
+  const countText = `${selectedIds.length} employee${selectedIds.length > 1 ? 's' : ''} selected`
+
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in">
-        <div
-          className="flex items-center gap-3 px-4 py-3 rounded-md shadow-2xl border backdrop-blur-md"
-          style={{
-            background: 'var(--bg-surface)',
-            borderColor: 'var(--accent-border)',
-            boxShadow: '0 20px 40px -15px rgba(0,0,0,0.3)',
-          }}
+      <FloatingActionBar
+        visible={selectedIds.length > 0}
+        indicatorColor="var(--accent)"
+        label={<span className="font-semibold text-[var(--text-primary)]">{countText}</span>}
+        onDismiss={onClearSelection}
+        dismissLabel="Clear selection"
+      >
+        <button
+          type="button"
+          onClick={() => setDeptModalOpen(true)}
+          disabled={executing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-[var(--bg-surface-2)] cursor-pointer"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
         >
-          <div className="flex items-center gap-2 pr-3 border-r" style={{ borderColor: 'var(--border)' }}>
-            <CheckSquare size={16} className="text-[var(--accent)]" />
-            <span className="text-xs font-bold font-mono" style={{ color: 'var(--text-primary)' }}>
-              {selectedIds.length} selected
-            </span>
-          </div>
+          <FolderInput size={12} /> Assign Department
+        </button>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setDeptModalOpen(true)}
-              disabled={executing}
-              className="gap-1.5 text-xs"
-            >
-              <FolderInput size={13} /> Assign Department
-            </Button>
+        <button
+          type="button"
+          onClick={() => setRoleModalOpen(true)}
+          disabled={executing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-[var(--bg-surface-2)] cursor-pointer"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+        >
+          <UserCog size={12} /> Change Role
+        </button>
 
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setRoleModalOpen(true)}
-              disabled={executing}
-              className="gap-1.5 text-xs"
-            >
-              <UserCog size={13} /> Change Role
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBulkDeactivate}
-              disabled={executing}
-              className="gap-1.5 text-xs text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
-            >
-              <UserMinus size={13} /> Deactivate
-            </Button>
-          </div>
-
-          <button
-            onClick={onClearSelection}
-            className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors ml-1"
-            title="Clear selection"
-          >
-            <X size={15} />
-          </button>
-        </div>
-      </div>
+        <button
+          type="button"
+          onClick={handleBulkDeactivate}
+          disabled={executing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 cursor-pointer"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <UserMinus size={12} /> Deactivate
+        </button>
+      </FloatingActionBar>
 
       {/* Bulk Assign Department Modal */}
       <Modal open={deptModalOpen} onClose={() => setDeptModalOpen(false)} size="sm">
