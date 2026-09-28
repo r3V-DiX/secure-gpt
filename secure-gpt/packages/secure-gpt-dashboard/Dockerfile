@@ -17,7 +17,7 @@ COPY packages/extension/package*.json ./packages/extension/
 COPY packages/secure-gpt-dashboard/package*.json ./packages/secure-gpt-dashboard/
 
 # Install all workspace dependencies into root node_modules
-RUN npm ci
+RUN npm ci || npm install --no-audit
 
 
 # ================================

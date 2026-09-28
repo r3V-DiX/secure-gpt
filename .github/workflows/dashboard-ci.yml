@@ -8,12 +8,18 @@ on:
     paths:
       - 'secure-gpt/packages/secure-gpt-dashboard/**'
       - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt/package*.json'
+      - 'secure-gpt/tsconfig.base.json'
+      - '.github/workflows/dashboard-ci.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'secure-gpt/packages/secure-gpt-dashboard/**'
       - 'secure-gpt/packages/shared/**'
+      - 'secure-gpt/package*.json'
+      - 'secure-gpt/tsconfig.base.json'
+      - '.github/workflows/dashboard-ci.yml'
 
 jobs:
   build-and-push:
