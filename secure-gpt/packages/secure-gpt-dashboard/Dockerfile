@@ -12,6 +12,8 @@ COPY tsconfig.base.json ./
 # Copy package.json files for all workspace packages
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/detection/package*.json ./packages/detection/
+COPY packages/ocr/package*.json ./packages/ocr/
+COPY packages/extension/package*.json ./packages/extension/
 COPY packages/secure-gpt-dashboard/package*.json ./packages/secure-gpt-dashboard/
 
 # Install all workspace dependencies into root node_modules
