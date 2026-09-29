@@ -9,6 +9,7 @@
     "build": "node build.mjs --mode=development",
     "build:dev": "node build.mjs --mode=development",
     "build:prod": "node build.mjs --mode=production",
+    "benchmark:build": "vite build --config vite.benchmark.config.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

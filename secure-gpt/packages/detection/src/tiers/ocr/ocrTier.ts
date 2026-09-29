@@ -3,10 +3,10 @@
 // Modular client wrapping @securegpt/ocr pipeline
 // ─────────────────────────────────────────────
 
-import { BaseTier } from '../base-tier'
+import { BaseTier } from '@securegpt/shared/tier'
 import { OcrPipeline, mapEntitiesToBboxes, upgradeSeverity } from '@securegpt/ocr'
 import type { PIIEntity, PIIConfig, Severity } from '@securegpt/shared/types'
-import { RegexTier } from '../regex/regexTier'
+import { RegexTier } from '@securegpt/regex'
 
 export class OCRTier extends BaseTier {
   readonly name = 'ocr' as const

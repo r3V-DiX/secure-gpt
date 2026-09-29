@@ -10,6 +10,8 @@ export default defineConfig({
     alias: {
       '@securegpt/shared': resolve(__dirname, '../shared/src'),
       '@securegpt/ocr': resolve(__dirname, '../ocr/src'),
+      '@securegpt/regex': resolve(__dirname, '../regex/src'),
+      '@securegpt/ner': resolve(__dirname, '../ner/src'),
       '@securegpt/detection': resolve(__dirname, 'src'),
     },
   },

@@ -1,0 +1,303 @@
+{
+  "engine": "chrome-onnx-runtime",
+  "corpus": "benchmarks/detection/corpus.json",
+  "modelLoaded": true,
+  "byCategory": {
+    "CONFIDENTIAL": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "FINANCIAL": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "IP": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "PII": {
+      "tp": 5,
+      "fp": 1,
+      "fn": 6,
+      "precision": 0.8333,
+      "recall": 0.4545
+    }
+  },
+  "bySource": {
+    "document": {
+      "tp": 4,
+      "fp": 1,
+      "fn": 4,
+      "precision": 0.8,
+      "recall": 0.5
+    },
+    "prompt": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.7143
+    }
+  },
+  "byTier": {
+    "ner": {
+      "tp": 0,
+      "fp": 1,
+      "precision": 0.0,
+      "shareOfGoldDetected": 0.0
+    },
+    "regex": {
+      "tp": 9,
+      "fp": 0,
+      "precision": 1.0,
+      "shareOfGoldDetected": 0.6
+    }
+  },
+  "cases": [
+    {
+      "id": "prompt-email",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "regex",
+          "span": [
+            21,
+            44,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prompt-pan",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "FINANCIAL",
+          "source": "prompt",
+          "tier": "regex",
+          "span": [
+            22,
+            32,
+            "FINANCIAL"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prompt-aadhaar",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "regex",
+          "span": [
+            22,
+            36,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prompt-name",
+      "origin": "repository-fixture",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "regex",
+          "span": [
+            36,
+            54,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "missed",
+          "span": [
+            11,
+            15,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "missed",
+          "span": [
+            16,
+            19,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prompt-clean",
+      "origin": "synthetic",
+      "matches": []
+    },
+    {
+      "id": "prompt-jwt",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "CONFIDENTIAL",
+          "source": "prompt",
+          "tier": "regex",
+          "span": [
+            30,
+            138,
+            "CONFIDENTIAL"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-invoice",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "fp",
+          "category": "PII",
+          "source": "document",
+          "tier": "ner",
+          "span": [
+            33,
+            40,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "document",
+          "tier": "regex",
+          "span": [
+            42,
+            63,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "FINANCIAL",
+          "source": "document",
+          "tier": "regex",
+          "span": [
+            69,
+            79,
+            "FINANCIAL"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "document",
+          "tier": "missed",
+          "span": [
+            23,
+            27,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "document",
+          "tier": "missed",
+          "span": [
+            28,
+            32,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-technical",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "IP",
+          "source": "document",
+          "tier": "regex",
+          "span": [
+            30,
+            42,
+            "IP"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "document",
+          "tier": "regex",
+          "span": [
+            52,
+            67,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-name",
+      "origin": "repository-fixture",
+      "matches": [
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "document",
+          "tier": "missed",
+          "span": [
+            0,
+            5,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "document",
+          "tier": "missed",
+          "span": [
+            6,
+            11,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-clean",
+      "origin": "synthetic",
+      "matches": []
+    }
+  ],
+  "corpusSha256": "36ccdce156f11b2868942d317f9a3f703a41994cd4ebaa3d1cf68094279ae8fd",
+  "modelSha256": "b60c0f20ced4fff0fcb5285d10b8a75965514d44aca22c82847a99f5957555d0"
+}

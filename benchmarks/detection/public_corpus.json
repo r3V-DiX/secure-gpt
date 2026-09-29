@@ -1,0 +1,27 @@
+[
+  {
+    "id": "public-derived-email-body",
+    "source": "prompt",
+    "origin": "public-derived",
+    "sourceUrl": "https://www.cs.cmu.edu/~enron/",
+    "transforms": "Short excerpt from the repository Enron sample; personal names and the service name replaced, credential lines omitted.",
+    "text": "Mira and Ravi: Attached below please find subuser passwords for this service so that each of you can review relevant products.",
+    "expected": [
+      {"value": "Mira", "category": "PII"},
+      {"value": "Ravi", "category": "PII"}
+    ]
+  },
+  {
+    "id": "public-derived-meeting-chat",
+    "source": "document",
+    "origin": "public-derived",
+    "sourceUrl": "https://open-staging.usa.gov/assets/files/05022024_OpenGov_PPCE_Listening_Session_saved_chat.pdf",
+    "transforms": "Short public meeting chat excerpt; the published name, email, and phone replaced with fictional name and example.com email; phone omitted.",
+    "text": "Anyone, feel free to reach out to me. -- Jordan Avery, jordan.avery@example.com",
+    "expected": [
+      {"value": "Jordan", "category": "PII"},
+      {"value": "Avery", "category": "PII"},
+      {"value": "jordan.avery@example.com", "category": "PII"}
+    ]
+  }
+]

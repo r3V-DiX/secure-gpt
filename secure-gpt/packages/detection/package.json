@@ -18,14 +18,11 @@
   "dependencies": {
     "@securegpt/shared": "*",
     "@securegpt/ocr": "*",
-    "libphonenumber-js": "^1.12.41",
-    "onnxruntime-web": "^1.18.0",
-    "tesseract.js": "^5.1.0",
-    "uuid": "^9.0.1"
+    "@securegpt/regex": "*",
+    "@securegpt/ner": "*",
+    "tesseract.js": "^5.1.0"
   },
   "devDependencies": {
-    "@types/uuid": "^9.0.8",
-    "onnxruntime-node": "^1.24.3",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   }

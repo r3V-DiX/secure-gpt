@@ -12,8 +12,8 @@ To ensure we can make data-driven improvements to our machine learning models an
 
 ### Key Components
 
-* **Gold-Standard Dataset (`example_data.jsonl`)**: Located at `packages/detection/dataset/example_data.jsonl`, this is a curated set of realistic corporate prompt templates annotated with exact-span PII types (e.g., `EMAIL`, `SOCIALNUMBER`, `TEL`, `IP`, `DRIVERLICENSE`).
-* **Evaluation Script (`evaluate.py`)**: Located at `packages/detection/scripts/evaluate.py`.
+* **Gold-Standard Dataset (`example_data.jsonl`)**: Located at `packages/ner/dataset/example_data.jsonl`, this is a curated set of realistic corporate prompt templates annotated with exact-span PII types (e.g., `EMAIL`, `SOCIALNUMBER`, `TEL`, `IP`, `DRIVERLICENSE`).
+* **Evaluation Script (`evaluate.py`)**: Located at `packages/ner/scripts/evaluate.py`.
   * Runs the INT8 quantized ONNX NER model (`pii-ner-int8.onnx`) directly on the dataset using `onnxruntime`.
   * Aligns character-level annotations with the model's subword token offset mappings.
   * Computes **Precision**, **Recall**, and **F1-score** for each category individually as well as overall micro-averages.
@@ -23,7 +23,7 @@ To ensure we can make data-driven improvements to our machine learning models an
 Activate the backend virtual environment first, then run the evaluation script:
 ```bash
 # From the project root:
-backend/venv/bin/python packages/detection/scripts/evaluate.py
+backend/venv/bin/python packages/ner/scripts/evaluate.py
 ```
 
 ---
