@@ -1,266 +1,98 @@
 'use client'
-// src/app/(app)/profile/page.tsx
-import { PageHeader } from '@/components/ui'
-import { Badge } from '@/components/ui'
-import { IconButton } from '@/components/ui'
-import { Button } from '@/components/ui'
-import { useState } from 'react'
-import { Monitor, Cpu, Globe, Calendar, Clock, Hash, Trash2 } from 'lucide-react'
-import { useProfile } from '@/features/profile/hooks/use-profile'
+
+import { ArrowUpRight, CalendarDays, Clock3, Fingerprint, Building2, Settings2 } from 'lucide-react'
 import { Avatar } from '@/components/shared/Avatar'
-import { apiDelete } from '@/lib/api/client'
-import { useToast } from '@/contexts/toast-context'
-import { Modal, useDangerConfirm } from '@/components/ui/modal/modal'
-import { EmptyState } from '@/components/ui/empty-state/EmptyState'
-import { AlertIcon } from '@/components/icons'
+import { Badge, Card, CardContent, CardHeader, LinkButton, PageHeader } from '@/components/ui'
+import { useAuth } from '@/contexts/auth-context'
+
+function formatDate(value: string | null, withTime = false) {
+  if (!value) return 'Never'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Unavailable'
+  return withTime
+    ? date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    : date.toLocaleDateString(undefined, { dateStyle: 'long' })
+}
 
 export default function ProfilePage() {
-    const { user, devices, loading, removeDevice } = useProfile()
-    const confirmDanger = useDangerConfirm()
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-    const [deleting, setDeleting] = useState(false)
-    const { toast } = useToast()
+  const { user } = useAuth()
+  if (!user) return null
 
-    const handleDeleteAccount = async () => {
-        try {
-            setDeleting(true)
-            await apiDelete('/auth/me')
-            toast.success('Account successfully deleted.')
-            window.location.href = '/login?msg=account_deleted'
-        } catch (err: any) {
-            toast.error(err.message || 'Failed to delete account')
-            setDeleting(false)
-        }
-    }
+  const role = user.role.replace(/_/g, ' ').replace(/\b\w/g, character => character.toUpperCase())
+  const details = [
+    { label: 'User ID', value: user.id, icon: Fingerprint },
+    { label: 'Organization ID', value: user.orgId ?? 'Not assigned', icon: Building2 },
+    { label: 'Member since', value: formatDate(user.createdAt), icon: CalendarDays },
+    { label: 'Last login', value: formatDate(user.lastLoginAt, true), icon: Clock3 },
+  ]
 
-    if (loading) {
-        return (
-            <div className="max-w-[720px] space-y-4 animate-fade-in">
-                <div className="skeleton h-36 rounded-md" />
-                <div className="skeleton h-52 rounded-md" />
-                <div className="skeleton h-40 rounded-md" />
+  return (
+    <div className="mx-auto max-w-5xl space-y-6">
+      <PageHeader title="Profile" description="View your identity and account details." />
+
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <section aria-labelledby="profile-identity">
+          <Card className="overflow-hidden">
+            <CardHeader className="px-6 py-5">
+              <h2 id="profile-identity" className="text-sm font-semibold text-[var(--text-primary)]">Identity</h2>
+            </CardHeader>
+            <CardContent className="flex flex-col items-start gap-4 px-6 py-6 sm:flex-row sm:items-center">
+              <Avatar src={user.avatarUrl} name={user.fullName} email={user.email} size="lg" />
+              <div className="min-w-0">
+                <p className="text-lg font-semibold text-[var(--text-primary)]">{user.fullName || 'Unnamed account'}</p>
+                <p className="mt-1 break-all text-sm text-[var(--text-secondary)]">{user.email}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge variant="info">{role}</Badge>
+                  <Badge variant={user.isActive ? 'success' : 'danger'} dot>
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section aria-labelledby="profile-details">
+          <Card className="overflow-hidden">
+            <CardHeader className="block px-6 py-5">
+              <h2 id="profile-details" className="text-sm font-semibold text-[var(--text-primary)]">Account details</h2>
+              <p className="mt-1 text-sm text-[var(--text-tertiary)]">Information associated with your account.</p>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <dl className="grid sm:grid-cols-2">
+                {details.map(({ label, value, icon: Icon }) => (
+                  <div key={label} className="min-w-0 border-b border-[var(--border)] px-6 py-5 sm:odd:border-r">
+                    <dt className="flex items-center gap-2 text-xs font-medium text-[var(--text-tertiary)]">
+                      <Icon size={15} aria-hidden="true" />
+                      {label}
+                    </dt>
+                    <dd className="mt-2 break-all text-sm font-medium text-[var(--text-primary)]" title={value}>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </CardContent>
+          </Card>
+        </section>
+      </div>
+
+      <section aria-labelledby="profile-settings">
+        <Card>
+          <CardContent className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-surface-2)] text-[var(--text-secondary)]">
+                <Settings2 size={18} aria-hidden="true" />
+              </span>
+              <div>
+                <h2 id="profile-settings" className="text-sm font-semibold text-[var(--text-primary)]">Manage your account</h2>
+                <p className="mt-1 text-sm text-[var(--text-tertiary)]">Review registered devices, export data, or manage account access.</p>
+              </div>
             </div>
-        )
-    }
-
-    if (!user) return null
-
-    return (
-        <PageHeader title={<>
-                    Profile
-                </>} description={<>
-                    Your account information and registered devices
-                </>} actions={<><div className="rounded-md border p-6 flex items-center gap-5"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
-                <Avatar src={user.avatarUrl} name={user.fullName} email={user.email} size="lg" />
-                <div className="min-w-0 flex-1">
-                    <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                        {user.fullName ?? '—'}
-                    </p>
-                    <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                        {user.email}
-                    </p>
-                    <div className="flex items-center gap-2 mt-3 flex-wrap">
-                        <Badge variant="info"
-                            >
-                            {user.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                        </Badge>
-                        <Badge variant="success"
-                            style={{
-                                background: user.isActive ? 'var(--success-light)' : 'var(--danger-light)',
-                                borderColor: user.isActive ? 'var(--success-border)' : 'var(--danger-border)',
-                                color: user.isActive ? 'var(--success)' : 'var(--danger)',
-                            }}>
-                            {user.isActive ? '● Active' : '● Inactive'}
-                        </Badge>
-                    </div>
-                </div>
-            </div>
-<div className="rounded-md border overflow-hidden"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
-                <div className="px-5 py-3 border-b" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}>
-                    <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-                        Account Details
-                    </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x"
-                    style={{ borderColor: 'var(--border)' }}>
-                    {[
-                        { label: 'User ID', value: user.id, icon: <Hash size={12} /> },
-                        { label: 'Org ID', value: user.orgId ?? '—', icon: <Globe size={12} /> },
-                        { label: 'Member Since', value: new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }), icon: <Calendar size={12} /> },
-                        { label: 'Last Login', value: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never', icon: <Clock size={12} /> },
-                    ].map(({ label, value, icon }) => (
-                        <div key={label} className="px-5 py-4"
-                            style={{ borderBottom: '1px solid var(--border)' }}>
-                            <div className="flex items-center gap-1.5 mb-1.5" style={{ color: 'var(--text-tertiary)' }}>
-                                {icon}
-                                <p className="text-[11px] font-semibold uppercase tracking-widest">{label}</p>
-                            </div>
-                            <p className="text-sm font-mono font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                                {value}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-<div className="rounded-md border overflow-hidden"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
-                <div className="px-5 py-3 border-b flex items-center justify-between"
-                    style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}>
-                    <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-                        Registered Devices
-                    </p>
-                    <Badge variant="info"
-                        >
-                        {devices.length}
-                    </Badge>
-                </div>
-
-                {devices.length === 0 ? (
-                    <div className="p-6">
-                        <EmptyState
-                            icon={Monitor}
-                            title="No Devices Registered"
-                            description="Install the SecureGPT browser extension and connect your account to register this device."
-                        />
-                    </div>
-                ) : (
-                    <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                        {devices.map((d, i) => (
-                            <div key={d.id}
-                                className="flex items-center justify-between px-5 py-4 gap-3 transition-colors animate-fade-in"
-                                style={{ animationDelay: `${i * 50}ms` }}
-                                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--bg-surface-2)'}
-                                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = ''}>
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="size-9 rounded-xl border flex items-center justify-center shrink-0"
-                                        style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border-2)', color: 'var(--text-tertiary)' }}>
-                                        <Monitor size={15} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                                            {d.name}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            {d.browser && (
-                                                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{d.browser}</span>
-                                            )}
-                                            {d.osPlatform && (
-                                                <>
-                                                    <span style={{ color: 'var(--text-tertiary)' }}>·</span>
-                                                    <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
-                                                        <Cpu size={10} />
-                                                        {d.osPlatform}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <div className="text-right space-y-1">
-                                        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                                            {d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleDateString() : 'Never'}
-                                        </p>
-                                        <span className="text-[10px] font-semibold"
-                                            style={{ color: d.isActive ? 'var(--success)' : 'var(--text-tertiary)' }}>
-                                            {d.isActive ? '● Active' : '○ Inactive'}
-                                        </span>
-                                    </div>
-                                    <IconButton aria-label="Remove device" variant="danger"
-                                        type="button"
-                                        onClick={async () => {
-                                            const confirmed = await confirmDanger({
-                                                title: `Remove device "${d.name}"?`,
-                                                description: `Unlinking ${d.name} (${d.osPlatform || 'Unknown OS'}) will terminate its connection to SecureGPT.`,
-                                                confirmLabel: 'Remove Device',
-                                            })
-                                            if (confirmed) {
-                                                await removeDevice(d.id)
-                                                toast.success('Device removed')
-                                            }
-                                        }}
-
-
-                                        title="Remove device"
-                                    >
-                                        <Trash2 size={14} />
-                                    </IconButton>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-<div className="rounded-md border overflow-hidden mt-6"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--danger-border)', boxShadow: 'var(--shadow-card)' }}>
-                <div className="px-5 py-3 border-b animate-fade-in" style={{ borderColor: 'var(--danger-border)', background: 'var(--danger-light)' }}>
-                    <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--danger)' }}>
-                        Danger Zone
-                    </p>
-                </div>
-                <div className="p-5 space-y-4">
-                    <div>
-                        <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Delete Account</h3>
-                        <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                            Permanently delete your account and all associated data.
-                            <strong> Note:</strong> Under compliance guidelines, your account data will be retained for 3 years,
-                            and security logs will be permanently deleted after 30 days. This action cannot be undone.
-                        </p>
-                    </div>
-                    <div>
-                        <Button variant="danger"
-                            onClick={() => setShowDeleteConfirm(true)}
-                            type="button"
-
-
-                        >
-                            Delete Account
-                        </Button>
-                    </div>
-                </div>
-            </div>
-<Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} size="md">
-                <div className="p-6 space-y-5">
-                    <div className="space-y-2">
-                        <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Are you absolutely sure?</h3>
-                        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                            This will permanently delete your user profile, active sessions, and registered devices.
-                        </p>
-                        <div className="p-3.5 rounded-xl border text-[11px] space-y-1.5"
-                            style={{ background: 'var(--danger-light)', borderColor: 'var(--danger-border)', color: 'var(--danger)' }}>
-                            <p className="font-semibold flex items-center gap-1.5">
-                                <AlertIcon size={14} className="shrink-0 text-[var(--danger)]" />
-                                Data Retention & Deletion Policy:
-                            </p>
-                            <ul className="list-disc pl-4 space-y-0.5">
-                                <li>Account and telemetry data will be retained for 3 years for compliance audits.</li>
-                                <li>Associated security and access logs will be permanently deleted after 30 days.</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-end gap-3">
-                        <Button variant="secondary"
-                            onClick={() => setShowDeleteConfirm(false)}
-                            type="button"
-
-
-                        >
-                            Cancel
-                        </Button>
-                        <Button variant="danger"
-                            onClick={handleDeleteAccount}
-                            disabled={deleting}
-                            type="button"
-
-
-                        >
-                            {deleting ? 'Deleting...' : 'Yes, Delete Account'}
-                        </Button>
-                    </div>
-                </div>
-            </Modal></>} />
-    )
+            <LinkButton href="/settings" variant="secondary" size="lg" className="shrink-0 gap-2">
+              Open settings <ArrowUpRight size={15} aria-hidden="true" />
+            </LinkButton>
+          </CardContent>
+        </Card>
+      </section>
+    </div>
+  )
 }

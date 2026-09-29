@@ -297,6 +297,20 @@ body {
 }
 
 /* ─── UI CARDS & SURFACES ────────────────────────────────────────────────── */
+/* Match Policy's rounded-md corners on the other authenticated dashboard routes. */
+body[data-dashboard-radius='compact'] {
+  --radius-xs: var(--radius-md);
+  --radius-lg: var(--radius-md);
+  --radius-xl: var(--radius-md);
+  --radius-2xl: var(--radius-md);
+}
+
+body[data-dashboard-radius='compact'] .rounded,
+body[data-dashboard-radius='compact'] .card,
+body[data-dashboard-radius='compact'] :is(input, select, textarea) {
+  border-radius: var(--radius-md);
+}
+
 .card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -376,4 +390,3 @@ input:focus, select:focus, textarea:focus {
 }
 
 code, .font-mono { font-family: var(--font-dm-mono); }
-

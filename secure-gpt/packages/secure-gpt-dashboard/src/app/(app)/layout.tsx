@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { LogIn, Clock, ShieldAlert } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { Sidebar } from '@/components/layout/Sidebar'
@@ -15,6 +15,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, sessionExpired, dismissExpired } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
+  const isPolicyPage = pathname === '/policy' || pathname?.startsWith('/policy/')
+
+  useEffect(() => {
+    if (!pathname) return
+    // Modals render into document.body, so the radius scope must include portals.
+    if (isPolicyPage) delete document.body.dataset.dashboardRadius
+    else document.body.dataset.dashboardRadius = 'compact'
+    return () => { delete document.body.dataset.dashboardRadius }
+  }, [pathname, isPolicyPage])
 
   useEffect(() => {
     if (!loading) {

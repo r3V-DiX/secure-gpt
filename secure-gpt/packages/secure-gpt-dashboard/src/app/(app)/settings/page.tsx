@@ -1,19 +1,40 @@
 'use client'
-// src/app/(app)/settings/page.tsx
-import { PageHeader } from '@/components/ui'
-import { Badge } from '@/components/ui'
-import { useState } from 'react'
-import { Download, LogOut, ShieldCheck, Database, Info, Lock, Monitor, Cpu } from 'lucide-react'
-import { useAuth } from '@/contexts/auth-context'
-import { useProfile } from '@/features/profile/hooks/use-profile'
-import { useToast } from '@/contexts/toast-context'
-import { useLogoutConfirm, Modal } from '@/components/ui/modal/modal'
-import { Button } from '@/components/ui/button/button'
+
+import { useState, type ReactNode } from 'react'
+import { ArrowUpRight, Database, Download, Info, Lock, LogOut, Monitor, ShieldCheck, Trash2 } from 'lucide-react'
+import { Badge, Button, Card, CardContent, CardHeader, LinkButton, PageHeader } from '@/components/ui'
 import { AlertIcon } from '@/components/icons'
-import { downloadLogsCsv } from '@/lib/utils/export'
-import { apiDelete } from '@/lib/api/client'
-import { RegisteredDevicesPanel } from '@/features/profile/components/registered-devices-panel'
+import { Modal, useLogoutConfirm } from '@/components/ui/modal/modal'
+import { useAuth } from '@/contexts/auth-context'
 import { useSystemVersion } from '@/contexts/system-version-context'
+import { useToast } from '@/contexts/toast-context'
+import { RegisteredDevicesPanel } from '@/features/profile/components/registered-devices-panel'
+import { apiDelete } from '@/lib/api/client'
+import { downloadLogsCsv } from '@/lib/utils/export'
+
+function SettingsSection({ id, icon, title, description, children, className = '' }: {
+  id: string
+  icon: ReactNode
+  title: string
+  description?: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <section aria-labelledby={id} className={className}>
+      <Card className="overflow-hidden">
+        <CardHeader className="items-start justify-start gap-3 px-6 py-5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-surface-2)] text-[var(--accent-text)]">{icon}</span>
+          <div>
+            <h2 id={id} className="text-sm font-semibold text-[var(--text-primary)]">{title}</h2>
+            {description && <p className="mt-1 text-sm text-[var(--text-tertiary)]">{description}</p>}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">{children}</CardContent>
+      </Card>
+    </section>
+  )
+}
 
 export default function SettingsPage() {
   const { currentVersion } = useSystemVersion()
@@ -24,18 +45,6 @@ export default function SettingsPage() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
-
-  const handleDeleteAccount = async () => {
-    try {
-      setDeleting(true)
-      await apiDelete('/auth/me')
-      toast.success('Account successfully deleted.')
-      window.location.href = '/login?msg=account_deleted'
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to delete account')
-      setDeleting(false)
-    }
-  }
 
   async function handleExport() {
     setExporting(true)
@@ -50,9 +59,7 @@ export default function SettingsPage() {
   }
 
   async function handleLogout() {
-    const confirmed = await confirmLogout()
-    if (!confirmed) return
-
+    if (!await confirmLogout()) return
     setLoggingOut(true)
     try {
       await logout()
@@ -62,169 +69,133 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    try {
+      await apiDelete('/auth/me')
+      toast.success('Account successfully deleted.')
+      window.location.href = '/login?msg=account_deleted'
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete account')
+      setDeleting(false)
+    }
+  }
+
   return (
-    <PageHeader title={<>
-          Settings
-        </>} description={<>
-          Manage your account and preferences
-        </>} actions={<><Section icon={<ShieldCheck size={14} />} title="Authentication">
-        <div className="px-5 py-4 flex items-center justify-between border-b"
-          style={{ borderColor: 'var(--border)' }}>
-          <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Google Account</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{user?.email}</p>
-          </div>
-          <Badge variant="success"
-            >
-            ● Connected
-          </Badge>
-        </div>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <PageHeader
+        title="Settings"
+        description="Manage account access, registered devices, and your data."
+        actions={<LinkButton href="/profile" variant="ghost" size="md" className="gap-1">View profile <ArrowUpRight size={15} aria-hidden="true" /></LinkButton>}
+      />
 
-        <div className="px-5 py-4">
-          <Button
-            variant="secondary"
-            onClick={handleLogout}
-            loading={loggingOut}
-            icon={<LogOut size={13} />}
-          >
-            Sign out
-          </Button>
-          <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
-            You'll be asked to confirm before signing out.
-          </p>
-        </div>
-      </Section>
-<Section icon={<Monitor size={14} />} title="Registered Devices">
-        <div className="px-5 py-4">
+      <div className="grid items-start gap-5 lg:grid-cols-12">
+        <SettingsSection
+          id="registered-devices"
+          icon={<Monitor size={18} aria-hidden="true" />}
+          title="Registered devices"
+          description="Review devices connected through the SecureGPT extension."
+          className="lg:col-span-7"
+        >
           <RegisteredDevicesPanel />
-        </div>
-      </Section>
-<Section icon={<Database size={14} />} title="Data Export">
-        <div className="px-5 py-4">
-          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-            Download all your detection event logs as a CSV file. Includes timestamps, actions, categories, and entity types.
-          </p>
-          <Button
-            variant="secondary"
-            onClick={handleExport}
-            loading={exporting}
-            icon={<Download size={13} />}
+        </SettingsSection>
+
+        <div className="grid gap-5 lg:col-span-5">
+          <SettingsSection
+            id="authentication"
+            icon={<ShieldCheck size={18} aria-hidden="true" />}
+            title="Authentication"
+            description="Your connected account and sign-in controls."
           >
-            Export my logs (CSV)
-          </Button>
-        </div>
-      </Section>
-<Section icon={<Lock size={14} />} title="Session">
-        <div className="px-5 py-4">
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            You are authenticated via a secure server-side session cookie. Sessions expire after{' '}
-            <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>24 hours</span>{' '}
-            of inactivity and are bound to your browser fingerprint for security.
-            Switching browsers or networks may require you to sign in again.
-          </p>
-        </div>
-      </Section>
-<Section icon={<Info size={14} />} title="About">
-        <div className="px-5 py-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>SecureGPT Dashboard</span>
-            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-md"
-              style={{ background: 'var(--accent-light)', color: 'var(--accent-text)' }}>
-              v{currentVersion}
-            </span>
-          </div>
-          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
-            Data Loss Prevention — all detection runs on-device in the browser extension.
-            No raw PII is ever sent to our servers.
-          </p>
-        </div>
-      </Section>
-<div className="rounded-md border overflow-hidden mt-6"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--danger-border)', boxShadow: 'var(--shadow-card)' }}>
-        <div className="px-5 py-3 border-b flex items-center gap-2"
-          style={{ borderColor: 'var(--danger-border)', background: 'var(--danger-light)' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--danger)' }}>
-            Danger Zone
-          </p>
-        </div>
-        <div className="p-5 space-y-4">
-          <div>
-            <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Delete Account</h3>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Permanently delete your account and all associated data.
-              <strong> Note:</strong> Under compliance guidelines, your account data will be retained for 3 years,
-              and security logs will be permanently deleted after 30 days. This action cannot be undone.
-            </p>
-          </div>
-          <div>
-            <Button variant="danger"
-              onClick={() => setShowDeleteConfirm(true)}
-              type="button"
+            <div className="px-6 py-5">
+              <p className="text-xs font-medium text-[var(--text-tertiary)]">Connected Google account</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <p className="min-w-0 break-all text-sm font-semibold text-[var(--text-primary)]">{user?.email ?? 'Unavailable'}</p>
+                {user && <Badge variant="success" dot>Connected</Badge>}
+              </div>
+            </div>
+            <div className="border-t border-[var(--border)] px-6 py-4">
+              <Button variant="secondary" type="button" loading={loggingOut} onClick={() => void handleLogout()} icon={<LogOut size={15} />}>
+                Sign out
+              </Button>
+            </div>
+          </SettingsSection>
 
-
-            >
-              Delete Account
-            </Button>
-          </div>
+          <SettingsSection
+            id="data-export"
+            icon={<Database size={18} aria-hidden="true" />}
+            title="Data export"
+            description="Download a copy of your detection event logs."
+          >
+            <div className="px-6 py-5">
+              <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+                The CSV includes timestamps, actions, categories, and entity types.
+              </p>
+              <Button variant="secondary" type="button" className="mt-4" loading={exporting} onClick={() => void handleExport()} icon={<Download size={15} />}>
+                Export logs (CSV)
+              </Button>
+            </div>
+          </SettingsSection>
         </div>
       </div>
-<Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} size="md">
-        <div className="p-6 space-y-5">
-          <div className="space-y-2">
-            <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Are you absolutely sure?</h3>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              This will permanently delete your user profile, active sessions, and registered devices.
+
+      <div className="grid items-start gap-5 md:grid-cols-2">
+        <SettingsSection id="session" icon={<Lock size={18} aria-hidden="true" />} title="Session" description="How your dashboard session is protected.">
+          <p className="px-6 py-5 text-sm leading-relaxed text-[var(--text-secondary)]">
+            You are authenticated with a secure server-side session cookie. Sessions expire after 24 hours of inactivity and are bound to your browser fingerprint. Switching browsers or networks may require you to sign in again.
+          </p>
+        </SettingsSection>
+        <SettingsSection id="about" icon={<Info size={18} aria-hidden="true" />} title="About" description="Product and privacy information.">
+          <div className="space-y-3 px-6 py-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-medium text-[var(--text-primary)]">SecureGPT Dashboard</span>
+              <Badge variant="info">v{currentVersion}</Badge>
+            </div>
+            <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+              Detection runs on-device in the browser extension. No raw PII is sent to our servers.
             </p>
-            <div className="p-3.5 rounded-xl border text-[11px] space-y-1.5"
-              style={{ background: 'var(--danger-light)', borderColor: 'var(--danger-border)', color: 'var(--danger)' }}>
-              <p className="font-semibold flex items-center gap-1.5">
-                <AlertIcon size={14} className="shrink-0 text-[var(--danger)]" />
-                Data Retention & Deletion Policy:
-              </p>
-              <ul className="list-disc pl-4 space-y-0.5">
-                <li>Account and telemetry data will be retained for 3 years for compliance audits.</li>
-                <li>Associated security and access logs will be permanently deleted after 30 days.</li>
+          </div>
+        </SettingsSection>
+      </div>
+
+      <section aria-labelledby="danger-zone">
+        <Card className="border-[var(--danger-border)]">
+          <CardContent className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--danger-light)] text-[var(--danger)]">
+                <Trash2 size={18} aria-hidden="true" />
+              </span>
+              <div>
+                <h2 id="danger-zone" className="text-sm font-semibold text-[var(--text-primary)]">Delete account</h2>
+                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
+                  Delete your profile, active sessions, and registered devices. Compliance data is retained for 3 years; security logs are deleted after 30 days. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <Button variant="danger" type="button" className="shrink-0 self-start" onClick={() => setShowDeleteConfirm(true)}>Delete account</Button>
+          </CardContent>
+        </Card>
+      </section>
+
+      <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} size="md">
+        <div className="space-y-5 p-6">
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Delete your account?</h2>
+            <p className="text-sm text-[var(--text-secondary)]">Your profile, active sessions, and registered devices will be removed.</p>
+            <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-light)] p-4 text-sm text-[var(--danger)]">
+              <p className="flex items-center gap-2 font-semibold"><AlertIcon size={16} aria-hidden="true" /> Data retention and deletion</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li>Account and telemetry data is retained for 3 years for compliance audits.</li>
+                <li>Security and access logs are deleted after 30 days.</li>
               </ul>
             </div>
           </div>
-          <div className="flex items-center justify-end gap-3">
-            <Button variant="secondary"
-              onClick={() => setShowDeleteConfirm(false)}
-              type="button"
-
-
-            >
-              Cancel
-            </Button>
-            <Button variant="danger"
-              onClick={handleDeleteAccount}
-              disabled={deleting}
-              type="button"
-
-
-            >
-              {deleting ? 'Deleting...' : 'Yes, Delete Account'}
-            </Button>
+          <div className="flex flex-wrap justify-end gap-3">
+            <Button variant="secondary" type="button" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+            <Button variant="danger" type="button" loading={deleting} onClick={() => void handleDeleteAccount()}>Delete account</Button>
           </div>
         </div>
-      </Modal></>} />
-  )
-}
-
-function Section({ icon, title, children }: {
-  icon: React.ReactNode; title: string; children: React.ReactNode
-}) {
-  return (
-    <div className="rounded-md border overflow-hidden"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
-      <div className="px-5 py-3 border-b flex items-center gap-2"
-        style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}>
-        <span style={{ color: 'var(--accent-text)' }}>{icon}</span>
-        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-          {title}
-        </p>
-      </div>
-      {children}
+      </Modal>
     </div>
   )
 }
