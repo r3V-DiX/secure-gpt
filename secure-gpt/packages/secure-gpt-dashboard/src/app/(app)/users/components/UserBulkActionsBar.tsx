@@ -1,5 +1,6 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
@@ -149,13 +150,13 @@ export function UserBulkActionsBar({
           </Button>
         </div>
 
-        <button
+        <IconButton aria-label="Clear selection" variant="ghost" type="button"
           onClick={onClearSelection}
-          className="p-1 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-tertiary)] transition-colors ml-1"
+          className="ml-1"
           title="Clear selection"
         >
           <X size={14} />
-        </button>
+        </IconButton>
       </div>
 
       <BulkModals

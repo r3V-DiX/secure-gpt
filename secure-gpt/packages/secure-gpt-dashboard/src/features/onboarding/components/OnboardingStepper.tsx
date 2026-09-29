@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 import React from 'react'
 import { Check } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -24,7 +25,7 @@ export function OnboardingStepper({
         const Icon = step.icon
 
         return (
-          <button
+          <Button variant="secondary"
             key={step.id}
             type="button"
             onClick={() => onSelectStep(idx)}
@@ -32,13 +33,11 @@ export function OnboardingStepper({
               'card flex items-center gap-3 p-3.5 text-left transition-all duration-200 cursor-pointer',
               isCurrent && 'ring-2 ring-[var(--accent)] bg-[var(--accent-light)]'
             )}
-            style={{
-              borderColor: isCurrent
+            style={{ borderColor: isCurrent
                 ? 'var(--accent-border)'
                 : isDone
                 ? 'var(--success-border)'
-                : 'var(--border)',
-            }}
+                : 'var(--border)' }}
           >
             <div
               className="size-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-xs transition-colors"
@@ -67,7 +66,7 @@ export function OnboardingStepper({
                 {step.title}
               </h4>
             </div>
-          </button>
+          </Button>
         )
       })}
     </div>

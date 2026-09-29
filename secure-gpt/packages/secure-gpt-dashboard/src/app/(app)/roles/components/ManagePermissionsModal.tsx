@@ -1,5 +1,6 @@
 'use client'
 
+import { Input, Select, Checkbox } from '@/components/ui'
 import React from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
@@ -72,23 +73,23 @@ export function ManagePermissionsModal({
           {/* Filters */}
           <div className="flex items-center gap-3 flex-wrap md:flex-nowrap pb-2">
             <div className="flex items-center gap-2 flex-1 bg-[var(--bg-surface-2)] rounded-xl px-3 border border-[var(--border-2)] focus-within:border-white/20 transition-all h-9">
-              <Search size={13} style={{ color: 'var(--text-tertiary)' }} />
-              <input
+
+              <Input aria-label="Search permissions..." icon={<Search size={15} />} wrapperClassName="w-auto min-w-0"
                 type="text"
                 value={permSearch}
                 onChange={e => setPermSearch(e.target.value)}
                 placeholder="Search permissions..."
-                className="flex-1 bg-transparent outline-none text-xs text-white placeholder:text-[var(--text-tertiary)]"
+                className="flex-1"
               />
             </div>
-            <select
+            <Select aria-label="All Modules" wrapperClassName="w-auto min-w-0"
               value={permModule}
               onChange={e => setPermModule(e.target.value)}
-              className="h-9 px-3 bg-[var(--bg-surface-2)] rounded-xl border border-[var(--border-2)] text-xs text-white outline-none cursor-pointer"
+
             >
               <option value="all">All Modules</option>
               {modules.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
+            </Select>
             <Button variant="secondary" size="sm" onClick={() => setSelectedPermActions(new Set(permissions.map(p => p.action)))}>
               Select All
             </Button>
@@ -107,11 +108,11 @@ export function ManagePermissionsModal({
                   key={perm.id}
                   className="flex items-center gap-3 py-3 px-2 hover:bg-white/5 cursor-pointer transition-colors select-none rounded-lg"
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox aria-label="Select item"
+
                     checked={isChecked}
                     onChange={() => togglePermissionSelection(perm.action)}
-                    className="rounded border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[var(--accent)] focus:ring-[var(--accent)] size-4 shrink-0 cursor-pointer"
+                    className="shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">

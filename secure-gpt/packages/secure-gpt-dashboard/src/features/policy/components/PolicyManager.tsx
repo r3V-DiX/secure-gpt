@@ -1,31 +1,10 @@
 'use client'
 
+import { Select, Switch } from '@/components/ui'
 import React from 'react'
 import { ACTION_LABEL, ACTION_COLORS, ACTIONS } from './ActionSelector'
 import type { PolicyAction, RuleOverride } from '@/types'
 import type { BuiltinRuleMeta } from '@securegpt/shared/constants'
-
-export function Toggle({ on, onChange, disabled }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={disabled ? undefined : () => onChange(!on)}
-      disabled={disabled}
-      className={`relative shrink-0 rounded-full transition-all duration-200 ${disabled ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}
-      style={{
-        width: 40,
-        height: 22,
-        background: on ? 'var(--accent)' : 'var(--bg-surface-3)',
-        boxShadow: on && !disabled ? '0 0 8px var(--accent-glow)' : 'none',
-      }}
-    >
-      <span
-        className="absolute top-1 left-1 size-3.5 bg-white rounded-full shadow-sm transition-transform duration-200"
-        style={{ transform: on ? 'translateX(18px)' : 'translateX(0)' }}
-      />
-    </button>
-  )
-}
 
 const SEVERITY_DOT: Record<string, string> = {
   critical: 'var(--danger)',
@@ -72,18 +51,14 @@ export function FieldRow({
       </span>
 
       {enabled && (
-        <select
+        <Select aria-label="Category default ( )" wrapperClassName="w-auto min-w-0"
           value={overrideAction ?? ''}
           onChange={e => onActionChange((e.target.value as PolicyAction) || null)}
           disabled={disabled}
           className={`text-[11px] font-semibold rounded-lg px-2 py-1 border outline-none transition-all ${
             disabled ? 'cursor-default' : 'cursor-pointer'
           }`}
-          style={{
-            background: overrideAction ? ACTION_COLORS[overrideAction].bg : 'var(--bg-surface-3)',
-            borderColor: overrideAction ? ACTION_COLORS[overrideAction].border : 'var(--border)',
-            color: overrideAction ? ACTION_COLORS[overrideAction].text : 'var(--text-tertiary)',
-          }}
+          style={{ background: overrideAction ? ACTION_COLORS[overrideAction].bg : 'var(--bg-surface-3)', borderColor: overrideAction ? ACTION_COLORS[overrideAction].border : 'var(--border)', color: overrideAction ? ACTION_COLORS[overrideAction].text : 'var(--text-tertiary)' }}
         >
           <option value="">Category default ({ACTION_LABEL[categoryAction]})</option>
           {ACTIONS.map(a => (
@@ -91,10 +66,10 @@ export function FieldRow({
               {ACTION_LABEL[a]}
             </option>
           ))}
-        </select>
+        </Select>
       )}
 
-      <Toggle on={enabled} onChange={onToggle} disabled={disabled} />
+      <Switch aria-label={`Enable ${rule.label}`} checked={enabled} onCheckedChange={onToggle} disabled={disabled} />
     </div>
   )
 }

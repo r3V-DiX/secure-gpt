@@ -1,5 +1,6 @@
 'use client'
 
+import { Badge } from '@/components/ui'
 import {
   Trash2,
   Shield,
@@ -94,8 +95,8 @@ export function CategoryDetailPane({
                 <h3 className="text-base font-bold text-[var(--text-primary)]">
                   {activeCategoryName}
                 </h3>
-                <span
-                  className="text-xs font-bold px-2.5 py-0.5 rounded-full border shadow-xs inline-flex items-center gap-1"
+                <Badge variant="neutral"
+
                   style={{
                     background: ac.bg,
                     borderColor: ac.border,
@@ -104,10 +105,10 @@ export function CategoryDetailPane({
                 >
                   {ACTION_ICONS[cfg.action]}
                   {ACTION_LABEL[cfg.action]}
-                </span>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border-[var(--border)] tabular-nums">
+                </Badge>
+                <Badge variant="neutral" className="tabular-nums">
                   {totalActiveFields} active rules
-                </span>
+                </Badge>
               </div>
               <p className="text-xs text-[var(--text-secondary)] mt-1">
                 {meta.desc}
@@ -149,7 +150,7 @@ export function CategoryDetailPane({
             className="flex items-center gap-1 p-1 rounded-xl border"
             style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}
           >
-            <button
+            <Button variant="ghost"
               type="button"
               onClick={() => setActiveTab('rules')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -160,9 +161,9 @@ export function CategoryDetailPane({
             >
               <Shield size={13} />
               <span>Detection Fields ({builtinRules.length})</span>
-            </button>
+            </Button>
 
-            <button
+            <Button variant="ghost"
               type="button"
               onClick={() => setActiveTab('keywords')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -173,9 +174,9 @@ export function CategoryDetailPane({
             >
               <Key size={13} />
               <span>Keywords & Allowlist ({keywords.length + allowlist.length})</span>
-            </button>
+            </Button>
 
-            <button
+            <Button variant="ghost"
               type="button"
               onClick={() => setActiveTab('custom')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -186,7 +187,7 @@ export function CategoryDetailPane({
             >
               <Sparkles size={13} />
               <span>Custom Regex ({customRules.length})</span>
-            </button>
+            </Button>
           </div>
 
           {activeTab === 'rules' && (

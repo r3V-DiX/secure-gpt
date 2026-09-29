@@ -1,7 +1,9 @@
 'use client'
-import React, { useEffect, useRef, type ReactNode } from 'react'
+import React, { useId, useRef, type ReactNode } from 'react'
 import { AlertTriangle, Trash2, Info } from 'lucide-react'
 import { Modal } from './modal'
+import { Button } from '../button/button'
+import { clsx } from 'clsx'
 
 export type ConfirmVariant = 'danger' | 'warning' | 'info'
 
@@ -16,35 +18,15 @@ export interface ConfirmOptions {
 }
 
 export const variantConfig: Record<ConfirmVariant, {
-    iconBg: string; iconBorder: string; iconColor: string
-    confirmBg: string; confirmHover: string; confirmText: string
     defaultIcon: ReactNode
 }> = {
     danger: {
-        iconBg: 'var(--danger-light)',
-        iconBorder: 'var(--danger-border)',
-        iconColor: 'var(--danger)',
-        confirmBg: '#dc2626',
-        confirmHover: '#b91c1c',
-        confirmText: '#ffffff',
         defaultIcon: <Trash2 size={20} />,
     },
     warning: {
-        iconBg: 'var(--warning-light)',
-        iconBorder: 'var(--warning-border)',
-        iconColor: 'var(--warning)',
-        confirmBg: '#d97706',
-        confirmHover: '#b45309',
-        confirmText: '#ffffff',
         defaultIcon: <AlertTriangle size={20} />,
     },
     info: {
-        iconBg: 'var(--accent-light)',
-        iconBorder: 'var(--accent-border)',
-        iconColor: 'var(--accent-text)',
-        confirmBg: 'var(--accent)',
-        confirmHover: 'var(--accent-hover)',
-        confirmText: '#ffffff',
         defaultIcon: <Info size={20} />,
     },
 }
@@ -67,81 +49,44 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
     const cfg = variantConfig[variant]
     const displayIcon = icon ?? cfg.defaultIcon
-    const confirmRef = useRef<HTMLButtonElement>(null)
-
-    useEffect(() => {
-        const t = setTimeout(() => confirmRef.current?.focus(), 50)
-        return () => clearTimeout(t)
-    }, [])
+    const cancelRef = useRef<HTMLButtonElement>(null)
+    const id = useId()
 
     return (
-        <Modal open onClose={onCancel} size="sm" closeOnBackdrop={!loading}>
+        <Modal open onClose={() => { if (!loading) onCancel() }} size="sm"
+            closeOnBackdrop={!loading} closeOnEscape={!loading} initialFocusRef={cancelRef}
+            aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined}>
             <div className="p-6 flex flex-col items-center text-center gap-4">
                 <div
-                    className="size-14 rounded-lg flex items-center justify-center shrink-0"
-                    style={{
-                        background: cfg.iconBg,
-                        border: `1.5px solid ${cfg.iconBorder}`,
-                        color: cfg.iconColor,
-                    }}
+                    className={clsx('size-14 rounded-lg border flex items-center justify-center shrink-0', {
+                        'bg-[var(--danger-light)] border-[var(--danger-border)] text-[var(--danger)]': variant === 'danger',
+                        'bg-[var(--warning-light)] border-[var(--warning-border)] text-[var(--warning)]': variant === 'warning',
+                        'bg-[var(--accent-light)] border-[var(--accent-border)] text-[var(--accent-text)]': variant === 'info',
+                    })}
                 >
                     {displayIcon}
                 </div>
 
                 <div>
-                    <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+                    <h2 id={`${id}-title`} className="text-base font-bold text-[var(--text-primary)]">
                         {title}
                     </h2>
                     {description && (
-                        <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                        <p id={`${id}-description`} className="text-sm mt-1.5 leading-relaxed text-[var(--text-secondary)]">
                             {description}
                         </p>
                     )}
                 </div>
 
                 <div className="flex gap-2.5 w-full pt-1">
-                    <button
-                        onClick={onCancel}
-                        disabled={loading}
-                        className="flex-1 h-9 rounded-xl text-sm font-semibold border transition-all disabled:opacity-50"
-                        style={{
-                            background: 'var(--bg-surface-2)',
-                            borderColor: 'var(--border-2)',
-                            color: 'var(--text-secondary)',
-                        }}
-                        onMouseEnter={e => {
-                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
-                                ; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-strong)'
-                        }}
-                        onMouseLeave={e => {
-                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
-                                ; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'
-                        }}
-                    >
+                    <Button ref={cancelRef} type="button" variant="secondary" size="lg"
+                        onClick={onCancel} disabled={loading} className="flex-1">
                         {cancelLabel}
-                    </button>
-
-                    <button
-                        ref={confirmRef}
-                        onClick={onConfirm}
-                        disabled={loading}
-                        className="flex-1 h-9 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-70"
-                        style={{
-                            background: cfg.confirmBg,
-                            color: cfg.confirmText,
-                        }}
-                        onMouseEnter={e => {
-                            if (!loading) (e.currentTarget as HTMLButtonElement).style.background = cfg.confirmHover
-                        }}
-                        onMouseLeave={e => {
-                            (e.currentTarget as HTMLButtonElement).style.background = cfg.confirmBg
-                        }}
-                    >
-                        {loading && (
-                            <span className="size-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        )}
+                    </Button>
+                    <Button type="button" variant={variant === 'info' ? 'primary' : variant} size="lg"
+                        onClick={onConfirm} loading={loading} className="flex-1">
                         {confirmLabel}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Modal>

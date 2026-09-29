@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import { useEffect, useState, useCallback } from "react"
 import { Monitor, Smartphone, Tablet, Loader2, RefreshCw, LogOut, ShieldAlert, Clock, MapPin, Cpu } from "lucide-react"
 import { apiGetPaginated, apiDelete } from "@/lib/api/client"
@@ -59,7 +61,7 @@ export function RegisteredDevicesPanel() {
       description: `${d.name} · ${d.osPlatform || 'Unknown OS'}`,
       confirmLabel: "Sign out",
     })
-    
+
     if (!isConfirmed) return
 
     setRevokingId(d.id)
@@ -98,7 +100,7 @@ export function RegisteredDevicesPanel() {
           hasError = true
         }
       }
-      
+
       if (hasError) {
         toast.error("Some devices could not be signed out")
       } else {
@@ -122,28 +124,28 @@ export function RegisteredDevicesPanel() {
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Devices currently signed in to your account.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <IconButton aria-label="Refresh" variant="ghost" type="button"
               onClick={loadDevices}
-              className="p-1.5 rounded-lg transition-colors cursor-pointer"
-              style={{ color: 'var(--text-tertiary)' }}
+
+
               onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.backgroundColor = 'var(--bg-surface-2)' }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; e.currentTarget.style.backgroundColor = 'transparent' }}
               title="Refresh"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-            </button>
+            </IconButton>
             {otherCount > 0 && (
-              <button
+              <Button variant="danger" type="button"
                 onClick={revokeAllOthers}
                 disabled={revokingAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
-                style={{ color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+
+
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--danger-light)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 {revokingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
                 Sign out {otherCount} other{otherCount > 1 ? "s" : ""}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -170,7 +172,7 @@ export function RegisteredDevicesPanel() {
                 }}
               >
                 {/* Device icon */}
-                <div 
+                <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border`}
                   style={{
                     backgroundColor: s.isActive ? 'var(--bg-surface)' : 'var(--bg-surface-2)',
@@ -186,7 +188,7 @@ export function RegisteredDevicesPanel() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
                     {s.isActive && (
-                      <span 
+                      <span
                         className="text-[10px] font-mono px-2 py-0.5 rounded-md shrink-0 border"
                         style={{ color: 'var(--accent)', backgroundColor: 'var(--bg-surface)', borderColor: 'var(--accent-border)' }}
                       >
@@ -215,16 +217,16 @@ export function RegisteredDevicesPanel() {
 
                 {/* Action */}
                 {!s.isActive && (
-                  <button
+                  <Button variant="danger" type="button"
                     onClick={() => revokeDevice(s)}
                     disabled={revokingId === s.id}
-                    className="text-xs font-medium transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
-                    style={{ color: 'var(--danger)' }}
+                    className="shrink-0"
+
                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--danger)'}
                   >
                     {revokingId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Sign out"}
-                  </button>
+                  </Button>
                 )}
               </div>
             ))}

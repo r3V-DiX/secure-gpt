@@ -1,5 +1,6 @@
 'use client'
 
+import { LinkButton } from '@/components/ui'
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button/button'
@@ -83,17 +84,17 @@ export default function DedicatedVersionsPage() {
             </Link>
 
             {!loading && user ? (
-              <Link href="/dashboard">
-                <Button variant="ghost" className="text-sm font-semibold">
+              <LinkButton variant="ghost" className="text-sm font-semibold" href="/dashboard">
+
                   Dashboard
-                </Button>
-              </Link>
+
+              </LinkButton>
             ) : (
-              <Link href="/login">
-                <Button variant="ghost" className="text-sm font-semibold">
+              <LinkButton variant="ghost" className="text-sm font-semibold" href="/login">
+
                   Sign In
-                </Button>
-              </Link>
+
+              </LinkButton>
             )}
           </div>
         </div>
@@ -131,16 +132,14 @@ export default function DedicatedVersionsPage() {
             {tabs.map((t) => {
               const isActive = activeTab === t.key
               return (
-                <button
+                <Button variant="primary"
                   key={t.key}
                   type="button"
                   onClick={() => setActiveTab(t.key)}
                   className={`p-4 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
                     isActive ? 'shadow-md text-white' : 'hover:bg-[var(--bg-surface)] text-[var(--text-secondary)]'
                   }`}
-                  style={{
-                    background: isActive ? 'var(--accent)' : 'transparent',
-                  }}
+                  style={{ background: isActive ? 'var(--accent)' : 'transparent' }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 font-bold text-sm">
@@ -163,7 +162,7 @@ export default function DedicatedVersionsPage() {
                   >
                     {t.description}
                   </p>
-                </button>
+                </Button>
               )
             })}
           </div>

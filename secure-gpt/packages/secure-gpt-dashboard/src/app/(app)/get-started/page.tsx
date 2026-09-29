@@ -1,5 +1,6 @@
 'use client'
 
+import { Badge, Card } from '@/components/ui'
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { PartyPopper } from 'lucide-react'
@@ -114,16 +115,12 @@ export default function GetStartedPage() {
             <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
               {title}
             </h1>
-            <span
-              className="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider"
-              style={{
-                background: 'var(--accent-light)',
-                borderColor: 'var(--accent-border)',
-                color: 'var(--accent-text)',
-              }}
+            <Badge variant="info"
+              className="uppercase"
+
             >
               {currentRole.replace('_', ' ')}
-            </span>
+            </Badge>
           </div>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             {subtitle}
@@ -155,23 +152,19 @@ export default function GetStartedPage() {
       </div>
 
       {/* ── Progress card ───────────────────────────────────────────────── */}
-      <div className="card p-5 animate-fade-in">
+      <Card className="p-5 animate-fade-in">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
               Setup progress
             </span>
             {allDone && (
-              <span
-                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{
-                  background: 'var(--success-light)',
-                  color: 'var(--success)',
-                  border: '1px solid var(--success-border)',
-                }}
+              <Badge variant="success"
+
+
               >
                 Complete
-              </span>
+              </Badge>
             )}
           </div>
           <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>
@@ -194,7 +187,7 @@ export default function GetStartedPage() {
             ? 'Everything is set up. You’re ready to proceed!'
             : 'Track real-time setup progress or toggle steps once configured.'}
         </p>
-      </div>
+      </Card>
 
       {/* ── Step cards ──────────────────────────────────────────────────── */}
       <div className="space-y-4">

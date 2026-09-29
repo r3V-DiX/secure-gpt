@@ -3,7 +3,7 @@
 import React from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
-import { Toggle } from './PolicyManager'
+import { Switch } from '@/components/ui/input/selection'
 import { ChevronRight } from 'lucide-react'
 import { ACTION_LABEL, ACTION_COLORS } from './ActionSelector'
 import type { CategoryConfig } from '@/types'
@@ -108,9 +108,9 @@ export function CategoryNavList({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <Toggle
-                  on={cConfig.enabled}
-                  onChange={(en) => onToggleCategoryEnabled(cat, en)}
+                <Switch aria-label="Enable category"
+                  checked={cConfig.enabled}
+                  onCheckedChange={(en) => onToggleCategoryEnabled(cat, en)}
                   disabled={!isAdmin}
                 />
                 <ChevronRight

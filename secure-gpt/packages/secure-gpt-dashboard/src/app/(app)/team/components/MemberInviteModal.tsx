@@ -1,5 +1,6 @@
 'use client'
 
+import { Input, Select } from '@/components/ui'
 import { Modal } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
 import { Mail, AlertCircle, CheckCircle2 } from 'lucide-react'
@@ -85,13 +86,13 @@ export function MemberInviteModal({
             <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>
               Employee Email Address
             </label>
-            <input
+            <Input aria-label={`developer@${orgDomain || 'yourcompany.com'}`}
               type="email"
               placeholder={`developer@${orgDomain || 'yourcompany.com'}`}
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-primary)' }}
+              className="w-full"
+
             />
           </div>
 
@@ -99,11 +100,11 @@ export function MemberInviteModal({
             <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>
               Department / Category
             </label>
-            <select
+            <Select aria-label="General / Default Org Policy"
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-primary)' }}
+              className="w-full"
+
             >
               <option value="">General / Default Org Policy</option>
               {departments.map((d) => (
@@ -111,7 +112,7 @@ export function MemberInviteModal({
                   {d.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 

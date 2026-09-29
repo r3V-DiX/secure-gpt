@@ -1,5 +1,6 @@
 'use client'
 // src/components/error/ErrorBoundary.tsx
+import { Button } from '@/components/ui'
 import { Component, type ReactNode } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
@@ -61,18 +62,14 @@ export class ErrorBoundary extends Component<Props, State> {
             </pre>
           )}
 
-          <button
+          <Button variant="secondary" type="button"
             onClick={this.handleReset}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all"
-            style={{
-              background: 'var(--bg-surface-2)',
-              borderColor: 'var(--border-2)',
-              color: 'var(--text-primary)',
-            }}
+
+
           >
             <RefreshCw size={13} />
             Try again
-          </button>
+          </Button>
         </div>
       )
     }

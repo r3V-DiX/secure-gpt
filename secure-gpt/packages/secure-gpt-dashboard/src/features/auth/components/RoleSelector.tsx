@@ -1,5 +1,6 @@
 'use client'
 
+import { RadioGroup } from '@/components/ui'
 import React from 'react'
 import { Building2, UserCheck, User } from 'lucide-react'
 
@@ -16,60 +17,16 @@ export function RoleSelector({
   setDevPersona,
   setDevEmail,
 }: RoleSelectorProps) {
-  return (
-    <div className="mb-5">
-      <label className="text-xs font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>
-        I am signing in as:
-      </label>
-      <div className="grid grid-cols-3 gap-1 p-1 rounded-md border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
-        <button
-          type="button"
-          onClick={() => {
-            setRoleType('employer')
-            setDevPersona('employer')
-            setDevEmail('admin@acmecorp.com')
-          }}
-          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-            roleType === 'employer'
-              ? 'bg-[var(--accent)] text-white shadow-xs'
-              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-          }`}
-        >
-          <Building2 size={13} /> Employer
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setRoleType('employee')
-            setDevPersona('employee')
-            setDevEmail('developer@acmecorp.com')
-          }}
-          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-            roleType === 'employee'
-              ? 'bg-[var(--accent)] text-white shadow-xs'
-              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-          }`}
-        >
-          <UserCheck size={13} /> Employee
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setRoleType('user')
-            setDevPersona('user')
-            setDevEmail('john.doe@gmail.com')
-          }}
-          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-            roleType === 'user'
-              ? 'bg-[var(--accent)] text-white shadow-xs'
-              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-          }`}
-        >
-          <User size={13} /> Personal
-        </button>
-      </div>
-    </div>
-  )
+  return <div className="mb-5 space-y-2">
+    <p className="text-xs font-medium text-[var(--text-primary)]">I am signing in as:</p>
+    <RadioGroup label="Login role" value={roleType} onValueChange={role => {
+      setRoleType(role)
+      setDevPersona(role)
+      setDevEmail({ employer: 'admin@acmecorp.com', employee: 'developer@acmecorp.com', user: 'john.doe@gmail.com' }[role])
+    }} options={[
+      { value: 'employer', label: 'Employer', icon: <Building2 size={13} /> },
+      { value: 'employee', label: 'Employee', icon: <UserCheck size={13} /> },
+      { value: 'user', label: 'Personal', icon: <User size={13} /> },
+    ]} />
+  </div>
 }

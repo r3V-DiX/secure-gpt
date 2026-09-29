@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ShieldAlert, ArrowRight, X, CheckCircle2 } from 'lucide-react'
@@ -86,14 +88,14 @@ export function OrgOnboardingBanner() {
             <ArrowRight size={14} />
           </Link>
 
-          <button
+          <IconButton aria-label="Dismiss for this session" variant="ghost"
             type="button"
             onClick={() => setDismissed(true)}
-            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] rounded-md transition-colors"
+
             title="Dismiss for this session"
           >
             <X size={15} />
-          </button>
+          </IconButton>
         </div>
       </div>
     </div>

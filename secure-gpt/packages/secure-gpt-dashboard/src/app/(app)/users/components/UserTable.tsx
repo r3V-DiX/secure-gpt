@@ -1,5 +1,6 @@
 'use client'
 
+import { Table, TableHead, TableRow, TableHeaderCell, Checkbox, TableBody, Select } from '@/components/ui'
 import React from 'react'
 import { Button } from '@/components/ui/button/button'
 import { Loader2, Users, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -85,25 +86,25 @@ export function UserTable({
   return (
     <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-xl">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              <th className="py-3 px-4 w-10 text-center">
-                <input
-                  type="checkbox"
+        <Table className="w-full text-left border-collapse">
+          <TableHead>
+            <TableRow className="border-b border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <TableHeaderCell className="py-3 px-4 w-10 text-center">
+                <Checkbox aria-label="Select item"
+
                   checked={allCurrentPageSelected}
                   onChange={onToggleSelectAll}
-                  className="rounded border-[var(--border-2)] bg-[var(--bg-surface)] text-[var(--accent)] focus:ring-[var(--accent)] size-4 cursor-pointer"
+
                   title="Select all on this page"
                 />
-              </th>
-              <th className="py-3 px-4">User</th>
-              <th className="py-3 px-4">Active Status</th>
-              <th className="py-3 px-4">Assigned Roles</th>
-              <th className="py-3 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--border-2)] text-[13px]">
+              </TableHeaderCell>
+              <TableHeaderCell className="py-3 px-4">User</TableHeaderCell>
+              <TableHeaderCell className="py-3 px-4">Active Status</TableHeaderCell>
+              <TableHeaderCell className="py-3 px-4">Assigned Roles</TableHeaderCell>
+              <TableHeaderCell className="py-3 px-4 text-right">Actions</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody className="divide-y divide-[var(--border-2)] text-[13px]">
             {users.map((u) => (
               <UserTableRow
                 key={u.id}
@@ -117,8 +118,8 @@ export function UserTable({
                 onDeleteUser={onDeleteUser}
               />
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination Footer */}
@@ -131,17 +132,17 @@ export function UserTable({
           </span>
           <div className="flex items-center gap-1.5 ml-2">
             <span className="text-[11px] text-[var(--text-tertiary)]">Rows:</span>
-            <select
+            <Select aria-label="20" wrapperClassName="w-auto min-w-0"
               value={pageSize}
               onChange={(e) => {
                 onPageSizeChange(Number(e.target.value))
               }}
-              className="px-2 py-1 text-xs rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-none cursor-pointer"
+
             >
               <option value={20}>20</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
-            </select>
+            </Select>
           </div>
         </div>
 

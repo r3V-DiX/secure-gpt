@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 import React from 'react'
 import {
   Search, EyeOff, Scan, BarChart3, Globe, Users,
@@ -148,24 +149,24 @@ export function HowItWorksSection() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button
-                    className="flex-1 h-9 rounded-lg border text-[11px] font-semibold"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'transparent' }}
+                  <Button variant="secondary" type="button"
+                    className="flex-1"
+
                   >
                     Edit message
-                  </button>
-                  <button
-                    className="flex-1 h-9 rounded-lg text-[11px] font-bold text-white"
-                    style={{ background: 'var(--accent)' }}
+                  </Button>
+                  <Button variant="primary" type="button"
+                    className="flex-1"
+
                   >
                     🔒 Mask &amp; Send
-                  </button>
-                  <button
-                    className="flex-1 h-9 rounded-lg text-[11px] font-semibold"
-                    style={{ background: 'var(--danger-light)', color: 'var(--danger)' }}
+                  </Button>
+                  <Button variant="danger" type="button"
+                    className="flex-1"
+
                   >
                     Block
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

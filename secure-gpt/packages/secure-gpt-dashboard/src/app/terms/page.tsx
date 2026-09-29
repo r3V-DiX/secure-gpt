@@ -1,4 +1,5 @@
 'use client'
+import { LinkButton } from '@/components/ui'
 import Link from 'next/link';
 import { Button } from '@/components/ui/button/button';
 import { useAuth } from '@/contexts/auth-context';
@@ -24,13 +25,13 @@ export default function TermsPage() {
           </Link>
           <div className="flex items-center gap-3">
             {!loading && user ? (
-              <Link href="/dashboard">
-                <Button variant="ghost" className="text-sm font-semibold">Dashboard</Button>
-              </Link>
+              <LinkButton variant="ghost" className="text-sm font-semibold" href="/dashboard">
+                Dashboard
+              </LinkButton>
             ) : (
-              <Link href="/login">
-                <Button variant="ghost" className="text-sm font-semibold">Sign In</Button>
-              </Link>
+              <LinkButton variant="ghost" className="text-sm font-semibold" href="/login">
+                Sign In
+              </LinkButton>
             )}
           </div>
         </div>
@@ -179,12 +180,12 @@ export default function TermsPage() {
 
             <div className="px-8 pb-8">
               <div className="pt-6 border-t flex items-center gap-3" style={{ borderColor: 'var(--border)' }}>
-                <Link href="/">
-                  <Button variant="secondary" className="text-sm font-semibold">← Back to Home</Button>
-                </Link>
-                <Link href="/privacy">
-                  <Button variant="ghost" className="text-sm font-semibold">Privacy Policy →</Button>
-                </Link>
+                <LinkButton variant="secondary" className="text-sm font-semibold" href="/">
+                  ← Back to Home
+                </LinkButton>
+                <LinkButton variant="ghost" className="text-sm font-semibold" href="/privacy">
+                  Privacy Policy →
+                </LinkButton>
               </div>
             </div>
           </article>

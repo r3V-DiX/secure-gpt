@@ -1,5 +1,6 @@
 'use client'
 
+import { LinkButton, Badge } from '@/components/ui'
 import React from 'react'
 import {
   Lock, AlertTriangle, Shield, ArrowRight
@@ -75,18 +76,18 @@ export function LandingHeroSection() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto rounded-full px-8 h-12 font-semibold group" style={{ boxShadow: '0 4px 20px var(--brand-btn-shadow)' }}>
+            <LinkButton size="lg" style={{ boxShadow: '0 4px 20px var(--brand-btn-shadow)' }} href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+
                 <Shield size={16} className="mr-1.5" />
                 Add to Chrome — Free
                 <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </a>
-            <a href="mailto:info@rivedix.com?subject=SecureGPT Enterprise Demo" className="w-full sm:w-auto">
-              <Button variant="secondary" size="lg" className="w-full sm:w-auto rounded-full px-8 h-12 font-semibold">
+
+            </LinkButton>
+            <LinkButton variant="secondary" size="lg" href="mailto:info@rivedix.com?subject=SecureGPT Enterprise Demo" className="w-full sm:w-auto">
+
                 Book Enterprise Demo
-              </Button>
-            </a>
+
+            </LinkButton>
           </div>
 
           <div className="mt-20">
@@ -95,14 +96,14 @@ export function LandingHeroSection() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-4xl mx-auto">
               {ALL_HERO_PLATFORMS.map((p) => (
-                <span
+                <Badge variant="neutral"
                   key={p.id}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all hover:scale-105 shadow-2xs"
-                  style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+
+
                 >
                   <PlatformIcon platformId={p.id} size={16} className="rounded-xs shrink-0" />
                   {p.name}
-                </span>
+                </Badge>
               ))}
             </div>
           </div>

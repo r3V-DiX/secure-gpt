@@ -1,5 +1,6 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import { Layers, FolderPlus, Plus, SlidersHorizontal, UserPlus } from 'lucide-react'
@@ -94,24 +95,24 @@ export function DepartmentDeck({
                 </div>
 
                 <div className="flex items-center gap-2 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
-                  <button
+                  <Button variant="primary"
                     type="button"
                     onClick={() => router.push(`/policy?department_id=${dept.id}`)}
-                    className="flex-1 px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all cursor-pointer hover:bg-[var(--accent-light)] hover:text-[var(--accent)] hover:border-[var(--accent-border)]"
-                    style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                    className="flex-1"
+
                   >
                     <SlidersHorizontal size={12} /> Configure Policy
-                  </button>
-                  <button
+                  </Button>
+                  <IconButton aria-label={!isOrgActive ? 'Verify domain to invite employees' : 'Invite colleague to this category'} variant="secondary"
                     type="button"
                     disabled={!isOrgActive}
                     onClick={() => onOpenInviteWithDept(dept.id)}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1 transition-all cursor-pointer hover:bg-[var(--bg-surface-2)] disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
+
+
                     title={!isOrgActive ? 'Verify domain to invite employees' : 'Invite colleague to this category'}
                   >
                     <UserPlus size={12} />
-                  </button>
+                  </IconButton>
                 </div>
               </div>
             )

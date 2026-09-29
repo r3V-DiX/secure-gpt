@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React from 'react'
 import { ShieldCheck, Check, ArrowRight, ArrowLeft, RefreshCw } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -73,8 +75,8 @@ export function PolicyPresetStep({
                     <Icon size={18} />
                   </div>
 
-                  <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
+                  <Badge variant="success"
+                    className="uppercase"
                     style={{
                       background: key === 'strict'
                         ? 'var(--danger-light)'
@@ -96,7 +98,7 @@ export function PolicyPresetStep({
                     }}
                   >
                     {preset.badge}
-                  </span>
+                  </Badge>
                 </div>
 
                 <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -133,31 +135,27 @@ export function PolicyPresetStep({
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-        <button
+        <Button variant="secondary"
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:brightness-105"
-          style={{
-            background: 'var(--bg-surface)',
-            borderColor: 'var(--border)',
-            color: 'var(--text-secondary)',
-          }}
+
+
         >
           <ArrowLeft size={13} />
           <span>Back</span>
-        </button>
+        </Button>
 
-        <button
+        <Button variant="primary"
           type="button"
           onClick={onApply}
           disabled={saving}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 disabled:opacity-50 cursor-pointer"
-          style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+
+
         >
           {saving ? <RefreshCw className="size-3.5 animate-spin" /> : null}
           <span>Apply Preset & Continue</span>
           <ArrowRight size={14} />
-        </button>
+        </Button>
       </div>
     </div>
   )

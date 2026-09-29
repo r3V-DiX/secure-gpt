@@ -2,6 +2,7 @@
 // src/components/shared/ThemeToggle.tsx
 // Animated sun/moon toggle button for the sidebar.
 
+import { Button } from '@/components/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { Moon, Sun } from 'lucide-react'
 
@@ -17,7 +18,7 @@ export function ThemeToggle({ className = '', variant = 'icon' }: ThemeTogglePro
 
     if (variant === 'full') {
         return (
-            <button
+            <Button variant="ghost" type="button"
                 onClick={toggleTheme}
                 title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                 className={`
@@ -28,19 +29,19 @@ export function ThemeToggle({ className = '', variant = 'icon' }: ThemeTogglePro
           transition-colors duration-150
           ${className}
         `}
-                style={{ fontFamily: 'var(--font-jakarta)' }}
+
             >
                 {isDark
                     ? <Sun size={14} className="shrink-0 text-[var(--warning)]" />
                     : <Moon size={14} className="shrink-0 text-[var(--text-tertiary)]" />
                 }
                 <span>{isDark ? 'Light mode' : 'Dark mode'}</span>
-            </button>
+            </Button>
         )
     }
 
     return (
-        <button
+        <Button variant="ghost" type="button"
             onClick={toggleTheme}
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             className={`
@@ -51,7 +52,7 @@ export function ThemeToggle({ className = '', variant = 'icon' }: ThemeTogglePro
         transition-all duration-150 shrink-0
         ${className}
       `}
-            style={{ fontFamily: 'var(--font-jakarta)' }}
+
         >
             <span
                 className="absolute transition-all duration-200"
@@ -71,6 +72,6 @@ export function ThemeToggle({ className = '', variant = 'icon' }: ThemeTogglePro
             >
                 <Moon size={13} />
             </span>
-        </button>
+        </Button>
     )
 }

@@ -1,5 +1,8 @@
 'use client'
 
+import { FilterBar } from '@/components/ui'
+import { IconButton } from '@/components/ui'
+import { Input, Button, Select } from '@/components/ui'
 import React from 'react'
 import { Search, Filter, X } from 'lucide-react'
 import type { Department } from '@/types'
@@ -23,39 +26,39 @@ export function TeamFilterBar({
   onUpdateFilters,
 }: TeamFilterBarProps) {
   return (
-    <div
+    <FilterBar
       className="p-3 rounded-md border flex flex-col md:flex-row items-stretch md:items-center gap-3"
       style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
     >
       {/* Search Bar */}
       <div className="relative flex-1">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
-        <input
+
+        <Input aria-label="Search employees by name or email (e.g. sarah, @acme)..." icon={<Search size={15} />}
           type="text"
           placeholder="Search employees by name or email (e.g. sarah, @acme)..."
           value={searchInput}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full text-xs pl-8 pr-8 py-2 rounded-xl border bg-[var(--bg-surface-2)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)]"
-          style={{ borderColor: 'var(--border-2)' }}
+          className="w-full pl-8 pr-8"
+
         />
         {searchInput && (
-          <button
+          <IconButton aria-label="Close" variant="ghost" type="button"
             onClick={onClearSearch}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2"
           >
             <X size={13} />
-          </button>
+          </IconButton>
         )}
       </div>
 
       {/* Department Filter */}
       <div className="flex items-center gap-1.5">
         <Filter size={13} className="text-[var(--text-tertiary)] shrink-0" />
-        <select
+        <Select aria-label="All Departments" wrapperClassName="w-auto min-w-0"
           value={filters.department_id || ''}
           onChange={(e) => onUpdateFilters({ department_id: e.target.value })}
-          className="text-xs py-2 px-2.5 rounded-xl border bg-[var(--bg-surface-2)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
-          style={{ borderColor: 'var(--border-2)' }}
+
+
         >
           <option value="">All Departments</option>
           <option value="unassigned">Unassigned Only</option>
@@ -64,23 +67,23 @@ export function TeamFilterBar({
               {d.name} {d.members_count !== undefined ? `(${d.members_count})` : ''}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Role Filter */}
       <div>
-        <select
+        <Select aria-label="All Roles" wrapperClassName="w-auto min-w-0"
           value={filters.role || ''}
           onChange={(e) => onUpdateFilters({ role: e.target.value })}
-          className="text-xs py-2 px-2.5 rounded-xl border bg-[var(--bg-surface-2)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
-          style={{ borderColor: 'var(--border-2)' }}
+
+
         >
           <option value="">All Roles</option>
           <option value="employee">EMPLOYEE</option>
           <option value="org_admin">ORG_ADMIN</option>
           <option value="user">USER</option>
-        </select>
+        </Select>
       </div>
-    </div>
+    </FilterBar>
   )
 }

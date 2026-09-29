@@ -1,5 +1,7 @@
 'use client'
 
+import { PageHeader } from '@/components/ui'
+import { Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell } from '@/components/ui'
 import React, { useEffect, useState } from 'react'
 import { apiGet } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
@@ -59,17 +61,12 @@ export default function AuditLogsPage() {
   return (
     <div className="flex-1 space-y-6 w-full animate-fade-in pb-8">
       {/* Header */}
-      <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
+      <PageHeader title={<>
             <ClipboardList className="text-[var(--accent)] size-5 shrink-0" />
             System Audit Logs
-          </h1>
-          <p className="text-sm mt-1 text-[var(--text-secondary)]">
+          </>} description={<>
             Track who logged in/out, check device fingerprints, monitor suspicious actions, and export data for ML model training.
-          </p>
-        </div>
-        <Button
+          </>} actions={<><Button
           variant="primary"
           size="sm"
           onClick={handleExport}
@@ -78,8 +75,7 @@ export default function AuditLogsPage() {
           icon={<Download size={13} />}
         >
           Export CSV
-        </Button>
-      </div>
+        </Button></>} />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -97,44 +93,44 @@ export default function AuditLogsPage() {
       ) : (
         <div className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                  <th className="py-3 px-4">Timestamp</th>
-                  <th className="py-3 px-4">User</th>
-                  <th className="py-3 px-4">Event Type</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Fingerprint Hash</th>
-                  <th className="py-3 px-4 text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-2)] text-[13px]">
+            <Table className="w-full text-left border-collapse">
+              <TableHead>
+                <TableRow className="border-b border-[var(--border-2)] bg-[var(--bg-surface-2)] text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+                  <TableHeaderCell className="py-3 px-4">Timestamp</TableHeaderCell>
+                  <TableHeaderCell className="py-3 px-4">User</TableHeaderCell>
+                  <TableHeaderCell className="py-3 px-4">Event Type</TableHeaderCell>
+                  <TableHeaderCell className="py-3 px-4">Status</TableHeaderCell>
+                  <TableHeaderCell className="py-3 px-4">Fingerprint Hash</TableHeaderCell>
+                  <TableHeaderCell className="py-3 px-4 text-right">Details</TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody className="divide-y divide-[var(--border-2)] text-[13px]">
                 {logs.map(log => {
                   const isExpanded = expandedLogId === log.id
                   return (
                     <React.Fragment key={log.id}>
-                      <tr className="hover:bg-white/5 transition-colors">
-                        <td className="py-3.5 px-4 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+                      <TableRow className="hover:bg-white/5 transition-colors">
+                        <TableCell className="py-3.5 px-4 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                           {new Date(log.createdAt).toLocaleString()}
-                        </td>
-                        <td className="py-3.5 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>
+                        </TableCell>
+                        <TableCell className="py-3.5 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>
                           {log.userName || log.userEmail}
                           {log.userEmail && log.userName && (
                             <span className="block text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{log.userEmail}</span>
                           )}
-                        </td>
-                        <td className="py-3.5 px-4 font-semibold text-[var(--accent-text)] uppercase text-[11px]">
+                        </TableCell>
+                        <TableCell className="py-3.5 px-4 font-semibold text-[var(--accent-text)] uppercase text-[11px]">
                           {log.eventType.replace('_', ' ')}
-                        </td>
-                        <td className="py-3.5 px-4">
+                        </TableCell>
+                        <TableCell className="py-3.5 px-4">
                           <Badge variant={getEventVariant(log.eventType)}>
                             {log.success ? 'Success' : 'Failed'}
                           </Badge>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                        </TableCell>
+                        <TableCell className="py-3.5 px-4 font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                           {log.fingerprintHash ? `${log.fingerprintHash.slice(0, 12)}...` : 'N/A'}
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
+                        </TableCell>
+                        <TableCell className="py-3.5 px-4 text-right">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -143,13 +139,13 @@ export default function AuditLogsPage() {
                           >
                             {isExpanded ? 'Hide' : 'Inspect'}
                           </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
 
                       {/* Expanded state details block */}
                       {isExpanded && (
-                        <tr className="bg-white/[0.02]">
-                          <td colSpan={6} className="py-4 px-6 border-b border-[var(--border-2)]">
+                        <TableRow className="bg-white/[0.02]">
+                          <TableCell colSpan={6} className="py-4 px-6 border-b border-[var(--border-2)]">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                               {/* Left metadata column */}
                               <div className="space-y-2">
@@ -184,7 +180,7 @@ export default function AuditLogsPage() {
                                 <h4 className="font-semibold uppercase tracking-wider text-[10px]" style={{ color: 'var(--text-secondary)' }}>
                                   Event Details & Metadata
                                 </h4>
-                                
+
                                 {log.metadata ? (
                                   <div className="font-mono text-[11px]">
                                     <pre className="bg-gray-100/50 border border-gray-200 text-gray-800 dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-300 p-3 rounded-xl overflow-x-auto max-h-[160px] whitespace-pre-wrap leading-tight">
@@ -196,14 +192,14 @@ export default function AuditLogsPage() {
                                 )}
                               </div>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )}
                     </React.Fragment>
                   )
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}

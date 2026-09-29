@@ -1,5 +1,6 @@
 'use client'
 
+import { Select } from '@/components/ui'
 import React, { useState } from 'react'
 import { FolderInput, UserCog, UserMinus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
@@ -91,35 +92,35 @@ export function TeamBulkActionsBar({
         onDismiss={onClearSelection}
         dismissLabel="Clear selection"
       >
-        <button
+        <Button variant="secondary"
           type="button"
           onClick={() => setDeptModalOpen(true)}
           disabled={executing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-[var(--bg-surface-2)] cursor-pointer"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+
+
         >
           <FolderInput size={12} /> Assign Department
-        </button>
+        </Button>
 
-        <button
+        <Button variant="secondary"
           type="button"
           onClick={() => setRoleModalOpen(true)}
           disabled={executing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-[var(--bg-surface-2)] cursor-pointer"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+
+
         >
           <UserCog size={12} /> Change Role
-        </button>
+        </Button>
 
-        <button
+        <Button variant="secondary"
           type="button"
           onClick={handleBulkDeactivate}
           disabled={executing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-40 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 cursor-pointer"
-          style={{ borderColor: 'var(--border)' }}
+
+
         >
           <UserMinus size={12} /> Deactivate
-        </button>
+        </Button>
       </FloatingActionBar>
 
       {/* Bulk Assign Department Modal */}
@@ -134,11 +135,11 @@ export function TeamBulkActionsBar({
             <p className="text-xs text-[var(--text-secondary)]">
               Select the target department for all {selectedIds.length} selected employees.
             </p>
-            <select
+            <Select aria-label="Unassigned (General Org Pool)"
               value={selectedDeptId}
               onChange={(e) => setSelectedDeptId(e.target.value)}
-              className="w-full text-xs p-2.5 rounded-xl border bg-[var(--bg-surface-2)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
-              style={{ borderColor: 'var(--border)' }}
+              className="w-full"
+
             >
               <option value="unassigned">Unassigned (General Org Pool)</option>
               {departments.map((d) => (
@@ -146,7 +147,7 @@ export function TeamBulkActionsBar({
                   {d.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </ModalBody>
         <ModalFooter>
@@ -173,16 +174,16 @@ export function TeamBulkActionsBar({
             <p className="text-xs text-[var(--text-secondary)]">
               Select the new role to grant across all {selectedIds.length} selected employees.
             </p>
-            <select
+            <Select aria-label="EMPLOYEE (Standard DLP Guard)"
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full text-xs p-2.5 rounded-xl border bg-[var(--bg-surface-2)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
-              style={{ borderColor: 'var(--border)' }}
+              className="w-full"
+
             >
               <option value="employee">EMPLOYEE (Standard DLP Guard)</option>
               <option value="org_admin">ORG_ADMIN (Organization Admin)</option>
               <option value="user">USER (Personal Account)</option>
-            </select>
+            </Select>
           </div>
         </ModalBody>
         <ModalFooter>

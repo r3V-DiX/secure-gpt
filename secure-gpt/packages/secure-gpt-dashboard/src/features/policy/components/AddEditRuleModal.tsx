@@ -1,9 +1,10 @@
 'use client'
 
+import { Input, Select } from '@/components/ui'
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button/button'
 import type { CustomRule } from '@/types'
-import { Toggle } from './PolicyManager'
+import { Switch } from '@/components/ui/input/selection'
 
 export interface AddEditRuleModalProps {
   category: string
@@ -47,9 +48,9 @@ export function AddEditRuleModal({
       <div className="space-y-3">
         <div>
           <label className="text-[11px] font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Rule name</label>
-          <input
+          <Input aria-label="e.g. Employee Badge ID"
             autoFocus
-            className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
+            className="w-full"
             style={inp}
             placeholder="e.g. Employee Badge ID"
             value={label}
@@ -70,9 +71,9 @@ export function AddEditRuleModal({
               Regex Reference
             </a>
           </div>
-          <input
-            className="w-full px-3 py-2 rounded-xl border outline-none text-sm font-mono"
-            style={{ ...inp, borderColor: patternError ? 'var(--danger)' : 'var(--border)' }}
+          <Input aria-label="e.g. EMP-[0-9]{5}"
+            className="w-full font-mono"
+            style={{ borderColor: patternError ? 'var(--danger)' : 'var(--border)' }}
             placeholder="e.g. EMP-[0-9]{5}"
             value={pattern}
             onChange={e => {
@@ -91,8 +92,8 @@ export function AddEditRuleModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-[11px] font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Severity</label>
-            <select
-              className="w-full px-3 py-2 rounded-xl border outline-none text-sm appearance-none"
+            <Select aria-label="Low"
+              className="w-full"
               style={inp}
               value={severity}
               onChange={e => setSeverity(e.target.value as any)}
@@ -101,14 +102,14 @@ export function AddEditRuleModal({
               <option value="medium">Medium</option>
               <option value="high">High</option>
               <option value="critical">Critical</option>
-            </select>
+            </Select>
           </div>
           <div>
             <label className="text-[11px] font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>
               Masking label <span style={{ color: 'var(--text-tertiary)' }}>(optional)</span>
             </label>
-            <input
-              className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
+            <Input aria-label="e.g. EMP_ID"
+              className="w-full"
               style={inp}
               placeholder="e.g. EMP_ID"
               value={maskingLabel}
@@ -118,7 +119,7 @@ export function AddEditRuleModal({
         </div>
 
         <label className="flex items-center gap-2.5 cursor-pointer select-none">
-          <Toggle on={caseSensitive} onChange={setCaseSensitive} />
+          <Switch aria-label="Case sensitive matching" checked={caseSensitive} onCheckedChange={setCaseSensitive} />
           <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Case sensitive</span>
         </label>
       </div>

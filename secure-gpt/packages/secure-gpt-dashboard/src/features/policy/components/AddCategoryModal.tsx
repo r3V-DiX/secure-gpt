@@ -1,5 +1,6 @@
 'use client'
 
+import { Input } from '@/components/ui'
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button/button'
 import { AlertCircle } from 'lucide-react'
@@ -42,11 +43,11 @@ export function AddCategoryModal({
 
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Name</label>
-        <input
+        <Input aria-label="e.g. Medical Records"
           autoFocus
           disabled={!isOrgVerified}
-          className="w-full px-3 py-2.5 rounded-xl border outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          className="w-full"
+
           placeholder="e.g. Medical Records"
           value={name}
           onChange={e => setName(e.target.value)}
@@ -69,16 +70,13 @@ export function AddCategoryModal({
               ALLOW: 'Let it pass, log it silently',
             }
             return (
-              <button
+              <Button variant="secondary"
                 key={a}
                 type="button"
                 onClick={() => setAction(a)}
                 disabled={!isOrgVerified}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                style={{
-                  background: active ? ac.bg : 'var(--bg-surface-2)',
-                  borderColor: active ? ac.border : 'var(--border)',
-                }}
+                className="w-full text-left"
+                style={{ background: active ? ac.bg : 'var(--bg-surface-2)', borderColor: active ? ac.border : 'var(--border)' }}
               >
                 <span className="text-xs font-bold w-12 shrink-0" style={{ color: ac.text }}>
                   {ACTION_LABEL[a]}
@@ -86,7 +84,7 @@ export function AddCategoryModal({
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                   {desc[a]}
                 </span>
-              </button>
+              </Button>
             )
           })}
         </div>

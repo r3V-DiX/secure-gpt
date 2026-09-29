@@ -1,5 +1,6 @@
 'use client'
 
+import { PageHeader } from '@/components/ui'
 import React, { useEffect, useState } from 'react'
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
@@ -181,20 +182,14 @@ export default function RolesPage() {
   return (
     <div className="flex-1 space-y-6 w-full animate-fade-in pb-8">
       {/* Header */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
+      <PageHeader title={<>
             <Shield className="text-[var(--accent)] size-5 shrink-0" />
             Security Roles
-          </h1>
-          <p className="text-sm mt-1 text-[var(--text-secondary)]">
+          </>} description={<>
             Configure Dynamic Security Roles, assign custom granular permissions, and control user scopes.
-          </p>
-        </div>
-        <Button variant="primary" icon={<Plus size={13} />} onClick={openCreateModal}>
+          </>} actions={<><Button variant="primary" icon={<Plus size={13} />} onClick={openCreateModal}>
           New Role
-        </Button>
-      </div>
+        </Button></>} />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">

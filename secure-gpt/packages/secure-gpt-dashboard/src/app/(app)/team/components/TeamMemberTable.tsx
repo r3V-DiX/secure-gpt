@@ -1,5 +1,7 @@
 'use client'
+import { Checkbox } from '@/components/ui/input/selection'
 
+import { Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell } from '@/components/ui'
 import React, { useState, useEffect } from 'react'
 import {
   Users, Plus, Download, Upload,
@@ -156,8 +158,8 @@ export function TeamMemberTable({
         className="border rounded-md overflow-hidden transition-all duration-300 hover:shadow-lg"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
       >
-        <table className="w-full text-left text-[13px]">
-          <thead
+        <Table className="w-full text-left text-[13px]">
+          <TableHead
             className="border-b uppercase font-bold text-[11px] tracking-wider"
             style={{
               borderColor: 'var(--border)',
@@ -165,59 +167,45 @@ export function TeamMemberTable({
               color: 'var(--text-secondary)',
             }}
           >
-            <tr>
-              <th className="w-10 px-4 py-3 text-center">
-                <button
-                  type="button"
-                  onClick={onToggleSelectAll}
-                  disabled={users.length === 0}
-                  className="p-1 rounded hover:bg-[var(--bg-surface-3)] transition-colors text-[var(--text-secondary)] disabled:opacity-30 cursor-pointer"
-                  title="Select all on current page"
-                >
-                  {allSelected ? (
-                    <CheckSquare size={15} className="text-[var(--accent)]" />
-                  ) : someSelected ? (
-                    <MinusSquare size={15} className="text-[var(--accent)]" />
-                  ) : (
-                    <Square size={15} />
-                  )}
-                </button>
-              </th>
-              <th className="px-5 py-3">Employee Name & Email</th>
-              <th className="px-5 py-3">Role</th>
-              <th className="px-5 py-3">Assigned Category / Policy Tier</th>
-              <th className="px-5 py-3">DLP Policy Status</th>
-              <th className="px-5 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            <TableRow>
+              <TableHeaderCell className="w-10 px-4 py-3 text-center">
+                <Checkbox aria-label="Select all on current page" checked={allSelected} onChange={onToggleSelectAll} indeterminate={someSelected} disabled={users.length === 0} />
+              </TableHeaderCell>
+              <TableHeaderCell className="px-5 py-3">Employee Name & Email</TableHeaderCell>
+              <TableHeaderCell className="px-5 py-3">Role</TableHeaderCell>
+              <TableHeaderCell className="px-5 py-3">Assigned Category / Policy Tier</TableHeaderCell>
+              <TableHeaderCell className="px-5 py-3">DLP Policy Status</TableHeaderCell>
+              <TableHeaderCell className="px-5 py-3 text-right">Actions</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody className="divide-y" style={{ borderColor: 'var(--border)' }}>
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="animate-pulse">
-                  <td className="px-4 py-4 text-center">
+                <TableRow key={i} className="animate-pulse">
+                  <TableCell className="px-4 py-4 text-center">
                     <div className="skeleton size-4 rounded mx-auto" />
-                  </td>
-                  <td className="px-5 py-4">
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
                     <div className="skeleton h-3.5 w-48 rounded mb-1.5" />
                     <div className="skeleton h-2.5 w-32 rounded" />
-                  </td>
-                  <td className="px-5 py-4">
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
                     <div className="skeleton h-5 w-24 rounded" />
-                  </td>
-                  <td className="px-5 py-4">
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
                     <div className="skeleton h-5 w-36 rounded" />
-                  </td>
-                  <td className="px-5 py-4">
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
                     <div className="skeleton h-4 w-28 rounded" />
-                  </td>
-                  <td className="px-5 py-4 text-right">
+                  </TableCell>
+                  <TableCell className="px-5 py-4 text-right">
                     <div className="skeleton size-6 rounded ml-auto" />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             ) : users.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-8">
+              <TableRow>
+                <TableCell colSpan={6} className="p-8">
                   <EmptyState
                     icon={Users}
                     title="No Employees Found"
@@ -227,8 +215,8 @@ export function TeamMemberTable({
                         : 'Invite team members or upload a CSV roster to enforce organization-wide DLP policies.'
                     }
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               users.map((u) => (
                 <TeamMemberRow
@@ -244,8 +232,8 @@ export function TeamMemberTable({
                 />
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* ── Server-Side Pagination Footer ──────────────────────────── */}

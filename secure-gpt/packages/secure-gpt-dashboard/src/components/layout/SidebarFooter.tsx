@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React from 'react'
 import Link from 'next/link'
 import { clsx } from 'clsx'
@@ -30,7 +32,7 @@ export function SidebarFooter({
   return (
     <div className="p-2 border-t border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] space-y-1">
       {/* Theme Toggle Button */}
-      <button
+      <Button variant="ghost" type="button"
         onClick={toggleTheme}
         title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         className={clsx(
@@ -46,7 +48,7 @@ export function SidebarFooter({
         {!isCompact && (
           <span className="flex-1 text-left">{theme === 'dark' ? 'Light Theme' : 'Dark Theme'}</span>
         )}
-      </button>
+      </Button>
 
       {/* User profile & Logout */}
       <div className={clsx(
@@ -97,22 +99,22 @@ export function SidebarFooter({
         </Link>
 
         {!isCompact && (
-          <button
+          <IconButton aria-label="Sign out" variant="danger" type="button"
             onClick={handleLogout}
-            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+
             title="Sign out"
           >
             <LogOut size={16} />
-          </button>
+          </IconButton>
         )}
       </div>
 
       {/* Release Version Tag */}
       {!isCompact && (
-        <button
+        <Button variant="secondary"
           type="button"
           onClick={() => setVersionModalOpen(true)}
-          className="w-full px-2 pt-1.5 pb-1 flex items-center justify-between text-[10.5px] text-[var(--sidebar-subtext)] font-mono font-medium border-t border-[var(--sidebar-border)]/50 mt-1 hover:bg-[var(--sidebar-hover-bg)] rounded transition-colors group cursor-pointer"
+          className="w-full font-mono mt-1"
           title="Click to check live system & component versions"
         >
           <span className="flex items-center gap-1 group-hover:text-[var(--sidebar-text-active)]">
@@ -122,7 +124,7 @@ export function SidebarFooter({
           <span className="opacity-75 group-hover:opacity-100 group-hover:text-emerald-400 transition-opacity font-semibold">
             Status ↗
           </span>
-        </button>
+        </Button>
       )}
     </div>
   )

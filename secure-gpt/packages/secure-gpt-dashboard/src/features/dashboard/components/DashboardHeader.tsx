@@ -1,5 +1,6 @@
 'use client'
 
+import { PageHeader } from '@/components/ui'
 import React from 'react'
 import { Clock } from 'lucide-react'
 
@@ -15,19 +16,13 @@ export function DashboardHeader({
   isSuperAdmin,
 }: DashboardHeaderProps) {
   return (
-    <div className="flex items-start justify-between flex-wrap gap-3 pt-1">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight leading-tight text-[var(--text-primary)]">
+    <PageHeader title={<>
           {greeting}, {firstName}
-        </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+        </>} description={<>
           {isSuperAdmin
             ? 'Global Platform Telemetry & Cross-Tenant Security Overview'
             : 'Your data protection summary for the last 30 days'}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2">
+        </>} actions={<><div className="flex items-center gap-2">
         <div
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border"
           style={{
@@ -39,7 +34,6 @@ export function DashboardHeader({
           <Clock size={11} />
           Last 30 days
         </div>
-      </div>
-    </div>
+      </div></>} />
   )
 }

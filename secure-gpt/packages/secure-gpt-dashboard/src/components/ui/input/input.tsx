@@ -1,74 +1,53 @@
-import React from 'react'
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+"use client"
+import React, { useId } from 'react'
+import { cn } from '../button/button'
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export type ControlSize = 'sm' | 'md' | 'lg'
+export const controlClasses = 'w-full rounded-lg border bg-[var(--bg-surface)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] border-[var(--border-2)] hover:border-[var(--border-strong)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[var(--bg-surface-2)] transition-colors'
+const sizes = { sm: 'h-7 px-2.5', md: 'h-8 px-2.5', lg: 'h-9 px-3' }
+interface FieldProps { error?: string; wrapperClassName?: string; controlSize?: ControlSize }
+function describedBy(existing: string | undefined, errorId: string | undefined) {
+  return [existing, errorId].filter(Boolean).join(' ') || undefined
 }
-
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  error?: string
-  icon?: React.ReactNode
-}
-
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, icon, disabled, ...props }, ref) => {
-    return (
-      <div className="relative w-full">
-        {icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] flex items-center justify-center pointer-events-none size-4">
-            {icon}
-          </div>
-        )}
-        <input
-          ref={ref}
-          disabled={disabled}
-          className={cn(
-            'w-full h-8 px-2.5 text-xs rounded-md border transition-all duration-120',
-            'bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]',
-            'border-[var(--border-2)] hover:border-[var(--border-strong)]',
-            'focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]',
-            'disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[var(--bg-surface-2)]',
-            icon && 'pl-8',
-            error && 'border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]',
-            className
-          )}
-          {...props}
-        />
-        {error && <p className="text-xs text-[var(--danger)] mt-1">{error}</p>}
-      </div>
-    )
-  }
-)
-Input.displayName = 'Input'
-
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  error?: string
-}
-
-export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, error, children, disabled, ...props }, ref) => {
-    return (
-      <div className="relative w-full">
-        <select
-          ref={ref}
-          disabled={disabled}
-          className={cn(
-            'w-full h-8 px-2.5 text-xs rounded-md border transition-all duration-120 cursor-pointer',
-            'bg-[var(--bg-surface)] text-[var(--text-primary)]',
-            'border-[var(--border-2)] hover:border-[var(--border-strong)]',
-            'focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]',
-            'disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[var(--bg-surface-2)]',
-            error && 'border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]',
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </select>
-        {error && <p className="text-xs text-[var(--danger)] mt-1">{error}</p>}
-      </div>
-    )
-  }
-)
-Select.displayName = 'Select'
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, FieldProps { icon?: React.ReactNode }
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
+  { className, wrapperClassName, error, icon, controlSize = 'md', ...props }, ref,
+) {
+  const id = useId()
+  const errorId = error ? `${id}-error` : undefined
+  return <div className={cn('relative w-full', wrapperClassName)}>
+    <div className="relative">
+      {icon && <span aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-tertiary)] size-4">{icon}</span>}
+      <input {...props} ref={ref} aria-invalid={error ? true : props['aria-invalid']}
+        aria-describedby={describedBy(props['aria-describedby'], errorId)}
+        className={cn(controlClasses, sizes[controlSize], icon && 'pl-9', error && 'border-[var(--danger)]', className)} />
+    </div>
+    {error && <p id={errorId} className="mt-1 text-xs text-[var(--danger)]">{error}</p>}
+  </div>
+})
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement>, FieldProps {}
+export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function Select(
+  { className, wrapperClassName, error, controlSize = 'md', children, ...props }, ref,
+) {
+  const id = useId()
+  const errorId = error ? `${id}-error` : undefined
+  return <div className={cn('relative w-full', wrapperClassName)}>
+    <select {...props} ref={ref} aria-invalid={error ? true : props['aria-invalid']}
+      aria-describedby={describedBy(props['aria-describedby'], errorId)}
+      className={cn(controlClasses, sizes[controlSize], 'cursor-pointer', error && 'border-[var(--danger)]', className)}>{children}</select>
+    {error && <p id={errorId} className="mt-1 text-xs text-[var(--danger)]">{error}</p>}
+  </div>
+})
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement>, Omit<FieldProps, 'controlSize'> {}
+export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { className, wrapperClassName, error, ...props }, ref,
+) {
+  const id = useId()
+  const errorId = error ? `${id}-error` : undefined
+  return <div className={cn('w-full', wrapperClassName)}>
+    <textarea {...props} ref={ref} aria-invalid={error ? true : props['aria-invalid']}
+      aria-describedby={describedBy(props['aria-describedby'], errorId)}
+      className={cn(controlClasses, 'min-h-24 px-3 py-2', error && 'border-[var(--danger)]', className)} />
+    {error && <p id={errorId} className="mt-1 text-xs text-[var(--danger)]">{error}</p>}
+  </div>
+})

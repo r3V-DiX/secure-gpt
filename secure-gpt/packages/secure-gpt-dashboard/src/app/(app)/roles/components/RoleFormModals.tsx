@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { Input, Textarea } from '@/components/ui'
 import React from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
@@ -71,7 +73,7 @@ export function RoleFormModals({
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                     Role Name
                   </label>
-                  <input
+                  <Input aria-label="e.g. Senior Security Auditor"
                     type="text"
                     required
                     value={roleName}
@@ -80,32 +82,32 @@ export function RoleFormModals({
                       setRoleSlug(autoSlug(e.target.value))
                     }}
                     placeholder="e.g. Senior Security Auditor"
-                    className="w-full px-3.5 py-2 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-white focus:ring-[var(--accent)]"
+                    className="w-full"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                     Slug Identification (Unique)
                   </label>
-                  <input
+                  <Input aria-label="senior_security_auditor"
                     type="text"
                     required
                     value={roleSlug}
                     onChange={e => setRoleSlug(e.target.value)}
                     placeholder="senior_security_auditor"
-                    className="w-full px-3.5 py-2 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-white focus:ring-[var(--accent)] font-mono"
+                    className="w-full font-mono"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                     Description
                   </label>
-                  <textarea
+                  <Textarea aria-label="Provide a description of the scope of this role..."
                     rows={3}
                     value={roleDesc}
                     onChange={e => setRoleDesc(e.target.value)}
                     placeholder="Provide a description of the scope of this role..."
-                    className="w-full px-3.5 py-2 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-white focus:ring-[var(--accent)] resize-none"
+                    className="w-full"
                   />
                 </div>
               </div>
@@ -138,34 +140,34 @@ export function RoleFormModals({
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                     Role Name
                   </label>
-                  <input
+                  <Input aria-label="Role Name"
                     type="text"
                     required
                     value={roleName}
                     onChange={e => setRoleName(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-white focus:ring-[var(--accent)]"
+                    className="w-full"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                     Slug (Read-Only)
                   </label>
-                  <input
+                  <Input aria-label="Slug (Read-Only)"
                     type="text"
                     disabled
                     value={editTarget.slug}
-                    className="w-full px-3.5 py-2 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-3)] text-white/50 cursor-not-allowed font-mono"
+                    className="w-full font-mono"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                     Description
                   </label>
-                  <textarea
+                  <Textarea aria-label="Description"
                     rows={3}
                     value={roleDesc}
                     onChange={e => setRoleDesc(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl text-xs border border-[var(--border-2)] bg-[var(--bg-surface-2)] text-white focus:ring-[var(--accent)] resize-none"
+                    className="w-full"
                   />
                 </div>
                 {!editTarget.isSystem && (
@@ -174,17 +176,17 @@ export function RoleFormModals({
                       <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Active Role Status</p>
                       <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>Inactive roles cannot be assigned to any user</p>
                     </div>
-                    <button
+                    <IconButton aria-label="View details" variant="primary"
                       type="button"
                       onClick={() => setRoleActive(a => !a)}
-                      className="relative w-10 h-5 rounded-full transition-all duration-200 shrink-0 cursor-pointer"
+                      className="relative w-10 shrink-0"
                       style={{ background: roleActive ? 'var(--accent)' : 'var(--bg-surface-3)' }}
                     >
                       <span
                         className="absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform duration-200"
                         style={{ transform: roleActive ? 'translateX(20px)' : 'translateX(0)' }}
                       />
-                    </button>
+                    </IconButton>
                   </div>
                 )}
               </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { Card } from '@/components/ui'
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import type { PolicyPresetKey } from '@/features/onboarding/config/org-onboarding.data'
@@ -73,7 +74,7 @@ export function OnboardingContent({
   onFinish,
 }: OnboardingContentProps) {
   return (
-    <div className="card p-6 md:p-8 animate-fade-in">
+    <Card className="p-6 md:p-8 animate-fade-in">
       {currentStepIndex === 0 && (
         <OrgProfileStep
           orgName={orgName}
@@ -124,6 +125,6 @@ export function OnboardingContent({
           onFinish={onFinish}
         />
       )}
-    </div>
+    </Card>
   )
 }

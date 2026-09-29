@@ -1,5 +1,9 @@
 'use client'
 
+import { PageHeader } from '@/components/ui'
+import { Card } from '@/components/ui'
+import { IconButton } from '@/components/ui'
+import { Button, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell } from '@/components/ui'
 import React, { useState, useEffect, useMemo } from 'react'
 import {
   Building2, Plus, ShieldAlert, RefreshCw
@@ -178,43 +182,33 @@ export default function AdminOrganizationsPage() {
   return (
     <div className="w-full flex-1 space-y-6 animate-fade-in pb-16">
       {/* ── Page Header ────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
+      <PageHeader title={<>
             <Building2 className="text-[var(--accent)] size-5 shrink-0" />
             Enterprise Organizations
-          </h1>
-          <p className="text-[12px] text-[var(--text-secondary)]">
+          </>} description={<>
             Manage enterprise tenants, manual domain verification overrides, and cross-tenant telemetry.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
+          </>} actions={<><div className="flex items-center gap-2.5">
+          <IconButton aria-label="Refresh organizations list" variant="secondary"
             type="button"
             onClick={fetchOrgs}
             disabled={loading}
-            className="p-2 rounded-xl border text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border)',
-            }}
+
+
             title="Refresh organizations list"
           >
             <RefreshCw size={15} className={clsx(loading && 'animate-spin')} />
-          </button>
+          </IconButton>
 
-          <button
+          <Button variant="primary"
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 cursor-pointer shadow-sm"
-            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+
+
           >
             <Plus size={15} />
             <span>New Organization</span>
-          </button>
-        </div>
-      </div>
+          </Button>
+        </div></>} />
 
       {/* ── Filters & Search ────────────────────────────────────── */}
       <OrgFilterBar
@@ -225,10 +219,10 @@ export default function AdminOrganizationsPage() {
       />
 
       {/* ── Organizations Table ─────────────────────────────────── */}
-      <div className="card overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead
+          <Table className="w-full text-left text-xs">
+            <TableHead
               className="text-[10px] font-bold uppercase tracking-wider border-b"
               style={{
                 background: 'var(--bg-surface-2)',
@@ -236,32 +230,32 @@ export default function AdminOrganizationsPage() {
                 color: 'var(--text-tertiary)',
               }}
             >
-              <tr>
-                <th className="px-5 py-3.5">Organization / Domain</th>
-                <th className="px-4 py-3.5">Admin Contact</th>
-                <th className="px-4 py-3.5">Status</th>
-                <th className="px-4 py-3.5">Domain Verification</th>
-                <th className="px-4 py-3.5 text-center">Users</th>
-                <th className="px-4 py-3.5 text-center">Depts</th>
-                <th className="px-5 py-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)]">
+              <TableRow>
+                <TableHeaderCell className="px-5 py-3.5">Organization / Domain</TableHeaderCell>
+                <TableHeaderCell className="px-4 py-3.5">Admin Contact</TableHeaderCell>
+                <TableHeaderCell className="px-4 py-3.5">Status</TableHeaderCell>
+                <TableHeaderCell className="px-4 py-3.5">Domain Verification</TableHeaderCell>
+                <TableHeaderCell className="px-4 py-3.5 text-center">Users</TableHeaderCell>
+                <TableHeaderCell className="px-4 py-3.5 text-center">Depts</TableHeaderCell>
+                <TableHeaderCell className="px-5 py-3.5 text-right">Actions</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody className="divide-y divide-[var(--border)]">
               {loading && orgs.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-[var(--text-muted)]">
+                <TableRow>
+                  <TableCell colSpan={7} className="px-5 py-10 text-center text-[var(--text-muted)]">
                     <RefreshCw className="size-6 animate-spin mx-auto mb-2 text-[var(--accent)]" />
                     <span>Loading organizations...</span>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : filteredOrgs.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-[var(--text-muted)]">
+                <TableRow>
+                  <TableCell colSpan={7} className="px-5 py-12 text-center text-[var(--text-muted)]">
                     <Building2 className="size-8 mx-auto mb-2 opacity-40" />
                     <p className="font-semibold text-[14px]">No organizations found</p>
                     <p className="text-[12px] mt-0.5">Try adjusting your search query or status filter.</p>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredOrgs.map((org) => (
                   <OrgTableRow
@@ -274,10 +268,10 @@ export default function AdminOrganizationsPage() {
                   />
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
-      </div>
+      </Card>
 
       {/* ── New Organization Modal ───────────────────────────────── */}
       <CreateOrgModal

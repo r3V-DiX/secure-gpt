@@ -1,5 +1,6 @@
 'use client'
 // src/contexts/theme-context.tsx
+import { Button } from '@/components/ui'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { Sun, Moon } from 'lucide-react'
 
@@ -49,7 +50,7 @@ export function useTheme() {
 export function ThemeToggleButton({ className = '' }: { className?: string }) {
   const { theme, toggleTheme } = useTheme()
   return (
-    <button
+    <Button variant="ghost" type="button"
       onClick={toggleTheme}
       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       className={`
@@ -75,6 +76,6 @@ export function ThemeToggleButton({ className = '' }: { className?: string }) {
         />
       </span>
       <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-    </button>
+    </Button>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { Input, Button } from '@/components/ui'
 import React from 'react'
 import { Building2, ArrowRight, RefreshCw } from 'lucide-react'
 
@@ -45,16 +46,13 @@ export function OrgProfileStep({
           <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
             Company / Organization Name <span className="text-[var(--danger)]">*</span>
           </label>
-          <input
+          <Input aria-label="e.g. Acme Corporation"
             type="text"
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
             placeholder="e.g. Acme Corporation"
-            className="w-full px-3.5 py-2.5 rounded-xl border text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)]"
-            style={{
-              background: 'var(--bg-base)',
-              borderColor: 'var(--border)',
-            }}
+            className="w-full"
+
             required
           />
         </div>
@@ -67,17 +65,14 @@ export function OrgProfileStep({
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[var(--text-tertiary)]">
               https://
             </span>
-            <input
+            <Input aria-label="acmecorp.com"
               type="text"
               value={orgDomain}
               onChange={(e) => setOrgDomain(e.target.value.toLowerCase().replace(/https?:\/\//, ''))}
               placeholder="acmecorp.com"
               disabled={isExistingOrg}
-              className="w-full pl-20 pr-3.5 py-2.5 rounded-xl border text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] disabled:opacity-60"
-              style={{
-                background: 'var(--bg-base)',
-                borderColor: 'var(--border)',
-              }}
+              className="w-full pl-20 pr-3.5"
+
               required
             />
           </div>
@@ -90,17 +85,14 @@ export function OrgProfileStep({
           <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
             Admin Contact Email <span className="text-[var(--danger)]">*</span>
           </label>
-          <input
+          <Input aria-label="security@acmecorp.com"
             type="email"
             value={adminEmail}
             onChange={(e) => setAdminEmail(e.target.value)}
             placeholder="security@acmecorp.com"
             disabled={isExistingOrg}
-            className="w-full px-3.5 py-2.5 rounded-xl border text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] disabled:opacity-60"
-            style={{
-              background: 'var(--bg-base)',
-              borderColor: 'var(--border)',
-            }}
+            className="w-full"
+
             required
           />
         </div>
@@ -110,16 +102,16 @@ export function OrgProfileStep({
         <span className="text-xs text-[var(--text-tertiary)]">
           Next: DNS TXT domain challenge
         </span>
-        <button
+        <Button variant="primary"
           type="submit"
           disabled={submitting}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 disabled:opacity-50 cursor-pointer"
-          style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+
+
         >
           {submitting ? <RefreshCw className="size-3.5 animate-spin" /> : null}
           <span>Save & Continue</span>
           <ArrowRight size={14} />
-        </button>
+        </Button>
       </div>
     </form>
   )

@@ -1,5 +1,8 @@
 'use client'
 
+import { FilterBar } from '@/components/ui'
+import { IconButton } from '@/components/ui'
+import { Input, Button, Select } from '@/components/ui'
 import React from 'react'
 import { Search, X, Filter } from 'lucide-react'
 import type { Role } from '@/types'
@@ -26,24 +29,24 @@ export function UserFilterToolbar({
   onResetPage,
 }: UserFilterToolbarProps) {
   return (
-    <div className="p-3.5 rounded-md border border-[var(--border-2)] bg-[var(--bg-surface)] flex flex-col md:flex-row items-center gap-3">
+    <FilterBar className="p-3.5 rounded-md border border-[var(--border-2)] bg-[var(--bg-surface)] flex flex-col md:flex-row items-center gap-3">
       {/* Search input */}
       <div className="relative flex-1 w-full">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[var(--text-tertiary)]" />
-        <input
+
+        <Input aria-label="Search by name, email, or org..." icon={<Search size={15} />}
           type="text"
           placeholder="Search by name, email, or org..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--bg-surface-2)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-all"
+          className="w-full pl-9 pr-8"
         />
         {search && (
-          <button
+          <IconButton aria-label="Close" variant="ghost" type="button"
             onClick={() => setSearch('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2"
           >
             <X size={14} />
-          </button>
+          </IconButton>
         )}
       </div>
 
@@ -53,13 +56,13 @@ export function UserFilterToolbar({
           <Filter size={12} />
           <span>Role:</span>
         </div>
-        <select
+        <Select aria-label="All Roles" wrapperClassName="w-auto min-w-0"
           value={roleFilter}
           onChange={(e) => {
             setRoleFilter(e.target.value)
             onResetPage()
           }}
-          className="px-2.5 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--bg-surface-2)] text-[var(--text-primary)] outline-none cursor-pointer focus:border-[var(--accent)]"
+
         >
           <option value="">All Roles</option>
           {roles.map((r) => (
@@ -67,25 +70,25 @@ export function UserFilterToolbar({
               {r.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Status Filter */}
       <div className="flex items-center gap-2 w-full md:w-auto">
         <span className="text-[11px] text-[var(--text-tertiary)] whitespace-nowrap font-medium">Status:</span>
-        <select
+        <Select aria-label="All Statuses" wrapperClassName="w-auto min-w-0"
           value={statusFilter}
           onChange={(e) => {
             setStatusFilter(e.target.value as 'all' | 'active' | 'suspended')
             onResetPage()
           }}
-          className="px-2.5 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--bg-surface-2)] text-[var(--text-primary)] outline-none cursor-pointer focus:border-[var(--accent)]"
+
         >
           <option value="all">All Statuses</option>
           <option value="active">Active Only</option>
           <option value="suspended">Suspended Only</option>
-        </select>
+        </Select>
       </div>
-    </div>
+    </FilterBar>
   )
 }

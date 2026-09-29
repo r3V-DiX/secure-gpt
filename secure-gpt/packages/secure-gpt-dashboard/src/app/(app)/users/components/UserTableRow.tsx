@@ -1,5 +1,6 @@
 'use client'
 
+import { TableRow, TableCell, Checkbox } from '@/components/ui'
 import React from 'react'
 import { Avatar } from '@/components/shared/Avatar'
 import { Badge } from '@/components/ui/badge/badge'
@@ -29,18 +30,18 @@ export function UserTableRow({
   onDeleteUser,
 }: UserTableRowProps) {
   return (
-    <tr
+    <TableRow
       className={`transition-colors ${isSelected ? 'bg-[var(--accent-light)]/40' : 'hover:bg-white/5'}`}
     >
-      <td className="py-3.5 px-4 text-center">
-        <input
-          type="checkbox"
+      <TableCell className="py-3.5 px-4 text-center">
+        <Checkbox aria-label="Select item"
+
           checked={isSelected}
           onChange={() => onToggleSelect(user.id)}
-          className="rounded border-[var(--border-2)] bg-[var(--bg-surface)] text-[var(--accent)] focus:ring-[var(--accent)] size-4 cursor-pointer"
+
         />
-      </td>
-      <td className="py-3.5 px-4 flex items-center gap-3">
+      </TableCell>
+      <TableCell className="py-3.5 px-4 flex items-center gap-3">
         <Avatar src={user.avatarUrl} name={user.fullName} email={user.email} size="md" />
         <div className="flex flex-col min-w-0">
           <span className="font-semibold truncate text-[var(--text-primary)]">
@@ -55,15 +56,15 @@ export function UserTableRow({
             )}
           </div>
         </div>
-      </td>
-      <td className="py-3.5 px-4">
+      </TableCell>
+      <TableCell className="py-3.5 px-4">
         {user.isActive ? (
           <Badge variant="success" dot>Active</Badge>
         ) : (
           <Badge variant="danger" dot>Suspended</Badge>
         )}
-      </td>
-      <td className="py-3.5 px-4">
+      </TableCell>
+      <TableCell className="py-3.5 px-4">
         <div className="flex flex-wrap gap-1.5 max-w-[320px]">
           {user.roles && user.roles.length > 0 ? (
             user.roles.map((r) => {
@@ -83,8 +84,8 @@ export function UserTableRow({
             <span className="italic text-[11px] text-[var(--text-tertiary)] opacity-70">No roles assigned</span>
           )}
         </div>
-      </td>
-      <td className="py-3.5 px-4 text-right">
+      </TableCell>
+      <TableCell className="py-3.5 px-4 text-right">
         <div className="inline-flex items-center gap-2">
           <Button
             variant="secondary"
@@ -120,7 +121,7 @@ export function UserTableRow({
             Delete
           </Button>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }

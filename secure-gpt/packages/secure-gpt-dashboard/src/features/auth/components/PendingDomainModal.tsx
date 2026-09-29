@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
-import { Building2, AlertTriangle, ArrowRight, UserCheck, Clock } from 'lucide-react'
+import React, { useId } from 'react'
+import { AlertTriangle, ArrowRight, UserCheck, Clock } from 'lucide-react'
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from '@/components/ui'
 
 interface PendingDomainModalProps {
   orgName: string
@@ -18,74 +19,45 @@ export function PendingDomainModal({
   onCancel,
   loading,
 }: PendingDomainModalProps) {
+  const id = useId()
+  const close = () => { if (!loading) onCancel() }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div
-        className="w-full max-w-md rounded-lg border p-6 shadow-2xl relative animate-scale-in"
-        style={{
-          background: 'var(--bg-surface)',
-          borderColor: 'var(--border-2)',
-        }}
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="size-10 rounded-xl flex items-center justify-center bg-amber-500/15 text-amber-500 border border-amber-500/30 shrink-0">
-            <AlertTriangle size={20} />
-          </div>
+    <Modal open onClose={close} closeOnBackdrop={!loading} closeOnEscape={!loading}
+      aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}>
+      <ModalHeader>
+        <div className="flex items-center gap-3">
+          <AlertTriangle size={20} className="shrink-0 text-[var(--warning)]" aria-hidden="true" />
           <div>
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">
+            <h2 id={`${id}-title`} className="text-base font-bold text-[var(--text-primary)]">
               Domain Verification Pending
-            </h3>
+            </h2>
             <p className="text-xs text-[var(--text-secondary)]">
               Organization: <strong className="text-[var(--text-primary)]">{orgName}</strong> ({domain})
             </p>
           </div>
         </div>
-
-        <div
-          className="p-3.5 rounded-xl border text-xs leading-relaxed mb-5"
-          style={{
-            background: 'var(--bg-surface-2)',
-            borderColor: 'var(--border)',
-            color: 'var(--text-secondary)',
-          }}
-        >
+      </ModalHeader>
+      <ModalBody>
+        <div id={`${id}-description`} className="space-y-2 text-sm leading-relaxed text-[var(--text-secondary)]">
           <p>
             Your organization administrator has registered <strong>{domain}</strong>, but domain ownership DNS verification is still in progress.
           </p>
-          <p className="mt-2 text-[var(--text-primary)] font-medium">
+          <p className="text-[var(--text-primary)]">
             You can create a <strong>Personal Account</strong> today. Once your administrator completes DNS verification, your account will be automatically migrated to an employee account.
           </p>
         </div>
-
-        <div className="space-y-2.5">
-          <button
-            type="button"
-            onClick={onContinuePersonal}
-            disabled={loading}
-            className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white transition-all hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer shadow-md"
-            style={{ background: 'var(--accent)' }}
-          >
-            <UserCheck size={14} />
-            <span>{loading ? 'Setting up account…' : 'Continue with Personal Account'}</span>
-            <ArrowRight size={13} />
-          </button>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold border transition-all hover:bg-[var(--bg-surface-2)] flex items-center justify-center gap-1.5 cursor-pointer"
-            style={{
-              background: 'transparent',
-              borderColor: 'var(--border)',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            <Clock size={13} />
-            <span>Wait for Org Administrator</span>
-          </button>
-        </div>
-      </div>
-    </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button type="button" variant="secondary" size="lg" fullWidth onClick={close}
+          disabled={loading} icon={<Clock size={14} />}>
+          Wait for Org Administrator
+        </Button>
+        <Button type="button" size="lg" fullWidth onClick={onContinuePersonal}
+          loading={loading} icon={<UserCheck size={14} />}>
+          {loading ? 'Setting up account…' : 'Continue with Personal Account'}
+          <ArrowRight size={13} aria-hidden="true" />
+        </Button>
+      </ModalFooter>
+    </Modal>
   )
 }

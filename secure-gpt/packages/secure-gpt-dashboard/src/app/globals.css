@@ -300,7 +300,7 @@ body {
 .card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 16px;
   box-shadow: none;
   transition: border-color 0.15s ease;
 }
@@ -347,7 +347,7 @@ input, select, textarea {
   color: var(--text-primary);
   background: var(--bg-surface);
   border: 1px solid var(--border-2);
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   transition: border-color 0.12s, box-shadow 0.12s;
 }

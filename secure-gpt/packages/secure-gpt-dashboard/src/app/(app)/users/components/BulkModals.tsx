@@ -1,5 +1,6 @@
 'use client'
 
+import { Input, Checkbox } from '@/components/ui'
 import React from 'react'
 import { Button } from '@/components/ui/button/button'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal/modal'
@@ -50,12 +51,12 @@ export function BulkModals({
               </p>
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-[var(--text-secondary)]">Organization ID</label>
-                <input
+                <Input aria-label="e.g. rivedix"
                   type="text"
                   placeholder="e.g. rivedix"
                   value={targetOrg}
                   onChange={(e) => setTargetOrg(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-surface-2)] text-[var(--text-primary)] text-sm outline-none focus:border-white/20"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -90,11 +91,11 @@ export function BulkModals({
                     key={role.id}
                     className="flex items-start gap-3 p-3 rounded-xl border border-[var(--border-2)] bg-[var(--bg-surface-2)] cursor-pointer hover:border-white/20 transition-all select-none"
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox aria-label="Select item"
+
                       checked={selectedRoleSlugs.includes(role.slug)}
                       onChange={() => handleToggleRoleSlug(role.slug)}
-                      className="mt-1 rounded border-[var(--border-2)] bg-[var(--bg-surface)] text-[var(--accent)] focus:ring-[var(--accent)] size-4 shrink-0"
+                      className="mt-1 shrink-0"
                     />
                     <div className="flex flex-col min-w-0">
                       <span className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">

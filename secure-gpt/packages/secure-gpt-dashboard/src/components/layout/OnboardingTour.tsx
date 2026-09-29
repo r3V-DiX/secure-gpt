@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import { useState, useEffect, useMemo } from 'react'
 import { Joyride, STATUS, TooltipRenderProps } from 'react-joyride'
 import { CheckCircle2, ChevronRight, X, Compass, ArrowRight } from 'lucide-react'
@@ -35,14 +37,14 @@ function CustomTooltip({
             {index === 0 ? 'Welcome to SecureGPT' : 'Platform Walkthrough'}
           </h3>
         </div>
-        <button
+        <IconButton variant="danger" type="button"
           {...closeProps}
-          className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer"
+
           aria-label="Close Tour"
           title="Exit Tour"
         >
           <X size={15} />
-        </button>
+        </IconButton>
       </div>
 
       <div className="p-5 text-xs text-[var(--text-secondary)] leading-relaxed">
@@ -50,30 +52,30 @@ function CustomTooltip({
       </div>
 
       <div className="flex items-center justify-between bg-[var(--bg-surface-2)] border-t border-[var(--border)] px-4 py-3">
-        <button
+        <Button variant="ghost" type="button"
           {...skipProps}
-          className="text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+
         >
           Exit Tour
-        </button>
+        </Button>
 
         <div className="flex items-center gap-2">
           {index > 0 && (
-            <button
+            <Button variant="secondary" type="button"
               {...backProps}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-3)] transition-colors cursor-pointer"
+
             >
               Back
-            </button>
+            </Button>
           )}
-          <button
+          <Button variant="primary" type="button"
             {...primaryProps}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm transition-transform hover:scale-105 cursor-pointer"
+
             style={{ background: isLastStep ? 'var(--success)' : 'var(--accent)' }}
           >
             <span>{isLastStep ? 'Complete' : 'Next'}</span>
             {isLastStep ? <CheckCircle2 size={13} /> : <ChevronRight size={13} />}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -183,33 +185,33 @@ export function OnboardingTour() {
               </p>
 
               <div className="flex items-center gap-2 mt-3">
-                <button
+                <Button variant="primary"
                   type="button"
                   onClick={handleAcceptPrompt}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all hover:brightness-110 flex items-center gap-1 cursor-pointer"
-                  style={{ background: 'var(--accent)' }}
+
+
                 >
                   <span>Start Tour</span>
                   <ArrowRight size={12} />
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost"
                   type="button"
                   onClick={handleDismissPrompt}
-                  className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+
                 >
                   No thanks
-                </button>
+                </Button>
               </div>
             </div>
 
-            <button
+            <IconButton aria-label="Dismiss" variant="ghost"
               type="button"
               onClick={handleDismissPrompt}
-              className="absolute top-3 right-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-lg transition-colors cursor-pointer"
+              className="absolute top-3 right-3"
               title="Dismiss"
             >
               <X size={14} />
-            </button>
+            </IconButton>
           </div>
         </div>
       )}

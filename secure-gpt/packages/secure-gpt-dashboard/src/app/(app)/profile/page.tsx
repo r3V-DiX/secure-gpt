@@ -1,5 +1,9 @@
 'use client'
 // src/app/(app)/profile/page.tsx
+import { PageHeader } from '@/components/ui'
+import { Badge } from '@/components/ui'
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import { useState } from 'react'
 import { Monitor, Cpu, Globe, Calendar, Clock, Hash, Trash2 } from 'lucide-react'
 import { useProfile } from '@/features/profile/hooks/use-profile'
@@ -42,20 +46,11 @@ export default function ProfilePage() {
     if (!user) return null
 
     return (
-        <div className="w-full space-y-5 animate-fade-in pb-8">
-
-            {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+        <PageHeader title={<>
                     Profile
-                </h1>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                </>} description={<>
                     Your account information and registered devices
-                </p>
-            </div>
-
-            {/* User card */}
-            <div className="rounded-md border p-6 flex items-center gap-5"
+                </>} actions={<><div className="rounded-md border p-6 flex items-center gap-5"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
                 <Avatar src={user.avatarUrl} name={user.fullName} email={user.email} size="lg" />
                 <div className="min-w-0 flex-1">
@@ -66,28 +61,22 @@ export default function ProfilePage() {
                         {user.email}
                     </p>
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold border"
-                            style={{
-                                background: 'var(--accent-light)',
-                                borderColor: 'var(--accent-border)',
-                                color: 'var(--accent-text)',
-                            }}>
+                        <Badge variant="info"
+                            >
                             {user.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                        </span>
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold border"
+                        </Badge>
+                        <Badge variant="success"
                             style={{
                                 background: user.isActive ? 'var(--success-light)' : 'var(--danger-light)',
                                 borderColor: user.isActive ? 'var(--success-border)' : 'var(--danger-border)',
                                 color: user.isActive ? 'var(--success)' : 'var(--danger)',
                             }}>
                             {user.isActive ? '● Active' : '● Inactive'}
-                        </span>
+                        </Badge>
                     </div>
                 </div>
             </div>
-
-            {/* Account details */}
-            <div className="rounded-md border overflow-hidden"
+<div className="rounded-md border overflow-hidden"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
                 <div className="px-5 py-3 border-b" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}>
                     <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
@@ -115,19 +104,17 @@ export default function ProfilePage() {
                     ))}
                 </div>
             </div>
-
-            {/* Devices */}
-            <div className="rounded-md border overflow-hidden"
+<div className="rounded-md border overflow-hidden"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', boxShadow: 'var(--shadow-card)' }}>
                 <div className="px-5 py-3 border-b flex items-center justify-between"
                     style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}>
                     <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
                         Registered Devices
                     </p>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
-                        style={{ background: 'var(--accent-light)', borderColor: 'var(--accent-border)', color: 'var(--accent-text)' }}>
+                    <Badge variant="info"
+                        >
                         {devices.length}
-                    </span>
+                    </Badge>
                 </div>
 
                 {devices.length === 0 ? (
@@ -182,7 +169,7 @@ export default function ProfilePage() {
                                             {d.isActive ? '● Active' : '○ Inactive'}
                                         </span>
                                     </div>
-                                    <button
+                                    <IconButton aria-label="Remove device" variant="danger"
                                         type="button"
                                         onClick={async () => {
                                             const confirmed = await confirmDanger({
@@ -195,21 +182,19 @@ export default function ProfilePage() {
                                                 toast.success('Device removed')
                                             }
                                         }}
-                                        className="p-1.5 rounded-lg border hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-slate-400 hover:text-red-600 cursor-pointer"
-                                        style={{ borderColor: 'var(--border-2)' }}
+
+
                                         title="Remove device"
                                     >
                                         <Trash2 size={14} />
-                                    </button>
+                                    </IconButton>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
-
-            {/* Danger Zone */}
-            <div className="rounded-md border overflow-hidden mt-6"
+<div className="rounded-md border overflow-hidden mt-6"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--danger-border)', boxShadow: 'var(--shadow-card)' }}>
                 <div className="px-5 py-3 border-b animate-fade-in" style={{ borderColor: 'var(--danger-border)', background: 'var(--danger-light)' }}>
                     <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--danger)' }}>
@@ -220,26 +205,24 @@ export default function ProfilePage() {
                     <div>
                         <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Delete Account</h3>
                         <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                            Permanently delete your account and all associated data. 
-                            <strong> Note:</strong> Under compliance guidelines, your account data will be retained for 3 years, 
+                            Permanently delete your account and all associated data.
+                            <strong> Note:</strong> Under compliance guidelines, your account data will be retained for 3 years,
                             and security logs will be permanently deleted after 30 days. This action cannot be undone.
                         </p>
                     </div>
                     <div>
-                        <button
+                        <Button variant="danger"
                             onClick={() => setShowDeleteConfirm(true)}
                             type="button"
-                            className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all cursor-pointer hover:opacity-90"
-                            style={{ background: 'var(--danger)' }}
+
+
                         >
                             Delete Account
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
-
-            {/* Delete Confirmation Modal */}
-            <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} size="md">
+<Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} size="md">
                 <div className="p-6 space-y-5">
                     <div className="space-y-2">
                         <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Are you absolutely sure?</h3>
@@ -259,26 +242,25 @@ export default function ProfilePage() {
                         </div>
                     </div>
                     <div className="flex items-center justify-end gap-3">
-                        <button
+                        <Button variant="secondary"
                             onClick={() => setShowDeleteConfirm(false)}
                             type="button"
-                            className="px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer"
-                            style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
+
+
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button variant="danger"
                             onClick={handleDeleteAccount}
                             disabled={deleting}
                             type="button"
-                            className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-50 cursor-pointer hover:opacity-90"
-                            style={{ background: 'var(--danger)' }}
+
+
                         >
                             {deleting ? 'Deleting...' : 'Yes, Delete Account'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
-            </Modal>
-        </div>
+            </Modal></>} />
     )
 }

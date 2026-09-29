@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 import { useState } from 'react'
 import { Building2, Globe, Check, Copy, CheckCircle2 } from 'lucide-react'
 import { apiPost } from '@/lib/api/client'
@@ -99,28 +100,24 @@ export function OrgVerificationCard({ currentOrg, user, onVerified }: OrgVerific
               <code className="text-xs font-mono font-bold select-all px-1" style={{ color: 'var(--text-primary)' }}>
                 {dnsToken}
               </code>
-              <button
+              <Button variant="secondary"
                 type="button"
                 onClick={() => handleCopy(dnsToken)}
-                className="px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 cursor-pointer"
-                style={{
-                  background: 'var(--bg-surface)',
-                  borderColor: 'var(--border-2)',
-                  color: 'var(--text-secondary)',
-                }}
+
+
                 title="Copy token to clipboard"
               >
                 {copiedToken ? <Check size={12} style={{ color: 'var(--success)' }} /> : <Copy size={12} />}
                 <span>{copiedToken ? 'Copied' : 'Copy'}</span>
-              </button>
+              </Button>
 
               {orgStatus !== 'ACTIVE' && (
-                <button
+                <Button variant="primary"
                   type="button"
                   disabled={verifyingDns}
                   onClick={handleVerifyDns}
-                  className="px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 text-white"
-                  style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+
+
                 >
                   {verifyingDns ? (
                     <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -128,7 +125,7 @@ export function OrgVerificationCard({ currentOrg, user, onVerified }: OrgVerific
                     <CheckCircle2 size={12} />
                   )}
                   <span>{verifyingDns ? 'Checking DNS…' : 'Verify Domain'}</span>
-                </button>
+                </Button>
               )}
             </div>
             <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>

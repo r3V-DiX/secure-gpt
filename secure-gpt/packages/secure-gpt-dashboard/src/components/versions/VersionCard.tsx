@@ -1,4 +1,5 @@
 // packages/secure-gpt-dashboard/src/components/versions/VersionCard.tsx
+import { Badge } from '@/components/ui'
 import React from 'react'
 import { Clock, GitCommit, Sparkles, RefreshCw, Zap, Wrench, CheckCircle2 } from 'lucide-react'
 import { VersionItem } from '@/config/versions.data'
@@ -26,16 +27,12 @@ export function VersionCard({ item }: { item: VersionItem }) {
             <span className="text-3xl font-bold font-mono tracking-tight" style={{ color: 'var(--text-primary)' }}>
               v{item.version}
             </span>
-            <span
-              className="text-xs font-semibold px-2.5 py-1 rounded-full border"
-              style={{
-                background: 'var(--accent-light)',
-                borderColor: 'var(--accent-border)',
-                color: 'var(--accent-text)',
-              }}
+            <Badge variant="info"
+
+
             >
               {item.tag}
-            </span>
+            </Badge>
             <span
               className="text-xs font-medium px-2.5 py-1 rounded-md border font-mono"
               style={{

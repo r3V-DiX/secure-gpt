@@ -1,7 +1,8 @@
-import React, { type ReactNode } from 'react'
+import React, { isValidElement, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
 export interface EmptyStateProps {
+  compact?: boolean
   icon?: LucideIcon | ReactNode
   title: string
   description?: string
@@ -10,6 +11,7 @@ export interface EmptyStateProps {
 }
 
 export function EmptyState({
+  compact = false,
   icon: IconOrNode,
   title,
   description,
@@ -20,9 +22,9 @@ export function EmptyState({
 
   return (
     <div
-      className={`flex flex-col items-center justify-center text-center p-8 rounded-md border border-dashed ${className}`}
+      className={`flex flex-col items-center justify-center text-center rounded-2xl ${compact ? 'py-6 gap-2' : 'p-8 border border-dashed'} ${className}`}
       style={{
-        background: 'var(--bg-surface-2)',
+        background: compact ? 'transparent' : 'var(--bg-surface-2)',
         borderColor: 'var(--border-2)',
       }}
     >
@@ -35,7 +37,7 @@ export function EmptyState({
             color: 'var(--text-tertiary)',
           }}
         >
-          {isLucideIcon ? React.createElement(IconOrNode as any, { size: 22 }) : IconOrNode}
+          {isValidElement(IconOrNode) ? IconOrNode : isLucideIcon ? React.createElement(IconOrNode as LucideIcon, { size: 22 }) : IconOrNode}
         </div>
       )}
 

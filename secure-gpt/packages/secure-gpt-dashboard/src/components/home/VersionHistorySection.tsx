@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React, { useState } from 'react'
 import {
   ShieldCheck,
@@ -70,7 +72,7 @@ export function VersionHistorySection() {
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key
             return (
-              <button
+              <Button variant="primary" type="button"
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-3 px-5 py-3 rounded-xl border text-sm font-semibold transition-all duration-200 cursor-pointer ${
@@ -78,26 +80,22 @@ export function VersionHistorySection() {
                     ? 'shadow-md scale-[1.02]'
                     : 'hover:border-slate-400 dark:hover:border-slate-600'
                 }`}
-                style={{
-                  background: isActive ? 'var(--accent)' : 'var(--bg-surface-2)',
-                  borderColor: isActive ? 'var(--accent)' : 'var(--border)',
-                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                }}
+                style={{ background: isActive ? 'var(--accent)' : 'var(--bg-surface-2)', borderColor: isActive ? 'var(--accent)' : 'var(--border)', color: isActive ? '#ffffff' : 'var(--text-secondary)' }}
               >
                 <span className={isActive ? 'text-white' : 'text-[var(--accent)]'}>
                   {tab.icon}
                 </span>
                 <span>{tab.label}</span>
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full font-mono font-medium"
+                <Badge variant="neutral"
+                  className="font-mono"
                   style={{
                     background: isActive ? 'rgba(255, 255, 255, 0.2)' : 'var(--bg-surface-3)',
                     color: isActive ? '#ffffff' : 'var(--text-tertiary)',
                   }}
                 >
                   {tab.badge}
-                </span>
-              </button>
+                </Badge>
+              </Button>
             )
           })}
         </div>

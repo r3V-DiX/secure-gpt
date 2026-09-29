@@ -10,7 +10,7 @@ import {
   EXTENSION_VERSIONS,
 } from '@/config/versions.data'
 
-const getVersion = (version: VersionItem[]) => 
+const getVersion = (version: VersionItem[]) =>
   version[0]?.version ?? 'Not Available'
 
 export interface SystemVersionContextType {

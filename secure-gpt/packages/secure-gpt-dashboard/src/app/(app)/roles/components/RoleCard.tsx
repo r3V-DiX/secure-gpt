@@ -43,16 +43,16 @@ export function RoleCard({
     >
       {/* Main Row */}
       <div className="flex items-center gap-3 px-5 py-4 flex-wrap sm:flex-nowrap">
-        <button
+        <Button variant="ghost" type="button"
           onClick={() => onToggleExpand(role.id)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
+          className="w-7 shrink-0"
         >
           {isExpanded ? (
             <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />
           ) : (
             <ChevronRight size={14} style={{ color: 'var(--text-secondary)' }} />
           )}
-        </button>
+        </Button>
 
         <div
           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
