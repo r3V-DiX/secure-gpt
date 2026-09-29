@@ -10,7 +10,8 @@
     "./types": "./src/types/index.ts",
     "./constants": "./src/constants/index.ts",
     "./utils": "./src/utils/index.ts",
-    "./utils/detection-helpers": "./src/utils/detection-helpers.ts"
+    "./utils/detection-helpers": "./src/utils/detection-helpers.ts",
+    "./tier": "./src/tier.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

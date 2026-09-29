@@ -1,5 +1,6 @@
 'use client'
 
+import { Input } from '@/components/ui'
 import { Modal } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
 import { CheckCircle2 } from 'lucide-react'
@@ -58,13 +59,13 @@ export function OrgRegisterModal({
               <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>
                 Company / Organization Name
               </label>
-              <input
+              <Input aria-label="Acme Cybersecurity Corp"
                 type="text"
                 placeholder="Acme Cybersecurity Corp"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-primary)' }}
+                className="w-full"
+
               />
             </div>
 
@@ -72,13 +73,13 @@ export function OrgRegisterModal({
               <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>
                 Admin Corporate Email
               </label>
-              <input
+              <Input aria-label="security-lead@acmecorp.com"
                 type="email"
                 placeholder="security-lead@acmecorp.com"
                 value={orgAdminEmail}
                 onChange={(e) => setOrgAdminEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-primary)' }}
+                className="w-full"
+
               />
             </div>
 
@@ -113,14 +114,14 @@ export function OrgRegisterModal({
                 style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               >
                 <span>{orgResult.dns_txt_token}</span>
-                <button
+                <Button variant="secondary"
                   type="button"
                   onClick={() => onCopyToken(orgResult.dns_txt_token)}
-                  className="ml-2 px-2.5 py-1 rounded text-xs font-semibold border"
-                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
+                  className="ml-2"
+
                 >
                   Copy
-                </button>
+                </Button>
               </div>
             </div>
 

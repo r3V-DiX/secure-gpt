@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogIn, Clock, ShieldAlert } from 'lucide-react'
@@ -67,16 +68,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             >
               Go to SecureGPT Dashboard
             </a>
-            <button
+            <Button variant="secondary" type="button"
               onClick={() => {
                 if (typeof window !== 'undefined') {
                   window.location.href = '/login'
                 }
               }}
-              className="w-full h-10 rounded-xl text-sm font-semibold flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] border border-[var(--border)] transition-all"
+              className="w-full"
             >
               Sign in with another account
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -126,13 +127,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </p>
           </div>
 
-          <button
+          <Button variant="primary" type="button"
             onClick={dismissExpired}
-            className="w-full h-10 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-sm"
+            className="w-full"
           >
             <LogIn size={16} />
             Sign in again
-          </button>
+          </Button>
         </div>
       </Modal>
     </div>

@@ -32,6 +32,7 @@ flowchart TD
 
 - **`packages/extension`**: Chrome MV3 extension. Intercepts prompt/file submission, delegates detection, applies block/mask/warn actions, and uploads anonymized audit events.
 - **`packages/detection`**: Local detection engine used by extension/offscreen contexts. Implements tiered detection pipeline.
+- **`packages/regex` and `packages/ner`**: Independent rule/validator and ONNX/tokenizer engines called by the detection pipeline.
 - **`packages/shared`**: shared types/constants/utilities used by extension, detection, and dashboard.
 - **`packages/secure-gpt-dashboard`**: admin/user dashboard with policy, logs, alerts, and auth UI.
 - **`backend`**: session-auth API for auth, policy, logs, alerts, devices, and redaction.
@@ -283,7 +284,7 @@ classDiagram
 
 ### 4.5 NER runtime
 
-- NER executes in worker (`src/workers/ner.worker.ts`) with `onnxruntime-web`.
+- NER executes in `packages/ner/src/workers/ner.worker.ts` with `onnxruntime-web`.
 - Worker initializes ONNX session with provider strategy (`webgpu` fallback to `wasm`).
 - NER tier tokenizes input (`WordPieceTokenizer`) and posts inference requests with request IDs.
 - Spans are reconstructed from labels and mapped to categories (`FINANCIAL`, `CONFIDENTIAL`, default `PII`).
@@ -316,7 +317,9 @@ To combat OCR extraction decay from skewed angles, bad contrast, and small text 
 
 ### 4.9 Model Evaluation Harness (`evaluate.py`)
 
-A standalone python evaluation script (`packages/detection/scripts/evaluate.py`) establishes a local accuracy benchmark for the INT8 quantized ONNX NER model against `packages/detection/dataset/example_data.jsonl`:
+A standalone python evaluation script (`packages/ner/scripts/evaluate.py`) establishes a local accuracy benchmark for the INT8 quantized ONNX NER model against `packages/ner/dataset/example_data.jsonl`:
+
+For the current browser pipeline evaluation, use `benchmarks/detection/evaluate.py`; it runs the bundled worker and reports entity-level results for prompts and document text.
 
 - **Subword Token Alignment**: Maps exact character-level labels (`B-[CLASS]` and `I-[CLASS]` spans) directly onto ONNX model subword-level token offset predictions.
 - **Evaluation Statistics**: Reports individual and micro-averaged **Precision**, **Recall**, and **F1-Score** per PII class, allowing quantitative optimization checks for subsequent quantization runs.
@@ -723,4 +726,3 @@ The backend enforces dynamic RBAC checks using FastAPI dependencies in `app/core
 ### 13.4 Frontend Enforcement (Next.js)
 - **Menu/Navigation Visibility**: The Next.js dashboard checks the user's active permissions array (returned by the `/auth/me` endpoint) to show or hide administrative pages (such as `/users` and `/audit`) in the sidebar navigation.
 - **Client Routing protection**: Dashboard router redirects unauthorized navigation attempts to fallback dashboard views.
-

@@ -1,5 +1,7 @@
 'use client'
 // src/contexts/toast-context.tsx
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React, { createContext, useContext, useState, useCallback } from 'react'
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react'
 import type { ToastType } from '@/types/toast.types'
@@ -108,16 +110,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 {t.message}
               </span>
 
-              <button
+              <IconButton variant="ghost" type="button"
                 onClick={() => dismiss(t.id)}
-                className="shrink-0 size-5 flex items-center justify-center rounded-md transition-colors mt-0.5"
-                style={{ color: 'var(--text-tertiary)' }}
+                className="shrink-0 mt-0.5"
+
                 onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'}
                 onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)'}
                 aria-label="Dismiss"
               >
                 <X size={13} />
-              </button>
+              </IconButton>
             </div>
           )
         })}

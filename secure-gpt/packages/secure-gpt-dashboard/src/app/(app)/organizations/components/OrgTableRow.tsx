@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { TableRow, TableCell, Button } from '@/components/ui'
 import React from 'react'
 import {
   Building2, Globe2, CheckCircle2, AlertCircle,
@@ -44,9 +46,9 @@ export function OrgTableRow({
   const isActing = actionInProgress === org.id
 
   return (
-    <tr className="hover:bg-[var(--bg-surface-2)]/60 transition-colors">
+    <TableRow className="hover:bg-[var(--bg-surface-2)]/60 transition-colors">
       {/* Name & Domain */}
-      <td className="px-5 py-4">
+      <TableCell className="px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-light)] text-[var(--accent)] font-bold text-xs">
             <Building2 size={16} />
@@ -61,15 +63,15 @@ export function OrgTableRow({
             </div>
           </div>
         </div>
-      </td>
+      </TableCell>
 
       {/* Admin Email */}
-      <td className="px-4 py-4 text-[var(--text-secondary)] font-mono text-[12px]">
+      <TableCell className="px-4 py-4 text-[var(--text-secondary)] font-mono text-[12px]">
         {org.admin_email}
-      </td>
+      </TableCell>
 
       {/* Status */}
-      <td className="px-4 py-4">
+      <TableCell className="px-4 py-4">
         <span
           className={clsx(
             'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider',
@@ -86,10 +88,10 @@ export function OrgTableRow({
           )} />
           {org.status === 'PENDING_VERIFICATION' ? 'Pending' : org.status}
         </span>
-      </td>
+      </TableCell>
 
       {/* Domain Verification */}
-      <td className="px-4 py-4">
+      <TableCell className="px-4 py-4">
         {isVerified ? (
           <div className="flex items-center gap-1.5 text-emerald-500 text-[12px] font-semibold">
             <CheckCircle2 size={15} />
@@ -101,39 +103,39 @@ export function OrgTableRow({
               <AlertCircle size={15} />
               <span>Unverified</span>
             </div>
-            <button
+            <Button variant="primary"
               type="button"
               onClick={() => onManualVerify(org.id, org.name)}
               disabled={isActing}
-              className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-[var(--accent)] text-white hover:opacity-90 transition-opacity cursor-pointer"
+
               title="Override and mark domain as verified"
             >
               Verify DNS
-            </button>
+            </Button>
           </div>
         )}
-      </td>
+      </TableCell>
 
       {/* User Stats */}
-      <td className="px-4 py-4 text-center">
+      <TableCell className="px-4 py-4 text-center">
         <span className="font-bold text-[13px] text-[var(--text-primary)]">
           {org.active_user_count}
         </span>
         <span className="text-[11px] text-[var(--text-muted)] font-normal">
           {' '}/ {org.user_count}
         </span>
-      </td>
+      </TableCell>
 
       {/* Dept Stats */}
-      <td className="px-4 py-4 text-center font-bold text-[13px] text-[var(--text-secondary)]">
+      <TableCell className="px-4 py-4 text-center font-bold text-[13px] text-[var(--text-secondary)]">
         {org.department_count}
-      </td>
+      </TableCell>
 
       {/* Actions */}
-      <td className="px-5 py-4 text-right">
+      <TableCell className="px-5 py-4 text-right">
         <div className="flex items-center justify-end gap-1.5">
           {/* Suspend / Activate Toggle */}
-          <button
+          <Button variant="ghost"
             type="button"
             onClick={() => onToggleStatus(org)}
             disabled={isActing}
@@ -146,20 +148,20 @@ export function OrgTableRow({
             title={isSuspended ? 'Activate organization' : 'Suspend organization'}
           >
             {isSuspended ? <PlayCircle size={15} /> : <Ban size={15} />}
-          </button>
+          </Button>
 
           {/* Delete */}
-          <button
+          <IconButton aria-label="Delete organization" variant="danger"
             type="button"
             onClick={() => onDeleteOrg(org.id, org.name)}
             disabled={isActing}
-            className="p-1.5 rounded-lg border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+
             title="Delete organization"
           >
             <Trash2 size={15} />
-          </button>
+          </IconButton>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }

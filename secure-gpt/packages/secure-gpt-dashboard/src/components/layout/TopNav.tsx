@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -49,14 +51,14 @@ export function TopNav({ onMenuClick }: TopNavProps) {
     <header className="h-[58px] border-b border-[var(--border)] bg-[var(--nav-bg)] backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between transition-colors">
       {/* ── Left Side: Mobile Menu & Breadcrumbs ─────────────── */}
       <div className="flex items-center gap-3">
-        <button
+        <IconButton variant="ghost"
           type="button"
           onClick={onMenuClick}
-          className="p-2 rounded-lg md:hidden text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] transition-colors"
+          className="md:hidden"
           aria-label="Open sidebar"
         >
           <Menu size={20} />
-        </button>
+        </IconButton>
 
         <div className="flex items-center gap-2 text-sm font-medium">
           <Link
@@ -112,17 +114,17 @@ export function TopNav({ onMenuClick }: TopNavProps) {
           </Link>
         )}
 
-        <button
+        <Button variant="secondary" type="button"
           onClick={toggleTheme}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] border border-[var(--border)] transition-colors"
+
         >
           {theme === 'dark' ? (
             <Sun size={17} className="text-amber-400" />
           ) : (
             <Moon size={17} className="text-indigo-500" />
           )}
-        </button>
+        </Button>
       </div>
     </header>
   )

@@ -1,5 +1,7 @@
-// src/components/data-display/data-table.tsx
 'use client'
+
+// src/components/data-display/data-table.tsx
+import { Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell } from '@/components/ui'
 import { clsx } from 'clsx'
 
 import { Inbox } from 'lucide-react'
@@ -7,8 +9,10 @@ import { EmptyState } from '@/components/ui/empty-state/EmptyState'
 
 export interface Column<T> {
   key: string
-  label: string
+  label: React.ReactNode
   width?: string
+  headerClassName?: string
+  cellClassName?: string
   render: (row: T) => React.ReactNode
 }
 
@@ -30,45 +34,45 @@ export function DataTable<T>({
         background: 'var(--bg-surface)',
         borderColor: 'var(--border)',
       }}>
-      <table className="w-full text-xs border-collapse">
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--border)' }}>
+      <Table className="w-full text-xs border-collapse">
+        <TableHead>
+          <TableRow style={{ borderBottom: '1px solid var(--border)' }}>
             {columns.map(col => (
-              <th
+              <TableHeaderCell
                 key={col.key}
                 style={{ width: col.width, background: 'var(--bg-surface-2)' }}
-                className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
+                className={col.headerClassName}
               >
                 <span style={{ color: 'var(--text-tertiary)' }}>{col.label}</span>
-              </th>
+              </TableHeaderCell>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHead>
+        <TableBody>
           {loading ? (
             Array.from({ length: 8 }).map((_, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+              <TableRow key={i} style={{ borderBottom: '1px solid var(--border)' }}>
                 {columns.map(col => (
-                  <td key={col.key} className="px-4 py-3">
+                  <TableCell key={col.key} className="px-4 py-3">
                     <div className="skeleton h-4 w-3/4" />
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))
           ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-8">
+            <TableRow>
+              <TableCell colSpan={columns.length} className="px-4 py-8">
                 <EmptyState
                   icon={Inbox}
                   title="No records found"
                   description={emptyMessage}
-                  className="border-none !bg-transparent p-4"
+                  compact
                 />
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ) : (
             data.map(row => (
-              <tr
+              <TableRow
                 key={rowKey(row)}
                 onClick={() => onRowClick?.(row)}
                 className={clsx(
@@ -84,15 +88,15 @@ export function DataTable<T>({
                 }}
               >
                 {columns.map(col => (
-                  <td key={col.key} className="px-3.5 py-2.5 whitespace-nowrap text-[var(--text-secondary)]">
+                  <TableCell key={col.key} className={col.cellClassName}>
                     {col.render(row)}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

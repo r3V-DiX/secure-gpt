@@ -1,4 +1,5 @@
 // src/components/data-display/pagination.tsx
+import { Button } from '@/components/ui'
 import { clsx } from 'clsx'
 import type { Pagination as PaginationType } from '@/types'
 
@@ -46,18 +47,14 @@ export function Pagination({ pagination, onPageChange }: PaginationProps) {
 
 function PageBtn({ label, disabled, onClick }: { label: string; disabled: boolean; onClick: () => void }) {
   return (
-    <button
+    <Button variant="secondary" type="button"
       onClick={onClick}
       disabled={disabled}
       className={clsx(
         'w-8 h-7 flex items-center justify-center rounded-lg text-sm font-medium border transition-all duration-100',
         'disabled:opacity-40 disabled:cursor-not-allowed',
       )}
-      style={{
-        background: 'var(--bg-surface)',
-        borderColor: 'var(--border-2)',
-        color: 'var(--text-secondary)',
-      }}
+
       onMouseEnter={e => {
         if (!disabled) {
           (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface-2)'
@@ -70,6 +67,6 @@ function PageBtn({ label, disabled, onClick }: { label: string; disabled: boolea
       }}
     >
       {label}
-    </button>
+    </Button>
   )
 }

@@ -1,9 +1,11 @@
 'use client'
 
+import { Card, Badge } from '@/components/ui'
+import { Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell } from '@/components/ui'
 import React from 'react'
 import Link from 'next/link'
 import { Building2, Users, Layers } from 'lucide-react'
-import { EmptyState } from './QuickStatsRow'
+import { EmptyState } from '@/components/ui/empty-state/EmptyState'
 
 interface OrgLeaderboardsProps {
   isSuperAdmin: boolean
@@ -24,7 +26,7 @@ export function OrgLeaderboards({
     <>
       {/* ── Super Admin: Top Organizations Section ──────────────────────── */}
       {(isSuperAdmin || (stats?.topOrganizations && stats.topOrganizations.length > 0)) && (
-        <div className="card p-6 animate-fade-in">
+        <Card className="p-6 animate-fade-in">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
             <div>
               <h2 className="text-sm font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
@@ -50,32 +52,32 @@ export function OrgLeaderboards({
               ))}
             </div>
           ) : !stats?.topOrganizations || stats.topOrganizations.length === 0 ? (
-            <EmptyState label="No organization telemetry recorded yet" />
+            <EmptyState compact title="No organization telemetry recorded yet" />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]" style={{ borderColor: 'var(--border)' }}>
-                    <th className="pb-3 pl-2">Organization</th>
-                    <th className="pb-3">Domain</th>
-                    <th className="pb-3">Interceptions</th>
-                    <th className="pb-3 pr-2 w-1/3">Threat Distribution</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+              <Table className="w-full text-left text-xs">
+                <TableHead>
+                  <TableRow className="border-b text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]" style={{ borderColor: 'var(--border)' }}>
+                    <TableHeaderCell className="pb-3 pl-2">Organization</TableHeaderCell>
+                    <TableHeaderCell className="pb-3">Domain</TableHeaderCell>
+                    <TableHeaderCell className="pb-3">Interceptions</TableHeaderCell>
+                    <TableHeaderCell className="pb-3 pr-2 w-1/3">Threat Distribution</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody className="divide-y" style={{ borderColor: 'var(--border)' }}>
                   {stats.topOrganizations.map((org: any, i: number) => (
-                    <tr key={org.id || i} className="hover:bg-[var(--bg-surface-2)] transition-colors">
-                      <td className="py-3.5 pl-2 font-bold text-[var(--text-primary)] flex items-center gap-2.5">
+                    <TableRow key={org.id || i} className="hover:bg-[var(--bg-surface-2)] transition-colors">
+                      <TableCell className="py-3.5 pl-2 font-bold text-[var(--text-primary)] flex items-center gap-2.5">
                         <div className="size-7 rounded-lg bg-[var(--accent-light)] text-[var(--accent-text)] border border-[var(--accent-border)] flex items-center justify-center font-bold text-xs">
                           {org.name.charAt(0).toUpperCase()}
                         </div>
                         <span>{org.name}</span>
-                      </td>
-                      <td className="py-3.5 font-mono text-[var(--text-secondary)]">{org.domain || '—'}</td>
-                      <td className="py-3.5 font-bold tabular-nums text-[var(--text-primary)]">
+                      </TableCell>
+                      <TableCell className="py-3.5 font-mono text-[var(--text-secondary)]">{org.domain || '—'}</TableCell>
+                      <TableCell className="py-3.5 font-bold tabular-nums text-[var(--text-primary)]">
                         {org.count.toLocaleString()}
-                      </td>
-                      <td className="py-3.5 pr-2">
+                      </TableCell>
+                      <TableCell className="py-3.5 pr-2">
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 rounded-full overflow-hidden bg-[var(--bg-surface-3)]">
                             <div
@@ -90,14 +92,14 @@ export function OrgLeaderboards({
                             {org.percent}%
                           </span>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* ── Organization Leaderboards (Top Users for Admins, Top Depts for All Members) ───────────────── */}
@@ -105,7 +107,7 @@ export function OrgLeaderboards({
         <div className={`grid grid-cols-1 ${showTopEmployees && showTopDepartments ? 'lg:grid-cols-2' : ''} gap-4`}>
           {/* Top Employees */}
           {showTopEmployees && (
-            <div className="card p-5 animate-fade-in">
+            <Card className="p-5 animate-fade-in">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-sm font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
@@ -126,7 +128,7 @@ export function OrgLeaderboards({
                   ))}
                 </div>
               ) : !stats?.topEmployees || stats.topEmployees.length === 0 ? (
-                <EmptyState label="No user violations recorded yet" />
+                <EmptyState compact title="No user violations recorded yet" />
               ) : (
                 <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
                   {stats.topEmployees.map((emp: any, i: number) => (
@@ -140,19 +142,19 @@ export function OrgLeaderboards({
                           <p className="text-[11px] truncate text-[var(--text-tertiary)]">{emp.email} • {emp.dept}</p>
                         </div>
                       </div>
-                      <span className="text-xs font-bold tabular-nums px-2.5 py-1 rounded-full bg-[var(--danger-light)] text-[var(--danger)] border border-[var(--danger-border)]">
+                      <Badge variant="danger" className="tabular-nums">
                         {emp.count} threats
-                      </span>
+                      </Badge>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
           )}
 
           {/* Top Departments */}
           {showTopDepartments && (
-            <div className="card p-5 animate-fade-in">
+            <Card className="p-5 animate-fade-in">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-sm font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
@@ -170,7 +172,7 @@ export function OrgLeaderboards({
                   ))}
                 </div>
               ) : !stats?.topDepartments || stats.topDepartments.length === 0 ? (
-                <EmptyState label="No department activity recorded yet" />
+                <EmptyState compact title="No department activity recorded yet" />
               ) : (
                 <div className="space-y-3">
                   {stats.topDepartments.map((dept: any, i: number) => (
@@ -189,7 +191,7 @@ export function OrgLeaderboards({
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
           )}
         </div>
       )}

@@ -8,7 +8,8 @@ Welcome to the central product, architecture, and engineering documentation repo
 docs/
 ├── architecture/       # System diagrams, component boundaries, and data flows
 │   ├── overview.md     # High-level architecture & subsystem interactions
-│   └── data-flow.md    # Multi-tier detection & redaction event sequence
+│   ├── data-flow.md    # Multi-tier detection & redaction event sequence
+│   └── scalability-review.md # Scaling risks, priorities, and validation scenarios
 ├── development/        # Developer onboarding, setup, testing, and debugging
 ├── deployment/         # Local, enterprise, AWS, and production deployment guides
 │   └── enterprise.md   # Enterprise DLP rollout and fleet management
@@ -25,3 +26,7 @@ docs/
     ├── 0002-detection-pipeline.md
     └── 0003-ocr-architecture.md
 ```
+
+## Architecture reviews
+
+- [Scalability review (2026-09-28)](architecture/scalability-review.md) — Eight prioritized findings, code references, recommended improvements, and load-testing scenarios.

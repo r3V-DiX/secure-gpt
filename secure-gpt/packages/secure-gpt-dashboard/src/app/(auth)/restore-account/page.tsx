@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -134,7 +135,7 @@ export default function RestoreAccountPage() {
         <h1 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>
           Reactivate Your Account?
         </h1>
-        
+
         <p className="text-xs mb-6 px-2" style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
           {deactivationReasonText} Under compliance guidelines, your data will be permanently purged when the grace period expires.
         </p>
@@ -156,25 +157,21 @@ export default function RestoreAccountPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <button
+          <Button variant="primary"
             onClick={handleRestore}
             disabled={restoring}
             type="button"
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all disabled:opacity-50 cursor-pointer shadow-md"
+            className="w-full"
           >
             <RefreshCw size={15} className={restoring ? 'animate-spin' : ''} />
             {restoring ? 'Reactivating...' : 'Reactivate Account'}
-          </button>
+          </Button>
 
-          <button
+          <Button variant="secondary"
             onClick={logout}
             type="button"
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border transition-all cursor-pointer"
-            style={{
-              background: 'var(--bg-surface-2)',
-              borderColor: 'var(--border-2)',
-              color: 'var(--text-secondary)',
-            }}
+            className="w-full"
+
             onMouseEnter={e => {
               ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-strong)'
               ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface-3)'
@@ -186,7 +183,7 @@ export default function RestoreAccountPage() {
           >
             <LogOut size={15} />
             Cancel & Sign Out
-          </button>
+          </Button>
         </div>
       </div>
     </div>

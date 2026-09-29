@@ -1,5 +1,6 @@
 'use client'
 // src/app/(app)/logs/page.tsx
+import { PageHeader } from '@/components/ui'
 import { useState } from 'react'
 import { useEventLog } from '@/features/event-log/hooks/use-event-log'
 import { EventLogTable } from '@/features/event-log/components/EventLogTable'
@@ -9,14 +10,14 @@ import { Button } from '@/components/ui/button/button'
 import { downloadLogsCsv } from '@/lib/utils/export'
 
 export default function LogsPage() {
-  const { 
-    data, 
-    pagination, 
-    filters, 
-    loading, 
-    error: loadError, 
-    updateFilters, 
-    setPage 
+  const {
+    data,
+    pagination,
+    filters,
+    loading,
+    error: loadError,
+    updateFilters,
+    setPage
   } = useEventLog()
 
   const [exporting, setExporting] = useState(false)
@@ -41,17 +42,11 @@ export default function LogsPage() {
   return (
     <div className="w-full space-y-6 animate-fade-in pb-8">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+      <PageHeader title={<>
             Event Log
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+          </>} description={<>
             Full history of all detections and actions taken
-          </p>
-        </div>
-
-        <Button 
+          </>} actions={<><Button
           variant="primary"
           size="sm"
           onClick={handleExport}
@@ -59,8 +54,7 @@ export default function LogsPage() {
           icon={<Download size={13} />}
         >
           Export CSV
-        </Button>
-      </div>
+        </Button></>} />
 
       {error && (
         <div className="p-3 rounded-xl text-sm font-medium"
@@ -80,11 +74,11 @@ export default function LogsPage() {
       )}
 
       {/* Table */}
-      <EventLogTable 
-        data={data} 
-        pagination={pagination} 
-        loading={loading} 
-        onPageChange={setPage} 
+      <EventLogTable
+        data={data}
+        pagination={pagination}
+        loading={loading}
+        onPageChange={setPage}
       />
     </div>
   )

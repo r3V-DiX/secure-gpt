@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -90,38 +92,38 @@ export function SidebarInner({
           </Link>
 
           {!isMobile && !isCompact && onToggleCollapse && (
-            <button
+            <IconButton aria-label="Collapse sidebar" variant="ghost"
               type="button"
               onClick={onToggleCollapse}
-              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--sidebar-text-active)] hover:bg-[var(--sidebar-hover-bg)] transition-colors"
+
               title="Collapse sidebar"
             >
               <PanelLeftClose size={16} />
-            </button>
+            </IconButton>
           )}
 
           {isMobile && onNavigate && (
-            <button
+            <IconButton aria-label="Close navigation" variant="ghost"
               type="button"
               onClick={onNavigate}
-              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--sidebar-text-active)] hover:bg-[var(--sidebar-hover-bg)] transition-colors"
+
               title="Close navigation"
             >
               <X size={18} />
-            </button>
+            </IconButton>
           )}
         </div>
 
         {isCompact && !isMobile && onToggleCollapse && (
           <div className="flex justify-center py-2 border-b border-[var(--sidebar-border)]">
-            <button
+            <IconButton aria-label="Expand sidebar" variant="ghost"
               type="button"
               onClick={onToggleCollapse}
-              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--sidebar-text-active)] hover:bg-[var(--sidebar-hover-bg)] transition-colors"
+
               title="Expand sidebar"
             >
               <PanelLeft size={16} />
-            </button>
+            </IconButton>
           </div>
         )}
 
@@ -140,12 +142,12 @@ export function SidebarInner({
                   <div className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--sidebar-group-label)] flex items-center justify-between">
                     <span>{group.label}</span>
                     {group.label === 'Overview' && (
-                      <button
+                      <Button variant="primary" type="button"
                         onClick={() => window.dispatchEvent(new Event('start-tour'))}
-                        className="text-[11px] font-semibold text-[var(--sidebar-accent)] hover:underline capitalize cursor-pointer"
+                        className="capitalize"
                       >
                         Tour
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}

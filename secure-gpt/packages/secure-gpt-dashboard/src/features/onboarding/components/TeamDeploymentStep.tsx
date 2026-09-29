@@ -1,5 +1,7 @@
 'use client'
 
+import { Card } from '@/components/ui'
+import { Textarea, Button } from '@/components/ui'
 import React, { useState } from 'react'
 import { UserPlus, Download, Users, RefreshCw, ArrowLeft, Sparkles, Copy, Check, ExternalLink, MailCheck } from 'lucide-react'
 
@@ -63,8 +65,8 @@ export function TeamDeploymentStep({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
         {/* Team Invite Box */}
-        <div
-          className="card p-5 space-y-4"
+        <Card
+          className="p-5 space-y-4"
           style={{ background: 'var(--bg-surface-2)' }}
         >
           <div className="flex items-center gap-2">
@@ -79,28 +81,25 @@ export function TeamDeploymentStep({
               <label className="block text-[11px] font-semibold mb-1" style={{ color: 'var(--text-tertiary)' }}>
                 Email addresses (comma or line separated):
               </label>
-              <textarea
+              <Textarea aria-label={`alice@${domain || 'company.com'}\nbob@${domain || 'company.com'}`}
                 rows={4}
                 value={inviteEmails}
                 onChange={(e) => setInviteEmails(e.target.value)}
                 placeholder={`alice@${domain || 'company.com'}\nbob@${domain || 'company.com'}`}
-                className="w-full p-2.5 rounded-xl border font-mono text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)]"
-                style={{
-                  background: 'var(--bg-surface)',
-                  borderColor: 'var(--border)',
-                }}
+                className="w-full font-mono"
+
               />
             </div>
 
-            <button
+            <Button variant="primary"
               type="submit"
               disabled={sendingInvites || !inviteEmails.trim()}
-              className="w-full py-2.5 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-              style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+              className="w-full"
+
             >
               {sendingInvites ? <RefreshCw className="size-3.5 animate-spin" /> : <UserPlus size={14} />}
               <span>Send Invitations</span>
-            </button>
+            </Button>
           </form>
 
           {invitedList.length > 0 && (
@@ -128,30 +127,27 @@ export function TeamDeploymentStep({
                     </div>
 
                     {item.invite_url && (
-                      <button
+                      <Button variant="secondary"
                         type="button"
                         onClick={() => handleCopyInviteUrl(item.invite_url!, i)}
-                        className="p-1 rounded-lg border text-[10px] flex items-center gap-1 shrink-0 cursor-pointer hover:bg-[var(--bg-surface-2)] transition-colors"
-                        style={{
-                          borderColor: 'var(--border)',
-                          color: copiedUrlIndex === i ? 'var(--success)' : 'var(--text-tertiary)',
-                        }}
+                        className="shrink-0"
+                        style={{ color: copiedUrlIndex === i ? 'var(--success)' : 'var(--text-tertiary)' }}
                         title="Copy direct invite link"
                       >
                         {copiedUrlIndex === i ? <Check size={11} /> : <Copy size={11} />}
                         <span className="font-sans">{copiedUrlIndex === i ? 'Copied Link' : 'Copy Link'}</span>
-                      </button>
+                      </Button>
                     )}
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Chrome Extension Box */}
-        <div
-          className="card p-5 space-y-4"
+        <Card
+          className="p-5 space-y-4"
           style={{ background: 'var(--bg-surface-2)' }}
         >
           <div className="flex items-center gap-2">
@@ -174,19 +170,15 @@ export function TeamDeploymentStep({
                 <span className="select-all font-semibold truncate" style={{ color: 'var(--accent-text)' }}>
                   {extensionId}
                 </span>
-                <button
+                <Button variant="secondary"
                   type="button"
                   onClick={handleCopyId}
-                  className="p-1 rounded-lg border text-xs cursor-pointer"
-                  style={{
-                    background: 'var(--bg-surface-2)',
-                    borderColor: 'var(--border-2)',
-                    color: copiedId ? 'var(--success)' : 'var(--text-tertiary)',
-                  }}
+
+                  style={{ color: copiedId ? 'var(--success)' : 'var(--text-tertiary)' }}
                   title="Copy extension ID"
                 >
                   {copiedId ? <Check size={12} /> : <Copy size={12} />}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -199,36 +191,29 @@ export function TeamDeploymentStep({
               </p>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-        <button
+        <Button variant="secondary"
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:brightness-105"
-          style={{
-            background: 'var(--bg-surface)',
-            borderColor: 'var(--border)',
-            color: 'var(--text-secondary)',
-          }}
+
+
         >
           <ArrowLeft size={13} />
           <span>Back</span>
-        </button>
+        </Button>
 
-        <button
+        <Button variant="ghost"
           type="button"
           onClick={onFinish}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 cursor-pointer"
-          style={{
-            background: 'var(--success)',
-            boxShadow: '0 2px 8px var(--success-glow)',
-          }}
+
+
         >
           <Sparkles size={14} />
           <span>Launch Enterprise Dashboard</span>
-        </button>
+        </Button>
       </div>
     </div>
   )

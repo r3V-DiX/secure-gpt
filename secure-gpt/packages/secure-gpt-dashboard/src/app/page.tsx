@@ -1,4 +1,5 @@
 'use client'
+import { LinkButton } from '@/components/ui'
 import Link from 'next/link';
 import { Button } from '@/components/ui/button/button';
 import { useAuth } from '@/contexts/auth-context';
@@ -80,20 +81,19 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-3">
             {!loading && user ? (
-              <Link href="/dashboard">
-                <Button className="rounded-full px-6">Dashboard</Button>
-              </Link>
+              <LinkButton className="rounded-full px-6" href="/dashboard">
+                Dashboard
+              </LinkButton>
             ) : (
               <>
-                <Link href="/login">
-                  <Button variant="ghost" className="hidden sm:inline-flex text-sm font-semibold">Sign In</Button>
-                </Link>
-                <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
-                  <Button className="rounded-full px-6 text-sm font-semibold"
-                          style={{ boxShadow: '0 4px 14px var(--brand-btn-shadow)' }}>
+                <LinkButton variant="ghost" className="hidden sm:inline-flex text-sm font-semibold" href="/login">
+                  Sign In
+                </LinkButton>
+                <LinkButton className="rounded-full px-6 text-sm font-semibold" style={{ boxShadow: '0 4px 14px var(--brand-btn-shadow)' }} href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
+
                     Get Started Free
-                  </Button>
-                </a>
+
+                </LinkButton>
               </>
             )}
           </div>
@@ -155,14 +155,12 @@ export default function LandingPage() {
                 SecureGPT takes 2 minutes to install and immediately starts protecting every message your team sends to AI tools — for free.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-                <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
-                  <Button variant="secondary" size="lg"
-                          className="rounded-full px-10 font-bold border-transparent"
-                          style={{ background: 'var(--on-dark-full)', color: 'var(--brand-dark)', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
+                <LinkButton variant="secondary" size="lg" className="rounded-full px-10 font-bold border-transparent" style={{ background: 'var(--on-dark-full)', color: 'var(--brand-dark)', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }} href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
+
                     <Shield size={16} className="mr-2" style={{ color: 'var(--accent)' }} />
                     Add to Chrome — It's Free
-                  </Button>
-                </a>
+
+                </LinkButton>
                 <a href="mailto:info@rivedix.com?subject=SecureGPT Enterprise"
                    className="text-sm font-semibold pb-0.5 transition-colors"
                    style={{ color: 'var(--brand-link)', borderBottom: '1px solid var(--on-dark-border)' }}>

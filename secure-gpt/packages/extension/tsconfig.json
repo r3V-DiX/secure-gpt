@@ -10,6 +10,9 @@
       "@securegpt/detection": ["../detection/src/pipeline.ts"],
       "@securegpt/ocr": ["../ocr/src/index.ts"],
       "@securegpt/ocr/*": ["../ocr/src/*"],
+      "@securegpt/regex": ["../regex/src/index.ts"],
+      "@securegpt/ner": ["../ner/src/index.ts"],
+      "@securegpt/shared/tier": ["../shared/src/tier.ts"],
       "@/*": ["./src/*"]
     },
     "allowJs": true

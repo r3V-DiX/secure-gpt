@@ -1,5 +1,6 @@
 'use client'
 
+import { Badge } from '@/components/ui'
 import React from 'react'
 import { PlatformIcon } from '@/components/shared/PlatformIcon'
 
@@ -35,9 +36,9 @@ export function PlatformCardGrid() {
           <div>
             <div className="flex items-center justify-between gap-2 mb-3">
               <PlatformIcon platformId={p.id} size={36} className="rounded-xl shadow-xs" />
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+              <Badge variant="success" className="font-mono">
                 Protected
-              </span>
+              </Badge>
             </div>
             <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
               {p.name}

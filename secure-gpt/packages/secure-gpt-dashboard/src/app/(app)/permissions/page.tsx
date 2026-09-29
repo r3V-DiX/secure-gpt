@@ -1,5 +1,7 @@
 'use client'
 
+import { PageHeader } from '@/components/ui'
+import { Input, Select, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell } from '@/components/ui'
 import React, { useEffect, useState } from 'react'
 import { apiGet } from '@/lib/api/client'
 import { useToast } from '@/contexts/toast-context'
@@ -100,37 +102,32 @@ export default function PermissionsPage() {
   return (
     <div className="flex-1 space-y-6 w-full animate-fade-in pb-8">
       {/* Header */}
-      <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
+      <PageHeader title={<>
             <Shield className="text-[var(--accent)] size-5 shrink-0" />
             Granular Permissions
-          </h1>
-          <p className="text-sm mt-1 text-[var(--text-secondary)]">
+          </>} description={<>
             Overview of the dynamic API action matrix across the SecureGPT platform (Read Only).
-          </p>
-        </div>
-      </div>
+          </>}  />
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-[var(--bg-surface)] rounded-xl px-3 border border-[var(--border-2)] focus-within:border-[var(--accent)] transition-all h-9">
-          <Search size={14} className="text-[var(--text-tertiary)]" />
-          <input
+
+          <Input aria-label="Search permissions..." icon={<Search size={15} />} wrapperClassName="w-auto min-w-0"
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search permissions..."
-            className="flex-1 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] border-none"
+            className="flex-1"
           />
         </div>
-        <select
+        <Select aria-label="Select option" wrapperClassName="w-auto min-w-0"
           value={riskFilter}
           onChange={e => setRisk(e.target.value)}
-          className="h-9 px-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-2)] text-xs text-[var(--text-primary)] outline-none cursor-pointer"
+
         >
           {RISK_FILTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        </Select>
         <Button
           variant="secondary"
           size="sm"
@@ -162,9 +159,9 @@ export default function PermissionsPage() {
 
             return (
               <div key={module} className="border border-[var(--border-2)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-lg">
-                <button
+                <Button variant="ghost" type="button"
                   onClick={() => toggleExpand(module)}
-                  className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors text-left"
+                  className="w-full text-left"
                 >
                   <div className="flex items-center justify-center rounded-lg w-8 h-8 flex-shrink-0" style={{ background: mc.bg }}>
                     <Shield size={14} style={{ color: mc.color }} />
@@ -172,18 +169,18 @@ export default function PermissionsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{module}</span>
-                      <span className="text-[10px] font-semibold bg-[var(--bg-surface-2)] border border-[var(--border)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full">
+                      <Badge variant="neutral" >
                         {perms.length} permissions
-                      </span>
+                      </Badge>
                       {criticalCount > 0 && (
-                        <span className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
+                        <Badge variant="danger" >
                           {criticalCount} critical
-                        </span>
+                        </Badge>
                       )}
                       {highCount > 0 && (
-                        <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
+                        <Badge variant="warning" >
                           {highCount} high
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -192,41 +189,41 @@ export default function PermissionsPage() {
                   ) : (
                     <ChevronRight size={14} style={{ color: 'var(--text-secondary)' }} />
                   )}
-                </button>
+                </Button>
 
                 {isExpanded && (
                   <div className="border-t border-[var(--border-2)]">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-[var(--bg-surface-2)] border-b border-[var(--border-2)] text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                            <th className="px-5 py-2.5">Permission Name</th>
-                            <th className="px-3 py-2.5">Action Code</th>
-                            <th className="px-3 py-2.5">Description</th>
-                            <th className="px-3 py-2.5">Risk Level</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[var(--border-2)] text-[12px]">
+                      <Table className="w-full text-left border-collapse">
+                        <TableHead>
+                          <TableRow className="bg-[var(--bg-surface-2)] border-b border-[var(--border-2)] text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+                            <TableHeaderCell className="px-5 py-2.5">Permission Name</TableHeaderCell>
+                            <TableHeaderCell className="px-3 py-2.5">Action Code</TableHeaderCell>
+                            <TableHeaderCell className="px-3 py-2.5">Description</TableHeaderCell>
+                            <TableHeaderCell className="px-3 py-2.5">Risk Level</TableHeaderCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody className="divide-y divide-[var(--border-2)] text-[12px]">
                           {perms.map(perm => (
-                            <tr key={perm.id} className="hover:bg-white/5 transition-colors">
-                              <td className="px-5 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>
+                            <TableRow key={perm.id} className="hover:bg-white/5 transition-colors">
+                              <TableCell className="px-5 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>
                                 {perm.name}
-                              </td>
-                              <td className="px-3 py-3 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                              </TableCell>
+                              <TableCell className="px-3 py-3 font-mono" style={{ color: 'var(--text-secondary)' }}>
                                 <code className="bg-[var(--bg-surface-3)] border border-[var(--border)] px-2 py-0.5 rounded text-[11px]">
                                   {perm.action}
                                 </code>
-                              </td>
-                              <td className="px-3 py-3" style={{ color: 'var(--text-tertiary)' }}>
+                              </TableCell>
+                              <TableCell className="px-3 py-3" style={{ color: 'var(--text-tertiary)' }}>
                                 {perm.description || '—'}
-                              </td>
-                              <td className="px-3 py-3">
+                              </TableCell>
+                              <TableCell className="px-3 py-3">
                                 <Badge variant={getRiskVariant(perm.riskLevel)}>{perm.riskLevel}</Badge>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </div>
                   </div>
                 )}

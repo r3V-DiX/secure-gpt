@@ -1,5 +1,6 @@
 'use client'
 
+import { Button, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell } from '@/components/ui'
 import React, { useState } from 'react'
 import { Globe2, CheckCircle2, AlertCircle, RefreshCw, Copy, Check, ArrowRight, ArrowLeft } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -78,22 +79,22 @@ export function DnsVerificationStep({
           </div>
         </div>
 
-        <button
+        <Button variant="primary"
           type="button"
           onClick={onVerify}
           disabled={verifying}
-          className="px-3.5 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 flex items-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
-          style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+          className="shrink-0"
+
         >
           <RefreshCw className={clsx('size-3.5', verifying && 'animate-spin')} />
           <span>{verifying ? 'Checking DNS…' : 'Verify DNS Record'}</span>
-        </button>
+        </Button>
       </div>
 
       {/* DNS Challenge Table */}
       <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--border)' }}>
-        <table className="w-full text-left text-xs">
-          <thead
+        <Table className="w-full text-left text-xs">
+          <TableHead
             className="text-[10px] font-bold uppercase tracking-wider border-b"
             style={{
               background: 'var(--bg-surface-2)',
@@ -101,41 +102,37 @@ export function DnsVerificationStep({
               color: 'var(--text-tertiary)',
             }}
           >
-            <tr>
-              <th className="px-4 py-3">Record Type</th>
-              <th className="px-4 py-3">Host / Name</th>
-              <th className="px-4 py-3">Value / Content</th>
-              <th className="px-4 py-3 text-right">TTL</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y font-mono text-xs" style={{ borderColor: 'var(--border)' }}>
-            <tr>
-              <td className="px-4 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>TXT</td>
-              <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>@ or {domain}</td>
-              <td className="px-4 py-3">
+            <TableRow>
+              <TableHeaderCell className="px-4 py-3">Record Type</TableHeaderCell>
+              <TableHeaderCell className="px-4 py-3">Host / Name</TableHeaderCell>
+              <TableHeaderCell className="px-4 py-3">Value / Content</TableHeaderCell>
+              <TableHeaderCell className="px-4 py-3 text-right">TTL</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody className="divide-y font-mono text-xs" style={{ borderColor: 'var(--border)' }}>
+            <TableRow>
+              <TableCell className="px-4 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>TXT</TableCell>
+              <TableCell className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>@ or {domain}</TableCell>
+              <TableCell className="px-4 py-3">
                 <div className="flex items-center gap-2">
                   <span className="select-all truncate max-w-xs md:max-w-md font-medium" style={{ color: 'var(--accent-text)' }}>
                     {dnsToken || 'securegpt-challenge-token-pending'}
                   </span>
-                  <button
+                  <Button variant="secondary"
                     type="button"
                     onClick={handleCopy}
-                    className="p-1 rounded-lg border transition-colors cursor-pointer"
-                    style={{
-                      background: 'var(--bg-surface-2)',
-                      borderColor: 'var(--border-2)',
-                      color: copied ? 'var(--success)' : 'var(--text-tertiary)',
-                    }}
+
+                    style={{ color: copied ? 'var(--success)' : 'var(--text-tertiary)' }}
                     title="Copy token"
                   >
                     {copied ? <Check size={12} /> : <Copy size={12} />}
-                  </button>
+                  </Button>
                 </div>
-              </td>
-              <td className="px-4 py-3 text-right" style={{ color: 'var(--text-tertiary)' }}>300 (Auto)</td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+              <TableCell className="px-4 py-3 text-right" style={{ color: 'var(--text-tertiary)' }}>300 (Auto)</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       {!isVerified && (
@@ -152,45 +149,37 @@ export function DnsVerificationStep({
       )}
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-        <button
+        <Button variant="secondary"
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:brightness-105"
-          style={{
-            background: 'var(--bg-surface)',
-            borderColor: 'var(--border)',
-            color: 'var(--text-secondary)',
-          }}
+
+
         >
           <ArrowLeft size={13} />
           <span>Back</span>
-        </button>
+        </Button>
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
           {onVerifyLater && !isVerified && (
-            <button
+            <Button variant="secondary"
               type="button"
               onClick={onVerifyLater}
-              className="px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:bg-[var(--bg-surface-2)]"
-              style={{
-                background: 'transparent',
-                borderColor: 'var(--border)',
-                color: 'var(--text-tertiary)',
-              }}
+
+
             >
               Verify Later (Restricted Mode)
-            </button>
+            </Button>
           )}
 
-          <button
+          <Button variant="primary"
             type="button"
             onClick={onContinue}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white transition-all hover:brightness-110 cursor-pointer"
-            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px var(--accent-glow)' }}
+
+
           >
             <span>Continue to Policy Presets</span>
             <ArrowRight size={14} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

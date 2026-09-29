@@ -1,5 +1,6 @@
 'use client'
 // features/policy/components/ActionSelector.tsx
+import { RadioGroup } from '@/components/ui'
 import type { PolicyAction } from '@/types'
 import { ShieldBan, EyeOff, AlertTriangle, ShieldCheck } from 'lucide-react'
 
@@ -35,41 +36,6 @@ export function ActionPicker({
   onChange: (a: PolicyAction) => void
   disabled?: boolean
 }) {
-  return (
-    <div
-      className="inline-flex items-center gap-1 p-1 rounded-xl border"
-      style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}
-    >
-      {ACTIONS.map(a => {
-        const ac = ACTION_COLORS[a]
-        const active = value === a
-        return (
-          <button
-            key={a}
-            type="button"
-            onClick={disabled ? undefined : () => onChange(a)}
-            disabled={disabled}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all select-none ${
-              disabled ? 'cursor-default opacity-50' : 'cursor-pointer'
-            }`}
-            style={{
-              background: active ? ac.bg : 'transparent',
-              borderColor: active ? ac.border : 'transparent',
-              borderWidth: 1,
-              borderStyle: 'solid',
-              color: active ? ac.text : 'var(--text-secondary)',
-              boxShadow: active ? `0 1px 4px ${ac.bg}` : 'none',
-            }}
-          >
-            <span style={{ color: active ? ac.text : 'var(--text-tertiary)' }}>
-              {ACTION_ICONS[a]}
-            </span>
-            <span>{ACTION_LABEL[a]}</span>
-          </button>
-        )
-      })}
-    </div>
-  )
+  return <RadioGroup label="Policy action" value={value} onValueChange={onChange} disabled={disabled}
+    options={ACTIONS.map(action => ({ value: action, label: ACTION_LABEL[action], icon: ACTION_ICONS[action] }))} />
 }
-
-

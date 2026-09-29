@@ -1,5 +1,8 @@
 'use client'
+import { IconButton } from '@/components/ui'
+import { Checkbox } from '@/components/ui/input/selection'
 
+import { TableRow, TableCell, Button, Select } from '@/components/ui'
 import React from 'react'
 import { CheckSquare, Square, Trash2 } from 'lucide-react'
 import type { AuthUser, Department } from '@/types'
@@ -31,26 +34,16 @@ export function TeamMemberRow({
     currentUser?.role === 'platform_super_admin'
 
   return (
-    <tr
+    <TableRow
       className={`transition-colors ${
         isSelected ? 'bg-[var(--accent-light)]/40' : 'hover:bg-[var(--bg-surface-2)]/60'
       }`}
     >
-      <td className="px-4 py-3.5 text-center">
-        <button
-          type="button"
-          onClick={() => onToggleSelect(u.id)}
-          className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors cursor-pointer"
-        >
-          {isSelected ? (
-            <CheckSquare size={15} className="text-[var(--accent)]" />
-          ) : (
-            <Square size={15} />
-          )}
-        </button>
-      </td>
+      <TableCell className="px-4 py-3.5 text-center">
+        <Checkbox aria-label="Select employee" checked={isSelected} onChange={() => onToggleSelect(u.id)} />
+      </TableCell>
 
-      <td className="px-5 py-3.5 flex items-center gap-3">
+      <TableCell className="px-5 py-3.5 flex items-center gap-3">
         <div
           className="size-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
           style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
@@ -65,19 +58,19 @@ export function TeamMemberRow({
             {u.email}
           </p>
         </div>
-      </td>
+      </TableCell>
 
-      <td className="px-5 py-3.5">
+      <TableCell className="px-5 py-3.5">
         {isSuperOrOrgAdmin ? (
-          <select
+          <Select aria-label="EMPLOYEE" wrapperClassName="w-auto min-w-0"
             value={u.role}
             onChange={(e) => onChangeRole(u.id, e.target.value)}
-            className="ui-select h-8 px-2.5 text-[12px] font-semibold rounded-md border bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-2)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
+
           >
             <option value="employee">EMPLOYEE</option>
             <option value="org_admin">ORG_ADMIN</option>
             <option value="user">USER</option>
-          </select>
+          </Select>
         ) : (
           <span
             className="text-[11px] font-mono font-semibold uppercase px-2.5 py-1 rounded-md"
@@ -86,13 +79,13 @@ export function TeamMemberRow({
             {u.role}
           </span>
         )}
-      </td>
+      </TableCell>
 
-      <td className="px-5 py-3.5">
-        <select
+      <TableCell className="px-5 py-3.5">
+        <Select aria-label="General Org Policy" wrapperClassName="w-auto min-w-0"
           value={u.departmentId || ''}
           onChange={(e) => onAssignDepartment(u.id, e.target.value || null)}
-          className="ui-select h-8 px-2.5 text-[12px] font-medium rounded-md border bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-2)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
+
         >
           <option value="">General Org Policy</option>
           {departments.map((d) => (
@@ -100,30 +93,30 @@ export function TeamMemberRow({
               {d.name}
             </option>
           ))}
-        </select>
-      </td>
+        </Select>
+      </TableCell>
 
-      <td className="px-5 py-3.5">
+      <TableCell className="px-5 py-3.5">
         <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
           <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active Protection
         </span>
-      </td>
+      </TableCell>
 
-      <td className="px-5 py-3.5 text-right">
+      <TableCell className="px-5 py-3.5 text-right">
         {u.id !== currentUser?.id ? (
-          <button
+          <IconButton aria-label="Terminate / Remove User" variant="danger"
             type="button"
             onClick={() => onDeleteClick(u)}
-            className="p-1.5 rounded-lg border hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-slate-400 hover:text-red-600 cursor-pointer inline-flex items-center justify-center"
-            style={{ borderColor: 'var(--border-2)' }}
+            className="inline-flex"
+
             title="Terminate / Remove User"
           >
             <Trash2 size={13} />
-          </button>
+          </IconButton>
         ) : (
           <span className="text-[11px] text-[var(--text-muted)] italic">You</span>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }

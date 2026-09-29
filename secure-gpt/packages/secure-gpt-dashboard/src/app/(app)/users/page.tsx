@@ -1,5 +1,6 @@
 'use client'
 
+import { PageHeader } from '@/components/ui'
 import React, { useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button/button'
 import { Shield, UserCheck, Download, Upload } from 'lucide-react'
@@ -53,17 +54,12 @@ export default function UsersPage() {
   return (
     <div className="flex-1 space-y-6 w-full animate-fade-in pb-16">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
+      <PageHeader title={<>
             <Shield className="text-[var(--accent)] size-5 shrink-0" />
             User Management (RBAC)
-          </h1>
-          <p className="text-[12px] text-[var(--text-secondary)]">
+          </>} description={<>
             Control dynamic role assignments, view active users, and manage account statuses across all organizations.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
+          </>} actions={<><div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="secondary"
             size="md"
@@ -90,8 +86,7 @@ export default function UsersPage() {
           >
             Add Member
           </Button>
-        </div>
-      </div>
+        </div></>} />
 
       <UserFilterToolbar
         search={m.search}

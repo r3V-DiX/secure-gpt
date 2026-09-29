@@ -1,5 +1,7 @@
 'use client'
 
+import { Card, Badge } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React from 'react'
 import { Circle, CircleCheck } from 'lucide-react'
 import type { Step } from '@/features/onboarding/config/steps.data'
@@ -23,8 +25,8 @@ export function StepCard({
   const Icon = step.icon
 
   return (
-    <div
-      className="card p-5 animate-fade-in"
+    <Card
+      className="p-5 animate-fade-in"
       style={{
         animationDelay: `${index * 60}ms`,
         borderColor: isDone ? 'var(--success-border)' : undefined,
@@ -54,9 +56,9 @@ export function StepCard({
                   {step.title}
                 </h2>
                 {isAutoVerified && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                  <Badge variant="success" >
                     Live Auto-Detected
-                  </span>
+                  </Badge>
                 )}
               </div>
               <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -65,20 +67,16 @@ export function StepCard({
             </div>
 
             {/* Mark done toggle */}
-            <button
+            <Button variant="secondary" type="button"
               onClick={() => onToggle(step.id)}
               aria-pressed={isDone}
               aria-label={isDone ? `Mark "${step.title}" as not done` : `Mark "${step.title}" as done`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition-all shrink-0 cursor-pointer hover:brightness-105"
-              style={{
-                background: isDone ? 'var(--success-light)' : 'var(--bg-surface-2)',
-                borderColor: isDone ? 'var(--success-border)' : 'var(--border-2)',
-                color: isDone ? 'var(--success)' : 'var(--text-tertiary)',
-              }}
+              className="shrink-0"
+              style={{ background: isDone ? 'var(--success-light)' : 'var(--bg-surface-2)', borderColor: isDone ? 'var(--success-border)' : 'var(--border-2)', color: isDone ? 'var(--success)' : 'var(--text-tertiary)' }}
             >
               {isDone ? <CircleCheck size={13} /> : <Circle size={13} />}
               {isDone ? 'Done' : 'Mark done'}
-            </button>
+            </Button>
           </div>
 
           {/* Action CTA */}
@@ -87,6 +85,6 @@ export function StepCard({
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }

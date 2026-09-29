@@ -17,7 +17,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   warning: 'bg-[var(--warning-light)] text-[var(--warning)] border border-[var(--warning-border)]',
   danger: 'bg-[var(--danger-light)]  text-[var(--danger)]  border border-[var(--danger-border)]',
   info: 'bg-[var(--info-light)]    text-[var(--info)]    border border-[var(--info-border)]',
-  purple: 'bg-violet-50 text-violet-600 border border-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20',
+  purple: 'bg-[var(--violet-light)] text-[var(--violet)] border border-[var(--border-2)]',
   neutral: 'bg-[var(--bg-surface-3)] text-[var(--text-tertiary)] border border-[var(--border)]',
 }
 
@@ -27,7 +27,7 @@ const dotClasses: Record<BadgeVariant, string> = {
   warning: 'bg-[var(--warning)]',
   danger: 'bg-[var(--danger)]',
   info: 'bg-[var(--info)]',
-  purple: 'bg-violet-500',
+  purple: 'bg-[var(--violet)]',
   neutral: 'bg-[var(--text-tertiary)]',
 }
 

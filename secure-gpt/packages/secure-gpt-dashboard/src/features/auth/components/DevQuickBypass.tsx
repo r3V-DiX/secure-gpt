@@ -1,5 +1,6 @@
 'use client'
 
+import { Input, Button } from '@/components/ui'
 import { Zap } from 'lucide-react'
 
 interface DevQuickBypassProps {
@@ -33,26 +34,22 @@ export function DevQuickBypass({
       </div>
 
       <div className="flex gap-2">
-        <input
+        <Input aria-label="Test email..." controlSize="lg" wrapperClassName="w-auto min-w-0"
           type="email"
           placeholder="Test email..."
           value={devEmail}
           onChange={(e) => setDevEmail(e.target.value)}
           required
-          className="flex-1 px-3 py-2 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
-          style={{
-            background: 'var(--bg-surface)',
-            borderColor: 'var(--border-strong)',
-            color: 'var(--text-primary)',
-          }}
+          className="flex-1"
+
         />
-        <button
+        <Button variant="primary"
           type="submit"
           disabled={devLoading || !devEmail || !privacyAccepted}
-          className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-sm shadow-amber-500/20"
+          className="shrink-0"
         >
           {devLoading ? 'Entering...' : 'Instant Login'}
-        </button>
+        </Button>
       </div>
     </form>
   )

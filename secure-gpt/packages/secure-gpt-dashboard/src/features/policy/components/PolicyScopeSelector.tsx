@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React, { useState } from 'react'
 import { Layers, Building2, FolderGit2, Sparkles, Check, ChevronRight } from 'lucide-react'
 
@@ -47,8 +49,8 @@ export function PolicyScopeSelector({
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
               Policy Governance Scope
             </span>
-            <span
-              className="text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all"
+            <Badge variant="info"
+
               style={{
                 background: isOrg ? 'var(--bg-surface-2)' : 'var(--accent-light)',
                 borderColor: isOrg ? 'var(--border)' : 'var(--accent-border)',
@@ -56,7 +58,7 @@ export function PolicyScopeSelector({
               }}
             >
               {isOrg ? 'Organization Baseline' : `Department: ${activeDept?.name || departmentId}`}
-            </span>
+            </Badge>
           </div>
 
           <p className="text-xs text-[var(--text-secondary)] max-w-2xl leading-relaxed">
@@ -76,7 +78,7 @@ export function PolicyScopeSelector({
         {/* Scope Pill Switcher */}
         <div className="flex items-center gap-1.5 flex-wrap p-1 rounded-xl border self-start lg:self-center"
              style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
-          <button
+          <Button variant="primary"
             type="button"
             onClick={() => onSelectScope(undefined)}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -84,20 +86,17 @@ export function PolicyScopeSelector({
                 ? 'shadow-xs'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-3)]'
             }`}
-            style={{
-              background: isOrg ? 'var(--accent)' : 'transparent',
-              color: isOrg ? '#ffffff' : undefined,
-            }}
+            style={{ background: isOrg ? 'var(--accent)' : 'transparent', color: isOrg ? '#ffffff' : undefined }}
           >
             <Building2 size={13} className={isOrg ? 'text-white' : 'text-[var(--text-tertiary)]'} />
             <span>Org Baseline</span>
             {isOrg && <Check size={12} className="ml-0.5 text-white/90" />}
-          </button>
+          </Button>
 
           {departments.map((dept) => {
             const isSelected = departmentId === dept.id
             return (
-              <button
+              <Button variant="primary"
                 key={dept.id}
                 type="button"
                 onClick={() => onSelectScope(dept.id)}
@@ -106,15 +105,12 @@ export function PolicyScopeSelector({
                     ? 'shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-3)]'
                 }`}
-                style={{
-                  background: isSelected ? 'var(--accent)' : 'transparent',
-                  color: isSelected ? '#ffffff' : undefined,
-                }}
+                style={{ background: isSelected ? 'var(--accent)' : 'transparent', color: isSelected ? '#ffffff' : undefined }}
               >
                 <FolderGit2 size={13} className={isSelected ? 'text-white' : 'text-[var(--text-tertiary)]'} />
                 <span>{dept.name}</span>
                 {isSelected && <Check size={12} className="ml-0.5 text-white/90" />}
-              </button>
+              </Button>
             )
           })}
         </div>

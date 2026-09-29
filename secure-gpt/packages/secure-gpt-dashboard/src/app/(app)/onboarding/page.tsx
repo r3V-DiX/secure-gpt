@@ -1,5 +1,7 @@
 'use client'
 
+import { PageHeader } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { RefreshCw } from 'lucide-react'
@@ -199,25 +201,18 @@ export default function OrgOnboardingPage() {
   return (
     <div className="w-full space-y-6 animate-fade-in pb-10">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap pt-1">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+      <PageHeader title={<>
             Enterprise Setup
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+          </>} description={<>
             Configure corporate domain verification, apply zero-trust DLP policy presets, and roll out browser protection.
-          </p>
-        </div>
-
-        <button
+          </>} actions={<><Button variant="ghost"
           type="button"
           onClick={() => router.push('/dashboard')}
-          className="text-xs font-semibold hover:underline cursor-pointer"
-          style={{ color: 'var(--text-tertiary)' }}
+
+
         >
           Exit to Dashboard ↗
-        </button>
-      </div>
+        </Button></>} />
 
       {/* Stepper Header */}
       <OnboardingStepper

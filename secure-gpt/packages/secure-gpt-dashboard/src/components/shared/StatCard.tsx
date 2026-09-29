@@ -1,9 +1,11 @@
+import { Card } from '@/components/ui'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 
 type Accent = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'indigo'
 
 interface StatCardProps {
+  footer?: React.ReactNode
   label: string
   value: string | number
   sub?: string
@@ -48,17 +50,17 @@ const accentTokens: Record<Accent, { icon: string; border: string; iconBg: strin
   },
 }
 
-export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, trend, trendLabel, href }: StatCardProps) {
+export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, trend, trendLabel, href, footer }: StatCardProps) {
   if (loading) {
     return (
-      <div className="card p-5 flex flex-col gap-3">
+      <Card className="p-5 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="skeleton h-3 w-20 rounded" />
           <div className="skeleton size-8 rounded-lg" />
         </div>
         <div className="skeleton h-8 w-24 rounded" />
         <div className="skeleton h-3 w-28 rounded" />
-      </div>
+      </Card>
     )
   }
 
@@ -87,6 +89,8 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
         {displayValue}
       </div>
 
+      {footer}
+
       {/* Sub row */}
       <div className="flex items-center justify-between gap-2">
         {sub && (
@@ -96,7 +100,7 @@ export function StatCard({ label, value, sub, accent = 'indigo', icon, loading, 
         )}
         {hasTrend && (
           <div className={`flex items-center gap-1 text-[11px] font-bold ${
-            trend >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+            trend >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'
           }`}>
             {trend >= 0
               ? <TrendingUp size={13} />

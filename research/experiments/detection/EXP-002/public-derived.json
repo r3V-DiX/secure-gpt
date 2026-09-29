@@ -1,0 +1,111 @@
+{
+  "engine": "chrome-onnx-runtime",
+  "corpus": "benchmarks/detection/public_corpus.json",
+  "corpusSha256": "57b72d296e96a99936eb312bc92a79c5a8a34069388a63c8dea65bd35e1899ce",
+  "modelSha256": "b60c0f20ced4fff0fcb5285d10b8a75965514d44aca22c82847a99f5957555d0",
+  "modelLoaded": true,
+  "nerInferenceResponses": 2,
+  "byCategory": {
+    "PII": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 4,
+      "precision": 1.0,
+      "recall": 0.2
+    }
+  },
+  "bySource": {
+    "document": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.3333
+    },
+    "prompt": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": null,
+      "recall": 0.0
+    }
+  },
+  "byTier": {
+    "regex": {
+      "tp": 1,
+      "fp": 0,
+      "precision": 1.0,
+      "shareOfGoldDetected": 0.2
+    }
+  },
+  "cases": [
+    {
+      "id": "public-derived-email-body",
+      "origin": "public-derived",
+      "matches": [
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "missed",
+          "span": [
+            0,
+            4,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "missed",
+          "span": [
+            9,
+            13,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "public-derived-meeting-chat",
+      "origin": "public-derived",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "document",
+          "tier": "regex",
+          "type": "email",
+          "span": [
+            55,
+            79,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "document",
+          "tier": "missed",
+          "span": [
+            41,
+            47,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "document",
+          "tier": "missed",
+          "span": [
+            48,
+            53,
+            "PII"
+          ]
+        }
+      ]
+    }
+  ]
+}

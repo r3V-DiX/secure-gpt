@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 interface OAuthButtonsProps {
   privacyAccepted: boolean
   onGoogle: () => void
@@ -13,31 +14,23 @@ export function OAuthButtons({
 }: OAuthButtonsProps) {
   return (
     <div className="space-y-2">
-      <button
+      <Button variant="secondary"
         onClick={onGoogle}
         disabled={!privacyAccepted}
         type="button"
-        className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-        style={{
-          borderColor: 'var(--border-strong)',
-          background: 'var(--bg-surface)',
-          color: 'var(--text-primary)',
-        }}
+        className="w-full"
+
       >
         <GoogleIcon />
         Continue with Google Workspace
-      </button>
+      </Button>
 
-      <button
+      <Button variant="secondary"
         onClick={onMicrosoft}
         disabled={!privacyAccepted}
         type="button"
-        className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-        style={{
-          borderColor: 'var(--border-strong)',
-          background: 'var(--bg-surface)',
-          color: 'var(--text-primary)',
-        }}
+        className="w-full"
+
       >
         <svg className="size-4 shrink-0" viewBox="0 0 21 21">
           <path fill="#f25022" d="M1 1h9v9H1z" />
@@ -46,7 +39,7 @@ export function OAuthButtons({
           <path fill="#ffb900" d="M11 11h9v9h-9z" />
         </svg>
         Continue with Microsoft Entra ID (Azure AD)
-      </button>
+      </Button>
     </div>
   )
 }

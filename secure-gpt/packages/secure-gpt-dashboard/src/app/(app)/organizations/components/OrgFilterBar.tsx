@@ -1,5 +1,7 @@
 'use client'
 
+import { FilterBar } from '@/components/ui'
+import { Input, Button } from '@/components/ui'
 import React from 'react'
 import { Search } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -20,21 +22,21 @@ export function OrgFilterBar({
   onStatusChange,
 }: OrgFilterBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+    <FilterBar className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
       <div className="relative flex-1 max-w-md">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-        <input
+
+        <Input aria-label="Search by name, domain, or admin email..." icon={<Search size={15} />}
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search by name, domain, or admin email..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] text-[13.5px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)]"
+          className="w-full pl-10 pr-4"
         />
       </div>
 
       <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-surface-2)] border border-[var(--border)] self-start sm:self-auto">
         {(['ALL', 'ACTIVE', 'PENDING_VERIFICATION', 'SUSPENDED'] as const).map((st) => (
-          <button
+          <Button variant="ghost"
             key={st}
             type="button"
             onClick={() => onStatusChange(st)}
@@ -52,9 +54,9 @@ export function OrgFilterBar({
               : st === 'ACTIVE'
               ? 'Active'
               : 'Suspended'}
-          </button>
+          </Button>
         ))}
       </div>
-    </div>
+    </FilterBar>
   )
 }

@@ -3,10 +3,10 @@
 // Add new tiers here — pipeline auto picks them up
 // ─────────────────────────────────────────────
 
-import { RegexTier } from './regex/regexTier'
-import { NERTier } from './ner/nerTier'
+import { RegexTier } from '@securegpt/regex'
+import { NERTier } from '@securegpt/ner'
 import { OCRTier } from './ocr/ocrTier'
-import type { BaseTier } from './base-tier'
+import type { BaseTier } from '@securegpt/shared/tier'
 
 // Registry of all tiers in priority order
 // Pipeline runs enabled tiers only
@@ -17,4 +17,4 @@ export const TIER_REGISTRY: BaseTier[] = [
 ]
 
 export { RegexTier, NERTier, OCRTier }
-export { BaseTier } from './base-tier'
+export { BaseTier } from '@securegpt/shared/tier'

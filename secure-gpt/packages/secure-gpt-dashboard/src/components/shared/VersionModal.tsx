@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React, { useState, useEffect } from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal/modal'
 import { CheckCircle2, RefreshCw, Server, Laptop, ShieldCheck, ExternalLink, AlertCircle } from 'lucide-react'
@@ -83,10 +85,10 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                   <span className="text-xl font-bold font-mono text-[var(--text-primary)]">
                     v{data.version}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 capitalize">
+                  <Badge variant="success" >
                     <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     {data.env}
-                  </span>
+                  </Badge>
                 </div>
               </div>
 
@@ -169,20 +171,20 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
           </a>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button variant="secondary" type="button"
               onClick={fetchVersion}
               disabled={loading}
-              className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] flex items-center gap-1.5 transition-colors disabled:opacity-50"
+
             >
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               Refresh
-            </button>
-            <button
+            </Button>
+            <Button variant="primary" type="button"
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors"
+
             >
               Close
-            </button>
+            </Button>
           </div>
         </div>
       </ModalFooter>

@@ -1,3 +1,4 @@
+import { Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Button } from '@/components/ui'
 import React, { useState } from 'react'
 // src/features/event-log/components/EventLogTable.tsx
 import { Badge, actionVariant } from '@/components/ui/badge/badge'
@@ -33,57 +34,57 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
     <div className="space-y-4">
       <div className="rounded-md border overflow-hidden transition-all duration-300 hover:shadow-lg"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}>
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)' }}>
+        <Table className="w-full text-sm border-collapse">
+          <TableHead>
+            <TableRow style={{ borderBottom: '1px solid var(--border)' }}>
               {['Action', 'Category', 'Detection', 'Platform', 'Entities', 'Time'].map(h => (
-                <th key={h}
+                <TableHeaderCell key={h}
                   className="px-4 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"
                   style={{ background: 'var(--bg-surface-2)', color: 'var(--text-tertiary)' }}>
                   {h}
-                </th>
+                </TableHeaderCell>
               ))}
-              <th className="px-4 py-3.5 text-right text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"
+              <TableHeaderCell className="px-4 py-3.5 text-right text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"
                 style={{ background: 'var(--bg-surface-2)', color: 'var(--text-tertiary)' }}>
                 Details
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {loading
               ? Array.from({ length: 10 }).map((_, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                <TableRow key={i} style={{ borderBottom: '1px solid var(--border)' }}>
                   {Array.from({ length: 7 }).map((__, j) => (
-                    <td key={j} className="px-4 py-3"><div className="skeleton h-4 w-3/4" /></td>
+                    <TableCell key={j} className="px-4 py-3"><div className="skeleton h-4 w-3/4" /></TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))
               : data.length === 0
                 ? (
-                  <tr>
-                      <td colSpan={7} className="p-8">
+                  <TableRow>
+                      <TableCell colSpan={7} className="p-8">
                         <EmptyState
                           title="No Event Logs Found"
                           description="No logs matching your selected filter criteria. Try clearing or expanding your filters."
                         />
-                      </td>
-                  </tr>
+                      </TableCell>
+                  </TableRow>
                 )
                 : data.map((log, i) => {
                   const logKey = log.id || log.eventId || String(i)
                   return (
                   <React.Fragment key={logKey}>
-                    <tr
+                    <TableRow
                       onClick={() => toggleExpandLog(logKey)}
                       style={{ borderBottom: '1px solid var(--border)', animationDelay: `${i * 15}ms` }}
                       className="animate-fade-in transition-all duration-150 hover:bg-[var(--bg-surface-2)]/60 cursor-pointer">
-                      <td className="px-4 py-3">
+                      <TableCell className="px-4 py-3">
                         <Badge variant={actionVariant(log.actionTaken)}>{log.actionTaken}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                         {log.categoryTriggered}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <div className="flex flex-col">
                           <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
                             {log.detectionType.replace(/_/g, ' ')}
@@ -92,16 +93,16 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                             {log.detectionTier}
                           </span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs capitalize" style={{ color: 'var(--text-secondary)' }}>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-xs capitalize" style={{ color: 'var(--text-secondary)' }}>
                         <div className="flex items-center gap-2">
                           {PLATFORM_ICONS[log.llmPlatform] ? (
                             <img src={PLATFORM_ICONS[log.llmPlatform]} alt="" className="size-4 shrink-0 object-contain" />
                           ) : null}
                           <span>{log.llmPlatform}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {(log.entityTypes ?? []).slice(0, 2).map(et => (
                             <span key={et}
@@ -117,26 +118,26 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                           )}
                           {(log.entityTypes ?? []).length === 0 && <span className="text-xs text-[var(--text-tertiary)]">—</span>}
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs tabular-nums whitespace-nowrap"
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-xs tabular-nums whitespace-nowrap"
                         style={{ color: 'var(--text-tertiary)' }}>
                         {new Date(log.timestamp).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-2)] transition-all active:scale-95 cursor-pointer shadow-sm pointer-events-none"
-                          style={{ color: 'var(--text-secondary)' }}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right">
+                        <Button variant="secondary" type="button"
+                          className="inline-flex"
+
                         >
                           {expandedLogId === logKey ? <EyeOff size={11} /> : <Eye size={11} />}
                           <span>{expandedLogId === logKey ? 'Hide' : 'Inspect'}</span>
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
 
                     {/* Expanded details block */}
                     {expandedLogId === logKey && (
-                      <tr className="bg-white/[0.01] dark:bg-black/[0.05]">
-                        <td colSpan={7} className="py-4 px-6 border-b border-[var(--border-2)]">
+                      <TableRow className="bg-white/[0.01] dark:bg-black/[0.05]">
+                        <TableCell colSpan={7} className="py-4 px-6 border-b border-[var(--border-2)]">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-left">
                             {/* Left column: Event details */}
                             <div className="space-y-2.5">
@@ -215,7 +216,7 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                                 </div>
                               </div>
                             </div>
-                            
+
                             {/* Privacy explanation */}
                             <div className="md:col-span-2 mt-2 p-3 rounded-xl flex items-start gap-3" style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
                               <span className="mt-0.5 text-sm" aria-hidden="true">ℹ️</span>
@@ -227,14 +228,14 @@ export function EventLogTable({ data, pagination, loading, onPageChange }: Event
                               </div>
                             </div>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )}
                   </React.Fragment>
                   )
                 })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <Pagination pagination={pagination} onPageChange={onPageChange} />
     </div>

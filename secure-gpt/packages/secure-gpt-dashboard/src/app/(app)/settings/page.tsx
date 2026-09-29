@@ -1,5 +1,7 @@
 'use client'
 // src/app/(app)/settings/page.tsx
+import { PageHeader } from '@/components/ui'
+import { Badge } from '@/components/ui'
 import { useState } from 'react'
 import { Download, LogOut, ShieldCheck, Database, Info, Lock, Monitor, Cpu } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
@@ -61,33 +63,21 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="w-full space-y-5 animate-fade-in pb-8">
-
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+    <PageHeader title={<>
           Settings
-        </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+        </>} description={<>
           Manage your account and preferences
-        </p>
-      </div>
-
-      {/* Authentication */}
-      <Section icon={<ShieldCheck size={14} />} title="Authentication">
+        </>} actions={<><Section icon={<ShieldCheck size={14} />} title="Authentication">
         <div className="px-5 py-4 flex items-center justify-between border-b"
           style={{ borderColor: 'var(--border)' }}>
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Google Account</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{user?.email}</p>
           </div>
-          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border"
-            style={{
-              background: 'var(--success-light)',
-              borderColor: 'var(--success-border)',
-              color: 'var(--success)',
-            }}>
+          <Badge variant="success"
+            >
             ● Connected
-          </span>
+          </Badge>
         </div>
 
         <div className="px-5 py-4">
@@ -104,16 +94,12 @@ export default function SettingsPage() {
           </p>
         </div>
       </Section>
-
-      {/* Registered Devices */}
-      <Section icon={<Monitor size={14} />} title="Registered Devices">
+<Section icon={<Monitor size={14} />} title="Registered Devices">
         <div className="px-5 py-4">
           <RegisteredDevicesPanel />
         </div>
       </Section>
-
-      {/* Data export */}
-      <Section icon={<Database size={14} />} title="Data Export">
+<Section icon={<Database size={14} />} title="Data Export">
         <div className="px-5 py-4">
           <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
             Download all your detection event logs as a CSV file. Includes timestamps, actions, categories, and entity types.
@@ -128,9 +114,7 @@ export default function SettingsPage() {
           </Button>
         </div>
       </Section>
-
-      {/* Session */}
-      <Section icon={<Lock size={14} />} title="Session">
+<Section icon={<Lock size={14} />} title="Session">
         <div className="px-5 py-4">
           <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             You are authenticated via a secure server-side session cookie. Sessions expire after{' '}
@@ -140,9 +124,7 @@ export default function SettingsPage() {
           </p>
         </div>
       </Section>
-
-      {/* About */}
-      <Section icon={<Info size={14} />} title="About">
+<Section icon={<Info size={14} />} title="About">
         <div className="px-5 py-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>SecureGPT Dashboard</span>
@@ -157,9 +139,7 @@ export default function SettingsPage() {
           </p>
         </div>
       </Section>
-
-      {/* Danger Zone */}
-      <div className="rounded-md border overflow-hidden mt-6"
+<div className="rounded-md border overflow-hidden mt-6"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--danger-border)', boxShadow: 'var(--shadow-card)' }}>
         <div className="px-5 py-3 border-b flex items-center gap-2"
           style={{ borderColor: 'var(--danger-border)', background: 'var(--danger-light)' }}>
@@ -177,20 +157,18 @@ export default function SettingsPage() {
             </p>
           </div>
           <div>
-            <button
+            <Button variant="danger"
               onClick={() => setShowDeleteConfirm(true)}
               type="button"
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all cursor-pointer hover:opacity-90"
-              style={{ background: 'var(--danger)' }}
+
+
             >
               Delete Account
-            </button>
+            </Button>
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} size="md">
+<Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} size="md">
         <div className="p-6 space-y-5">
           <div className="space-y-2">
             <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Are you absolutely sure?</h3>
@@ -210,27 +188,26 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="flex items-center justify-end gap-3">
-            <button
+            <Button variant="secondary"
               onClick={() => setShowDeleteConfirm(false)}
               type="button"
-              className="px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer"
-              style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
+
+
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button variant="danger"
               onClick={handleDeleteAccount}
               disabled={deleting}
               type="button"
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-50 cursor-pointer hover:opacity-90"
-              style={{ background: 'var(--danger)' }}
+
+
             >
               {deleting ? 'Deleting...' : 'Yes, Delete Account'}
-            </button>
+            </Button>
           </div>
         </div>
-      </Modal>
-    </div>
+      </Modal></>} />
   )
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
 import React from 'react'
 import { Plus, Sliders, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button/button'
@@ -95,25 +96,25 @@ export function CustomRulesTab({
 
               {isAdmin && (
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <button
+                  <IconButton aria-label="Edit" variant="secondary"
                     type="button"
                     onClick={() => {
                       setEditingRule(rule)
                       setAddRuleOpen(true)
                     }}
-                    className="p-1.5 rounded-lg border text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                    style={{ borderColor: 'var(--border)' }}
+
+
                   >
                     <Pencil size={12} />
-                  </button>
-                  <button
+                  </IconButton>
+                  <IconButton aria-label="Delete" variant="danger"
                     type="button"
                     onClick={() => onDeleteCustomRule(activeCategoryName, rule.id)}
-                    className="p-1.5 rounded-lg border text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger-light)] transition-all cursor-pointer"
-                    style={{ borderColor: 'var(--border)' }}
+
+
                   >
                     <Trash2 size={12} />
-                  </button>
+                  </IconButton>
                 </div>
               )}
             </div>

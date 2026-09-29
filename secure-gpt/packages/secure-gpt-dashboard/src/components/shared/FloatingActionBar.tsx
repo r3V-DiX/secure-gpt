@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 import React from 'react'
 
 export interface FloatingActionBarProps {
@@ -70,10 +71,10 @@ export function FloatingActionBar({
 
         {/* Optional Dismiss Button */}
         {onDismiss && (
-          <button
+          <Button variant="ghost"
             type="button"
             onClick={onDismiss}
-            className="p-1 rounded hover:bg-[var(--bg-surface-2)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors ml-0.5 cursor-pointer"
+            className="ml-0.5"
             title={dismissLabel}
             aria-label={dismissLabel}
           >
@@ -90,7 +91,7 @@ export function FloatingActionBar({
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
-          </button>
+          </Button>
         )}
       </div>
     </div>

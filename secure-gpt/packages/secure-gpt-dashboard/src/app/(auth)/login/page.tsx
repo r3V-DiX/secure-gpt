@@ -1,6 +1,7 @@
 'use client'
 // packages/dashboard/src/app/(auth)/login/page.tsx
 
+import { Checkbox } from '@/components/ui'
 import { useState } from 'react'
 import Link from 'next/link'
 import { apiPost } from '@/lib/api/client'
@@ -228,12 +229,12 @@ export default function LoginPage() {
         )}
 
         <div className="flex items-start gap-2.5 mb-5">
-          <input
+          <Checkbox
             id="privacy-checkbox"
-            type="checkbox"
+
             checked={privacyAccepted}
             onChange={e => setPrivacyAccepted(e.target.checked)}
-            className="mt-0.5 size-4 rounded border-gray-400 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            className="mt-0.5"
           />
           <label htmlFor="privacy-checkbox" className="text-[12px] leading-normal select-none cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
             I agree to the{' '}

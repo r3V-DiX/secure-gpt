@@ -1,5 +1,6 @@
 'use client'
 
+import { Input } from '@/components/ui'
 import { Modal } from '@/components/ui/modal/modal'
 import { Button } from '@/components/ui/button/button'
 import { FolderPlus, AlertCircle } from 'lucide-react'
@@ -70,14 +71,14 @@ export function DepartmentModal({
             <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>
               Category Name
             </label>
-            <input
+            <Input aria-label="e.g. Engineering, Financial Analysts, Customer Support"
               type="text"
               disabled={!isOrgActive}
               placeholder="e.g. Engineering, Financial Analysts, Customer Support"
               value={deptName}
               onChange={(e) => setDeptName(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-primary)' }}
+              className="w-full"
+
             />
           </div>
 
@@ -85,14 +86,14 @@ export function DepartmentModal({
             <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>
               Description (Optional)
             </label>
-            <input
+            <Input aria-label="e.g. Strict masking for financial records and source code"
               type="text"
               disabled={!isOrgActive}
               placeholder="e.g. Strict masking for financial records and source code"
               value={deptDesc}
               onChange={(e) => setDeptDesc(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-primary)' }}
+              className="w-full"
+
             />
           </div>
         </div>

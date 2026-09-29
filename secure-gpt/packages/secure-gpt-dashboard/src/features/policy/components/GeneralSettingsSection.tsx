@@ -1,9 +1,10 @@
 'use client'
 
+import { Badge } from '@/components/ui'
 import React from 'react'
 import { Settings2, FileSearch, ShieldCheck, MailCheck, Eye, Sparkles } from 'lucide-react'
 import type { PIIConfig } from '@/types'
-import { Toggle } from './PolicyManager'
+import { Switch } from '@/components/ui/input/selection'
 
 interface Props {
   config: PIIConfig
@@ -92,16 +93,12 @@ export function GeneralSettingsSection({ config, isAdmin, onUpdateField }: Props
                     <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">
                       {label}
                     </p>
-                    <span
-                      className="text-[10px] font-semibold px-2 py-0.2 rounded-full border"
-                      style={{
-                        background: 'var(--bg-surface-2)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--text-secondary)',
-                      }}
+                    <Badge variant="neutral"
+
+
                     >
                       {badge}
-                    </span>
+                    </Badge>
                   </div>
                   <p className="text-xs text-[var(--text-tertiary)] mt-0.5 max-w-xl">
                     {desc}
@@ -109,9 +106,9 @@ export function GeneralSettingsSection({ config, isAdmin, onUpdateField }: Props
                 </div>
               </div>
 
-              <Toggle
-                on={isEnabled}
-                onChange={(en) => onUpdateField(key, en)}
+              <Switch aria-label="Enable setting"
+                checked={isEnabled}
+                onCheckedChange={(en) => onUpdateField(key, en)}
                 disabled={!isAdmin}
               />
             </div>

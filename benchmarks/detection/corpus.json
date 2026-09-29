@@ -1,0 +1,12 @@
+[
+  {"id":"prompt-email","source":"prompt","origin":"synthetic","text":"Email the summary to alex.morgan@example.com.","expected":[{"value":"alex.morgan@example.com","category":"PII"}]},
+  {"id":"prompt-pan","source":"prompt","origin":"synthetic","text":"My PAN card number is ABCPE1234F.","expected":[{"value":"ABCPE1234F","category":"FINANCIAL"}]},
+  {"id":"prompt-aadhaar","source":"prompt","origin":"synthetic","text":"Please verify Aadhaar 7592 2902 8107.","expected":[{"value":"7592 2902 8107","category":"PII"}]},
+  {"id":"prompt-name","source":"prompt","origin":"repository-fixture","text":"My name is John Doe and my email is john.doe@gmail.com","expected":[{"value":"John","category":"PII"},{"value":"Doe","category":"PII"},{"value":"john.doe@gmail.com","category":"PII"}]},
+  {"id":"prompt-clean","source":"prompt","origin":"synthetic","text":"Please summarize the design meeting notes for tomorrow.","expected":[]},
+  {"id":"prompt-jwt","source":"prompt","origin":"synthetic","text":"Check the Authorization token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U","expected":[{"value":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U","category":"CONFIDENTIAL"}]},
+  {"id":"document-invoice","source":"document","origin":"synthetic","text":"Invoice #1042\nBill to: Mira Shah\nContact: mira.shah@example.com\nPAN: ABCPE1234F","expected":[{"value":"Mira","category":"PII"},{"value":"Shah","category":"PII"},{"value":"mira.shah@example.com","category":"PII"},{"value":"ABCPE1234F","category":"FINANCIAL"}]},
+  {"id":"document-technical","source":"document","origin":"synthetic","text":"Operations runbook\nServer IP: 192.168.1.50\nSupport: ops@example.com","expected":[{"value":"192.168.1.50","category":"IP"},{"value":"ops@example.com","category":"PII"}]},
+  {"id":"document-name","source":"document","origin":"repository-fixture","text":"Alice Smith was born on 1990-05-12.","expected":[{"value":"Alice","category":"PII"},{"value":"Smith","category":"PII"}]},
+  {"id":"document-clean","source":"document","origin":"synthetic","text":"Meeting agenda\n1. Review roadmap milestones\n2. Discuss staffing and timelines","expected":[]}
+]

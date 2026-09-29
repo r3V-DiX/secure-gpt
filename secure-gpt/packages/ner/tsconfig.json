@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {"outDir": "./dist", "rootDir": "..", "lib": ["ES2020", "DOM", "DOM.Iterable", "WebWorker"], "types": ["vite/client", "node"]},
+  "include": ["src/**/*", "../shared/src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

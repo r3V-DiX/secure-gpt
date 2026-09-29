@@ -1,5 +1,6 @@
 'use client'
 
+import { Card, Badge } from '@/components/ui'
 import React from 'react'
 import { TrendingUp, Activity } from 'lucide-react'
 import {
@@ -9,7 +10,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
-import { EmptyState } from './QuickStatsRow'
+import { EmptyState } from '@/components/ui/empty-state/EmptyState'
 
 interface TelemetryGridsProps {
   stats: any
@@ -20,7 +21,7 @@ export function TelemetryGrids({ stats, loading }: TelemetryGridsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Entity types */}
-      <div className="card p-5 animate-fade-in stagger-1">
+      <Card className="p-5 animate-fade-in stagger-1">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
             Top Entity Types
@@ -38,7 +39,7 @@ export function TelemetryGrids({ stats, loading }: TelemetryGridsProps) {
             ))}
           </div>
         ) : stats?.topEntityTypes.length === 0 ? (
-          <EmptyState label="No detections yet" />
+          <EmptyState compact title="No detections yet" />
         ) : (
           <div className="space-y-3.5">
             {stats?.topEntityTypes.slice(0, 8).map((item: any, i: number) => {
@@ -74,10 +75,10 @@ export function TelemetryGrids({ stats, loading }: TelemetryGridsProps) {
             })}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Top domains */}
-      <div className="card p-5 animate-fade-in stagger-2">
+      <Card className="p-5 animate-fade-in stagger-2">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
             Active Domains
@@ -95,7 +96,7 @@ export function TelemetryGrids({ stats, loading }: TelemetryGridsProps) {
             ))}
           </div>
         ) : stats?.topDomains.length === 0 ? (
-          <EmptyState label="No domains recorded" />
+          <EmptyState compact title="No domains recorded" />
         ) : (
           <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
             {stats?.topDomains.slice(0, 8).map((item: any, i: number) => (
@@ -107,24 +108,20 @@ export function TelemetryGrids({ stats, loading }: TelemetryGridsProps) {
                 <span className="text-[12px] font-mono font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                   {item.domain}
                 </span>
-                <span
-                  className="text-[11px] tabular-nums font-semibold ml-3 shrink-0 px-2 py-0.5 rounded-full"
-                  style={{
-                    background: 'var(--accent-light)',
-                    color: 'var(--accent-text)',
-                    border: '1px solid var(--accent-border)',
-                  }}
+                <Badge variant="info"
+                  className="tabular-nums ml-3 shrink-0"
+
                 >
                   {item.count}
-                </span>
+                </Badge>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Events over time */}
-      <div className="card p-5 animate-fade-in stagger-3">
+      <Card className="p-5 animate-fade-in stagger-3">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -144,7 +141,7 @@ export function TelemetryGrids({ stats, loading }: TelemetryGridsProps) {
             <div className="skeleton h-3 w-20 rounded" />
           </div>
         ) : (stats?.eventsByDay ?? []).length === 0 ? (
-          <EmptyState label="No events in period" />
+          <EmptyState compact title="No events in period" />
         ) : (
           <div className="h-32 min-h-[128px] min-w-0 w-full -mx-2">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={128}>
@@ -200,7 +197,7 @@ export function TelemetryGrids({ stats, loading }: TelemetryGridsProps) {
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

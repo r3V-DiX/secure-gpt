@@ -1,5 +1,8 @@
 'use client'
 
+import { Badge } from '@/components/ui'
+import { IconButton } from '@/components/ui'
+import { Button, Input } from '@/components/ui'
 import React, { useState, useMemo } from 'react'
 import { PlatformIcon } from '@/components/shared/PlatformIcon'
 import type { LLMPlatform } from '@securegpt/shared/constants'
@@ -83,16 +86,12 @@ export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: P
             <h2 className="text-sm font-bold text-[var(--text-primary)]">
               Monitored AI Platforms
             </h2>
-            <span
-              className="text-[11px] px-2.5 py-0.5 rounded-full font-bold tabular-nums border shadow-xs"
-              style={{
-                background: 'var(--accent-light)',
-                color: 'var(--accent-text)',
-                borderColor: 'var(--accent-border)',
-              }}
+            <Badge variant="info"
+              className="tabular-nums"
+
             >
               {activeCount} / {totalCount} Protected
-            </span>
+            </Badge>
           </div>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">
             Browser extension enforces DLP inspection and content masking exclusively on selected targets.
@@ -101,24 +100,24 @@ export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: P
 
         {isAdmin && (
           <div className="flex items-center gap-2 self-start sm:self-center">
-            <button
+            <Button variant="primary"
               type="button"
               onClick={() => onChange(PLATFORMS.map(p => p.id))}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all hover:bg-[var(--accent-light)] hover:text-[var(--accent)] hover:border-[var(--accent-border)] cursor-pointer"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
+              className="inline-flex"
+
             >
               <CheckSquare size={13} className="text-[var(--accent)]" />
               <span>Select All</span>
-            </button>
-            <button
+            </Button>
+            <Button variant="danger"
               type="button"
               onClick={() => onChange([])}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all hover:bg-[var(--danger-light)] hover:text-[var(--danger)] hover:border-[var(--danger-border)] cursor-pointer"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-2)', color: 'var(--text-secondary)' }}
+              className="inline-flex"
+
             >
               <Square size={13} className="text-[var(--danger)]" />
               <span>Deselect All</span>
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -143,7 +142,7 @@ export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: P
             ].map(tab => {
               const active = platformCategory === tab.id
               return (
-                <button
+                <Button variant="primary"
                   key={tab.id}
                   type="button"
                   onClick={() => setPlatformCategory(tab.id as any)}
@@ -152,53 +151,45 @@ export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: P
                       ? 'shadow-xs'
                       : 'hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)]'
                   }`}
-                  style={{
-                    background: active ? 'var(--accent)' : 'transparent',
-                    borderColor: active ? 'var(--accent)' : 'var(--border)',
-                    color: active ? '#ffffff' : 'var(--text-secondary)',
-                  }}
+                  style={{ background: active ? 'var(--accent)' : 'transparent', borderColor: active ? 'var(--accent)' : 'var(--border)', color: active ? '#ffffff' : 'var(--text-secondary)' }}
                 >
                   <span className={active ? 'text-white' : 'text-[var(--text-tertiary)]'}>
                     {tab.icon}
                   </span>
                   <span>{tab.label}</span>
-                  <span
-                    className="text-[10px] px-1.5 py-0.2 rounded-full font-bold tabular-nums"
+                  <Badge variant="neutral"
+                    className="tabular-nums"
                     style={{
                       background: active ? 'rgba(255,255,255,0.22)' : 'var(--bg-surface-2)',
                       color: active ? '#ffffff' : 'var(--text-tertiary)',
                     }}
                   >
                     {tab.count}
-                  </span>
-                </button>
+                  </Badge>
+                </Button>
               )
             })}
           </div>
 
           {/* Search box */}
           <div className="relative min-w-[220px]">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] pointer-events-none" />
-            <input
+
+            <Input aria-label="Search platforms by name or domain…" icon={<Search size={15} />}
               type="text"
               placeholder="Search platforms by name or domain…"
               value={platformSearch}
               onChange={e => setPlatformSearch(e.target.value)}
-              className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border outline-none transition-all focus:border-[var(--accent)]"
-              style={{
-                background: 'var(--bg-surface-2)',
-                borderColor: 'var(--border)',
-                color: 'var(--text-primary)',
-              }}
+              className="w-full pl-8 pr-7"
+
             />
             {platformSearch && (
-              <button
+              <IconButton aria-label="Close" variant="ghost"
                 type="button"
                 onClick={() => setPlatformSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2"
               >
                 <X size={12} />
-              </button>
+              </IconButton>
             )}
           </div>
         </div>

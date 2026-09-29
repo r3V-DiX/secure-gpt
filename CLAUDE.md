@@ -37,7 +37,7 @@ Single test file:
 
 ```bash
 npm run test --workspace=@securegpt/extension -- tests/content/interceptor.test.ts
-npm run test --workspace=@securegpt/detection -- src/tiers/regex/regexTier.test.ts
+npm run test --workspace=@securegpt/regex -- src/regexTier.test.ts
 ```
 
 ### `secure-gpt-admin/` (npm workspaces: `shared`, `secure-gpt-dashboard`)
@@ -86,9 +86,9 @@ Core runtime path: **extension content script intercepts → background SW orche
 
 - Entry: `src/pipeline.ts` — `detectPII(text, config)`. Order: Regex tier → mask regex spans → NER tier → merge (tier priority `regex < ner < ocr`; same-tier keeps higher confidence) → allowlist filter → `DetectionResult`.
 - Image path: `detectPIIFromImage(imageData, config)` runs OCR first, then regex/NER on extracted text, maps entities to bounding boxes.
-- NER runs in `src/workers/ner.worker.ts` via `onnxruntime-web` (WebGPU → WASM fallback), WordPiece tokenizer. OCR uses tesseract.js (`src/tiers/ocr/`), with a canvas preprocessor (2x upscale, grayscale, threshold binarization) for skewed/low-contrast images.
-- Rules grouped by category (`financial`, `pii`, `confidential`, `ip`) in `src/rules/*`, with optional context triggers and validators (luhn, verhoeff, pan, iban, phone, entropy, jwt).
-- `packages/detection/scripts/evaluate.py` runs a local accuracy benchmark (precision/recall/F1 per class) against `dataset/example_data.jsonl`.
+- NER runs in `packages/ner/src/workers/ner.worker.ts` via `onnxruntime-web` (WebGPU → WASM fallback), with its WordPiece tokenizer. OCR uses tesseract.js (`packages/detection/src/tiers/ocr/`), with a canvas preprocessor (2x upscale, grayscale, threshold binarization) for skewed/low-contrast images.
+- Rules are grouped by category (`financial`, `pii`, `confidential`, `ip`) in `packages/regex/src/rules/*`, with optional context triggers and validators (luhn, verhoeff, pan, iban, phone, entropy, jwt).
+- `packages/ner/scripts/evaluate.py` evaluates the ONNX model alone; `../benchmarks/detection/evaluate.py` benchmarks the browser pipeline and records entity-level precision and recall.
 
 ### Backend (FastAPI + SQLAlchemy async + PostgreSQL)
 

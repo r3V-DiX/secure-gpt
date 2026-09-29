@@ -1,5 +1,7 @@
 'use client'
 
+import { IconButton } from '@/components/ui'
+import { Button } from '@/components/ui'
 import React from 'react'
 import Link from 'next/link'
 import { Rocket, Sparkles, X } from 'lucide-react'
@@ -44,14 +46,14 @@ export function OnboardingBanner({ show, onDismiss }: OnboardingBannerProps) {
             <Sparkles size={13} />
             Get Started
           </Link>
-          <button
+          <IconButton variant="secondary" type="button"
             onClick={onDismiss}
             aria-label="Dismiss onboarding"
-            className="size-7 rounded-md flex items-center justify-center border transition-all hover:bg-[var(--bg-surface-2)] cursor-pointer"
-            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+
+
           >
             <X size={14} />
-          </button>
+          </IconButton>
         </div>
       </div>
     </div>

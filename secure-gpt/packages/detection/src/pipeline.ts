@@ -3,8 +3,8 @@
 // Single entry point — extension calls detectPII()
 // ─────────────────────────────────────────────
 
-import { RegexTier } from './tiers/regex/regexTier'
-import { NERTier } from './tiers/ner/nerTier'
+import { RegexTier } from '@securegpt/regex'
+import { NERTier } from '@securegpt/ner'
 import { OCRTier } from './tiers/ocr/ocrTier'
 import { mergeEntities } from './utils/merger.utils'
 import { applyAllowlist } from './utils/allowlist.utils'
@@ -144,5 +144,5 @@ export type { DetectionResult, PIIEntity, PIIConfig }
 
 // ─── Re-export tier classes for offscreen document use ────────────────────────
 export { OCRTier } from './tiers/ocr/ocrTier'
-export { RegexTier } from './tiers/regex/regexTier'
-export { NERTier } from './tiers/ner/nerTier'  // Bug 8 fix: needed by offscreen OCR path
+export { RegexTier } from '@securegpt/regex'
+export { NERTier } from '@securegpt/ner'  // Bug 8 fix: needed by offscreen OCR path
