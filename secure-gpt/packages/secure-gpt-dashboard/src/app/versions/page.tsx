@@ -132,19 +132,19 @@ export default function DedicatedVersionsPage() {
             {tabs.map((t) => {
               const isActive = activeTab === t.key
               return (
-                <Button variant="primary"
+                <Button variant={isActive ? 'primary' : 'ghost'}
                   key={t.key}
                   type="button"
+                  aria-pressed={isActive}
                   onClick={() => setActiveTab(t.key)}
-                  className={`p-4 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                  className={`h-auto min-h-28 w-full items-stretch p-4 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
                     isActive ? 'shadow-md text-white' : 'hover:bg-[var(--bg-surface)] text-[var(--text-secondary)]'
                   }`}
-                  style={{ background: isActive ? 'var(--accent)' : 'transparent' }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 font-bold text-sm">
                       <span className={isActive ? 'text-white' : 'text-[var(--accent)]'}>{t.icon}</span>
-                      <span style={{ color: isActive ? '#ffffff' : 'var(--text-primary)' }}>{t.label}</span>
+                      <span className={isActive ? 'text-white' : 'text-[var(--text-primary)]'}>{t.label}</span>
                     </div>
                     <span
                       className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
@@ -157,8 +157,7 @@ export default function DedicatedVersionsPage() {
                     </span>
                   </div>
                   <p
-                    className="text-xs leading-relaxed"
-                    style={{ color: isActive ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}
+                    className={`text-xs leading-relaxed ${isActive ? 'text-white/85' : 'text-[var(--text-secondary)]'}`}
                   >
                     {t.description}
                   </p>

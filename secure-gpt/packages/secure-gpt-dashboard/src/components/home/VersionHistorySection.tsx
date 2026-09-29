@@ -74,8 +74,9 @@ export function VersionHistorySection() {
             return (
               <Button variant="primary" type="button"
                 key={tab.key}
+                aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-3 px-5 py-3 rounded-xl border text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                className={`h-auto min-h-10 flex items-center gap-3 px-5 py-3 rounded-xl border text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   isActive
                     ? 'shadow-md scale-[1.02]'
                     : 'hover:border-slate-400 dark:hover:border-slate-600'
