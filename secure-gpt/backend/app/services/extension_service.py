@@ -50,7 +50,7 @@ DEFAULT_POLICY_CONFIG = {
         "CONFIDENTIAL": {"enabled": True, "action": "BLOCK", "customKeywords": [], "allowlist": [], "fuzzyMatch": False, "customRules": []},
         "IP": {"enabled": True, "action": "WARN_ALLOW", "customKeywords": [], "allowlist": [], "fuzzyMatch": False, "customRules": []},
     },
-    "monitoredPlatforms": ["chatgpt", "gemini", "copilot", "claude", "perplexity", "meta-ai"],
+    "monitoredPlatforms": ["chatgpt", "gemini", "google-ai-mode", "copilot", "claude", "perplexity", "meta-ai"],
     "customDomains": [],
     "allowPause": True,
     "logUserEmail": False,

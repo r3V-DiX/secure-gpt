@@ -1,5 +1,5 @@
 // packages/extension/src/content/platform-selectors.constants.ts
-// Platform-specific input selectors targeting 20+ AI platforms
+// Platform-specific input selectors for supported AI platforms
 
 export const INPUT_SELECTORS = [
   // ChatGPT
@@ -10,6 +10,8 @@ export const INPUT_SELECTORS = [
   // Gemini
   'div.ql-editor[contenteditable="true"]',
   'rich-textarea div[contenteditable="true"]',
+  // Google AI Mode
+  'textarea[placeholder*="Ask anything"]',
   // Claude
   'div[contenteditable="true"].ProseMirror',
   // Copilot
@@ -39,18 +41,6 @@ export const INPUT_SELECTORS = [
   // HuggingChat
   'textarea[placeholder*="Ask anything"]',
   'textarea[enterkeyhint="send"]',
-  // Phind
-  'textarea[placeholder*="Ask Phind"]',
-  'textarea[aria-label="Search"]',
-  // Notion AI
-  'div[placeholder*="Ask AI"]',
-  'div[class*="notion-ai-prompt-input"]',
-  // Jasper AI
-  'textarea[placeholder*="Ask Jasper"]',
-  'div[contenteditable="true"][data-slate-editor="true"]',
-  // Copy.ai
-  'textarea[placeholder*="Enter prompt"]',
-  'textarea[data-testid="chat-textarea"]',
   // Cursor Web
   'textarea[placeholder*="Plan, code"]',
 ]

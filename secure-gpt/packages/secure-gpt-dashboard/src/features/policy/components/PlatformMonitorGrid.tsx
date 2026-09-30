@@ -6,12 +6,12 @@ import { Button, Input } from '@/components/ui'
 import React, { useState, useMemo } from 'react'
 import { PlatformIcon } from '@/components/shared/PlatformIcon'
 import type { LLMPlatform } from '@securegpt/shared/constants'
-import { Search, CheckSquare, Square, Globe, ShieldCheck, Sparkles, Code2, Bot, FileText, X } from 'lucide-react'
+import { Search, CheckSquare, Square, Globe, ShieldCheck, Sparkles, Code2, Bot, X } from 'lucide-react'
 
 export interface PlatformMeta {
   id: LLMPlatform
   label: string
-  category: 'chat' | 'code' | 'writing'
+  category: 'chat' | 'code'
   domain: string
 }
 
@@ -19,20 +19,17 @@ export const PLATFORMS: PlatformMeta[] = [
   { id: 'chatgpt',    label: 'ChatGPT',           category: 'chat',    domain: 'chatgpt.com' },
   { id: 'claude',     label: 'Claude (Anthropic)', category: 'chat',    domain: 'claude.ai' },
   { id: 'gemini',     label: 'Google Gemini',     category: 'chat',    domain: 'gemini.google.com' },
-  { id: 'copilot',    label: 'Microsoft Copilot', category: 'chat',    domain: 'copilot.microsoft.com' },
+  { id: 'google-ai-mode', label: 'Google AI Mode', category: 'chat', domain: 'google.com/ai' },
+  { id: 'copilot',    label: 'Microsoft Copilot', category: 'chat',    domain: 'copilot.com' },
   { id: 'perplexity', label: 'Perplexity AI',     category: 'chat',    domain: 'perplexity.ai' },
   { id: 'deepseek',   label: 'DeepSeek',          category: 'chat',    domain: 'deepseek.com' },
   { id: 'mistral',    label: 'Mistral Le Chat',   category: 'chat',    domain: 'chat.mistral.ai' },
   { id: 'meta-ai',    label: 'Meta AI',           category: 'chat',    domain: 'meta.ai' },
   { id: 'poe',        label: 'Poe',               category: 'chat',    domain: 'poe.com' },
   { id: 'cursor',     label: 'Cursor Web',        category: 'code',    domain: 'cursor.com' },
-  { id: 'v0',         label: 'v0.dev (Vercel)',   category: 'code',    domain: 'v0.dev' },
+  { id: 'v0',         label: 'v0 (Vercel)',       category: 'code',    domain: 'v0.app' },
   { id: 'replit',     label: 'Replit Agent',      category: 'code',    domain: 'replit.com' },
   { id: 'huggingchat',label: 'HuggingChat',       category: 'code',    domain: 'huggingface.co' },
-  { id: 'phind',      label: 'Phind AI',          category: 'code',    domain: 'phind.com' },
-  { id: 'notion',     label: 'Notion AI',         category: 'writing', domain: 'notion.so' },
-  { id: 'jasper',     label: 'Jasper AI',         category: 'writing', domain: 'jasper.ai' },
-  { id: 'copy-ai',    label: 'Copy.ai',           category: 'writing', domain: 'copy.ai' },
 ]
 
 interface Props {
@@ -42,7 +39,7 @@ interface Props {
 }
 
 export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: Props) {
-  const [platformCategory, setPlatformCategory] = useState<'all' | 'chat' | 'code' | 'writing'>('all')
+  const [platformCategory, setPlatformCategory] = useState<'all' | 'chat' | 'code'>('all')
   const [platformSearch, setPlatformSearch] = useState('')
 
   const activeCount = monitoredPlatforms.length
@@ -63,7 +60,6 @@ export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: P
       all: PLATFORMS.length,
       chat: PLATFORMS.filter(p => p.category === 'chat').length,
       code: PLATFORMS.filter(p => p.category === 'code').length,
-      writing: PLATFORMS.filter(p => p.category === 'writing').length,
     }
   }, [])
 
@@ -138,7 +134,6 @@ export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: P
               { id: 'all', label: 'All Targets', count: categoryCounts.all, icon: <Sparkles size={12} /> },
               { id: 'chat', label: 'Chat & Search', count: categoryCounts.chat, icon: <Bot size={12} /> },
               { id: 'code', label: 'Coding & Dev', count: categoryCounts.code, icon: <Code2 size={12} /> },
-              { id: 'writing', label: 'Enterprise Writing', count: categoryCounts.writing, icon: <FileText size={12} /> },
             ].map(tab => {
               const active = platformCategory === tab.id
               return (
@@ -263,4 +258,3 @@ export function PlatformMonitorGrid({ monitoredPlatforms, isAdmin, onChange }: P
     </section>
   )
 }
-

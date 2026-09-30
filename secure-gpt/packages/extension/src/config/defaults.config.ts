@@ -10,7 +10,7 @@ export const DEFAULT_EXTENSION_CONFIG: PIIConfig = {
   ...DEFAULT_PII_CONFIG,
 }
 
-export const EXTENSION_VERSION = '1.0.0'
+export const EXTENSION_VERSION = '1.2.4'
 
 export const PAUSE_OPTIONS = [
   { label: '15 minutes', value: 15 },

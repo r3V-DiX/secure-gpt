@@ -1,0 +1,1087 @@
+sample_id,source,outcome,gold_category,pred_category,tier,type,value
+conll-per-979,prompt,fp,NONE,PII,ner,B-BUILDING,60
+conll-per-979,prompt,fn,PII,NONE,missed,missed,Havel
+conll-clean-1436,prompt,fp,NONE,CONFIDENTIAL,ner,B-SECADDRESS,90
+kiji-conf-205,prompt,fp,NONE,PII,ner,B-STREET,Birchwood Crescent
+kiji-conf-205,prompt,fp,NONE,PII,ner,B-STATE,Alberta
+kiji-conf-205,prompt,fn,PII,NONE,missed,missed,Haddad
+kiji-conf-205,prompt,fn,FINANCIAL,NONE,missed,missed,CA12 3456 7890 1234 5678
+kiji-conf-205,prompt,fn,CONFIDENTIAL,NONE,missed,missed,SunRise2024!
+conll-per-254,prompt,fn,PII,NONE,missed,missed,R. Samuels
+conll-per-254,prompt,fn,PII,NONE,missed,missed,M. Waugh
+conll-per-254,prompt,fn,PII,NONE,missed,missed,Gillespie
+kiji-conf-627,prompt,fp,NONE,PII,ner,B-STREET,Maplewood Dr.
+kiji-conf-627,prompt,fp,NONE,PII,ner,B-STREET,Springfield
+kiji-conf-627,prompt,fp,NONE,PII,ner,B-CITY,", IL"
+kiji-conf-627,prompt,tp,PII,PII,regex,phone,+1-217-555-0198
+kiji-conf-627,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-627,prompt,fn,PII,NONE,missed,missed,Lisa
+kiji-conf-935,prompt,fp,NONE,PII,ner,B-STREET,"Silver Birch Lane, Edinburgh"
+kiji-conf-935,prompt,fp,NONE,PII,ner,B-CITY,EH3
+kiji-conf-935,prompt,fp,NONE,PII,ner,B-POSTCODE,9BW
+kiji-conf-935,prompt,fp,NONE,PII,ner,B-POSTCODE,need to
+kiji-conf-935,prompt,fn,PII,NONE,missed,missed,Amina
+kiji-conf-935,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Sunset!78East
+ai4p-195033,prompt,tp,PII,PII,regex,phone,061 0069.6119
+ai4p-195033,prompt,tp,PII,PII,regex,email,Florence88@yahoo.com
+ai4p-199613,prompt,fn,PII,NONE,missed,missed,Modesto
+ai4p-199613,prompt,fn,PII,NONE,missed,missed,Harper
+kiji-conf-495,prompt,tp,PII,PII,regex,ssn,123-45-6789
+kiji-conf-495,prompt,tp,PII,PII,regex,email,john.doe@gmail.com
+kiji-conf-495,prompt,fn,PII,NONE,missed,missed,John
+kiji-conf-495,prompt,fn,CONFIDENTIAL,NONE,missed,missed,SecurePass!2024
+conll-clean-2017,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1311,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1860,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1856,prompt,fn,PII,NONE,missed,missed,Mussolini
+ai4p-166498,prompt,fn,PII,NONE,missed,missed,Ora
+ai4p-166498,prompt,fn,PII,NONE,missed,missed,Percival
+conll-clean-3342,prompt,fp,NONE,PII,ner,B-STATE,GF GA PTS
+kiji-conf-353,prompt,fp,NONE,PII,ner,B-STREET,Cypress Lane
+kiji-conf-353,prompt,fp,NONE,CONFIDENTIAL,ner,B-SECADDRESS,"Apt 5B, in the"
+kiji-conf-353,prompt,fp,NONE,PII,ner,B-STATE,Oregon
+kiji-conf-353,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-353,prompt,fn,PII,NONE,missed,missed,Patel
+kiji-conf-353,prompt,fn,PII,NONE,missed,missed,Ramirez
+conll-clean-1713,prompt,fp,NONE,PII,ner,B-IP,284
+conll-per-253,prompt,tp,PII,PII,ner,B-STREET,Healy
+conll-per-253,prompt,fp,PII,CONFIDENTIAL,ner,B-SECADDRESS,b Gillespie 31
+conll-per-253,prompt,fn,PII,NONE,missed,missed,S. Campbell
+ai4p-196455,prompt,tp,PII,PII,regex,email,Pauline_Green83@gmail.com
+ai4p-196455,prompt,fn,PII,NONE,missed,missed,Hoyt
+ai4p-184801,prompt,tp,PII,PII,regex,ssn,573-39-3046
+ai4p-184801,prompt,fn,FINANCIAL,NONE,missed,missed,5570484617813082
+conll-clean-1070,prompt,fp,NONE,FINANCIAL,regex,pan_card,technology
+ai4p-198406,prompt,fp,NONE,FINANCIAL,regex,pan_card,discussion
+ai4p-198406,prompt,tp,IP,IP,regex,ip_address,254.107.103.59
+ai4p-198406,prompt,fn,PII,NONE,missed,missed,Enrique
+ai4p-171756,prompt,tp,PII,PII,regex,email,Florine.Nienow76@yahoo.com
+ai4p-171756,prompt,fn,PII,NONE,missed,missed,Quinton
+ai4p-171756,prompt,fn,PII,NONE,missed,missed,Angelo
+conll-clean-3449,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-125,prompt,fp,NONE,FINANCIAL,regex,pan_card,discussion
+kiji-conf-125,prompt,fp,NONE,PII,ner,B-STATE,completed the analysis
+kiji-conf-125,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-125,prompt,fn,PII,NONE,missed,missed,O'Connell
+kiji-conf-125,prompt,fn,PII,NONE,missed,missed,Patrick
+kiji-conf-125,prompt,fn,PII,NONE,missed,missed,Byrne
+conll-clean-2331,prompt,tn,NONE,NONE,clean,clean,
+ai4p-168126,prompt,fp,NONE,PII,regex,person_name,your
+ai4p-168126,prompt,fp,NONE,PII,regex,person_name,email
+ai4p-168126,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,GR47350075589C0Y3H2A2771740
+ai4p-168126,prompt,fn,PII,NONE,missed,missed,Gudrun
+ai4p-207771,prompt,fn,PII,NONE,missed,missed,Anderson
+ai4p-207771,prompt,fn,PII,NONE,missed,missed,75685733249
+ai4p-167553,prompt,tp,PII,PII,regex,email,Susan.Parisian12@yahoo.com
+ai4p-167553,prompt,fn,PII,NONE,missed,missed,Jacynthe
+ai4p-189643,prompt,tp,PII,PII,ner,B-GIVENNAME1,Micah
+ai4p-189643,prompt,tp,PII,PII,ner,B-GIVENNAME1,Corbin
+ai4p-189643,prompt,fp,FINANCIAL,PII,regex,phone,15532638972
+conll-per-754,prompt,fn,PII,NONE,missed,missed,Ferrer
+conll-per-43,prompt,tp,PII,PII,ner,B-LASTNAME1,Bitar
+conll-per-43,prompt,fn,PII,NONE,missed,missed,Kazuyoshi Miura
+conll-per-43,prompt,fn,PII,NONE,missed,missed,Takagi
+ai4p-196488,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,BR6847002909006221800940097J2
+ai4p-196488,prompt,fn,PII,NONE,missed,missed,Delphia
+kiji-conf-635,prompt,fn,PII,NONE,missed,missed,Liam
+kiji-conf-635,prompt,fn,PII,NONE,missed,missed,AB123456C
+kiji-conf-635,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Low3rC@se!
+ai4p-180669,prompt,fp,NONE,PII,regex,person_name,be
+ai4p-180669,prompt,fp,NONE,PII,regex,person_name,charged
+ai4p-180669,prompt,tp,FINANCIAL,FINANCIAL,regex,credit_card,4733930261501195
+ai4p-180669,prompt,fn,PII,NONE,missed,missed,Desmond
+ai4p-180669,prompt,fn,PII,NONE,missed,missed,Beatty
+kiji-conf-841,prompt,tp,PII,PII,regex,phone,+64 21 555 6789
+kiji-conf-841,prompt,fn,PII,NONE,missed,missed,Thompson
+kiji-conf-841,prompt,fn,PII,NONE,missed,missed,730498264
+kiji-conf-841,prompt,fn,CONFIDENTIAL,NONE,missed,missed,P@ssw0rdNZ2024
+kiji-conf-841,prompt,fn,PII,NONE,missed,missed,Alex
+kiji-conf-841,prompt,fn,PII,NONE,missed,missed,Jessica
+conll-clean-2175,prompt,fp,NONE,FINANCIAL,regex,pan_card,discussion
+kiji-conf-246,prompt,fp,NONE,PII,ner,B-CITY,Harrogate
+kiji-conf-246,prompt,fp,NONE,PII,ner,B-STATE,North
+kiji-conf-246,prompt,fp,NONE,PII,ner,B-STATE,Yorkshire
+kiji-conf-246,prompt,fp,NONE,PII,ner,B-STREET,Crescent
+kiji-conf-246,prompt,fp,NONE,CONFIDENTIAL,ner,B-SECADDRESS,HG2 8RT
+kiji-conf-246,prompt,fn,PII,NONE,missed,missed,Emily
+kiji-conf-246,prompt,fn,PII,NONE,missed,missed,Watson
+kiji-conf-246,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Emerald!42
+kiji-conf-246,prompt,fn,PII,NONE,missed,missed,David
+kiji-conf-246,prompt,fn,PII,NONE,missed,missed,Clarke
+ai4p-206345,prompt,tp,PII,PII,regex,email,Mckayla_Hills6@yahoo.com
+ai4p-206345,prompt,fn,PII,NONE,missed,missed,Newell
+conll-per-753,prompt,fn,PII,NONE,missed,missed,Rafael Alkorta
+conll-per-753,prompt,fn,PII,NONE,missed,missed,Albert
+conll-clean-1955,prompt,tn,NONE,NONE,clean,clean,
+ai4p-194573,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,BH96LPXL4Y629719813357
+ai4p-194573,prompt,tp,PII,PII,regex,email,Fannie50@hotmail.com
+conll-per-1972,prompt,fn,PII,NONE,missed,missed,Arafat
+conll-per-1972,prompt,fn,PII,NONE,missed,missed,Netanyahu
+conll-per-239,prompt,fn,PII,NONE,missed,missed,Blewett
+conll-clean-1610,prompt,fp,NONE,PII,ner,B-TEL,lbs
+conll-per-118,prompt,tp,PII,PII,ner,B-GIVENNAME1,Saqlain 37
+conll-per-118,prompt,fn,PII,NONE,missed,missed,A. Parore
+conll-per-118,prompt,fn,PII,NONE,missed,missed,Ijaz Ahmad
+conll-per-3137,prompt,fn,PII,NONE,missed,missed,Rob Andrew
+conll-clean-438,prompt,fp,NONE,PII,ner,B-COUNTRY,GB
+conll-per-1292,prompt,fn,PII,NONE,missed,missed,Buza
+conll-per-1292,prompt,fn,PII,NONE,missed,missed,Gjonaj
+conll-per-131,prompt,tp,PII,PII,ner,B-GIVENNAME1,Wasim
+conll-per-131,prompt,fn,PII,NONE,missed,missed,Waqar Younis
+conll-per-743,prompt,fn,PII,NONE,missed,missed,Popescu
+conll-per-241,prompt,fn,PII,NONE,missed,missed,Lara
+conll-per-241,prompt,fn,PII,NONE,missed,missed,Shane Warne
+conll-clean-2366,prompt,tn,NONE,NONE,clean,clean,
+ai4p-187469,prompt,tp,IP,IP,regex,ip_address,237.225.255.146
+ai4p-187469,prompt,fn,PII,NONE,missed,missed,Collin
+kiji-conf-236,prompt,fp,NONE,PII,ner,B-STREET,27
+kiji-conf-236,prompt,fp,NONE,PII,ner,B-CITY,Parramatta
+kiji-conf-236,prompt,fp,NONE,CONFIDENTIAL,ner,B-PASS,was verified
+kiji-conf-236,prompt,fn,PII,NONE,missed,missed,Dane
+kiji-conf-236,prompt,fn,PII,NONE,missed,missed,Mitchell
+kiji-conf-236,prompt,fn,CONFIDENTIAL,NONE,missed,missed,YzR3-d9Lm2L8NqwTk
+ai4p-169031,prompt,fp,IP,PII,ner,B-IP,:e9c0:79a7:f5ed:1cb8 to schedule your consultation
+ai4p-169031,prompt,fn,PII,NONE,missed,missed,Alford
+ai4p-169031,prompt,fn,PII,NONE,missed,missed,756.5806.2774
+ai4p-199082,prompt,fn,PII,NONE,missed,missed,Asia
+ai4p-199082,prompt,fn,PII,NONE,missed,missed,Shawn
+ai4p-199082,prompt,fn,PII,NONE,missed,missed,Tillman
+conll-per-890,prompt,fn,PII,NONE,missed,missed,Klara Gajduskova
+conll-per-257,prompt,fn,PII,NONE,missed,missed,C. Hooper
+conll-clean-1726,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,7 57.9 3.0
+ai4p-183192,prompt,fn,PII,NONE,missed,missed,Sawyer
+ai4p-183192,prompt,fn,PII,NONE,missed,missed,Kutch
+conll-clean-1642,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-977,prompt,tp,PII,PII,regex,email,rachel.thompson@example.com
+kiji-conf-977,prompt,fn,PII,NONE,missed,missed,Rachel
+kiji-conf-977,prompt,fn,PII,NONE,missed,missed,Thompson
+kiji-conf-977,prompt,fn,PII,NONE,missed,missed,T1234567
+kiji-conf-977,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Summer2022!
+conll-per-974,prompt,fn,PII,NONE,missed,missed,Ladlislav Spacek
+kiji-conf-449,prompt,fn,PII,NONE,missed,missed,Thompson
+kiji-conf-449,prompt,fn,CONFIDENTIAL,NONE,missed,missed,BlueSky#2024
+conll-per-29,prompt,fn,PII,NONE,missed,missed,Coste
+ai4p-169086,prompt,fp,IP,PII,ner,B-IP,252.175.248.
+ai4p-169086,prompt,fn,PII,NONE,missed,missed,Thiel
+ai4p-203968,prompt,tp,PII,PII,regex,email,Narciso32@hotmail.com
+ai4p-203968,prompt,fn,PII,NONE,missed,missed,Erin
+conll-clean-2452,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1020,prompt,tn,NONE,NONE,clean,clean,
+conll-per-12,prompt,fn,PII,NONE,missed,missed,Hassan Abbas
+conll-per-12,prompt,fn,PII,NONE,missed,missed,Bitar
+conll-clean-2034,prompt,tn,NONE,NONE,clean,clean,
+ai4p-180757,prompt,tp,PII,PII,regex,ssn,273-98-9333
+ai4p-180757,prompt,fn,PII,NONE,missed,missed,Dolores
+conll-clean-1513,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1813,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2230,prompt,tn,NONE,NONE,clean,clean,
+ai4p-200504,prompt,tp,PII,PII,regex,phone,(989) 3158115
+ai4p-200504,prompt,fn,PII,NONE,missed,missed,Madilyn
+conll-clean-2358,prompt,tn,NONE,NONE,clean,clean,
+ai4p-192091,prompt,tp,PII,PII,regex,email,Arden_Blanda37@yahoo.com
+ai4p-192091,prompt,tp,PII,PII,regex,phone,891-148.3505
+conll-per-126,prompt,fn,PII,NONE,missed,missed,R. Kennedy
+kiji-conf-306,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,ner,B-PASS,C@le@N123
+kiji-conf-306,prompt,fp,NONE,PII,ner,B-STREET,Street
+kiji-conf-306,prompt,fn,PII,NONE,missed,missed,Fiona
+kiji-conf-306,prompt,fn,PII,NONE,missed,missed,BH348273
+kiji-conf-598,prompt,fp,FINANCIAL,PII,regex,phone,76 1234 5678
+kiji-conf-598,prompt,fn,PII,NONE,missed,missed,Sarah
+kiji-conf-598,prompt,fn,PII,NONE,missed,missed,8901234TT
+kiji-conf-598,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Summer2024!
+conll-clean-1649,prompt,fp,NONE,PII,ner,B-DATE,12/15/2011 1
+conll-clean-1649,prompt,fp,NONE,PII,ner,B-IP,25
+ai4p-179078,prompt,tp,PII,PII,regex,email,Jerrod20@gmail.com
+ai4p-179078,prompt,fn,PII,NONE,missed,missed,Allie
+conll-clean-1763,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1094,prompt,fp,NONE,PII,ner,B-BOD,Sep
+conll-clean-1896,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1674,prompt,fn,PII,NONE,missed,missed,Mills
+conll-per-1674,prompt,fn,PII,NONE,missed,missed,Lawhon
+conll-clean-1431,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-738,prompt,fp,NONE,PII,ner,B-STREET,"Te Kainga Road,"
+kiji-conf-738,prompt,fp,NONE,PII,ner,B-CITY,Wellington
+kiji-conf-738,prompt,fp,NONE,CONFIDENTIAL,ner,B-PASS,reliable
+kiji-conf-738,prompt,tp,PII,PII,regex,ssn,078-65-4329
+kiji-conf-738,prompt,fn,FINANCIAL,NONE,missed,missed,4321
+kiji-conf-738,prompt,fn,PII,NONE,missed,missed,Callum
+kiji-conf-738,prompt,fn,PII,NONE,missed,missed,Smith
+kiji-conf-738,prompt,fn,CONFIDENTIAL,NONE,missed,missed,XyZ12-GH56-KLmNOP-789QwErT
+kiji-conf-354,prompt,tp,PII,PII,regex,email,alex.gray@nzbank.co.nz
+kiji-conf-354,prompt,fn,PII,NONE,missed,missed,Alex
+kiji-conf-354,prompt,fn,CONFIDENTIAL,NONE,missed,missed,XYZ123-abcde-98765
+kiji-conf-354,prompt,fn,PII,NONE,missed,missed,Emily
+ai4p-175777,prompt,fn,IP,NONE,missed,missed,b84e:d9ed:afc1:dcf7:2d34:5bbb:af25:8a6e
+ai4p-175777,prompt,fn,FINANCIAL,NONE,missed,missed,8063378603637856
+ai4p-205403,prompt,tp,PII,PII,regex,email,Tremayne_Maggio16@hotmail.com
+ai4p-205403,prompt,fn,PII,NONE,missed,missed,Mittie
+ai4p-205403,prompt,fn,PII,NONE,missed,missed,Nicolas
+ai4p-185542,prompt,tp,FINANCIAL,FINANCIAL,regex,credit_card,5784353939672196
+ai4p-185542,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,TN8345716100980100311002
+ai4p-201958,prompt,tp,PII,PII,ner,B-CITY,Augustus Logan
+ai4p-201958,prompt,fp,NONE,PII,ner,B-CITY,we
+ai4p-201958,prompt,fn,PII,NONE,missed,missed,75697042014
+ai4p-201958,prompt,fn,PII,NONE,missed,missed,Logan
+conll-per-2234,prompt,fn,PII,NONE,missed,missed,Bolger
+conll-per-278,prompt,fn,PII,NONE,missed,missed,T. Moody
+conll-clean-711,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1034,prompt,tn,NONE,NONE,clean,clean,
+conll-per-741,prompt,fn,PII,NONE,missed,missed,Jose Amavisca
+conll-per-741,prompt,fn,PII,NONE,missed,missed,Roger Garcia
+ai4p-189107,prompt,fp,IP,PII,ner,B-IP,28a7:a4f2:3f8b:c47b.
+ai4p-189107,prompt,fn,IP,NONE,missed,missed,2b1f:432c:2c7c:9fd7:29ba:ec37:2cfe:afa0
+conll-clean-521,prompt,tn,NONE,NONE,clean,clean,
+ai4p-193080,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,XK020149009660010078
+ai4p-193080,prompt,fn,PII,NONE,missed,missed,Quinn
+conll-clean-1833,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1406,prompt,fn,PII,NONE,missed,missed,Simona de Logu
+ai4p-202719,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,KZ90007452N61C638305
+ai4p-202719,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,CR81275920211718560220
+conll-per-268,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,10-2-26-0 (nb-3
+conll-per-268,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,10-0-39-2
+conll-per-268,prompt,fn,PII,NONE,missed,missed,Reiffel
+conll-per-268,prompt,fn,PII,NONE,missed,missed,Gillespie
+conll-clean-360,prompt,fp,NONE,PII,ner,B-STATE,GF GA PTS
+conll-per-1289,prompt,fn,PII,NONE,missed,missed,Buza
+ai4p-166906,prompt,fn,PII,NONE,missed,missed,Daisy
+ai4p-166906,prompt,fn,PII,NONE,missed,missed,Rory
+kiji-conf-243,prompt,fn,PII,NONE,missed,missed,Sean
+kiji-conf-243,prompt,fn,PII,NONE,missed,missed,O'Sullivan
+kiji-conf-243,prompt,fn,PII,NONE,missed,missed,1234567AB
+kiji-conf-243,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Paddy2024
+kiji-conf-243,prompt,fn,PII,NONE,missed,missed,987654321V
+conll-clean-2684,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-504,prompt,tp,PII,PII,regex,passport,N1234567
+kiji-conf-504,prompt,fn,PII,NONE,missed,missed,James
+kiji-conf-504,prompt,fn,PII,NONE,missed,missed,Miller
+kiji-conf-504,prompt,fn,CONFIDENTIAL,NONE,missed,missed,BlueSky2024
+conll-per-117,prompt,tp,PII,PII,ner,B-GIVENNAME1,Wasim
+conll-per-117,prompt,fn,PII,NONE,missed,missed,C. Spearman
+conll-per-117,prompt,fn,PII,NONE,missed,missed,Moin Khan
+conll-clean-815,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1160,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-712,prompt,tn,NONE,NONE,clean,clean,
+conll-per-738,prompt,fn,PII,NONE,missed,missed,Fernando Redondo
+conll-per-738,prompt,fn,PII,NONE,missed,missed,Giovanni
+kiji-conf-263,prompt,fp,NONE,PII,ner,B-STREET,"West Elm Street, Charleston,"
+kiji-conf-263,prompt,tp,PII,PII,ner,B-POSTCODE,Marcus
+kiji-conf-263,prompt,fp,PII,CONFIDENTIAL,ner,B-SECADDRESS,Brown
+kiji-conf-263,prompt,fp,NONE,CONFIDENTIAL,ner,B-SECADDRESS,incredible
+kiji-conf-263,prompt,fn,CONFIDENTIAL,NONE,missed,missed,8F3A-9JKL-2PQR
+ai4p-168304,prompt,tp,PII,PII,ner,B-GIVENNAME1,Ernestine at
+ai4p-168304,prompt,tp,PII,PII,regex,email,Vernon.Simonis30@hotmail.com
+kiji-conf-431,prompt,fp,NONE,PII,ner,B-STREET,42
+kiji-conf-431,prompt,fp,NONE,PII,ner,B-STREET,Birchcliffe Road
+kiji-conf-431,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-431,prompt,fn,PII,NONE,missed,missed,John
+kiji-conf-431,prompt,fn,PII,NONE,missed,missed,Mitchell
+kiji-conf-431,prompt,fn,PII,NONE,missed,missed,AB987654C
+ai4p-200849,prompt,fn,PII,NONE,missed,missed,Anissa
+ai4p-200849,prompt,fn,PII,NONE,missed,missed,Dickens
+conll-clean-447,prompt,fp,NONE,PII,ner,B-COUNTRY,GB
+ai4p-199968,prompt,tp,PII,PII,regex,email,Herbert_Moen@hotmail.com
+ai4p-199968,prompt,fn,PII,NONE,missed,missed,Madalyn
+ai4p-178138,prompt,tp,PII,PII,regex,phone,+620.257-729 1642
+ai4p-178138,prompt,fn,PII,NONE,missed,missed,Stacy
+conll-clean-1529,prompt,tn,NONE,NONE,clean,clean,
+ai4p-196531,prompt,tp,IP,IP,regex,ip_address,2.222.8.79
+ai4p-196531,prompt,fn,IP,NONE,missed,missed,ccc8:397b:bc0f:fde1:84bd:78d0:fcdb:5e36
+ai4p-177500,prompt,tp,PII,PII,regex,phone,(978)-8155398
+ai4p-177500,prompt,fn,PII,NONE,missed,missed,Amelie
+conll-per-1145,prompt,fp,NONE,PII,ner,B-TEL,859-1654
+conll-per-1145,prompt,fn,PII,NONE,missed,missed,Joan Gralla
+ai4p-194829,prompt,tp,PII,PII,ner,B-SOCIALNUMBER,8494. Immediate
+ai4p-194829,prompt,tp,IP,IP,regex,ip_address,92.205.87.170
+ai4p-197039,prompt,tp,PII,PII,ner,B-GIVENNAME1,Vicente
+ai4p-197039,prompt,tp,PII,PII,regex,email,Frank.Quitzon4@hotmail.com
+kiji-conf-419,prompt,tp,PII,PII,regex,person_name,Sarah
+kiji-conf-419,prompt,tp,PII,PII,regex,person_name,Thompson
+kiji-conf-419,prompt,fp,NONE,PII,ner,B-STREET,Monrovia Lane in Boulder
+kiji-conf-419,prompt,fp,NONE,PII,ner,B-STATE,Colorado
+kiji-conf-419,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-419,prompt,fn,FINANCIAL,NONE,missed,missed,4532
+kiji-conf-1016,prompt,fp,NONE,PII,ner,B-STREET,Fairview Lane
+kiji-conf-1016,prompt,fp,NONE,CONFIDENTIAL,ner,B-SECADDRESS,5B
+kiji-conf-1016,prompt,fp,NONE,PII,ner,B-CITY,Springfield
+kiji-conf-1016,prompt,fp,NONE,PII,ner,B-STATE,Illinois
+kiji-conf-1016,prompt,fp,NONE,PII,ner,B-DATE,January 15th
+kiji-conf-1016,prompt,fn,PII,NONE,missed,missed,Diana
+kiji-conf-1016,prompt,fn,PII,NONE,missed,missed,Moore
+kiji-conf-1016,prompt,fn,CONFIDENTIAL,NONE,missed,missed,ASDF1234ZXCV5678QWER
+conll-clean-3202,prompt,tn,NONE,NONE,clean,clean,
+ai4p-174040,prompt,tp,PII,PII,regex,email,Benny56@hotmail.com
+ai4p-174040,prompt,fn,PII,NONE,missed,missed,Helena
+kiji-conf-183,prompt,fp,NONE,PII,ner,B-STATE,Phoenix
+kiji-conf-183,prompt,fp,NONE,PII,ner,B-STATE,AZ
+kiji-conf-183,prompt,fp,NONE,PII,regex,phone,12-3456789
+kiji-conf-183,prompt,fn,PII,NONE,missed,missed,Sarah
+kiji-conf-183,prompt,fn,PII,NONE,missed,missed,Smith
+kiji-conf-183,prompt,fn,CONFIDENTIAL,NONE,missed,missed,ABCD1234XYZ987
+ai4p-182527,prompt,tp,PII,PII,regex,email,Gino.Towne@yahoo.com
+ai4p-182527,prompt,fn,PII,NONE,missed,missed,Reinger
+ai4p-170216,prompt,tp,PII,PII,regex,email,Marge.Yost37@gmail.com
+ai4p-170216,prompt,fn,PII,NONE,missed,missed,Cynthia
+conll-clean-1204,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2365,prompt,tn,NONE,NONE,clean,clean,
+conll-per-3386,prompt,fn,PII,NONE,missed,missed,Bure
+conll-per-3386,prompt,fn,PII,NONE,missed,missed,Burke
+conll-clean-1096,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,00 68.05
+conll-clean-1096,prompt,fp,NONE,PII,ner,B-TEL,63.98 65
+conll-clean-1096,prompt,fp,NONE,PII,ner,B-IP,70.16
+kiji-conf-692,prompt,fp,NONE,PII,ner,B-STREET,Lane
+kiji-conf-692,prompt,fp,NONE,PII,ner,B-STREET,"Boulder, Colorado"
+kiji-conf-692,prompt,fp,NONE,PII,ner,B-CITY,80301
+kiji-conf-692,prompt,fp,NONE,PII,ner,B-STATE,correct
+kiji-conf-692,prompt,fn,PII,NONE,missed,missed,Allen
+kiji-conf-692,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Str0ngP@ss2024
+kiji-conf-692,prompt,fn,PII,NONE,missed,missed,A1234567
+kiji-conf-692,prompt,fn,PII,NONE,missed,missed,Emily
+kiji-conf-692,prompt,fn,PII,NONE,missed,missed,Johnson
+conll-per-1313,prompt,fn,PII,NONE,missed,missed,Chernyshev
+conll-per-113,prompt,fp,PII,CONFIDENTIAL,ner,B-SECADDRESS,Vaughan
+conll-per-113,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,1-55-1
+conll-per-113,prompt,fp,PII,CONFIDENTIAL,ner,B-SECADDRESS,Harris
+conll-per-113,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,10-0-42-5 (w-1
+conll-per-113,prompt,fn,PII,NONE,missed,missed,Cairns
+conll-per-2490,prompt,fn,PII,NONE,missed,missed,Alexandra Meissnitzer
+conll-clean-1556,prompt,tn,NONE,NONE,clean,clean,
+ai4p-207817,prompt,fp,FINANCIAL,PII,regex,phone,07020942863
+ai4p-207817,prompt,fn,PII,NONE,missed,missed,Ashly
+ai4p-170490,prompt,tp,PII,PII,regex,email,Carolyn95@yahoo.com
+ai4p-170490,prompt,fn,PII,NONE,missed,missed,Reina
+ai4p-170490,prompt,fn,PII,NONE,missed,missed,+76-045 597 9200
+conll-clean-1854,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,eight
+conll-clean-1854,prompt,fp,NONE,PII,ner,B-TEL,18
+ai4p-167946,prompt,tp,PII,PII,regex,ssn,868-79-5791
+ai4p-167946,prompt,fn,PII,NONE,missed,missed,Kody
+ai4p-167946,prompt,fn,PII,NONE,missed,missed,Leannon
+conll-per-99,prompt,fn,PII,NONE,missed,missed,Zahoor Elahi
+conll-per-99,prompt,fn,PII,NONE,missed,missed,Cairns
+conll-clean-1721,prompt,tn,NONE,NONE,clean,clean,
+ai4p-188443,prompt,fn,PII,NONE,missed,missed,Roscoe
+ai4p-188443,prompt,fn,PII,NONE,missed,missed,758-96-3766
+conll-clean-1584,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2033,prompt,tn,NONE,NONE,clean,clean,
+ai4p-208432,prompt,tp,IP,IP,regex,ip_address,85.153.113.251
+ai4p-208432,prompt,fn,PII,NONE,missed,missed,Orn
+kiji-conf-433,prompt,tp,PII,PII,regex,phone,123-45-6789
+kiji-conf-433,prompt,fn,PII,NONE,missed,missed,Patel
+kiji-conf-433,prompt,fn,PII,NONE,missed,missed,D1234567
+kiji-conf-433,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Aussie$2024!
+kiji-conf-433,prompt,fn,PII,NONE,missed,missed,Jessica
+kiji-conf-433,prompt,fn,PII,NONE,missed,missed,Lee
+conll-clean-1623,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,000
+kiji-conf-887,prompt,tp,PII,PII,regex,person_name,Liam
+kiji-conf-887,prompt,fp,NONE,PII,regex,person_name,and
+kiji-conf-887,prompt,fn,CONFIDENTIAL,NONE,missed,missed,AIzSy3X8vE6RQxZ9v0Lp
+conll-per-2559,prompt,fp,NONE,PII,ner,B-TIME,1:51.04
+conll-per-2559,prompt,fn,PII,NONE,missed,missed,Sybille Brauner
+ai4p-190512,prompt,fp,IP,PII,ner,B-IP,223.124.208.58 or 09f2:bb96:58b0:74ef:eaea:d60a:16d5:ba27? Ping IT if
+ai4p-190512,prompt,fn,PII,NONE,missed,missed,Fredrick
+ai4p-190512,prompt,fn,IP,NONE,missed,missed,09f2:bb96:58b0:74ef:eaea:d60a:16d5:ba27
+ai4p-206691,prompt,tp,FINANCIAL,FINANCIAL,regex,credit_card,2510306578517583
+ai4p-206691,prompt,tp,PII,PII,regex,email,Kristian59@yahoo.com
+ai4p-170311,prompt,tp,PII,PII,ner,B-GIVENNAME1,Regan
+ai4p-170311,prompt,fn,PII,NONE,missed,missed,Erwin
+conll-clean-1521,prompt,tn,NONE,NONE,clean,clean,
+ai4p-207268,prompt,fn,PII,NONE,missed,missed,Penelope
+ai4p-207268,prompt,fn,PII,NONE,missed,missed,Tara
+ai4p-207268,prompt,fn,PII,NONE,missed,missed,Verna
+conll-per-424,prompt,fn,PII,NONE,missed,missed,Faulk
+ai4p-184577,prompt,tp,FINANCIAL,FINANCIAL,regex,credit_card,4533252392457573
+ai4p-184577,prompt,fn,PII,NONE,missed,missed,Drake
+ai4p-184577,prompt,fn,PII,NONE,missed,missed,Dooley
+conll-clean-1379,prompt,fp,NONE,PII,ner,B-TIME,22
+conll-clean-1379,prompt,fp,NONE,PII,ner,B-DATE,22.25
+conll-clean-1687,prompt,tn,NONE,NONE,clean,clean,
+ai4p-199907,prompt,tp,PII,PII,regex,email,Jermain93@hotmail.com
+ai4p-199907,prompt,fn,PII,NONE,missed,missed,Kareem
+ai4p-194546,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,TR620748460057020300690020
+ai4p-194546,prompt,fn,PII,NONE,missed,missed,Carolyn
+conll-clean-1090,prompt,fp,NONE,PII,ner,B-BOD,May 97
+conll-clean-1090,prompt,fp,NONE,PII,ner,B-IP,51 77.07 72.97 74.42-79.19
+kiji-conf-8,prompt,fp,CONFIDENTIAL,PII,ner,B-DRIVERLICENSE,9KD2-WE45-PLM9.
+kiji-conf-8,prompt,fn,PII,NONE,missed,missed,Rachel
+kiji-conf-8,prompt,fn,PII,NONE,missed,missed,Thompson
+kiji-conf-651,prompt,tp,PII,PII,regex,phone,12345678
+kiji-conf-651,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-651,prompt,fp,NONE,PII,regex,phone,123-456-789
+kiji-conf-651,prompt,fn,PII,NONE,missed,missed,Mia
+kiji-conf-809,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,ner,B-PASS,PQ7Z is now active
+kiji-conf-809,prompt,fp,NONE,PII,ner,B-STREET,scheduled
+kiji-conf-809,prompt,fp,NONE,PII,ner,B-STREET,"you have any questions, she will"
+kiji-conf-809,prompt,fn,PII,NONE,missed,missed,Emily
+kiji-conf-809,prompt,fn,PII,NONE,missed,missed,780129432
+ai4p-191548,prompt,tp,PII,PII,regex,email,Karley.Brown90@yahoo.com
+ai4p-191548,prompt,fn,PII,NONE,missed,missed,Rosalia
+ai4p-191548,prompt,fn,PII,NONE,missed,missed,Greenfelder
+kiji-conf-52,prompt,fp,NONE,PII,ner,B-STREET,Fernwood Crescent
+kiji-conf-52,prompt,fp,NONE,PII,ner,B-STATE,Wales
+kiji-conf-52,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-52,prompt,fp,NONE,PII,ner,B-CITY,Wollongong
+kiji-conf-52,prompt,fp,NONE,PII,ner,B-CITY,hometown
+kiji-conf-52,prompt,fn,PII,NONE,missed,missed,Benjamin
+kiji-conf-52,prompt,fn,PII,NONE,missed,missed,Clarke
+kiji-conf-52,prompt,fn,CONFIDENTIAL,NONE,missed,missed,R3dF0x!N2024
+conll-clean-1215,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2084,prompt,tn,NONE,NONE,clean,clean,
+ai4p-172001,prompt,tp,PII,PII,regex,email,Eliane20@gmail.com
+ai4p-172001,prompt,fn,PII,NONE,missed,missed,Adelia
+conll-per-744,prompt,fn,PII,NONE,missed,missed,Roberto Carlos
+ai4p-172698,prompt,fn,PII,NONE,missed,missed,Logan
+ai4p-172698,prompt,fn,IP,NONE,missed,missed,7d2c:1afd:8eed:e569:ecfe:b871:412b:4ddd
+conll-clean-1468,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-3180,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-663,prompt,fp,NONE,PII,ner,B-STREET,Elmwood Crescent
+kiji-conf-663,prompt,fp,NONE,PII,ner,B-CITY,Edinburgh
+kiji-conf-663,prompt,tp,PII,PII,regex,passport,M4972851
+kiji-conf-663,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-663,prompt,fn,PII,NONE,missed,missed,James
+conll-per-2198,prompt,fp,NONE,PII,ner,B-TITLE,chancellor
+conll-per-2198,prompt,fn,PII,NONE,missed,missed,Tony Marlow
+conll-clean-86,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1,prompt,fn,PII,NONE,missed,missed,Nadim Ladki
+ai4p-207399,prompt,fp,IP,PII,ner,B-IP,:4e5f:1f4d:db3e:6abd:46fe and              . Administrator
+ai4p-207399,prompt,tp,PII,PII,regex,email,Ashlee_Ziemann72@hotmail.com
+ai4p-207399,prompt,fn,IP,NONE,missed,missed,124.214.59.79
+conll-clean-960,prompt,tn,NONE,NONE,clean,clean,
+ai4p-174206,prompt,fn,PII,NONE,missed,missed,Lilyan
+ai4p-174206,prompt,fn,FINANCIAL,NONE,missed,missed,4031766637862705
+ai4p-193310,prompt,fp,IP,PII,ner,B-IP,57e9:7c50:b1e0:a34c:9bee:0c8e:ddd5:5bbf.
+ai4p-193310,prompt,fn,PII,NONE,missed,missed,Nicholas
+conll-clean-1051,prompt,tn,NONE,NONE,clean,clean,
+conll-per-98,prompt,fn,PII,NONE,missed,missed,Saeed Anwar
+ai4p-192657,prompt,fn,PII,NONE,missed,missed,Cory
+ai4p-192657,prompt,fn,PII,NONE,missed,missed,Smitham
+kiji-conf-594,prompt,fn,PII,NONE,missed,missed,Siobhan
+kiji-conf-594,prompt,fn,PII,NONE,missed,missed,O'Connell
+kiji-conf-594,prompt,fn,CONFIDENTIAL,NONE,missed,missed,BlueSky2024!
+kiji-conf-941,prompt,fp,NONE,PII,ner,B-STREET,"Willowbank Road, Brisbane"
+kiji-conf-941,prompt,fn,PII,NONE,missed,missed,Aisha
+kiji-conf-941,prompt,fn,CONFIDENTIAL,NONE,missed,missed,BlueSky2023!
+ai4p-190453,prompt,tp,PII,PII,regex,email,Orlo_Williamson@gmail.com
+ai4p-190453,prompt,fn,PII,NONE,missed,missed,Francisco
+ai4p-190453,prompt,fn,PII,NONE,missed,missed,Chaim
+conll-clean-571,prompt,tn,NONE,NONE,clean,clean,
+ai4p-182825,prompt,fn,PII,NONE,missed,missed,Parker
+ai4p-182825,prompt,fn,IP,NONE,missed,missed,ffef:ae0e:fa8a:6fc0:0a79:b4a8:7a3c:5eea
+ai4p-174024,prompt,fn,PII,NONE,missed,missed,Murl
+ai4p-174024,prompt,fn,PII,NONE,missed,missed,407-51-9709
+conll-clean-488,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1693,prompt,tn,NONE,NONE,clean,clean,
+ai4p-172057,prompt,tp,IP,IP,regex,ip_address,255.73.102.197
+ai4p-172057,prompt,fp,IP,PII,ner,B-IP,af89:eaae:cfff:d3cb:5e49:ecda:caec.
+conll-clean-1086,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1059,prompt,fn,PII,NONE,missed,missed,Gorst
+kiji-conf-438,prompt,fp,NONE,PII,ner,B-STREET,Crescent
+kiji-conf-438,prompt,fp,NONE,PII,ner,B-CITY,Saskatoon
+kiji-conf-438,prompt,fp,NONE,PII,ner,B-CITY,SK
+kiji-conf-438,prompt,fn,PII,NONE,missed,missed,Sarah
+kiji-conf-438,prompt,fn,PII,NONE,missed,missed,ZT8937426
+kiji-conf-438,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Winter2024!
+ai4p-170491,prompt,tp,IP,IP,regex,ip_address,252.8.8.49
+ai4p-170491,prompt,fp,IP,PII,ner,B-IP,:d26c:e699:a041:d218:20a4:632f.
+conll-per-1350,prompt,fn,PII,NONE,missed,missed,Yegor Stroyev
+conll-per-1350,prompt,fn,PII,NONE,missed,missed,Yeltsin
+conll-clean-1959,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2328,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-766,prompt,tn,NONE,NONE,clean,clean,
+ai4p-200001,prompt,tp,IP,IP,regex,ip_address,64.33.143.215
+ai4p-200001,prompt,fp,IP,PII,ner,B-IP,:51c1:faf1:6aec:a2fe:caca:9612 for safety
+conll-clean-634,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1985,prompt,tn,NONE,NONE,clean,clean,
+ai4p-187316,prompt,tp,PII,PII,regex,email,Brendon_Cormier4@hotmail.com
+ai4p-187316,prompt,fn,PII,NONE,missed,missed,Queenie
+conll-clean-794,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1004,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-470,prompt,tp,PII,PII,regex,phone,12-34-6789
+kiji-conf-470,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-470,prompt,tp,PII,PII,regex,phone,12 345 678
+kiji-conf-470,prompt,fn,PII,NONE,missed,missed,Mia
+ai4p-200860,prompt,fn,PII,NONE,missed,missed,09 7804 3068
+ai4p-200860,prompt,fn,IP,NONE,missed,missed,247.168.38.90
+conll-clean-1052,prompt,tn,NONE,NONE,clean,clean,
+conll-per-3134,prompt,fn,PII,NONE,missed,missed,Burke
+conll-clean-2046,prompt,tn,NONE,NONE,clean,clean,
+conll-per-865,prompt,fn,PII,NONE,missed,missed,Zoran Savic
+conll-clean-1424,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-159,prompt,fn,PII,NONE,missed,missed,Claire
+kiji-conf-159,prompt,fn,PII,NONE,missed,missed,O'Brien
+kiji-conf-159,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Clover2024!
+kiji-conf-159,prompt,fn,PII,NONE,missed,missed,9804123X87
+kiji-conf-159,prompt,fn,PII,NONE,missed,missed,C1234567
+ai4p-172707,prompt,fp,NONE,PII,ner,B-TEL,compromised
+ai4p-172707,prompt,fn,FINANCIAL,NONE,missed,missed,0470508539987919
+ai4p-172707,prompt,fn,FINANCIAL,NONE,missed,missed,SM95K0030011900J709J434S797
+conll-per-256,prompt,fp,PII,CONFIDENTIAL,ner,B-SECADDRESS,Blewett 54
+conll-per-256,prompt,fn,PII,NONE,missed,missed,S. Chanderpaul
+conll-per-256,prompt,fn,PII,NONE,missed,missed,Healy
+conll-clean-2192,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-3127,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1437,prompt,fp,NONE,CONFIDENTIAL,ner,B-SECADDRESS,283 unq 283 unq
+ai4p-198844,prompt,tp,PII,PII,regex,phone,(601) 9833049
+ai4p-198844,prompt,fn,IP,NONE,missed,missed,fc53:163a:b690:2eae:e981:ce42:75bd:7fb9
+ai4p-198844,prompt,fn,PII,NONE,missed,missed,Lenora
+conll-clean-2579,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1008,prompt,fn,PII,NONE,missed,missed,Edna Fernandes
+conll-clean-2476,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2587,prompt,fn,PII,NONE,missed,missed,Paramygina
+conll-clean-1555,prompt,fp,NONE,PII,ner,B-DATE,2000/01
+conll-per-3192,prompt,fp,NONE,PII,ner,B-TIME,four
+conll-per-3192,prompt,fn,PII,NONE,missed,missed,Ko Jeong Woon
+ai4p-206515,prompt,fp,IP,PII,ner,B-IP,:fc41:eecd:bdeb:fa5b:a1e5 for our online
+ai4p-206515,prompt,fn,PII,NONE,missed,missed,Rory
+conll-clean-2041,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-290,prompt,fp,NONE,PII,ner,B-STREET,"Willowbank Crescent,"
+kiji-conf-290,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,GB29NWBK60161331926819
+kiji-conf-290,prompt,fp,NONE,PII,ner,B-STREET,Manchester
+kiji-conf-290,prompt,fp,NONE,PII,ner,B-STREET,It is essential
+kiji-conf-290,prompt,fp,NONE,PII,ner,B-CITY,that this
+kiji-conf-290,prompt,fp,NONE,PII,ner,B-STATE,information remains confidential
+kiji-conf-290,prompt,fn,PII,NONE,missed,missed,Zainab
+kiji-conf-290,prompt,fn,PII,NONE,missed,missed,Ahmed
+kiji-conf-290,prompt,fn,CONFIDENTIAL,NONE,missed,missed,tx18qdj7vf9hejoPXmL3c
+conll-per-623,prompt,fn,PII,NONE,missed,missed,Gourvennec
+conll-per-623,prompt,fn,PII,NONE,missed,missed,Christophe Pignol
+ai4p-177876,prompt,tp,PII,PII,regex,phone,5653660158
+ai4p-177876,prompt,tp,FINANCIAL,FINANCIAL,regex,credit_card,1853182990588396
+ai4p-206725,prompt,tp,PII,PII,ner,B-SOCIALNUMBER,539 39 6214
+ai4p-206725,prompt,fn,PII,NONE,missed,missed,Kyleigh
+ai4p-206725,prompt,fn,PII,NONE,missed,missed,Wilkinson
+ai4p-189098,prompt,fn,PII,NONE,missed,missed,Martin
+ai4p-189098,prompt,fn,PII,NONE,missed,missed,+50.441-658.4582
+kiji-conf-792,prompt,tp,PII,PII,regex,phone,+1-416-555-1234
+kiji-conf-792,prompt,fn,PII,NONE,missed,missed,Sarah
+kiji-conf-792,prompt,fn,CONFIDENTIAL,NONE,missed,missed,MapleLeaf2024
+conll-clean-1570,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2375,prompt,fn,PII,NONE,missed,missed,Horinouchi
+conll-per-260,prompt,fn,PII,NONE,missed,missed,N. McLean
+conll-per-260,prompt,fn,PII,NONE,missed,missed,M. Waugh
+ai4p-193257,prompt,fp,NONE,FINANCIAL,regex,pan_card,psychology
+ai4p-193257,prompt,tp,IP,IP,regex,ip_address,26.208.23.60
+ai4p-193257,prompt,fn,PII,NONE,missed,missed,Sasha
+conll-clean-1712,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,1225.
+conll-clean-1712,prompt,fp,NONE,PII,ner,B-TEL,965.3
+conll-clean-1712,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,1069.6
+conll-clean-2065,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1108,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-127,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2227,prompt,fn,PII,NONE,missed,missed,Michael Grove
+ai4p-171165,prompt,fn,PII,NONE,missed,missed,Kylie
+ai4p-171165,prompt,fn,PII,NONE,missed,missed,Bailey
+conll-clean-281,prompt,tn,NONE,NONE,clean,clean,
+conll-per-942,prompt,fn,PII,NONE,missed,missed,Rosati
+ai4p-206206,prompt,fn,PII,NONE,missed,missed,Emerson
+ai4p-206206,prompt,fn,PII,NONE,missed,missed,75699682686
+conll-per-751,prompt,fn,PII,NONE,missed,missed,AbelardoFernandez
+conll-clean-1433,prompt,fp,NONE,PII,ner,B-STATE,Flint
+conll-clean-1433,prompt,fp,NONE,PII,ner,B-IP,113 114 113.7 112
+kiji-conf-316,prompt,fp,NONE,PII,ner,B-STREET,Lane
+kiji-conf-316,prompt,tp,PII,PII,regex,phone,+353 91 555 1234
+kiji-conf-316,prompt,fn,PII,NONE,missed,missed,Fiona
+kiji-conf-316,prompt,fn,PII,NONE,missed,missed,O'Sullivan
+kiji-conf-316,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Winter2023!
+kiji-conf-316,prompt,fn,CONFIDENTIAL,NONE,missed,missed,B3lfast#2024
+ai4p-197403,prompt,tp,IP,IP,regex,ip_address,252.112.230.41
+ai4p-197403,prompt,fn,PII,NONE,missed,missed,Arden
+kiji-conf-153,prompt,tp,PII,PII,regex,phone,12345678
+kiji-conf-153,prompt,fp,NONE,PII,ner,B-COUNTRY,GB
+kiji-conf-153,prompt,fn,PII,NONE,missed,missed,Patrick
+kiji-conf-153,prompt,fn,PII,NONE,missed,missed,O'Sullivan
+kiji-conf-153,prompt,fn,CONFIDENTIAL,NONE,missed,missed,ASDFG-98765-ZXCVB
+conll-clean-94,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-3140,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-985,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1558,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-62,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-62,prompt,fp,NONE,PII,ner,B-STREET,Cedarshade Lane in Galveston
+kiji-conf-62,prompt,fp,NONE,PII,ner,B-CITY,", Texas, must update"
+kiji-conf-62,prompt,fp,NONE,PII,ner,B-STREET,notify the office
+kiji-conf-62,prompt,fn,PII,NONE,missed,missed,Michael
+conll-per-2444,prompt,fn,PII,NONE,missed,missed,Renate Goetschl
+conll-clean-1897,prompt,fp,NONE,PII,ner,B-BOD,1996 1995
+conll-per-747,prompt,fn,PII,NONE,missed,missed,laPena
+conll-clean-2566,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-895,prompt,fp,NONE,PII,ner,B-STREET,Street
+kiji-conf-895,prompt,fn,CONFIDENTIAL,NONE,missed,missed,MapleP@ss2024
+kiji-conf-895,prompt,fn,PII,NONE,missed,missed,Sarah
+kiji-conf-895,prompt,fn,PII,NONE,missed,missed,Brown
+ai4p-183301,prompt,tp,IP,IP,regex,ip_address,103.53.145.129
+ai4p-183301,prompt,fn,PII,NONE,missed,missed,Ashleigh
+ai4p-203084,prompt,tp,IP,IP,regex,ip_address,76.66.32.228
+ai4p-203084,prompt,fn,PII,NONE,missed,missed,Billie
+ai4p-207985,prompt,fn,PII,NONE,missed,missed,Deon
+ai4p-207985,prompt,fn,PII,NONE,missed,missed,Maggio
+ai4p-203669,prompt,tp,PII,PII,regex,email,Meagan.Kessler68@hotmail.com
+ai4p-203669,prompt,fn,PII,NONE,missed,missed,Jesus
+conll-clean-3332,prompt,fp,NONE,PII,ner,B-STATE,GF GA PTS
+conll-per-245,prompt,fn,PII,NONE,missed,missed,Shivnarine Chanderpaul
+conll-per-221,prompt,tp,PII,PII,ner,B-GIVENNAME1,Florin Prunea
+conll-per-221,prompt,fn,PII,NONE,missed,missed,Bogdan Stelea
+ai4p-189705,prompt,tp,PII,PII,regex,email,Micaela.Ebert@yahoo.com
+ai4p-189705,prompt,fn,FINANCIAL,NONE,missed,missed,QA39NJZYQ44727G4T122403769307
+ai4p-189705,prompt,fn,PII,NONE,missed,missed,Jaylan
+conll-clean-2035,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1625,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,305
+conll-clean-1625,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,88
+conll-clean-2047,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1612,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2373,prompt,fn,PII,NONE,missed,missed,Horinouchi
+ai4p-177496,prompt,fp,IP,PII,ner,B-IP,63d6:bdac:e682.
+ai4p-177496,prompt,fn,PII,NONE,missed,missed,Vivienne
+ai4p-178642,prompt,fp,IP,PII,regex,phone,197.30.116.133
+ai4p-178642,prompt,tp,PII,PII,regex,email,Twila_Mills43@hotmail.com
+ai4p-178642,prompt,fn,PII,NONE,missed,missed,Pinkie
+kiji-conf-247,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,api_key,"token ""XyZ12345-ABcdEfGhIj-klMNopQRstUV"""
+kiji-conf-247,prompt,fn,PII,NONE,missed,missed,Fiona
+kiji-conf-247,prompt,fn,PII,NONE,missed,missed,Mike
+kiji-conf-802,prompt,fn,PII,NONE,missed,missed,Fiona
+kiji-conf-802,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Dublin2023!
+kiji-conf-802,prompt,fn,CONFIDENTIAL,NONE,missed,missed,9a7b6c5d4e3f2g1h
+kiji-conf-802,prompt,fn,FINANCIAL,NONE,missed,missed,4321
+kiji-conf-802,prompt,fn,PII,NONE,missed,missed,OReilly
+ai4p-173839,prompt,fn,PII,NONE,missed,missed,Kendrick
+ai4p-173839,prompt,fn,FINANCIAL,NONE,missed,missed,0355399118363036
+conll-clean-1993,prompt,tn,NONE,NONE,clean,clean,
+ai4p-205692,prompt,fp,IP,PII,ner,B-IP,30.196.161.235 and
+ai4p-205692,prompt,fp,IP,PII,ner,B-IP,e96d:5dfd:bc7d:5bda:0df1:7db3:82f5:6e53? Might contain
+kiji-conf-485,prompt,fn,CONFIDENTIAL,NONE,missed,missed,59B8-7F3D-AC42-1E90
+kiji-conf-485,prompt,fn,PII,NONE,missed,missed,9001234X
+conll-clean-1429,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1281,prompt,tn,NONE,NONE,clean,clean,
+conll-per-232,prompt,fn,PII,NONE,missed,missed,LARA
+kiji-conf-796,prompt,fp,NONE,PII,regex,date_of_birth,23/08/1985
+kiji-conf-796,prompt,fn,PII,NONE,missed,missed,Wilson
+kiji-conf-796,prompt,fn,CONFIDENTIAL,NONE,missed,missed,XZ12-9A8B-4Q7E
+kiji-conf-796,prompt,fn,PII,NONE,missed,missed,Laura
+kiji-conf-796,prompt,fn,PII,NONE,missed,missed,Adams
+conll-per-425,prompt,fn,PII,NONE,missed,missed,Justin
+conll-per-425,prompt,fn,PII,NONE,missed,missed,Harbaugh
+conll-per-426,prompt,fn,PII,NONE,missed,missed,Justin
+conll-clean-2282,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1172,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-363,prompt,fp,NONE,PII,ner,B-STREET,89
+kiji-conf-363,prompt,fp,NONE,PII,ner,B-STREET,Victoria Crescent
+kiji-conf-363,prompt,fp,NONE,PII,ner,B-CITY,Halifax
+kiji-conf-363,prompt,fp,NONE,PII,regex,phone,123-456-789
+kiji-conf-363,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-363,prompt,fn,PII,NONE,missed,missed,Singh
+ai4p-183519,prompt,tp,IP,IP,regex,ip_address,97.218.124.103
+ai4p-183519,prompt,fn,PII,NONE,missed,missed,Marlowe
+conll-per-1812,prompt,fn,PII,NONE,missed,missed,Cornwell
+ai4p-206732,prompt,fp,FINANCIAL,PII,regex,phone,8245413824
+ai4p-206732,prompt,fn,PII,NONE,missed,missed,Taya
+kiji-conf-361,prompt,fp,NONE,PII,ner,B-STREET,Crescent
+kiji-conf-361,prompt,fn,PII,NONE,missed,missed,James
+kiji-conf-361,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Kiwi$2024
+kiji-conf-361,prompt,fn,PII,NONE,missed,missed,Sarah
+kiji-conf-361,prompt,fn,PII,NONE,missed,missed,Patel
+ai4p-204345,prompt,fp,FINANCIAL,PII,regex,phone,179165137946
+ai4p-204345,prompt,fn,PII,NONE,missed,missed,Roman
+ai4p-166230,prompt,tp,IP,IP,regex,ip_address,21.151.245.130
+ai4p-166230,prompt,fn,PII,NONE,missed,missed,Charlie
+conll-per-263,prompt,fn,PII,NONE,missed,missed,C. Walsh
+ai4p-208560,prompt,fn,PII,NONE,missed,missed,Darrell
+ai4p-208560,prompt,fn,IP,NONE,missed,missed,196.9.184.108
+conll-clean-1085,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-21,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1335,prompt,tn,NONE,NONE,clean,clean,
+ai4p-170530,prompt,tp,PII,PII,regex,email,Marc60@yahoo.com
+ai4p-170530,prompt,fn,PII,NONE,missed,missed,Willard
+conll-per-1838,prompt,fn,PII,NONE,missed,missed,Evelyn Leopold
+kiji-conf-576,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Oodles2024
+kiji-conf-576,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Xy9BvT7lkM2q
+kiji-conf-576,prompt,fn,PII,NONE,missed,missed,Emily
+ai4p-187575,prompt,fp,IP,PII,ner,B-IP,195.97.14.72
+ai4p-187575,prompt,fn,IP,NONE,missed,missed,ed56:d4c6:f731:6da1:f7e0:0e32:dba4:eb73
+conll-per-1791,prompt,fn,PII,NONE,missed,missed,Clinton
+ai4p-190438,prompt,tp,PII,PII,regex,phone,56.9453.8928
+ai4p-190438,prompt,fn,PII,NONE,missed,missed,Billie
+ai4p-190438,prompt,fn,PII,NONE,missed,missed,Maggio-Huels
+conll-clean-2752,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-3,prompt,fp,NONE,PII,ner,B-STREET,", NG7 5HQ. If you have"
+kiji-conf-3,prompt,fp,NONE,PII,ner,B-POSTCODE,questions
+kiji-conf-3,prompt,fn,PII,NONE,missed,missed,Thompson
+kiji-conf-3,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Pearl*2024
+kiji-conf-3,prompt,fn,PII,NONE,missed,missed,Sarah
+conll-clean-568,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2228,prompt,fn,PII,NONE,missed,missed,Crofts
+conll-per-2228,prompt,fn,PII,NONE,missed,missed,Grove
+ai4p-188886,prompt,fp,IP,PII,ner,B-IP,d7db:a3a0:5a2b:c08b
+ai4p-188886,prompt,fn,PII,NONE,missed,missed,Stone
+conll-clean-1143,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-528,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2100,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2681,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2741,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2013,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-896,prompt,fn,PII,NONE,missed,missed,Emily
+kiji-conf-896,prompt,fn,PII,NONE,missed,missed,AB123456C
+kiji-conf-896,prompt,fn,PII,NONE,missed,missed,987654321
+kiji-conf-896,prompt,fn,CONFIDENTIAL,NONE,missed,missed,BlueSky!2024
+kiji-conf-818,prompt,fp,NONE,PII,ner,B-BUILDING,Emerald
+kiji-conf-818,prompt,fp,NONE,PII,ner,B-STREET,Terrace
+kiji-conf-818,prompt,fp,NONE,PII,ner,B-STREET,Apt 9 in Boulder
+kiji-conf-818,prompt,fp,NONE,PII,ner,B-STATE,Colorado
+kiji-conf-818,prompt,fp,NONE,PII,ner,B-POSTCODE,security
+kiji-conf-818,prompt,fn,PII,NONE,missed,missed,Osei
+kiji-conf-818,prompt,fn,CONFIDENTIAL,NONE,missed,missed,fjs78d9fkdjs8f7sd
+kiji-conf-818,prompt,fn,PII,NONE,missed,missed,Jennifer
+kiji-conf-818,prompt,fn,PII,NONE,missed,missed,Thompson
+ai4p-187009,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,RS11241768205061003002
+ai4p-187009,prompt,fn,PII,NONE,missed,missed,Kendall
+conll-per-806,prompt,fn,PII,NONE,missed,missed,Costa
+ai4p-205596,prompt,fn,PII,NONE,missed,missed,Nedra
+ai4p-205596,prompt,fn,IP,NONE,missed,missed,1a4c:fd86:e0ae:f2ed:0adc:8359:b63f:2aad
+ai4p-200902,prompt,fn,PII,NONE,missed,missed,Kulas
+ai4p-200902,prompt,fn,PII,NONE,missed,missed,Novella
+ai4p-200902,prompt,fn,PII,NONE,missed,missed,Gulgowski-Mills
+conll-clean-129,prompt,tn,NONE,NONE,clean,clean,
+ai4p-198947,prompt,tp,IP,IP,regex,ip_address,127.255.72.183
+ai4p-198947,prompt,fn,IP,NONE,missed,missed,2e80:bc77:8dba:cbcd:1dd8:009b:dab8:c592
+ai4p-184770,prompt,fn,PII,NONE,missed,missed,Margret
+ai4p-184770,prompt,fn,PII,NONE,missed,missed,Christiansen
+kiji-conf-347,prompt,fp,NONE,PII,ner,B-DRIVERLICENSE,I need
+kiji-conf-347,prompt,fn,PII,NONE,missed,missed,Sarah
+kiji-conf-347,prompt,fn,PII,NONE,missed,missed,NZD8927483
+kiji-conf-347,prompt,fn,CONFIDENTIAL,NONE,missed,missed,KF84JD9QMNJ2
+ai4p-191509,prompt,tp,PII,PII,regex,phone,18-29-4370
+ai4p-191509,prompt,fn,PII,NONE,missed,missed,Lon
+conll-clean-160,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2218,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1846,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-518,prompt,fn,PII,NONE,missed,missed,Thompson
+kiji-conf-518,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Xy12Zp9QmL79
+kiji-conf-518,prompt,fn,PII,NONE,missed,missed,752498316
+kiji-conf-518,prompt,fn,PII,NONE,missed,missed,John
+kiji-conf-167,prompt,fp,NONE,PII,ner,B-CITY,"Nova Scotia,"
+kiji-conf-167,prompt,fp,NONE,PII,ner,B-POSTCODE,Canada
+kiji-conf-167,prompt,fn,PII,NONE,missed,missed,Mark
+kiji-conf-167,prompt,fn,PII,NONE,missed,missed,Patel
+kiji-conf-167,prompt,fn,CONFIDENTIAL,NONE,missed,missed,MapleLeaf99
+kiji-conf-693,prompt,tp,PII,PII,ner,B-TEL,086-1234567
+kiji-conf-693,prompt,fn,CONFIDENTIAL,NONE,missed,missed,SeaBreeze1992
+kiji-conf-693,prompt,fn,PII,NONE,missed,missed,Liam
+kiji-conf-693,prompt,fn,PII,NONE,missed,missed,O'Sullivan
+kiji-conf-846,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-846,prompt,fn,PII,NONE,missed,missed,Emily
+kiji-conf-846,prompt,fn,PII,NONE,missed,missed,742891234
+kiji-conf-846,prompt,fn,FINANCIAL,NONE,missed,missed,CA12345678901234567890
+ai4p-195872,prompt,tp,PII,PII,regex,phone,+99-284 318-6483
+ai4p-195872,prompt,fn,PII,NONE,missed,missed,Josephine
+ai4p-195872,prompt,fn,PII,NONE,missed,missed,Gleason
+ai4p-166281,prompt,tp,IP,IP,regex,ip_address,30.32.68.100
+ai4p-166281,prompt,fn,PII,NONE,missed,missed,Avis
+kiji-conf-994,prompt,tp,PII,PII,regex,email,ravi.khan@example.net
+kiji-conf-994,prompt,tp,PII,PII,regex,phone,123456789012
+kiji-conf-994,prompt,fn,CONFIDENTIAL,NONE,missed,missed,BlueSkies@2024
+kiji-conf-994,prompt,fn,PII,NONE,missed,missed,Ravi
+conll-clean-2021,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-989,prompt,tn,NONE,NONE,clean,clean,
+ai4p-197579,prompt,tp,IP,IP,regex,ip_address,210.27.74.109
+ai4p-197579,prompt,fn,IP,NONE,missed,missed,c257:c6f4:3eed:bcef:7ea2:acdb:d8b5:dbfd
+ai4p-180130,prompt,fn,PII,NONE,missed,missed,Harley
+ai4p-180130,prompt,fn,PII,NONE,missed,missed,Jackeline
+ai4p-193627,prompt,tp,PII,PII,regex,email,Torrey30@yahoo.com
+ai4p-193627,prompt,fn,PII,NONE,missed,missed,Mathias
+ai4p-167486,prompt,fn,PII,NONE,missed,missed,Dax
+ai4p-167486,prompt,fn,IP,NONE,missed,missed,89c2:fcf3:4a6e:4cc1:91ea:1d06:ed2b:8c46
+conll-per-3157,prompt,tp,PII,PII,ner,B-BUILDING,Steven
+conll-per-3157,prompt,fp,PII,CONFIDENTIAL,ner,B-SECADDRESS,Bradford Vaughan 72 71
+ai4p-207450,prompt,fp,NONE,PII,ner,B-TEL,your
+ai4p-207450,prompt,tp,PII,PII,regex,phone,5657338309
+ai4p-207450,prompt,fn,PII,NONE,missed,missed,Keegan
+ai4p-207450,prompt,fn,PII,NONE,missed,missed,03-56 00.60-57
+conll-clean-3277,prompt,fp,NONE,PII,ner,B-COUNTRY,GB
+conll-per-1234,prompt,fn,PII,NONE,missed,missed,Moustapha Niasse
+conll-clean-1621,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1495,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-207,prompt,fp,NONE,PII,ner,B-STREET,17
+kiji-conf-207,prompt,fp,NONE,PII,ner,B-STREET,Ashford Avenue
+kiji-conf-207,prompt,fp,NONE,PII,ner,B-CITY,Leopardstown
+kiji-conf-207,prompt,fp,NONE,PII,ner,B-STATE,Dublin 18
+kiji-conf-207,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,IE29AIBK93115212345678
+kiji-conf-207,prompt,fn,CONFIDENTIAL,NONE,missed,missed,AKJ29-PSDK2
+kiji-conf-207,prompt,fn,PII,NONE,missed,missed,Sean
+kiji-conf-207,prompt,fn,PII,NONE,missed,missed,O'Brien
+ai4p-172028,prompt,tp,PII,PII,ner,B-SOCIALNUMBER,27-1185 for
+ai4p-172028,prompt,fn,PII,NONE,missed,missed,Alvena
+conll-clean-1372,prompt,tn,NONE,NONE,clean,clean,
+ai4p-190233,prompt,fn,FINANCIAL,NONE,missed,missed,CH946005088085394L8U7
+ai4p-190233,prompt,fn,IP,NONE,missed,missed,a12f:aade:9a9b:0fec:fdfb:cfac:ffc4:3e6d
+ai4p-170879,prompt,tp,PII,PII,regex,phone,5670146369
+ai4p-170879,prompt,fn,PII,NONE,missed,missed,Serenity
+conll-clean-1569,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2083,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-3266,prompt,fp,NONE,PII,ner,B-COUNTRY,GB
+conll-clean-51,prompt,tn,NONE,NONE,clean,clean,
+ai4p-194953,prompt,tp,PII,PII,ner,B-SOCIALNUMBER,756
+ai4p-194953,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,8434.8144 is safe
+ai4p-194953,prompt,fn,PII,NONE,missed,missed,Addie
+ai4p-194953,prompt,fn,FINANCIAL,NONE,missed,missed,5231636375665308
+conll-per-83,prompt,fp,PII,CONFIDENTIAL,ner,B-SECADDRESS,"Igor 78,"
+conll-per-83,prompt,fp,NONE,CONFIDENTIAL,ner,B-SECADDRESS,90
+conll-per-83,prompt,fn,PII,NONE,missed,missed,Shatskikh Oleg
+kiji-conf-548,prompt,fp,NONE,PII,ner,B-STREET,Regent Street
+kiji-conf-548,prompt,fn,PII,NONE,missed,missed,NZ1234567
+kiji-conf-548,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Kiwi#2024
+conll-per-562,prompt,fn,PII,NONE,missed,missed,Pace
+ai4p-194091,prompt,fn,PII,NONE,missed,missed,Etha
+ai4p-194091,prompt,fn,IP,NONE,missed,missed,60df:b60b:f4b5:1cbd:aadc:bbca:0cf9:b9cc
+conll-per-39,prompt,fn,PII,NONE,missed,missed,Hassan Abbas
+conll-per-39,prompt,fn,PII,NONE,missed,missed,Bitar
+conll-clean-1351,prompt,fp,NONE,PII,ner,B-DATE,44
+conll-per-238,prompt,fn,PII,NONE,missed,missed,Greg Blewett
+kiji-conf-197,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-197,prompt,fn,PII,NONE,missed,missed,Liam
+conll-per-1181,prompt,fn,PII,NONE,missed,missed,Cooke
+conll-clean-1645,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2113,prompt,tn,NONE,NONE,clean,clean,
+ai4p-207088,prompt,fp,IP,PII,ner,B-IP,:bce1:bc7d:8bbb:464e:1175:cabe:dcff and bbab:cc69:25c2:6cd6:2bab:a57b:94d8:87a8. This could be
+ai4p-207088,prompt,fn,PII,NONE,missed,missed,Adalberto
+ai4p-207088,prompt,fn,IP,NONE,missed,missed,bbab:cc69:25c2:6cd6:2bab:a57b:94d8:87a8
+conll-clean-2281,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-492,prompt,tn,NONE,NONE,clean,clean,
+conll-per-3170,prompt,tp,PII,PII,ner,B-LASTNAME1,Altin Haxhi
+conll-per-3170,prompt,fn,PII,NONE,missed,missed,Bledar Kola
+conll-per-3170,prompt,fn,PII,NONE,missed,missed,Sokol Prenga
+conll-per-3170,prompt,fn,PII,NONE,missed,missed,Ervin Fakaj
+conll-clean-1530,prompt,tn,NONE,NONE,clean,clean,
+ai4p-197042,prompt,tp,PII,PII,regex,email,Santa_Heathcote32@hotmail.com
+ai4p-197042,prompt,fn,PII,NONE,missed,missed,Trystan
+conll-clean-1047,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-378,prompt,fp,NONE,PII,ner,B-STATE,GF GA PTS
+conll-clean-598,prompt,tn,NONE,NONE,clean,clean,
+ai4p-202785,prompt,fn,IP,NONE,missed,missed,209.135.211.241
+ai4p-202785,prompt,fn,FINANCIAL,NONE,missed,missed,4949893003220057
+conll-per-872,prompt,fn,PII,NONE,missed,missed,Nicol
+conll-clean-642,prompt,tn,NONE,NONE,clean,clean,
+ai4p-195562,prompt,fn,PII,NONE,missed,missed,Jayce
+ai4p-195562,prompt,fn,PII,NONE,missed,missed,Kshlerin
+kiji-conf-128,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-128,prompt,fn,PII,NONE,missed,missed,O'Sullivan
+conll-clean-1922,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1033,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-128,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1561,prompt,fn,PII,NONE,missed,missed,George Nishiyama
+conll-clean-1609,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2248,prompt,fn,PII,NONE,missed,missed,Langmore
+conll-per-2248,prompt,fn,PII,NONE,missed,missed,Fraser
+ai4p-188331,prompt,fn,PII,NONE,missed,missed,Lee
+ai4p-188331,prompt,fn,FINANCIAL,NONE,missed,missed,BH79CFRX392EM1X7B0U089
+ai4p-188994,prompt,tp,PII,PII,regex,phone,087.2579.2248
+ai4p-188994,prompt,fn,PII,NONE,missed,missed,Amelie
+conll-per-628,prompt,fn,PII,NONE,missed,missed,Phil Gray
+ai4p-193841,prompt,fp,IP,PII,ner,B-IP,acaf:e72b:40ed:c11e.
+ai4p-193841,prompt,fn,PII,NONE,missed,missed,Monica
+conll-clean-1824,prompt,tn,NONE,NONE,clean,clean,
+ai4p-193036,prompt,fp,NONE,FINANCIAL,regex,pan_card,Psychology
+ai4p-193036,prompt,tp,IP,IP,regex,ip_address,184.96.231.178
+ai4p-193036,prompt,fp,IP,PII,ner,B-IP,baae:4afd:1f2f) for our research purposes.
+conll-clean-1727,prompt,fp,NONE,PII,ner,B-IP,154.1 235.7 1.1 22.2 15.7
+conll-clean-1076,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-239,prompt,fp,NONE,PII,ner,B-STREET,"Terrace, Building 4, Wellington"
+kiji-conf-239,prompt,fp,NONE,PII,ner,B-CITY,6012.
+kiji-conf-239,prompt,fp,NONE,PII,ner,B-STATE,New
+kiji-conf-239,prompt,fn,PII,NONE,missed,missed,Liam
+kiji-conf-239,prompt,fn,PII,NONE,missed,missed,Brown
+kiji-conf-239,prompt,fn,PII,NONE,missed,missed,NZ1234567
+kiji-conf-239,prompt,fn,CONFIDENTIAL,NONE,missed,missed,AB12-XY34-OP56
+conll-clean-1732,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1688,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1386,prompt,fn,PII,NONE,missed,missed,Greenspan
+conll-clean-1327,prompt,tn,NONE,NONE,clean,clean,
+conll-per-6,prompt,fn,PII,NONE,missed,missed,Oleg Shatskiku
+conll-clean-1527,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-717,prompt,tp,PII,PII,regex,person_name,Aria
+kiji-conf-717,prompt,tp,PII,PII,regex,person_name,Patel
+kiji-conf-717,prompt,tp,PII,PII,regex,ssn,423-67-8910
+kiji-conf-717,prompt,fn,CONFIDENTIAL,NONE,missed,missed,SunnyDay!23
+kiji-conf-735,prompt,fp,NONE,PII,ner,B-DATE,2nd
+kiji-conf-735,prompt,fp,NONE,PII,ner,B-STREET,42
+kiji-conf-735,prompt,fp,NONE,PII,ner,B-STREET,Katoomba Lane
+kiji-conf-735,prompt,fp,NONE,PII,ner,B-STATE,Tasmania
+kiji-conf-735,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-735,prompt,tp,PII,PII,regex,email,ravi.tan@cybersecure.au
+kiji-conf-735,prompt,fn,PII,NONE,missed,missed,Ravi
+conll-clean-1742,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2229,prompt,fn,PII,NONE,missed,missed,Grove
+conll-per-2229,prompt,fn,PII,NONE,missed,missed,Betcher
+ai4p-188421,prompt,fp,NONE,PII,ner,B-IP,Can you please attempt
+ai4p-188421,prompt,fn,PII,NONE,missed,missed,Bailey
+ai4p-188421,prompt,fn,IP,NONE,missed,missed,36.253.50.70
+ai4p-174666,prompt,fp,FINANCIAL,PII,ner,B-SOCIALNUMBER,FI4466055444842451
+ai4p-174666,prompt,fn,FINANCIAL,NONE,missed,missed,6847511895416555
+ai4p-178120,prompt,tp,IP,IP,regex,ip_address,118.136.18.38
+ai4p-178120,prompt,fn,PII,NONE,missed,missed,Flossie
+ai4p-186180,prompt,fp,IP,PII,regex,phone,70.146.89.229
+ai4p-186180,prompt,fn,PII,NONE,missed,missed,Reece
+conll-clean-1716,prompt,fp,NONE,PII,ner,B-IP,165.2 181.9 14.9 231.4 332.9
+conll-per-3147,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,69 75
+conll-per-3147,prompt,fn,PII,NONE,missed,missed,Steve van Vuuren
+ai4p-199192,prompt,tp,PII,PII,regex,email,Vesta.Lang@hotmail.com
+ai4p-199192,prompt,fn,PII,NONE,missed,missed,034-1405-0264
+kiji-conf-759,prompt,fp,NONE,PII,ner,B-STREET,Glen
+kiji-conf-759,prompt,fp,NONE,PII,ner,B-CITY,Hobart
+kiji-conf-759,prompt,tp,PII,PII,ner,B-TEL,6223 4567
+kiji-conf-759,prompt,tp,PII,PII,regex,phone,123 45 6789
+kiji-conf-759,prompt,fn,PII,NONE,missed,missed,Thomas
+kiji-conf-759,prompt,fn,PII,NONE,missed,missed,Greene
+kiji-conf-759,prompt,fn,CONFIDENTIAL,NONE,missed,missed,BlueSky@2024
+ai4p-182379,prompt,fn,PII,NONE,missed,missed,Sanford
+ai4p-182379,prompt,fn,FINANCIAL,NONE,missed,missed,3470355203343581
+kiji-conf-861,prompt,tp,PII,PII,regex,phone,12345678
+kiji-conf-861,prompt,fn,CONFIDENTIAL,NONE,missed,missed,GreenClover23
+kiji-conf-861,prompt,fn,PII,NONE,missed,missed,Liam
+kiji-conf-861,prompt,fn,PII,NONE,missed,missed,900101A1234
+ai4p-205318,prompt,fn,IP,NONE,missed,missed,196.122.133.252
+ai4p-205318,prompt,fn,IP,NONE,missed,missed,d3cb:aef0:16ce:ceb2:78be:a6db:81ec:03b1
+ai4p-194938,prompt,fn,PII,NONE,missed,missed,Cara
+ai4p-194938,prompt,fn,IP,NONE,missed,missed,cb3a:6fbc:d163:f5f4:b37c:6819:3bf7:2db8
+conll-clean-3244,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-847,prompt,fp,NONE,PII,ner,B-STREET,Belmont Road
+kiji-conf-847,prompt,fp,NONE,PII,ner,B-STREET,Galway
+kiji-conf-847,prompt,fn,PII,NONE,missed,missed,Liam
+kiji-conf-847,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Shamrock2024
+kiji-conf-847,prompt,fn,PII,NONE,missed,missed,930724-3
+conll-clean-1718,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1968,prompt,fp,NONE,PII,ner,B-TITLE,President
+conll-per-1968,prompt,tp,PII,PII,ner,B-TITLE,Arafat
+conll-per-1968,prompt,fn,PII,NONE,missed,missed,Netanyahu
+ai4p-203027,prompt,tp,PII,PII,regex,email,Arnoldo90@yahoo.com
+ai4p-203027,prompt,fn,PII,NONE,missed,missed,Aiden
+conll-per-807,prompt,fn,PII,NONE,missed,missed,Costa
+conll-per-807,prompt,fn,PII,NONE,missed,missed,Weah
+conll-clean-1333,prompt,tn,NONE,NONE,clean,clean,
+ai4p-172389,prompt,fn,PII,NONE,missed,missed,Cole
+ai4p-172389,prompt,fn,FINANCIAL,NONE,missed,missed,GI62DXAG197031NT9582634
+kiji-conf-886,prompt,fp,NONE,PII,ner,B-STREET,"Building 5, Galway. Our records"
+kiji-conf-886,prompt,fp,NONE,PII,ner,B-STATE,postal code
+kiji-conf-886,prompt,fn,PII,NONE,missed,missed,O'Brien
+kiji-conf-886,prompt,fn,CONFIDENTIAL,NONE,missed,missed,ABC123XYZ789
+ai4p-206014,prompt,fp,NONE,PII,ner,B-TEL,handled
+ai4p-206014,prompt,fn,FINANCIAL,NONE,missed,missed,RO23PFLB4919V4F7L3141266
+ai4p-206014,prompt,fn,PII,NONE,missed,missed,Justen
+conll-clean-1999,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2866,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2578,prompt,fn,PII,NONE,missed,missed,Sashurin
+conll-clean-733,prompt,tn,NONE,NONE,clean,clean,
+conll-per-737,prompt,fn,PII,NONE,missed,missed,Raul Gonzalez
+conll-per-737,prompt,fn,PII,NONE,missed,missed,Juan Pizzi
+kiji-conf-1022,prompt,fp,NONE,PII,ner,B-STREET,145
+kiji-conf-1022,prompt,fp,NONE,PII,ner,B-STREET,Wattle Lane
+kiji-conf-1022,prompt,fp,NONE,PII,ner,B-CITY,Fitzroy
+kiji-conf-1022,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,api_key,"token, 'AKIAIOSFODNN7EXAMPLE'"
+kiji-conf-1022,prompt,fn,PII,NONE,missed,missed,Emily
+kiji-conf-1022,prompt,fn,PII,NONE,missed,missed,Watson
+kiji-conf-1022,prompt,fn,PII,NONE,missed,missed,VIC-830247159A
+conll-clean-264,prompt,tn,NONE,NONE,clean,clean,
+conll-per-750,prompt,fn,PII,NONE,missed,missed,Fernando Sanz
+conll-clean-1496,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1648,prompt,fp,NONE,PII,ner,B-DATE,12/15/2010 1
+conll-per-3135,prompt,fn,PII,NONE,missed,missed,Burke
+conll-clean-3324,prompt,fp,NONE,PII,ner,B-STATE,GF GA PTS
+conll-clean-3053,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-587,prompt,fp,NONE,PII,ner,B-STREET,Rangatira Road
+kiji-conf-587,prompt,fp,NONE,PII,ner,B-STREET,Hamilton
+kiji-conf-587,prompt,fp,NONE,PII,ner,B-CITY,3204
+kiji-conf-587,prompt,fn,PII,NONE,missed,missed,Zoe
+kiji-conf-587,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Kiwi$2024
+kiji-conf-587,prompt,fn,PII,NONE,missed,missed,Mark
+conll-clean-2773,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1947,prompt,tn,NONE,NONE,clean,clean,
+conll-per-2440,prompt,fn,PII,NONE,missed,missed,Beth Daniel
+conll-per-2440,prompt,fn,PII,NONE,missed,missed,Davis Love
+ai4p-198281,prompt,tp,PII,PII,regex,email,Mathias.Hahn89@gmail.com
+ai4p-198281,prompt,fn,FINANCIAL,NONE,missed,missed,9324046414533899
+ai4p-174175,prompt,fn,PII,NONE,missed,missed,Kayley
+ai4p-174175,prompt,fn,IP,NONE,missed,missed,5bd6:caa5:605a:8b17:e7d5:b8ce:dd84:1cda
+conll-per-1705,prompt,fn,PII,NONE,missed,missed,Voeks
+ai4p-199524,prompt,tp,PII,PII,regex,email,Waino.Marvin@gmail.com
+ai4p-199524,prompt,fn,PII,NONE,missed,missed,Consuelo
+conll-clean-1509,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1819,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1622,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1002,prompt,tn,NONE,NONE,clean,clean,
+conll-per-1261,prompt,fn,PII,NONE,missed,missed,Patasse
+ai4p-200735,prompt,fn,PII,NONE,missed,missed,Trey
+ai4p-200735,prompt,fn,IP,NONE,missed,missed,e6cc:8fa0:a4f6:0bd9:1fc0:a56b:dbec:2a9b
+kiji-conf-194,prompt,fp,NONE,PII,regex,date_of_birth,12/04/1978
+kiji-conf-194,prompt,fn,PII,NONE,missed,missed,Liam
+kiji-conf-194,prompt,fn,PII,NONE,missed,missed,Murphy
+kiji-conf-194,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Emerald2024!
+ai4p-167306,prompt,fp,IP,PII,ner,B-IP,54.209.85.61 network
+ai4p-167306,prompt,fn,PII,NONE,missed,missed,Schimmel
+ai4p-191302,prompt,tp,PII,PII,regex,phone,56.1601.9267
+ai4p-191302,prompt,fn,IP,NONE,missed,missed,dfad:0c10:db24:e50c:5c53:6fa6:162d:52a1
+conll-per-1942,prompt,tp,PII,PII,ner,B-TITLE,Major
+conll-per-1942,prompt,fn,PII,NONE,missed,missed,Clarke
+conll-per-970,prompt,fn,PII,NONE,missed,missed,HAVEL
+kiji-conf-366,prompt,fp,NONE,PII,ner,B-BOD,1988-11-04
+kiji-conf-366,prompt,fp,NONE,PII,ner,B-STREET,Terrace
+kiji-conf-366,prompt,fp,NONE,PII,ner,B-STREET,Cambridge
+kiji-conf-366,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-366,prompt,fp,NONE,PII,ner,B-STATE,Cornwall
+kiji-conf-366,prompt,fn,PII,NONE,missed,missed,Arjun
+kiji-conf-366,prompt,fn,PII,NONE,missed,missed,Patel
+kiji-conf-528,prompt,fp,CONFIDENTIAL,PII,ner,B-DRIVERLICENSE,"B55MN-HYT6U, to access"
+kiji-conf-528,prompt,fp,NONE,PII,ner,B-DRIVERLICENSE,system
+kiji-conf-528,prompt,fp,NONE,PII,ner,B-POSTCODE,maintenance
+kiji-conf-528,prompt,fn,PII,NONE,missed,missed,Ella
+kiji-conf-528,prompt,fn,PII,NONE,missed,missed,Patrick
+kiji-conf-141,prompt,tp,PII,PII,regex,email,liam.osullivan@example.ie
+kiji-conf-141,prompt,tp,PII,PII,regex,phone,+353 87 123 4567
+kiji-conf-141,prompt,tp,CONFIDENTIAL,CONFIDENTIAL,regex,aws_key,AKIAIOSFODNN7EXAMPLE
+kiji-conf-141,prompt,fn,PII,NONE,missed,missed,Liam
+kiji-conf-141,prompt,fn,PII,NONE,missed,missed,O'Sullivan
+ai4p-193104,prompt,tp,IP,IP,regex,ip_address,206.144.15.244
+ai4p-193104,prompt,fn,PII,NONE,missed,missed,Bernadine
+ai4p-170086,prompt,tp,PII,PII,ner,B-LASTNAME1,Metz
+ai4p-170086,prompt,fn,PII,NONE,missed,missed,Velda
+kiji-conf-590,prompt,fp,NONE,PII,regex,date_of_birth,15/03/1982
+kiji-conf-590,prompt,tp,FINANCIAL,FINANCIAL,regex,iban,GB29NWBK60161331926819
+kiji-conf-590,prompt,tp,PII,PII,ner,B-TEL,44
+kiji-conf-590,prompt,fp,NONE,PII,regex,phone,7700 900123
+kiji-conf-590,prompt,fn,PII,NONE,missed,missed,James
+kiji-conf-590,prompt,fn,PII,NONE,missed,missed,Carter
+kiji-conf-590,prompt,fn,CONFIDENTIAL,NONE,missed,missed,A1B2C3D4E5F6G7H8
+ai4p-180800,prompt,tp,PII,PII,regex,email,Adrianna_Metz@gmail.com
+ai4p-180800,prompt,fn,PII,NONE,missed,missed,Carli
+conll-clean-2641,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-1200,prompt,tn,NONE,NONE,clean,clean,
+conll-clean-2025,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-607,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,new
+kiji-conf-607,prompt,fp,FINANCIAL,PII,ner,B-SOCIALNUMBER,: NZ72 0110 0930
+kiji-conf-607,prompt,fn,PII,NONE,missed,missed,Mia
+kiji-conf-607,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Rainbow!94
+conll-clean-714,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-867,prompt,tp,PII,PII,ner,B-GIVENNAME1,Emma
+kiji-conf-867,prompt,fp,NONE,PII,ner,B-CITY,Wellington
+kiji-conf-867,prompt,fp,NONE,CONFIDENTIAL,ner,B-SECADDRESS,Apartment 4B
+kiji-conf-867,prompt,fn,PII,NONE,missed,missed,Patel
+kiji-conf-867,prompt,fn,PII,NONE,missed,missed,Arjun
+kiji-conf-867,prompt,fn,PII,NONE,missed,missed,09-555-7812
+kiji-conf-867,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Kiwi#2024
+conll-per-114,prompt,fn,PII,NONE,missed,missed,Astle
+conll-per-224,prompt,fn,PII,NONE,missed,missed,Ioan Vladoiu
+conll-per-224,prompt,fn,PII,NONE,missed,missed,Gheorghe Craioveanu
+conll-per-224,prompt,fn,PII,NONE,missed,missed,Ionel Danciulescu
+conll-per-224,prompt,fn,PII,NONE,missed,missed,Viorel Ion
+conll-per-3156,prompt,fp,NONE,PII,ner,B-SOCIALNUMBER,73 71
+conll-per-3156,prompt,fn,PII,NONE,missed,missed,Fourie
+conll-clean-534,prompt,tn,NONE,NONE,clean,clean,
+kiji-conf-972,prompt,fp,NONE,PII,ner,B-STREET,Terrace
+kiji-conf-972,prompt,fp,NONE,PII,ner,B-STREET,Boulder
+kiji-conf-972,prompt,fp,NONE,PII,ner,B-STREET,CO
+kiji-conf-972,prompt,fp,NONE,PII,ner,B-CITY,80302
+kiji-conf-972,prompt,fp,NONE,PII,ner,B-POSTCODE,previously
+kiji-conf-972,prompt,fp,NONE,PII,ner,B-STREET,the transition
+kiji-conf-972,prompt,fp,NONE,CONFIDENTIAL,ner,B-PASS,billing
+kiji-conf-972,prompt,fn,PII,NONE,missed,missed,Andrew
+kiji-conf-972,prompt,fn,PII,NONE,missed,missed,Mitchell
+kiji-conf-972,prompt,fn,CONFIDENTIAL,NONE,missed,missed,V3ctor@!99
+kiji-conf-232,prompt,fp,NONE,PII,ner,B-STREET,78
+kiji-conf-232,prompt,fp,NONE,PII,ner,B-POSTCODE,3010
+kiji-conf-232,prompt,fn,PII,NONE,missed,missed,Mike
+kiji-conf-232,prompt,fn,CONFIDENTIAL,NONE,missed,missed,Winter2024
+conll-clean-2945,prompt,tn,NONE,NONE,clean,clean,

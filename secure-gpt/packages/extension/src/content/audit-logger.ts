@@ -8,10 +8,10 @@
 // ─────────────────────────────────────────────
 
 import { authStorage } from '@/lib/storage/storage'
-import { DOMAIN_TO_PLATFORM } from '@securegpt/shared/constants'
+import { getPlatformForUrl } from './platform-routing'
 import { EXTENSION_VERSION } from '@/config/defaults.config'
 import type { DetectionResult } from '@securegpt/shared/types'
-import type { PolicyAction } from '@securegpt/shared/constants'
+import type { PolicyAction, LLMPlatform } from '@securegpt/shared/constants'
 import type { AuditLog } from '@securegpt/shared/types'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -38,7 +38,8 @@ export async function logDetectionEvent(
   result: DetectionResult,
   action: PolicyAction,
   topEntity: any,
-  acknowledged = false
+  acknowledged = false,
+  platformOverride?: LLMPlatform
 ): Promise<void> {
   console.log('[SecureGPT] logDetectionEvent called with result:', result.hasFindings, 'action:', action)
   // Bail out silently if extension was reloaded and context is gone
@@ -61,7 +62,7 @@ export async function logDetectionEvent(
       return
     }
 
-    const platform = DOMAIN_TO_PLATFORM[window.location.hostname] ?? 'unknown'
+    const platform = platformOverride ?? getPlatformForUrl(window.location.href) ?? 'unknown'
 
     // Hash the matched value — NEVER log raw text
     const snippetHash = await sha256(topEntity.value)
@@ -78,7 +79,8 @@ export async function logDetectionEvent(
       detectionType: topEntity.type,
       detectionTier: result.tier,
       llmPlatform: platform as any,
-      domain: window.location.hostname,
+      domain: platform === 'google-ai-mode' && window.location.protocol === 'chrome-extension:'
+        ? 'www.google.com' : window.location.hostname,
       matchCount: result.entities.length,
       snippetHash,
       entityTypes,

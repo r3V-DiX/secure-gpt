@@ -10,6 +10,7 @@ export interface PlatformIconProps {
 const LOCAL_ICON_FILES: Record<string, string> = {
   chatgpt: '/icons/chatgpt.png',
   gemini: '/icons/gemini.png',
+  'google-ai-mode': '/icons/gemini.png',
   copilot: '/icons/copilot.png',
   claude: '/icons/claude.png',
   perplexity: '/icons/perplexity.png',
@@ -21,10 +22,6 @@ const LOCAL_ICON_FILES: Record<string, string> = {
   replit: '/icons/replit.png',
   huggingchat: '/icons/huggingchat.png',
   deepseek: '/icons/deepseek.png',
-  phind: '/icons/phind.png',
-  notion: '/icons/notion.png',
-  jasper: '/icons/jasper.png',
-  'copy-ai': '/icons/copy-ai.png',
 }
 
 export function PlatformIcon({ platformId, size = 24, className = '' }: PlatformIconProps) {
@@ -195,44 +192,6 @@ export function PlatformIcon({ platformId, size = 24, className = '' }: Platform
             fill="#93C5FD"
           />
           <circle cx="12" cy="12" r="2" fill="#FFFFFF" />
-        </svg>
-      )
-    case 'phind':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <rect width="24" height="24" rx="6" fill="#0D9488" />
-          <path
-            d="M10 7H14C16.2 7 18 8.8 18 11C18 13.2 16.2 15 14 15H12V18H9V7H10ZM12 12.5H14C14.8 12.5 15.5 11.8 15.5 11C15.5 10.2 14.8 9.5 14 9.5H12V12.5Z"
-            fill="#FFFFFF"
-          />
-        </svg>
-      )
-    case 'notion':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <rect width="24" height="24" rx="6" fill="#000000" />
-          <path
-            d="M6.5 6.5L16 5L17.5 7V17.5L15 18.5L8.5 7.5V17L6.5 17.5V6.5Z"
-            fill="#FFFFFF"
-          />
-        </svg>
-      )
-    case 'jasper':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <rect width="24" height="24" rx="6" fill="#6366F1" />
-          <path
-            d="M7 6H17V9H13.5V15C13.5 16.66 12.16 18 10.5 18C8.84 18 7.5 16.66 7.5 15V14H10.5V15C10.5 15.28 10.72 15.5 11 15.5C11.28 15.5 11.5 15.28 11.5 15V9H7V6Z"
-            fill="#FFFFFF"
-          />
-        </svg>
-      )
-    case 'copy-ai':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <rect width="24" height="24" rx="6" fill="#2563EB" />
-          <circle cx="10" cy="12" r="4" stroke="#FFFFFF" strokeWidth="2" />
-          <circle cx="14" cy="12" r="4" stroke="#93C5FD" strokeWidth="2" strokeDasharray="3 3" />
         </svg>
       )
     default:

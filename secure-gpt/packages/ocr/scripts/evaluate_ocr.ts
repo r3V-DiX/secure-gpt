@@ -88,6 +88,8 @@ function resolveImagePayload(imagePath?: string): string {
     path.resolve(__dirname, '../dataset/images', imagePath),
     path.resolve(__dirname, '../dataset', imagePath),
     path.resolve(process.cwd(), imagePath),
+    path.resolve(process.cwd(), '../../test_documents/images', imagePath),
+    path.resolve(process.cwd(), 'test_documents/images', imagePath),
   ]
 
   for (const p of candidates) {
@@ -212,4 +214,5 @@ export async function runEvaluation(datasetPath: string, useMock: boolean = fals
 }
 
 const datasetFile = path.resolve(__dirname, '../dataset/ground_truth.jsonl')
-runEvaluation(datasetFile, true).catch(console.error)
+const isReal = process.argv.includes('--real')
+runEvaluation(datasetFile, !isReal).catch(console.error)

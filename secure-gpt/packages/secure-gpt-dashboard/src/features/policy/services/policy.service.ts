@@ -19,7 +19,7 @@ export const DEFAULT_POLICY_CONFIG: PIIConfig = {
     CONFIDENTIAL: { enabled: true, action: 'BLOCK', customKeywords: [], allowlist: [], fuzzyMatch: false },
     IP: { enabled: true, action: 'WARN_ALLOW', customKeywords: [], allowlist: [], fuzzyMatch: false },
   },
-  monitoredPlatforms: ['chatgpt', 'gemini', 'copilot', 'claude', 'perplexity', 'meta-ai'],
+  monitoredPlatforms: ['chatgpt', 'gemini', 'google-ai-mode', 'copilot', 'claude', 'perplexity', 'meta-ai'],
   customDomains: [],
   allowPause: true,
   logUserEmail: false,

@@ -86,6 +86,7 @@ export const DEFAULT_PII_CONFIG: PIIConfig = {
   monitoredPlatforms: [
     'chatgpt',
     'gemini',
+    'google-ai-mode',
     'copilot',
     'claude',
     'perplexity',

@@ -4,7 +4,7 @@
 // Runs ONNX BERT inference in a Web Worker
 // ─────────────────────────────────────────────
 
-import * as ort from 'onnxruntime-web';
+import * as ort from 'onnxruntime-web/wasm';
 
 const LABEL_MAP: Record<number, string> = {
   0: "B-BOD", 1: "B-BUILDING", 2: "B-CITY", 3: "B-COUNTRY", 4: "B-DATE",
@@ -51,35 +51,14 @@ async function initSession() {
   
   console.log('[NERWorker] Configured WASM paths:', ort.env.wasm.wasmPaths);
 
-  // Prefer low-power for better compatibility in extensions
-  if (ort.env.webgpu) {
-    ort.env.webgpu.powerPreference = 'low-power';
-  }
-
-  let hasWebGPU = false;
-  try {
-    const nav = navigator as any;
-    if (nav?.gpu && typeof nav.gpu.requestAdapter === 'function') {
-      const adapter = await nav.gpu.requestAdapter({ powerPreference: 'low-power' });
-      hasWebGPU = !!adapter;
-      console.log('[NERWorker] WebGPU available:', hasWebGPU);
-    }
-  } catch (err) {
-    console.warn('[NERWorker] WebGPU check failed:', (err as Error).message);
-    hasWebGPU = false;
-  }
-
-  // If WebGPU is not available, explicitly tell ONNX to avoid it to stop console noise
-  if (!hasWebGPU && ort.env.webgpu) {
-    // @ts-ignore
-    ort.env.webgpu.disabled = true;
-  }
-
   const modelUrl = `${base}/models/pii-ner-int8.onnx`;
   console.log('[NERWorker] Loading model from:', modelUrl);
   
   try {
-      const providers = hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'];
+      // Extension offscreen documents may expose navigator.gpu without an
+      // adapter. Probing it emits a Chromium extension error even when WASM
+      // succeeds, so use the bundled WASM provider directly.
+      const providers = ['wasm'];
       console.log('[NERWorker] Attempting to create InferenceSession with providers:', providers);
       
       session = await ort.InferenceSession.create(modelUrl, {
@@ -92,23 +71,6 @@ async function initSession() {
   } catch (err) {
       console.error('[NERWorker] Session creation failed:', (err as Error).message);
       
-      // If we tried WebGPU and failed, try falling back to WASM manually
-      if (hasWebGPU) {
-        console.log('[NERWorker] Retrying with WASM provider only...');
-        try {
-          session = await ort.InferenceSession.create(modelUrl, {
-            executionProviders: ['wasm'],
-            graphOptimizationLevel: 'all',
-          });
-          console.log('[NERWorker] Session created successfully (WASM fallback)');
-          self.postMessage({ type: 'READY' });
-          return;
-        } catch (retryErr) {
-          console.error('[NERWorker] WASM fallback also failed:', (retryErr as Error).message);
-        }
-      }
-      
-      // If all failed, tell parent
       self.postMessage({ type: 'ERROR', error: (err as Error).message });
   }
 }
@@ -165,4 +127,3 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 });
-

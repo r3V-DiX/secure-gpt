@@ -11,6 +11,7 @@ export { getMostRestrictiveAction }
 import { handleGlobalPaste, handleGlobalFileChange, handleGlobalDrop, type FileListenerContext } from './file-drop-listener'
 
 let currentPolicy: PIIConfig
+let interceptorActive = false
 let preAllowedText = ''
 
 export function setPreAllowedText(text: string): void {
@@ -27,6 +28,7 @@ const getPendingCount = () => pendingOcrCount
 
 const submitContext: SubmitContext = {
   getCurrentPolicy: () => currentPolicy,
+  isProtectionActive: () => interceptorActive,
   getPreAllowedText: () => preAllowedText,
   ocrCache,
   getPendingCount,
@@ -34,6 +36,7 @@ const submitContext: SubmitContext = {
 
 const fileListenerContext: FileListenerContext = {
   getCurrentPolicy: () => currentPolicy,
+  isProtectionActive: () => interceptorActive,
   ocrCache,
   incPending,
   decPending,
@@ -43,18 +46,22 @@ const fileListenerContext: FileListenerContext = {
 export function setupInterceptor(policy: PIIConfig): void {
   currentPolicy = policy
   teardown()
+  interceptorActive = true
   attachGlobalListeners()
 }
 
 function onGlobalPaste(ev: ClipboardEvent): void {
+  if (!isExtensionContextValid()) { teardown(); return }
   handleGlobalPaste(ev, fileListenerContext)
 }
 
 function onGlobalFileChange(ev: Event): void {
+  if (!isExtensionContextValid()) { teardown(); return }
   handleGlobalFileChange(ev, fileListenerContext)
 }
 
 function onGlobalDrop(ev: DragEvent): void {
+  if (!isExtensionContextValid()) { teardown(); return }
   handleGlobalDrop(ev, fileListenerContext)
 }
 
@@ -72,6 +79,7 @@ function attachGlobalListeners(): void {
 }
 
 function handleGlobalKeyDown(e: KeyboardEvent): void {
+  if (!isExtensionContextValid()) { teardown(); return }
   if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return
   if (!e.isTrusted) return
 
@@ -86,6 +94,7 @@ function handleGlobalKeyDown(e: KeyboardEvent): void {
 }
 
 function handleGlobalClick(e: MouseEvent): void {
+  if (!isExtensionContextValid()) { teardown(); return }
   if (!e.isTrusted) return
 
   const target = e.target as HTMLElement
@@ -117,6 +126,7 @@ function handleGlobalClick(e: MouseEvent): void {
 }
 
 function handleGlobalSubmit(e: Event): void {
+  if (!isExtensionContextValid()) { teardown(); return }
   if (!e.isTrusted) return
 
   const root = findMainEditor()
@@ -130,6 +140,7 @@ function handleGlobalSubmit(e: Event): void {
 }
 
 function handleGlobalFocus(e: FocusEvent): void {
+  if (!isExtensionContextValid()) { teardown(); return }
   if (!e.isTrusted) return
   const target = e.target as HTMLElement
   const root = findEditableRoot(target)
@@ -153,6 +164,7 @@ function handleGlobalBlur(e: FocusEvent): void {
 }
 
 async function handleGlobalInput(e: Event): Promise<void> {
+  if (!isExtensionContextValid()) { teardown(); return }
   if (!e.isTrusted) return
 
   const target = e.target as HTMLElement
@@ -212,6 +224,10 @@ async function handleGlobalInput(e: Event): Promise<void> {
 }
 
 export function teardown(): void {
+  interceptorActive = false
+  ocrCache.clear()
+  if (inputDebounceTimer) clearTimeout(inputDebounceTimer)
+  inputDebounceTimer = null
   window.removeEventListener('keydown', handleGlobalKeyDown, true)
   window.removeEventListener('click', handleGlobalClick, true)
   window.removeEventListener('submit', handleGlobalSubmit, true)

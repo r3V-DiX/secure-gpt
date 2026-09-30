@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.system_release import SystemRelease
-from app.core.seed_releases import INITIAL_RELEASES
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -104,41 +103,14 @@ async def get_releases(db: AsyncSession = Depends(get_db)):
     except Exception:
         pass
 
-    # Fallback to static initial releases structure if database is warming up
-    fallback_grouped = {"baseline": [], "admin": [], "extension": []}
-    for item in INITIAL_RELEASES:
-        cat = item.get("component", "baseline")
-        if cat not in fallback_grouped:
-            fallback_grouped[cat] = []
-        fallback_grouped[cat].append({
-            "id": f"seed-{cat}-{item['version']}",
-            "component": cat,
-            "version": item["version"],
-            "date": item["release_date"],
-            "status": item["status"],
-            "tag": item["tag"],
-            "commit": item["commit_hash"],
-            "summary": item["summary"],
-            "info": item["info"],
-            "whatsNew": item.get("whats_new", []),
-            "changedFunctionality": item.get("changed_functionality", []),
-            "improvements": item.get("improvements", []),
-            "problemsSolved": item.get("problems_solved", []),
-            "isActive": True,
-            "orderIndex": item.get("order_index", 0),
-        })
-
-    latest_fallback_baseline = fallback_grouped["baseline"][0]["version"] if fallback_grouped["baseline"] else settings.app_version
-    latest_fallback_admin = fallback_grouped["admin"][0]["version"] if fallback_grouped["admin"] else settings.app_version
-    latest_fallback_extension = fallback_grouped["extension"][0]["version"] if fallback_grouped["extension"] else settings.extension_version
-
+    empty_grouped = {"baseline": [], "admin": [], "extension": []}
     return {
         "status": "ok",
-        "currentVersion": latest_fallback_baseline,
+        "currentVersion": settings.app_version,
         "components": {
-            "baseline": latest_fallback_baseline,
-            "admin": latest_fallback_admin,
-            "extension": latest_fallback_extension,
+            "baseline": settings.app_version,
+            "admin": settings.app_version,
+            "extension": settings.extension_version,
         },
-        "releases": fallback_grouped,
+        "releases": empty_grouped,
     }

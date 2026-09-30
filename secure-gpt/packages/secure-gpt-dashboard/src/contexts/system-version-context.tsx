@@ -63,10 +63,19 @@ export function SystemVersionProvider({ children }: { children: React.ReactNode 
       }>('/system/releases')
 
       if (res.data && res.data.releases) {
+        const dedupe = (items: VersionItem[]) => {
+          const seen = new Set<string>()
+          return items.filter((item) => {
+            if (!item.version || seen.has(item.version)) return false
+            seen.add(item.version)
+            return true
+          })
+        }
+
         setReleases({
-          baseline: res.data.releases.baseline?.length ? res.data.releases.baseline : BASELINE_VERSIONS,
-          admin: res.data.releases.admin?.length ? res.data.releases.admin : ADMIN_VERSIONS,
-          extension: res.data.releases.extension?.length ? res.data.releases.extension : EXTENSION_VERSIONS,
+          baseline: dedupe(res.data.releases.baseline?.length ? res.data.releases.baseline : BASELINE_VERSIONS),
+          admin: dedupe(res.data.releases.admin?.length ? res.data.releases.admin : ADMIN_VERSIONS),
+          extension: dedupe(res.data.releases.extension?.length ? res.data.releases.extension : EXTENSION_VERSIONS),
         })
         if (res.data.components) {
           if (res.data.components.baseline) setCurrentVersion(res.data.components.baseline)

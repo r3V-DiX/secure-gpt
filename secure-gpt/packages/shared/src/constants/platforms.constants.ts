@@ -5,6 +5,7 @@
 export const LLM_PLATFORMS = {
   chatgpt: 'chatgpt',
   gemini: 'gemini',
+  'google-ai-mode': 'google-ai-mode',
   copilot: 'copilot',
   claude: 'claude',
   perplexity: 'perplexity',
@@ -16,10 +17,6 @@ export const LLM_PLATFORMS = {
   replit: 'replit',
   huggingchat: 'huggingchat',
   deepseek: 'deepseek',
-  phind: 'phind',
-  notion: 'notion',
-  jasper: 'jasper',
-  'copy-ai': 'copy-ai',
 } as const
 
 export type LLMPlatform = keyof typeof LLM_PLATFORMS
@@ -27,6 +24,7 @@ export type LLMPlatform = keyof typeof LLM_PLATFORMS
 export const PLATFORM_LABELS: Record<LLMPlatform, string> = {
   chatgpt: 'ChatGPT',
   gemini: 'Google Gemini',
+  'google-ai-mode': 'Google AI Mode',
   copilot: 'Microsoft Copilot',
   claude: 'Claude (Anthropic)',
   perplexity: 'Perplexity AI',
@@ -34,34 +32,27 @@ export const PLATFORM_LABELS: Record<LLMPlatform, string> = {
   poe: 'Poe',
   mistral: 'Mistral Le Chat',
   cursor: 'Cursor Web',
-  v0: 'v0.dev (Vercel)',
+  v0: 'v0 (Vercel)',
   replit: 'Replit Agent',
   huggingchat: 'HuggingChat',
   deepseek: 'DeepSeek',
-  phind: 'Phind AI',
-  notion: 'Notion AI',
-  jasper: 'Jasper AI',
-  'copy-ai': 'Copy.ai',
 }
 
 export const PLATFORM_DOMAINS: Record<LLMPlatform, string | string[]> = {
   chatgpt: ['chat.openai.com', 'chatgpt.com'],
-  gemini: ['gemini.google.com', 'www.google.com'],
-  copilot: 'copilot.microsoft.com',
+  gemini: 'gemini.google.com',
+  'google-ai-mode': ['google.com', 'www.google.com'],
+  copilot: ['copilot.microsoft.com', 'copilot.com', 'www.copilot.com'],
   claude: 'claude.ai',
-  perplexity: 'perplexity.ai',
-  'meta-ai': 'meta.ai',
+  perplexity: ['perplexity.ai', 'www.perplexity.ai'],
+  'meta-ai': ['meta.ai', 'www.meta.ai'],
   poe: 'poe.com',
   mistral: ['chat.mistral.ai', 'mistral.ai'],
   cursor: ['cursor.com', 'cursor.sh'],
-  v0: 'v0.dev',
+  v0: ['v0.dev', 'v0.app', 'www.v0.app'],
   replit: 'replit.com',
   huggingchat: 'huggingface.co',
   deepseek: ['chat.deepseek.com', 'deepseek.com'],
-  phind: 'www.phind.com',
-  notion: 'www.notion.so',
-  jasper: 'app.jasper.ai',
-  'copy-ai': 'app.copy.ai',
 }
 
 // Reverse lookup: domain -> platform

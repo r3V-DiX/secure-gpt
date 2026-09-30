@@ -1,14 +1,15 @@
 // packages/extension/src/content/site-detection-indicator.ts
-import { DOMAIN_TO_PLATFORM, PLATFORM_LABELS, type LLMPlatform } from '@securegpt/shared/constants'
+import { PLATFORM_LABELS, type LLMPlatform } from '@securegpt/shared/constants'
+import { getPlatformForUrl } from './platform-routing'
 import { INDICATOR_TEMPLATE, WELCOME_MODAL_TEMPLATE } from './site-indicator-templates'
 
 let indicatorHostEl: HTMLElement | null = null
 let isFlyoutOpen = false
+let outsideClickHandler: ((event: MouseEvent) => void) | null = null
 
 export function getCurrentPlatform(): { id: LLMPlatform | 'unknown'; label: string; domain: string } {
   const hostname = window.location.hostname
-  const matchingDomain = Object.keys(DOMAIN_TO_PLATFORM).find(d => hostname.endsWith(d))
-  const platformId: LLMPlatform | 'unknown' = DOMAIN_TO_PLATFORM[hostname] || (matchingDomain ? DOMAIN_TO_PLATFORM[matchingDomain] : 'unknown') || 'unknown'
+  const platformId: LLMPlatform | 'unknown' = getPlatformForUrl(window.location.href) ?? 'unknown'
   const label = platformId !== 'unknown' ? (PLATFORM_LABELS[platformId as LLMPlatform] || 'AI Platform') : 'AI Platform'
   return { id: platformId, label, domain: hostname }
 }
@@ -72,11 +73,12 @@ function mountBottomRightIndicator(
     showWelcomeModal(platform, true)
   })
 
-  window.addEventListener('click', (e) => {
+  outsideClickHandler = (e) => {
     if (isFlyoutOpen && !host.contains(e.target as Node)) {
       toggleFlyout(false)
     }
-  })
+  }
+  window.addEventListener('click', outsideClickHandler)
 }
 
 function checkAndShowWelcomeModal(platform: { id: LLMPlatform | 'unknown'; label: string; domain: string }): void {
@@ -142,6 +144,10 @@ export function showWelcomeModal(
 }
 
 export function removeSiteDetectionIndicator(): void {
+  if (outsideClickHandler) window.removeEventListener('click', outsideClickHandler)
+  outsideClickHandler = null
+  isFlyoutOpen = false
+  document.getElementById('securegpt-welcome-modal-host')?.remove()
   if (indicatorHostEl) {
     indicatorHostEl.remove()
     indicatorHostEl = null

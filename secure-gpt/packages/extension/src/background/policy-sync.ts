@@ -18,7 +18,7 @@ const FALLBACK_ALARM_PERIOD_MIN = 1
 const HEARTBEAT_ALARM_PERIOD_MIN = 2
 const SSE_RETRY_DELAY_MS = 5 * 1000
 
-const LLM_URL_PATTERNS: string[] = Object.values(PLATFORM_DOMAINS)
+export const LLM_URL_PATTERNS: string[] = Object.values(PLATFORM_DOMAINS)
   .flatMap((d) => (Array.isArray(d) ? d : [d]))
   .map((hostname) => `https://${hostname}/*`)
 

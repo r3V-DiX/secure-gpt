@@ -168,8 +168,8 @@ export default function DedicatedVersionsPage() {
 
           {/* Release Cards Stream */}
           <div className="space-y-8">
-            {activeVersions.map((item) => (
-              <VersionCard key={item.version} item={item} />
+            {activeVersions.map((item, idx) => (
+              <VersionCard key={item.id ?? `${activeTab}-${item.version}-${idx}`} item={item} />
             ))}
           </div>
         </div>

@@ -1,0 +1,66 @@
+name: Release Extension Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.3.0)'
+        required: true
+        default: 'v1.3.0'
+
+jobs:
+  release-extension:
+    name: Build & Release Chrome Extension
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🏷️ Determine Version Tag
+        id: vars
+        run: |
+          RAW_TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${RAW_TAG#v}"
+          echo "tag=$RAW_TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Target tag: $RAW_TAG (version: $VERSION)"
+
+      - name: 🛠️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'secure-gpt/package-lock.json'
+
+      - name: 📦 Install Root & Workspace Dependencies
+        run: |
+          npm ci --prefix secure-gpt
+
+      - name: 🏗️ Build Extension Bundle (Production)
+        run: |
+          npm --prefix secure-gpt run build:extension
+
+      - name: 🗜️ Archive Extension Dist
+        run: |
+          cd secure-gpt/packages/extension/dist
+          zip -r ../../../../secure-gpt-extension-${{ steps.vars.outputs.tag }}.zip ./*
+          cd ../../../..
+
+      - name: 🚀 Create GitHub Release & Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: "SecureGPT Extension ${{ steps.vars.outputs.tag }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            secure-gpt-extension-${{ steps.vars.outputs.tag }}.zip

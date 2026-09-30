@@ -218,7 +218,7 @@ async function runImageOcr(
 ): Promise<{ ok: boolean; result?: DetectionResult; error?: string }> {
   try {
     console.log('[Offscreen] Running OCR on image…')
-    const { rawText, ocrData, severityFloor, rotatedImageUrl } = await ocrTier.runOnImage(imageUrl, config)
+    const { rawText, ocrData, severityFloor, rotatedImageUrl, scale, rotation, imgWidth, imgHeight } = await ocrTier.runOnImage(imageUrl, config)
 
     if (!rawText) {
       return {
@@ -247,7 +247,16 @@ async function runImageOcr(
 
     // Merge all found entities, then map to image bounding boxes
     const allEntities = [...regexEntities, ...nerEntities]
-    const mappedEntities = ocrTier.mapEntitiesToBboxes(allEntities, ocrData, rawText, severityFloor)
+    const mappedEntities = ocrTier.mapEntitiesToBboxes(
+      allEntities,
+      ocrData,
+      rawText,
+      severityFloor,
+      scale,
+      rotation,
+      imgWidth,
+      imgHeight
+    )
 
     const result: DetectionResult = {
       hasFindings: mappedEntities.length > 0,

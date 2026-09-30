@@ -13,20 +13,17 @@ export const ALL_HERO_PLATFORMS = [
   { id: 'chatgpt', name: 'ChatGPT' },
   { id: 'claude', name: 'Claude' },
   { id: 'gemini', name: 'Gemini' },
+  { id: 'google-ai-mode', name: 'Google AI Mode' },
   { id: 'copilot', name: 'Copilot' },
   { id: 'perplexity', name: 'Perplexity' },
   { id: 'deepseek', name: 'DeepSeek' },
   { id: 'cursor', name: 'Cursor' },
   { id: 'mistral', name: 'Mistral' },
   { id: 'meta-ai', name: 'Meta AI' },
-  { id: 'v0', name: 'v0.dev' },
+  { id: 'v0', name: 'v0' },
   { id: 'replit', name: 'Replit' },
   { id: 'poe', name: 'Poe' },
   { id: 'huggingchat', name: 'HuggingChat' },
-  { id: 'phind', name: 'Phind' },
-  { id: 'notion', name: 'Notion AI' },
-  { id: 'jasper', name: 'Jasper' },
-  { id: 'copy-ai', name: 'Copy.ai' },
 ] as const
 
 export function LandingHeroSection() {

@@ -1,10 +1,11 @@
 // packages/extension/src/content/file-scanner.ts
 // Handles file upload inspection (Images, PDFs, Office docs) and redaction
 
-import { dispatchImagePaste, dispatchFilePaste } from './dom-utils'
+import { dispatchImagePaste, dispatchFilePaste, clearAttachments } from './dom-utils'
 import { showBanner, removeBanner } from './banners'
 import { logDetectionEvent } from './audit-logger'
 import { applyImageMasking } from '@/features/actions/services/masking.service'
+import { getMostRestrictiveAction } from './submit-handler'
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
 import type { PIICategory } from '@securegpt/shared/constants'
 
@@ -46,8 +47,13 @@ export async function handleImagePasteInternal(
   ocrCache: Map<string, PIIEntity[]>,
   incPending: () => void,
   decPending: () => void,
-  getPendingCount: () => number
+  getPendingCount: () => number,
+  isScanningEnabled: () => boolean = () => true
 ): Promise<void> {
+  if (!isScanningEnabled()) {
+    await dispatchImagePaste(el, imgUrl)
+    return
+  }
   try {
     incPending()
     console.info('[SecureGPT] Image paste detected, running OCR scan…')
@@ -66,11 +72,42 @@ export async function handleImagePasteInternal(
       )
     })
 
+    if (!isScanningEnabled()) {
+      await dispatchImagePaste(el, imgUrl)
+      return
+    }
+
     if (result.hasFindings && result.entities.length > 0) {
-      console.info(`[SecureGPT] OCR found ${result.entities.length} entities. Redacting before upload…`)
+      const { action, topEntity } = getMostRestrictiveAction(result.entities, currentPolicy)
+      console.info(`[SecureGPT] OCR found ${result.entities.length} entities. Policy Action: ${action} (${topEntity.category})`)
+
+      if (action === 'BLOCK') {
+        await clearAttachments()
+        showBanner('block', topEntity.category, result.entities.length)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)
+        return
+      }
+
+      console.info(`[SecureGPT] Redacting ${result.entities.length} entities before upload…`)
       const baseImg = result.rotatedImageUrl || imgUrl
       const redactedUrl = await applyImageMasking(baseImg, result.entities)
+      if (!isScanningEnabled()) {
+        await dispatchImagePaste(el, imgUrl)
+        return
+      }
       ocrCache.set(redactedUrl, result.entities)
+
+      if (action === 'MASK') {
+        showBanner('mask', topEntity.category, result.entities.length)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'MASK', topEntity, false)
+      } else if (action === 'WARN_ALLOW') {
+        showBanner('warn', topEntity.category, result.entities.length)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'WARN_ALLOW', topEntity, true)
+      }
+
       await dispatchImagePaste(el, redactedUrl)
     } else {
       console.info('[SecureGPT] Pasted image is clean. Re-injecting…')
@@ -93,14 +130,15 @@ export async function handleFileScan(
   ocrCache: Map<string, PIIEntity[]>,
   incPending: () => void,
   decPending: () => void,
-  getPendingCount: () => number
+  getPendingCount: () => number,
+  isScanningEnabled: () => boolean = () => true
 ): Promise<void> {
   const isImage = file.type.startsWith('image/')
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
   const isOffice = isOfficeFile(file)
   if (!isImage && !isPdf && !isOffice) return
 
-  if (currentPolicy?.enableDocumentScanning === false) {
+  if (!isScanningEnabled() || currentPolicy?.enableDocumentScanning === false) {
     console.info(`[SecureGPT] Document scanning disabled by policy — skipping inspection for ${file.name}`)
     const reader = new FileReader()
     const dataUrl = await new Promise<string>((resolve) => {
@@ -117,6 +155,11 @@ export async function handleFileScan(
     reader.onload = () => resolve(reader.result as string)
     reader.readAsDataURL(file)
   })
+
+  if (!isScanningEnabled()) {
+    await dispatchFilePaste(el, dataUrl, file.name, file.type)
+    return
+  }
 
   if (isOffice && file.size > MAX_OFFICE_SCAN_BYTES) {
     console.warn(`[SecureGPT] ${file.name} exceeds ${MAX_OFFICE_SCAN_BYTES} bytes — forwarding unscanned.`)
@@ -144,8 +187,22 @@ export async function handleFileScan(
       )
     })
 
+    if (!isScanningEnabled()) {
+      await dispatchFilePaste(el, dataUrl, file.name, file.type)
+      return
+    }
+
     if (result.hasFindings && result.entities.length > 0) {
-      console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Redacting before upload…`)
+      const { action, topEntity } = getMostRestrictiveAction(result.entities, currentPolicy)
+      console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Policy Action: ${action} (${topEntity.category})`)
+
+      if (action === 'BLOCK' && !isOffice) {
+        await clearAttachments()
+        showBanner('block', topEntity.category, result.entities.length)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)
+        return
+      }
 
       if (isOffice) {
         const topEntity = result.entities[0]
@@ -158,6 +215,10 @@ export async function handleFileScan(
               resolve
             )
           })
+          if (!isScanningEnabled()) {
+            await dispatchFilePaste(el, dataUrl, file.name, file.type)
+            return
+          }
           if (resp && resp.ok && resp.redactedPdfData) {
             console.info(`[SecureGPT] Masked ${file.name}, re-injecting.`)
             ocrCache.set(resp.redactedPdfData, [])
@@ -180,6 +241,10 @@ export async function handleFileScan(
         const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
           chrome.runtime.sendMessage({ type: 'REDACT_PDF', pdfData: dataUrl, entities: result.entities }, resolve)
         })
+        if (!isScanningEnabled()) {
+          await dispatchFilePaste(el, dataUrl, file.name, file.type)
+          return
+        }
         if (resp && resp.ok && resp.redactedPdfData) {
           redactedUrl = resp.redactedPdfData
         } else {
@@ -191,7 +256,22 @@ export async function handleFileScan(
         redactedUrl = await applyImageMasking(baseImg, result.entities)
       }
 
+      if (!isScanningEnabled()) {
+        await dispatchFilePaste(el, dataUrl, file.name, file.type)
+        return
+      }
       ocrCache.set(redactedUrl, result.entities)
+
+      if (action === 'MASK') {
+        showBanner('mask', topEntity.category, result.entities.length)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'MASK', topEntity, false)
+      } else if (action === 'WARN_ALLOW') {
+        showBanner('warn', topEntity.category, result.entities.length)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'WARN_ALLOW', topEntity, true)
+      }
+
       await dispatchFilePaste(el, redactedUrl, file.name, file.type)
     } else {
       console.info(`[SecureGPT] ${file.name} is clean. Forwarding original.`)

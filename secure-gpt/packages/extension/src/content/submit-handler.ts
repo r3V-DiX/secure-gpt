@@ -7,7 +7,7 @@ import { setInputValue, resubmit } from './text-replacer'
 import { waitForPendingOcr } from './ocr-wait-handler'
 import { clearAttachments, dispatchFilePaste, dispatchImagePaste, extractText } from './dom-utils'
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
-import { POLICY_ACTION_PRIORITY, type PolicyAction } from '@securegpt/shared/constants'
+import { POLICY_ACTION_PRIORITY, type PolicyAction, type LLMPlatform } from '@securegpt/shared/constants'
 
 export function isExtensionContextValid(): boolean {
   try {
@@ -45,6 +45,9 @@ export interface SubmitContext {
   getPreAllowedText: () => string
   ocrCache: Map<string, PIIEntity[]>
   getPendingCount: () => number
+  isProtectionActive?: () => boolean
+  resubmit?: (el: HTMLElement) => void
+  entryPlatform?: LLMPlatform
 }
 
 let isRunning = false
@@ -64,6 +67,7 @@ export async function handleSubmit(
   const currentPolicy = ctx.getCurrentPolicy()
   const preAllowedText = ctx.getPreAllowedText()
   const ocrCache = ctx.ocrCache
+  const submit = ctx.resubmit ?? resubmit
 
   try {
     const isActive = await new Promise<boolean>((resolve) => {
@@ -76,9 +80,9 @@ export async function handleSubmit(
       })
     })
 
-    if (!isActive) {
+    if (!isActive || ctx.isProtectionActive?.() === false) {
       isRunning = false
-      resubmit(el)
+      submit(el)
       return
     }
 
@@ -86,20 +90,25 @@ export async function handleSubmit(
     if (ctx.getPendingCount() > 0) {
       await waitForPendingOcr(ctx.getPendingCount)
     }
+    if (ctx.isProtectionActive?.() === false) {
+      isRunning = false
+      submit(el)
+      return
+    }
 
     const text = extractText(el)
 
     if (text === preAllowedText && text.trim().length > 0) {
       console.log('[SecureGPT] Bypassing submit detection because text was pre-allowed via live tooltip.')
       isRunning = false
-      resubmit(el)
+      submit(el)
       return
     }
 
     const hasCachedImages = ocrCache.size > 0
     if ((!text || text.trim().length === 0) && !hasCachedImages) {
       isRunning = false
-      resubmit(el)
+      submit(el)
       return
     }
 
@@ -110,7 +119,7 @@ export async function handleSubmit(
     if (text.trim().length > 0) {
       result = await new Promise<DetectionResult>((resolve) => {
         chrome.runtime.sendMessage(
-          { type: 'DETECT_PII', text, config: currentPolicy },
+          { type: 'DETECT_PII', text, config: currentPolicy, entryPlatform: ctx.entryPlatform },
           (res) => {
             if (chrome.runtime.lastError) {
               console.error('[SecureGPT] Background detection error:', chrome.runtime.lastError)
@@ -125,6 +134,11 @@ export async function handleSubmit(
       result = { hasFindings: false, entities: [], tier: 'regex', processingTimeMs: 0, inputLength: 0 }
     }
     console.log('[SecureGPT] Detection result:', result)
+    if (ctx.isProtectionActive?.() === false) {
+      isRunning = false
+      submit(el)
+      return
+    }
 
     const mergedEntities = [...result.entities, ...allOcrEntities]
     const hasFindings = result.hasFindings || allOcrEntities.length > 0
@@ -132,7 +146,7 @@ export async function handleSubmit(
     if (!hasFindings) {
       ocrCache.clear()
       isRunning = false
-      resubmit(el)
+      submit(el)
       return
     }
 
@@ -151,16 +165,16 @@ export async function handleSubmit(
         )
       })
       void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
-      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'BLOCK', topEntity, false)
+      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'BLOCK', topEntity, false, ctx.entryPlatform)
       ocrCache.clear()
       isRunning = false
       return
     }
 
     if (action === 'ALLOW') {
-      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'ALLOW', topEntity, false)
+      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'ALLOW', topEntity, false, ctx.entryPlatform)
       isRunning = false
-      resubmit(el)
+      submit(el)
       return
     }
 
@@ -181,7 +195,7 @@ export async function handleSubmit(
       ocrCache.clear()
 
       void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
-      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
+      void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false, ctx.entryPlatform)
       showBanner('mask', topEntity.category, mergedEntities.length, undefined, () => {
         showShieldModal(
           { ...result, entities: mergedEntities, hasFindings },
@@ -194,7 +208,7 @@ export async function handleSubmit(
       })
 
       isRunning = false
-      setTimeout(() => resubmit(el), 400)
+      setTimeout(() => submit(el), 400)
       return
     }
 
@@ -228,7 +242,7 @@ export async function handleSubmit(
           ocrCache.clear()
 
           void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
-          void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false)
+          void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'MASK', topEntity, false, ctx.entryPlatform)
           showBanner('mask', topEntity.category, mergedEntities.length, undefined, () => {
             showShieldModal(
               { ...result, entities: mergedEntities, hasFindings },
@@ -240,12 +254,12 @@ export async function handleSubmit(
             )
           })
 
-          setTimeout(() => resubmit(el), 400)
+          setTimeout(() => submit(el), 400)
         } else {
           ocrCache.clear()
           void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
-          void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'WARN_ALLOW', topEntity, true)
-          resubmit(el)
+          void logDetectionEvent({ ...result, entities: mergedEntities, hasFindings }, 'WARN_ALLOW', topEntity, true, ctx.entryPlatform)
+          submit(el)
         }
       }
     )
@@ -258,6 +272,6 @@ export async function handleSubmit(
       console.error('[SecureGPT] Error in handleSubmit:', err)
     }
     isRunning = false
-    resubmit(el)
+    submit(el)
   }
 }

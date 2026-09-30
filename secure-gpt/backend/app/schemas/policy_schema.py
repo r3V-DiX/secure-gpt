@@ -60,6 +60,19 @@ class PIIConfig(BaseModel):
     enableDocumentScanning: bool = True
     updatedAt: str | None = None
 
+    @field_validator('monitoredPlatforms')
+    @classmethod
+    def validate_monitored_platforms(cls, platforms: list[str]) -> list[str]:
+        supported = {
+            'chatgpt', 'gemini', 'google-ai-mode', 'copilot', 'claude',
+            'perplexity', 'meta-ai', 'poe', 'mistral', 'cursor', 'v0',
+            'replit', 'huggingchat', 'deepseek',
+        }
+        unsupported = set(platforms) - supported
+        if unsupported:
+            raise ValueError(f"Unsupported monitored platforms: {', '.join(sorted(unsupported))}")
+        return platforms
+
 
 class PolicyCreateRequest(BaseModel):
     config: PIIConfig

@@ -7,6 +7,7 @@ import type { PIIConfig, PIIEntity } from '@securegpt/shared/types'
 
 export interface FileListenerContext {
   getCurrentPolicy: () => PIIConfig
+  isProtectionActive: () => boolean
   ocrCache: Map<string, PIIEntity[]>
   incPending: () => void
   decPending: () => void
@@ -15,6 +16,7 @@ export interface FileListenerContext {
 
 export function handleGlobalPaste(ev: ClipboardEvent, ctx: FileListenerContext): void {
   if (!ev.isTrusted) return
+  if (!ctx.isProtectionActive()) return
   const items = ev.clipboardData?.items
   if (!items) return
 
@@ -28,6 +30,7 @@ export function handleGlobalPaste(ev: ClipboardEvent, ctx: FileListenerContext):
     }
   }
   if (!targetItem) return
+  if (ctx.getCurrentPolicy().enableDocumentScanning === false) return
 
   const el = findEditableRoot(ev.target) ?? findEditableRoot(document.activeElement)
   if (!el || bypassSet.has(el)) return
@@ -43,12 +46,12 @@ export function handleGlobalPaste(ev: ClipboardEvent, ctx: FileListenerContext):
   const currentPolicy = ctx.getCurrentPolicy()
 
   if (isPdf || isOffice) {
-    void handleFileScan(el as HTMLElement, blob, currentPolicy, ctx.ocrCache, ctx.incPending, ctx.decPending, ctx.getPendingCount)
+    void handleFileScan(el as HTMLElement, blob, currentPolicy, ctx.ocrCache, ctx.incPending, ctx.decPending, ctx.getPendingCount, () => ctx.isProtectionActive() && ctx.getCurrentPolicy().enableDocumentScanning !== false)
   } else {
     const reader = new FileReader()
     reader.onload = () => {
       const imgUrl = reader.result as string
-      void handleImagePasteInternal(el as HTMLElement, imgUrl, currentPolicy, ctx.ocrCache, ctx.incPending, ctx.decPending, ctx.getPendingCount)
+      void handleImagePasteInternal(el as HTMLElement, imgUrl, currentPolicy, ctx.ocrCache, ctx.incPending, ctx.decPending, ctx.getPendingCount, () => ctx.isProtectionActive() && ctx.getCurrentPolicy().enableDocumentScanning !== false)
     }
     reader.readAsDataURL(blob)
   }
@@ -56,34 +59,38 @@ export function handleGlobalPaste(ev: ClipboardEvent, ctx: FileListenerContext):
 
 export function handleGlobalFileChange(ev: Event, ctx: FileListenerContext): void {
   if (!ev.isTrusted) return
+  if (!ctx.isProtectionActive()) return
   const target = ev.target as HTMLInputElement
   if (target.type !== 'file' || !target.files?.length) return
 
   const file = target.files[0]
   if (!file) return
   if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf') && !isOfficeFile(file)) return
+  if (ctx.getCurrentPolicy().enableDocumentScanning === false) return
 
   const el = findMainEditor() ?? document.body as HTMLElement
   if (bypassSet.has(el)) return
 
   ev.stopImmediatePropagation()
   target.value = ''
-  void handleFileScan(el, file, ctx.getCurrentPolicy(), ctx.ocrCache, ctx.incPending, ctx.decPending, ctx.getPendingCount)
+  void handleFileScan(el, file, ctx.getCurrentPolicy(), ctx.ocrCache, ctx.incPending, ctx.decPending, ctx.getPendingCount, () => ctx.isProtectionActive() && ctx.getCurrentPolicy().enableDocumentScanning !== false)
 }
 
 export function handleGlobalDrop(ev: DragEvent, ctx: FileListenerContext): void {
   if (!ev.isTrusted) return
+  if (!ctx.isProtectionActive()) return
   const files = ev.dataTransfer?.files
   if (!files?.length) return
 
   const file = files[0]
   if (!file) return
   if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf') && !isOfficeFile(file)) return
+  if (ctx.getCurrentPolicy().enableDocumentScanning === false) return
 
   const el = findMainEditor() ?? document.body as HTMLElement
   if (bypassSet.has(el)) return
 
   ev.preventDefault()
   ev.stopImmediatePropagation()
-  void handleFileScan(el, file, ctx.getCurrentPolicy(), ctx.ocrCache, ctx.incPending, ctx.decPending, ctx.getPendingCount)
+  void handleFileScan(el, file, ctx.getCurrentPolicy(), ctx.ocrCache, ctx.incPending, ctx.decPending, ctx.getPendingCount, () => ctx.isProtectionActive() && ctx.getCurrentPolicy().enableDocumentScanning !== false)
 }

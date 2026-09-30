@@ -27,20 +27,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-from app.core.database import engine, Base, AsyncSessionLocal
-from app.core.seed_releases import seed_system_releases_if_empty
+from app.core.database import engine, Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s [%s]", settings.app_name, settings.app_env)
     async with engine.begin() as conn:
-        # Create any missing tables (e.g. system_releases) safely
+        # Create any missing tables safely
         await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables verified/synced")
-    
-    # Auto-seed/synchronize system releases on startup
-    async with AsyncSessionLocal() as session:
-        await seed_system_releases_if_empty(session)
 
     yield
     await engine.dispose()

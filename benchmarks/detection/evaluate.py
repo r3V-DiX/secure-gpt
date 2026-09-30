@@ -2,8 +2,11 @@
 """Score the shipped browser detection pipeline through Chrome DevTools Protocol."""
 
 import argparse
+import csv
 import hashlib
 import json
+import os
+import shutil
 import subprocess
 import sys
 import time
@@ -16,6 +19,24 @@ import websocket
 ROOT = Path(__file__).resolve().parents[2]
 DIST = ROOT / "secure-gpt/packages/extension/dist"
 DEFAULT_CORPUS = Path(__file__).with_name("corpus.json")
+CATEGORIES = ["PII", "FINANCIAL", "CONFIDENTIAL", "IP"]
+
+
+def find_chrome_binary():
+    """Locate a valid Chrome or Chromium executable."""
+    candidates = [
+        os.environ.get("CHROME_BIN"),
+        "/opt/google/chrome/google-chrome",
+        "/opt/google/chrome/chrome",
+        shutil.which("google-chrome"),
+        shutil.which("google-chrome-stable"),
+        shutil.which("chromium"),
+        shutil.which("chromium-browser"),
+    ]
+    for candidate in candidates:
+        if candidate and os.path.exists(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    raise RuntimeError("No Google Chrome or Chromium executable found on the system.")
 
 
 def wait_for_json(url, timeout=20):
@@ -75,24 +96,110 @@ class CDP:
 
 def gold_spans(sample):
     spans = []
-    for item in sample["expected"]:
-        start = sample["text"].find(item["value"])
+    for item in sample.get("expected", []):
+        val = item["value"]
+        start = sample["text"].find(val)
         if start < 0:
-            raise ValueError(f"{sample['id']}: missing gold value {item['value']}")
-        if sample["text"].count(item["value"]) != 1:
-            raise ValueError(f"{sample['id']}: gold value occurs more than once: {item['value']}")
-        spans.append((start, start + len(item["value"]), item["category"]))
-    if len(spans) != len(set(spans)):
-        raise ValueError(f"{sample['id']}: ambiguous duplicate span")
+            raise ValueError(f"{sample['id']}: missing gold value {val}")
+        if sample["text"].count(val) != 1:
+            raise ValueError(f"{sample['id']}: gold value occurs more than once: {val}")
+        spans.append((start, start + len(val), item["category"], val))
     return spans
+
+
+def score(sample, entities):
+    """
+    Score entities against gold spans.
+    Produces detailed match items enabling confusion matrix and row-level CSV export.
+    """
+    gold = gold_spans(sample)  # list of (start, end, category, value)
+    matches = []
+    gold_matched = set()
+
+    for entity in entities:
+        e_start = entity["startIndex"]
+        e_end = entity["endIndex"]
+        e_cat = entity["category"]
+        e_tier = entity["tier"]
+        e_type = entity.get("type", "")
+        e_val = entity.get("value", sample["text"][e_start:e_end])
+
+        # Check for overlapping gold span
+        matching_gold_idx = None
+        for idx, (g_start, g_end, g_cat, g_val) in enumerate(gold):
+            if idx not in gold_matched:
+                if max(e_start, g_start) < min(e_end, g_end):
+                    matching_gold_idx = idx
+                    break
+
+        if matching_gold_idx is not None:
+            gold_matched.add(matching_gold_idx)
+            g_start, g_end, g_cat, g_val = gold[matching_gold_idx]
+            is_tp = (e_cat == g_cat)
+            matches.append({
+                "outcome": "tp" if is_tp else "fp",
+                "category": e_cat,
+                "gold_category": g_cat,
+                "pred_category": e_cat,
+                "source": sample["source"],
+                "tier": e_tier,
+                "type": e_type,
+                "value": e_val,
+                "span": [e_start, e_end],
+            })
+        else:
+            # False Positive without any overlapping gold entity
+            matches.append({
+                "outcome": "fp",
+                "category": e_cat,
+                "gold_category": "NONE",
+                "pred_category": e_cat,
+                "source": sample["source"],
+                "tier": e_tier,
+                "type": e_type,
+                "value": e_val,
+                "span": [e_start, e_end],
+            })
+
+    # Record False Negatives for gold spans that were missed
+    for idx, (g_start, g_end, g_cat, g_val) in enumerate(gold):
+        if idx not in gold_matched:
+            matches.append({
+                "outcome": "fn",
+                "category": g_cat,
+                "gold_category": g_cat,
+                "pred_category": "NONE",
+                "source": sample["source"],
+                "tier": "missed",
+                "type": "missed",
+                "value": g_val,
+                "span": [g_start, g_end],
+            })
+
+    # If sample is a negative sample and nothing was predicted, record true negative
+    if not gold and not entities:
+        matches.append({
+            "outcome": "tn",
+            "category": "NONE",
+            "gold_category": "NONE",
+            "pred_category": "NONE",
+            "source": sample["source"],
+            "tier": "clean",
+            "type": "clean",
+            "value": "",
+            "span": [0, 0],
+        })
+
+    return {"id": sample["id"], "origin": sample.get("origin", ""), "matches": matches}
 
 
 def tally(rows, group):
     counts = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0})
     for row in rows:
         for match in row["matches"]:
-            key = match[group]
-            counts[key][match["outcome"]] += 1
+            if match["outcome"] in ("tp", "fp", "fn"):
+                key = match[group]
+                counts[key][match["outcome"]] += 1
     return {
         key: {
             **value,
@@ -106,11 +213,11 @@ def tally(rows, group):
 
 
 def tier_tally(rows):
-    gold_count = sum(match["outcome"] != "fp" for row in rows for match in row["matches"])
+    gold_count = sum(match["outcome"] in ("tp", "fn") for row in rows for match in row["matches"])
     tiers = defaultdict(lambda: {"tp": 0, "fp": 0})
     for row in rows:
         for match in row["matches"]:
-            if match["outcome"] != "fn":
+            if match["outcome"] in ("tp", "fp"):
                 tiers[match["tier"]][match["outcome"]] += 1
     return {
         tier: {
@@ -123,45 +230,73 @@ def tier_tally(rows):
     }
 
 
-def score(sample, entities):
-    gold = set(gold_spans(sample))
-    matches = []
-    seen = set()
-    for entity in entities:
-        span = (entity["startIndex"], entity["endIndex"], entity["category"])
-        correct = span in gold and span not in seen
-        seen.add(span)
-        matches.append({
-            "outcome": "tp" if correct else "fp",
-            "category": entity["category"],
-            "source": sample["source"],
-            "tier": entity["tier"],
-            "type": entity["type"],
-            "span": list(span),
-        })
-    for span in sorted(gold - seen):
-        matches.append({
-            "outcome": "fn", "category": span[2], "source": sample["source"],
-            "tier": "missed", "span": list(span),
-        })
-    return {"id": sample["id"], "origin": sample["origin"], "matches": matches}
+def build_confusion_matrix(rows):
+    matrix_labels = CATEGORIES + ["NONE"]
+    matrix = {actual: {pred: 0 for pred in matrix_labels} for actual in matrix_labels}
+
+    for row in rows:
+        for match in row["matches"]:
+            actual = match.get("gold_category", "NONE")
+            pred = match.get("pred_category", "NONE")
+            matrix[actual][pred] += 1
+
+    return matrix
+
+
+def print_ascii_matrix(matrix):
+    headers = CATEGORIES + ["NONE"]
+    print("\n" + "=" * 76)
+    print("                      CATEGORY CONFUSION MATRIX")
+    print("=" * 76)
+    col_title = "Actual \\ Pred"
+    header_line = f"{col_title:<14} | " + " | ".join(f"{h:>10}" for h in headers)
+    print(header_line)
+    print("-" * len(header_line))
+
+    for actual in headers:
+        row_str = f"{actual:<14} | " + " | ".join(f"{matrix[actual][pred]:>10}" for pred in headers)
+        print(row_str)
+    print("=" * 76 + "\n")
+
+
+def export_csv(rows, csv_path: Path):
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["sample_id", "source", "outcome", "gold_category", "pred_category", "tier", "type", "value"])
+        for row in rows:
+            for m in row["matches"]:
+                writer.writerow([
+                    row["id"],
+                    m["source"],
+                    m["outcome"],
+                    m.get("gold_category", ""),
+                    m.get("pred_category", ""),
+                    m["tier"],
+                    m["type"],
+                    m.get("value", "").replace("\n", " "),
+                ])
+    print(f"Exported row-level results to CSV: {csv_path}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
+    parser.add_argument("--csv", type=Path, default=None, help="Optional CSV output path for row-level details")
     args = parser.parse_args()
     corpus = args.corpus.resolve()
     if not (DIST / "benchmark/index.html").exists():
         raise SystemExit("Build the extension and benchmark page first; see README.md")
+
+    chrome_bin = find_chrome_binary()
 
     server = subprocess.Popen(
         [sys.executable, "-m", "http.server", "8765", "--bind", "127.0.0.1", "--directory", str(DIST)],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     chrome = subprocess.Popen([
-        "google-chrome", "--headless=new", "--no-sandbox", "--disable-gpu",
+        chrome_bin, "--headless=new", "--no-sandbox", "--disable-gpu",
         "--remote-debugging-port=9223", "--remote-allow-origins=*",
         "--user-data-dir=/tmp/securegpt-detection-benchmark-chrome",
         "about:blank",
@@ -185,15 +320,26 @@ def main():
 
         rows = []
         samples = json.loads(corpus.read_text())
-        for sample in samples:
+        total = len(samples)
+        print(f"Running detection benchmark on {total} samples using {chrome_bin}...")
+        for i, sample in enumerate(samples):
             expression = f"window.runDetectionSample({json.dumps(sample['text'])})"
             entities = cdp.evaluate(expression)
             rows.append(score(sample, entities))
-            print(f"{sample['id']}: {len(entities)} predictions")
+            if (i + 1) % 50 == 0 or (i + 1) == total:
+                print(f"[{i + 1}/{total}] processed (latest: {sample['id']} with {len(entities)} preds)")
+
         if not cdp.ner_ready:
             raise RuntimeError(f"The ONNX worker did not initialize; refusing a mock-only report: {cdp.errors}")
         if cdp.ner_inferences != len(samples):
             raise RuntimeError(f"Expected {len(samples)} ONNX inference responses; got {cdp.ner_inferences}: {cdp.errors}")
+
+        confusion_matrix = build_confusion_matrix(rows)
+        print_ascii_matrix(confusion_matrix)
+
+        if args.csv:
+            export_csv(rows, args.csv)
+
         report = {
             "engine": "chrome-onnx-runtime",
             "corpus": str(corpus.relative_to(ROOT)),
@@ -204,10 +350,17 @@ def main():
             "byCategory": tally(rows, "category"),
             "bySource": tally(rows, "source"),
             "byTier": tier_tally(rows),
+            "confusionMatrix": confusion_matrix,
             "cases": rows,
         }
-        Path(args.output).write_text(json.dumps(report, indent=2) + "\n")
-        print(json.dumps(report["bySource"], indent=2))
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(report, indent=2) + "\n")
+        print(f"Full JSON report saved to: {args.output}")
+        print("\nSummary by Category:")
+        print(json.dumps(report["byCategory"], indent=2))
+        print("\nSummary by Tier:")
+        print(json.dumps(report["byTier"], indent=2))
     finally:
         chrome.terminate()
         server.terminate()

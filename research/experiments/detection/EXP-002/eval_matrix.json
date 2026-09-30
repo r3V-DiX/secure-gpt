@@ -1,0 +1,300 @@
+{
+  "engine": "chrome-onnx-runtime",
+  "corpus": "benchmarks/detection/corpus.json",
+  "corpusSha256": "36ccdce156f11b2868942d317f9a3f703a41994cd4ebaa3d1cf68094279ae8fd",
+  "modelSha256": "b60c0f20ced4fff0fcb5285d10b8a75965514d44aca22c82847a99f5957555d0",
+  "modelLoaded": true,
+  "nerInferenceResponses": 10,
+  "byCategory": {
+    "CONFIDENTIAL": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "FINANCIAL": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "IP": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "PII": {
+      "tp": 9,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.8182
+    }
+  },
+  "bySource": {
+    "document": {
+      "tp": 6,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.75
+    },
+    "prompt": {
+      "tp": 7,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "byTier": {
+    "regex": {
+      "tp": 13,
+      "fp": 0,
+      "precision": 1.0,
+      "shareOfGoldDetected": 0.8667
+    }
+  },
+  "cases": [
+    {
+      "id": "prompt-email",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "regex",
+          "type": "email",
+          "span": [
+            21,
+            44,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prompt-pan",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "FINANCIAL",
+          "source": "prompt",
+          "tier": "regex",
+          "type": "pan_card",
+          "span": [
+            22,
+            32,
+            "FINANCIAL"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prompt-aadhaar",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "regex",
+          "type": "aadhaar",
+          "span": [
+            22,
+            36,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prompt-name",
+      "origin": "repository-fixture",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "regex",
+          "type": "person_name",
+          "span": [
+            11,
+            15,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "regex",
+          "type": "person_name",
+          "span": [
+            16,
+            19,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "prompt",
+          "tier": "regex",
+          "type": "email",
+          "span": [
+            36,
+            54,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prompt-clean",
+      "origin": "synthetic",
+      "matches": []
+    },
+    {
+      "id": "prompt-jwt",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "CONFIDENTIAL",
+          "source": "prompt",
+          "tier": "regex",
+          "type": "jwt_token",
+          "span": [
+            30,
+            138,
+            "CONFIDENTIAL"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-invoice",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "document",
+          "tier": "regex",
+          "type": "person_name",
+          "span": [
+            23,
+            27,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "document",
+          "tier": "regex",
+          "type": "person_name",
+          "span": [
+            28,
+            32,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "document",
+          "tier": "regex",
+          "type": "email",
+          "span": [
+            42,
+            63,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "FINANCIAL",
+          "source": "document",
+          "tier": "regex",
+          "type": "pan_card",
+          "span": [
+            69,
+            79,
+            "FINANCIAL"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-technical",
+      "origin": "synthetic",
+      "matches": [
+        {
+          "outcome": "tp",
+          "category": "IP",
+          "source": "document",
+          "tier": "regex",
+          "type": "ip_address",
+          "span": [
+            30,
+            42,
+            "IP"
+          ]
+        },
+        {
+          "outcome": "tp",
+          "category": "PII",
+          "source": "document",
+          "tier": "regex",
+          "type": "email",
+          "span": [
+            52,
+            67,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-name",
+      "origin": "repository-fixture",
+      "matches": [
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "document",
+          "tier": "missed",
+          "span": [
+            0,
+            5,
+            "PII"
+          ]
+        },
+        {
+          "outcome": "fn",
+          "category": "PII",
+          "source": "document",
+          "tier": "missed",
+          "span": [
+            6,
+            11,
+            "PII"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-clean",
+      "origin": "synthetic",
+      "matches": []
+    }
+  ]
+}
