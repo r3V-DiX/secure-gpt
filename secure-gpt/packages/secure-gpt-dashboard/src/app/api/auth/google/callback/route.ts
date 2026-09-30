@@ -4,7 +4,9 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000'
-  const appUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host')
+  const proto = request.headers.get('x-forwarded-proto') ?? (process.env.NODE_ENV === 'production' ? 'https' : 'http')
+  const appUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000')
 
   // Forward the OAuth code/error params to the backend callback
   const backendCallbackUrl = `${backendUrl}/api/v1/auth/google/callback${request.nextUrl.search}`

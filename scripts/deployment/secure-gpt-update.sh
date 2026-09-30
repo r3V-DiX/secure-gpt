@@ -148,10 +148,20 @@ ENV_EOF
     print_info "Secrets refreshed and .env updated ✓ (shared by backend + admin-backend)"
 }
 
+run_migrations() {
+    print_step "Running Alembic database migrations against RDS..."
+    if docker compose run --rm backend alembic upgrade head; then
+        print_info "Alembic migrations completed successfully ✓"
+    else
+        print_warn "Alembic migration failed or was non-zero. Continuing service startup..."
+    fi
+}
+
 case $OPTION in
     1)
         print_step "Updating Backend..."
         docker compose pull backend
+        run_migrations
         docker compose up -d --force-recreate backend
         wait_for_containers
         ;;
@@ -164,6 +174,7 @@ case $OPTION in
     3)
         print_step "Updating Admin Backend..."
         docker compose pull admin-backend
+        run_migrations
         docker compose up -d --force-recreate admin-backend
         wait_for_containers
         ;;
@@ -176,12 +187,14 @@ case $OPTION in
     5)
         print_step "Updating All Services..."
         docker compose pull
+        run_migrations
         docker compose up -d --force-recreate
         wait_for_containers
         ;;
     6)
         print_step "Refreshing secrets and restarting..."
         refresh_secrets
+        run_migrations
         docker compose up -d --force-recreate
         wait_for_containers
         ;;
@@ -189,6 +202,7 @@ case $OPTION in
         print_step "Running full update..."
         refresh_secrets
         docker compose pull
+        run_migrations
         docker compose up -d --force-recreate
         wait_for_containers
         ;;
