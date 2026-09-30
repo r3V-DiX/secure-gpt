@@ -199,29 +199,21 @@ export default function OrgOnboardingPage() {
   }
 
   return (
-    <div className="w-full space-y-6 animate-fade-in pb-10">
-      {/* Header */}
-      <PageHeader title={<>
-            Enterprise Setup
-          </>} description={<>
-            Configure corporate domain verification, apply zero-trust DLP policy presets, and roll out browser protection.
-          </>} actions={<><Button variant="ghost"
-          type="button"
-          onClick={() => router.push('/dashboard')}
-
-
-        >
+    <div className="w-full space-y-6 pb-10 animate-fade-in">
+      <PageHeader
+        title="Enterprise Setup"
+        description="Verify your domain, set a protection baseline, and deploy SecureGPT to your team."
+        actions={<Button variant="ghost" type="button" onClick={() => router.push('/dashboard')}>
           Exit to Dashboard ↗
-        </Button></>} />
+        </Button>}
+      />
 
-      {/* Stepper Header */}
       <OnboardingStepper
         currentStepIndex={currentStepIndex}
         domainVerified={Boolean(org?.domain_verified_at)}
         onSelectStep={(idx) => setCurrentStepIndex(idx)}
       />
 
-      {/* Step Content */}
       <OnboardingContent
         currentStepIndex={currentStepIndex}
         setCurrentStepIndex={setCurrentStepIndex}

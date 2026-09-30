@@ -1,10 +1,9 @@
 'use client'
 
 import { Button } from '@/components/ui'
-import React from 'react'
 import { Check } from 'lucide-react'
 import { clsx } from 'clsx'
-import { ONBOARDING_STEPS, type OnboardingStep } from '../config/org-onboarding.data'
+import { ONBOARDING_STEPS } from '../config/org-onboarding.data'
 
 interface OnboardingStepperProps {
   currentStepIndex: number
@@ -18,57 +17,46 @@ export function OnboardingStepper({
   onSelectStep,
 }: OnboardingStepperProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <nav aria-label="Enterprise setup progress">
+      <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {ONBOARDING_STEPS.map((step, idx) => {
         const isDone = idx < currentStepIndex || (idx === 1 && domainVerified)
         const isCurrent = idx === currentStepIndex
         const Icon = step.icon
 
         return (
-          <Button variant="secondary"
-            key={step.id}
-            type="button"
-            onClick={() => onSelectStep(idx)}
-            className={clsx(
-              'card flex items-center gap-3 p-3.5 text-left transition-all duration-200 cursor-pointer',
-              isCurrent && 'ring-2 ring-[var(--accent)] bg-[var(--accent-light)]'
-            )}
-            style={{ borderColor: isCurrent
-                ? 'var(--accent-border)'
-                : isDone
-                ? 'var(--success-border)'
-                : 'var(--border)' }}
-          >
-            <div
-              className="size-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-xs transition-colors"
-              style={{
-                background: isCurrent
-                  ? 'var(--accent)'
-                  : isDone
-                  ? 'var(--success)'
-                  : 'var(--bg-surface-2)',
-                color: isCurrent || isDone ? '#ffffff' : 'var(--text-tertiary)',
-              }}
+          <li key={step.id} className="min-w-0">
+            <Button
+              variant="secondary"
+              type="button"
+              aria-current={isCurrent ? 'step' : undefined}
+              onClick={() => onSelectStep(idx)}
+              className={clsx(
+                'h-auto min-h-20 w-full justify-start gap-3 border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 text-left shadow-none',
+                isCurrent && 'border-[var(--accent-border)] bg-[var(--accent-light)] ring-1 ring-[var(--accent)]',
+                isDone && !isCurrent && 'border-[var(--success-border)]'
+              )}
             >
-              {isDone ? <Check size={16} strokeWidth={2.5} /> : <Icon size={16} />}
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  Step {step.stepNumber}
+              <span className={clsx(
+                'flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-surface-2)] text-[var(--text-secondary)]',
+                isCurrent && 'bg-[var(--accent)] text-[var(--on-dark-full)]',
+                isDone && !isCurrent && 'bg-[var(--success)] text-[var(--on-dark-full)]'
+              )}>
+                {isDone ? <Check size={17} aria-hidden="true" /> : <Icon size={17} aria-hidden="true" />}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                  Step {step.stepNumber}{isDone ? ' · Complete' : ''}
                 </span>
-                {isDone && (
-                  <span className="text-[10px] font-bold text-[var(--success)]">✓ Done</span>
-                )}
-              </div>
-              <h4 className="text-xs font-bold truncate text-[var(--text-primary)]">
-                {step.title}
-              </h4>
-            </div>
-          </Button>
+                <span className="mt-0.5 block whitespace-normal text-sm font-semibold leading-5 text-[var(--text-primary)]">
+                  {step.title}
+                </span>
+              </span>
+            </Button>
+          </li>
         )
       })}
-    </div>
+      </ol>
+    </nav>
   )
 }

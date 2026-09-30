@@ -1,8 +1,7 @@
 'use client'
 
-import { Card } from '@/components/ui'
+import { Card, CardContent } from '@/components/ui'
 import React from 'react'
-import { useRouter } from 'next/navigation'
 import type { PolicyPresetKey } from '@/features/onboarding/config/org-onboarding.data'
 import { OrgProfileStep } from '@/features/onboarding/components/OrgProfileStep'
 import { DnsVerificationStep } from '@/features/onboarding/components/DnsVerificationStep'
@@ -74,7 +73,8 @@ export function OnboardingContent({
   onFinish,
 }: OnboardingContentProps) {
   return (
-    <Card className="p-6 md:p-8 animate-fade-in">
+    <Card className="animate-fade-in">
+      <CardContent className="px-5 py-6 sm:px-7 sm:py-7">
       {currentStepIndex === 0 && (
         <OrgProfileStep
           orgName={orgName}
@@ -125,6 +125,7 @@ export function OnboardingContent({
           onFinish={onFinish}
         />
       )}
+      </CardContent>
     </Card>
   )
 }

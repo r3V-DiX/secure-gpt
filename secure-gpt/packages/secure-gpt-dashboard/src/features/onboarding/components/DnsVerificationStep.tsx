@@ -1,9 +1,8 @@
 'use client'
 
-import { Button, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell } from '@/components/ui'
-import React, { useState } from 'react'
-import { Globe2, CheckCircle2, AlertCircle, RefreshCw, Copy, Check, ArrowRight, ArrowLeft } from 'lucide-react'
-import { clsx } from 'clsx'
+import { Badge, Button, Card, CardContent, CardHeader } from '@/components/ui'
+import { useState } from 'react'
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, Globe2, RefreshCw } from 'lucide-react'
 
 interface DnsVerificationStepProps {
   domain: string
@@ -30,158 +29,119 @@ export function DnsVerificationStep({
 }: DnsVerificationStepProps) {
   const [copied, setCopied] = useState(false)
 
-  function handleCopy() {
+  async function handleCopy() {
     if (!dnsToken) return
-    navigator.clipboard.writeText(dnsToken)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      await navigator.clipboard.writeText(dnsToken)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
   }
 
+  const verificationDate = verifiedAt && !Number.isNaN(new Date(verifiedAt).getTime())
+    ? new Date(verifiedAt).toLocaleDateString()
+    : null
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
+    <section aria-labelledby="dns-step-title" className="space-y-6 animate-fade-in">
+      <div className="max-w-3xl">
         <div className="flex items-center gap-2">
-          <Globe2 size={18} className="text-[var(--accent)]" />
-          <h2 className="text-base font-bold text-[var(--text-primary)]">
-            Step 2: DNS Domain Verification
+          <Globe2 size={19} className="shrink-0 text-[var(--accent)]" aria-hidden="true" />
+          <h2 id="dns-step-title" className="text-lg font-semibold text-[var(--text-primary)]">
+            Verify your domain
           </h2>
         </div>
-        <p className="mt-1 text-xs text-[var(--text-secondary)]">
-          Verify ownership of <strong style={{ color: 'var(--text-primary)' }}>{domain || 'your domain'}</strong> by publishing a challenge TXT record in your DNS provider (Cloudflare, Route 53, GoDaddy, Google Domains).
+        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+          Add a TXT record for <strong className="font-semibold text-[var(--text-primary)]">{domain || 'your domain'}</strong> at your DNS provider, then check the record here.
         </p>
       </div>
 
-      {/* Verification Status Banner */}
-      <div
-        className="p-4 rounded-lg border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        style={{
-          background: isVerified ? 'var(--success-light)' : 'var(--warning-light)',
-          borderColor: isVerified ? 'var(--success-border)' : 'var(--warning-border)',
-        }}
-      >
-        <div className="flex items-center gap-3">
-          {isVerified ? (
-            <CheckCircle2 size={22} style={{ color: 'var(--success)' }} className="shrink-0" />
-          ) : (
-            <AlertCircle size={22} style={{ color: 'var(--warning)' }} className="shrink-0" />
-          )}
-          <div>
-            <h4 className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
-              {isVerified ? 'Domain Ownership Verified' : 'Pending DNS Challenge Verification'}
-            </h4>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-              {isVerified
-                ? (verifiedAt && !isNaN(new Date(verifiedAt).getTime())
-                    ? `Verified on ${new Date(verifiedAt).toLocaleDateString()}`
-                    : 'Domain ownership successfully verified')
-                : 'Publish the record below and click "Verify DNS Record" to validate.'}
-            </p>
-          </div>
-        </div>
-
-        <Button variant="primary"
-          type="button"
-          onClick={onVerify}
-          disabled={verifying}
-          className="shrink-0"
-
-        >
-          <RefreshCw className={clsx('size-3.5', verifying && 'animate-spin')} />
-          <span>{verifying ? 'Checking DNS…' : 'Verify DNS Record'}</span>
-        </Button>
-      </div>
-
-      {/* DNS Challenge Table */}
-      <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--border)' }}>
-        <Table className="w-full text-left text-xs">
-          <TableHead
-            className="text-[10px] font-bold uppercase tracking-wider border-b"
-            style={{
-              background: 'var(--bg-surface-2)',
-              borderColor: 'var(--border)',
-              color: 'var(--text-tertiary)',
-            }}
-          >
-            <TableRow>
-              <TableHeaderCell className="px-4 py-3">Record Type</TableHeaderCell>
-              <TableHeaderCell className="px-4 py-3">Host / Name</TableHeaderCell>
-              <TableHeaderCell className="px-4 py-3">Value / Content</TableHeaderCell>
-              <TableHeaderCell className="px-4 py-3 text-right">TTL</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody className="divide-y font-mono text-xs" style={{ borderColor: 'var(--border)' }}>
-            <TableRow>
-              <TableCell className="px-4 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>TXT</TableCell>
-              <TableCell className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>@ or {domain}</TableCell>
-              <TableCell className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <span className="select-all truncate max-w-xs md:max-w-md font-medium" style={{ color: 'var(--accent-text)' }}>
-                    {dnsToken || 'securegpt-challenge-token-pending'}
-                  </span>
-                  <Button variant="secondary"
-                    type="button"
-                    onClick={handleCopy}
-
-                    style={{ color: copied ? 'var(--success)' : 'var(--text-tertiary)' }}
-                    title="Copy token"
-                  >
-                    {copied ? <Check size={12} /> : <Copy size={12} />}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(19rem,1fr)]">
+        <Card className="min-w-0 overflow-hidden shadow-none">
+          <CardHeader className="px-5 py-4">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">DNS TXT record</h3>
+            <Badge variant="info">Required</Badge>
+          </CardHeader>
+          <CardContent className="px-5 py-1">
+            <dl className="divide-y divide-[var(--border)] text-sm">
+              <div className="grid gap-1 py-3 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4">
+                <dt className="text-[var(--text-tertiary)]">Record type</dt>
+                <dd className="font-mono font-medium text-[var(--text-primary)]">TXT</dd>
+              </div>
+              <div className="grid gap-1 py-3 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4">
+                <dt className="text-[var(--text-tertiary)]">Host / Name</dt>
+                <dd className="break-all font-mono text-[var(--text-primary)]">@ or {domain || 'your domain'}</dd>
+              </div>
+              <div className="grid gap-2 py-3 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4">
+                <dt className="text-[var(--text-tertiary)]">Value / Content</dt>
+                <dd className="flex min-w-0 flex-col items-start gap-3">
+                  <code className="w-full select-all break-all rounded-lg bg-[var(--bg-surface-2)] px-3 py-2 text-xs leading-5 text-[var(--text-primary)]">
+                    {dnsToken || 'Verification token pending'}
+                  </code>
+                  <Button variant="secondary" size="sm" type="button" disabled={!dnsToken} onClick={() => void handleCopy()} icon={copied ? <Check size={14} /> : <Copy size={14} />}>
+                    {copied ? 'Copied' : 'Copy value'}
                   </Button>
-                </div>
-              </TableCell>
-              <TableCell className="px-4 py-3 text-right" style={{ color: 'var(--text-tertiary)' }}>300 (Auto)</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+                </dd>
+              </div>
+              <div className="grid gap-1 py-3 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4">
+                <dt className="text-[var(--text-tertiary)]">TTL</dt>
+                <dd className="font-mono text-[var(--text-primary)]">300 (Auto)</dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+
+        <Card className="self-start shadow-none">
+          <CardHeader className="px-5 py-4">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Verification status</h3>
+            <Badge variant={isVerified ? 'success' : 'warning'} dot>
+              {isVerified ? 'Verified' : 'Pending'}
+            </Badge>
+          </CardHeader>
+          <CardContent className="space-y-4 px-5 py-5">
+            <div role="status" className="flex items-start gap-3" aria-live="polite">
+              {isVerified ? (
+                <CheckCircle2 size={19} className="mt-0.5 shrink-0 text-[var(--success)]" aria-hidden="true" />
+              ) : (
+                <RefreshCw size={19} className="mt-0.5 shrink-0 text-[var(--warning)]" aria-hidden="true" />
+              )}
+              <p className="text-sm leading-6 text-[var(--text-secondary)]">
+                {isVerified
+                  ? verificationDate ? `Domain ownership verified on ${verificationDate}.` : 'Domain ownership verified.'
+                  : 'Publish the record, then check whether DNS has updated.'}
+              </p>
+            </div>
+            {!isVerified && (
+              <Button variant="primary" type="button" loading={verifying} onClick={onVerify} fullWidth>
+                {verifying ? 'Checking DNS…' : 'Verify DNS record'}
+              </Button>
+            )}
+            {!isVerified && (
+              <p className="border-t border-[var(--border)] pt-4 text-xs leading-5 text-[var(--text-tertiary)]">
+                You can verify later. Until then, enterprise policy enforcement and employee auto-enrollment remain paused.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {!isVerified && (
-        <div
-          className="p-3.5 rounded-xl border text-xs"
-          style={{
-            background: 'var(--bg-surface-2)',
-            borderColor: 'var(--border)',
-            color: 'var(--text-secondary)',
-          }}
-        >
-          <span className="font-semibold text-[var(--text-primary)]">Optional Verification:</span> You can verify DNS now for instant employee auto-enrollment, or choose <strong className="text-[var(--text-primary)]">"Verify Later"</strong> below to explore the dashboard. <em>Note: Until verified, enterprise policy enforcement and employee auto-enrollment remain paused.</em>
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-        <Button variant="secondary"
-          type="button"
-          onClick={onBack}
-
-
-        >
-          <ArrowLeft size={13} />
-          <span>Back</span>
+      <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <Button variant="secondary" type="button" onClick={onBack} icon={<ArrowLeft size={14} />} className="self-start">
+          Back
         </Button>
-
-        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {onVerifyLater && !isVerified && (
-            <Button variant="secondary"
-              type="button"
-              onClick={onVerifyLater}
-
-
-            >
-              Verify Later (Restricted Mode)
+            <Button variant="secondary" type="button" onClick={onVerifyLater}>
+              Verify later
             </Button>
           )}
-
-          <Button variant="primary"
-            type="button"
-            onClick={onContinue}
-
-
-          >
-            <span>Continue to Policy Presets</span>
-            <ArrowRight size={14} />
+          <Button variant="primary" type="button" onClick={onContinue}>
+            Continue to policy presets <ArrowRight size={14} aria-hidden="true" />
           </Button>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
