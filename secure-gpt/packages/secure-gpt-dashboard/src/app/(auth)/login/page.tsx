@@ -28,9 +28,11 @@ export default function LoginPage() {
   const [pendingDomainOrg, setPendingDomainOrg] = useState<{ orgName: string; domain: string } | null>(null)
   const [personalSignupLoading, setPersonalSignupLoading] = useState(false)
 
+  const isAdminMode = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
+
   // Dev Quick-Bypass State
-  const [devEmail, setDevEmail] = useState('admin@blackvector.online')
-  const [devPersona, setDevPersona] = useState<'employer' | 'employee' | 'user'>('employer')
+  const [devEmail, setDevEmail] = useState(isAdminMode ? 'superadmin@blackvector.online' : 'admin@blackvector.online')
+  const [devPersona, setDevPersona] = useState<'employer' | 'employee' | 'user' | 'super_admin'>(isAdminMode ? 'super_admin' : 'employer')
   const [devLoading, setDevLoading] = useState(false)
 
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
@@ -121,9 +123,11 @@ export default function LoginPage() {
     }
   }
 
-  async function handleDevLogin(e: React.FormEvent) {
+  async function handleDevLogin(e: React.FormEvent, customEmail?: string, customPersona?: string) {
     e.preventDefault()
-    if (!devEmail) return
+    const targetEmail = customEmail || devEmail
+    const targetPersona = customPersona || (isAdminMode ? 'super_admin' : devPersona)
+    if (!targetEmail) return
     if (!privacyAccepted) {
       toast.error('You must accept the Privacy Policy and Terms of Service to continue.')
       return
@@ -131,10 +135,10 @@ export default function LoginPage() {
     try {
       setDevLoading(true)
       await apiPost('/auth/dev-login', {
-        email: devEmail.trim(),
-        persona: devPersona,
+        email: targetEmail.trim(),
+        persona: targetPersona,
       })
-      toast.success(`Signed in as ${devPersona}!`)
+      toast.success(`Signed in as ${targetPersona}!`)
       window.location.href = '/callback'
     } catch (err: any) {
       toast.error(err.message || 'Developer login failed')
@@ -142,8 +146,6 @@ export default function LoginPage() {
       setDevLoading(false)
     }
   }
-
-  const isAdminMode = process.env.NEXT_PUBLIC_APP_MODE === 'admin'
 
   return (
     <div
@@ -281,6 +283,7 @@ export default function LoginPage() {
             devLoading={devLoading}
             privacyAccepted={privacyAccepted}
             onDevLogin={handleDevLogin}
+            isAdminMode={isAdminMode}
           />
         )}
 

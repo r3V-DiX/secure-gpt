@@ -112,6 +112,13 @@ export interface AuthUser {
   deactivationReason?: string | null
   roles?: string[]
   permissions?: string[]
+  is_impersonation?: boolean
+  impersonator_id?: string | null
+  impersonated_org?: {
+    id: string
+    name: string
+    domain: string | null
+  } | null
 }
 
 // ── Enterprise Organisation & Department ──────────────────────────────────────

@@ -1,14 +1,16 @@
 'use client'
 
+import React from 'react'
 import { Input, Button } from '@/components/ui'
-import { Zap } from 'lucide-react'
+import { Zap, ShieldAlert } from 'lucide-react'
 
 interface DevQuickBypassProps {
   devEmail: string
   setDevEmail: (val: string) => void
   devLoading: boolean
   privacyAccepted: boolean
-  onDevLogin: (e: React.FormEvent) => Promise<void>
+  onDevLogin: (e: React.FormEvent, customEmail?: string, customPersona?: string) => Promise<void>
+  isAdminMode?: boolean
 }
 
 export function DevQuickBypass({
@@ -17,11 +19,11 @@ export function DevQuickBypass({
   devLoading,
   privacyAccepted,
   onDevLogin,
+  isAdminMode,
 }: DevQuickBypassProps) {
   return (
-    <form
-      onSubmit={onDevLogin}
-      className="mt-5 pt-5 border-t space-y-2.5"
+    <div
+      className="mt-5 pt-5 border-t space-y-3"
       style={{ borderColor: 'var(--border)' }}
     >
       <div className="flex items-center justify-between">
@@ -33,24 +35,39 @@ export function DevQuickBypass({
         </span>
       </div>
 
-      <div className="flex gap-2">
-        <Input aria-label="Test email..." controlSize="lg" wrapperClassName="w-auto min-w-0"
+      {/* 1-Click Super Admin Bypass */}
+      <Button
+        variant="danger"
+        type="button"
+        disabled={devLoading || !privacyAccepted}
+        onClick={(e) => onDevLogin(e, 'superadmin@blackvector.online', 'super_admin')}
+        className="w-full h-9 flex items-center justify-center gap-2 text-xs font-semibold"
+      >
+        <ShieldAlert size={14} />
+        <span>Instant Login as Super Admin</span>
+      </Button>
+
+      <form onSubmit={(e) => onDevLogin(e)} className="flex gap-2">
+        <Input
+          aria-label="Test email..."
+          controlSize="lg"
+          wrapperClassName="w-auto min-w-0"
           type="email"
-          placeholder="Test email..."
+          placeholder={isAdminMode ? 'superadmin@blackvector.online' : 'Test email...'}
           value={devEmail}
           onChange={(e) => setDevEmail(e.target.value)}
           required
           className="flex-1"
-
         />
-        <Button variant="primary"
+        <Button
+          variant="primary"
           type="submit"
           disabled={devLoading || !devEmail || !privacyAccepted}
           className="shrink-0"
         >
           {devLoading ? 'Entering...' : 'Instant Login'}
         </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   )
 }
