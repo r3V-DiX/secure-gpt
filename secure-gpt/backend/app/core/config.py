@@ -6,6 +6,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,7 +24,11 @@ class Settings(BaseSettings):
     # Non-sensitive — safe defaults are fine here
     app_name: str = "DLP Shield"
     app_env: str = "development"
+    portal_mode: Literal["standard", "admin"] = "standard"
     debug: bool = False
+    log_level: str = "INFO"
+    log_format: Literal["text", "json", "auto"] = "auto"
+    sqlalchemy_echo: bool = False
     app_version: str = "dev"
     extension_version: str = "dev"
     dashboard_version: str = "dev"
