@@ -91,24 +91,15 @@ export function useUserManager() {
     params?: { orgId?: string; roleSlugs?: string[] }
   ) => {
     try {
-      const response = await fetch('/api/v1/admin/users/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_ids: selectedIds,
-          action,
-          org_id: params?.orgId,
-          role_slugs: params?.roleSlugs,
-        }),
+      const json = await apiPost<{ affected: number; action: string }>('/admin/users/bulk', {
+        user_ids: selectedIds,
+        action,
+        org_id: params?.orgId,
+        role_slugs: params?.roleSlugs,
       })
-      const json = await response.json()
-      if (json.success) {
-        toast.success(json.message || `Bulk action '${action}' succeeded.`)
-        setSelectedIds([])
-        await loadUsers()
-      } else {
-        toast.error(json.error?.message || `Failed to execute bulk action '${action}'.`)
-      }
+      toast.success(json?.message || `Bulk action '${action}' succeeded.`)
+      setSelectedIds([])
+      await loadUsers()
     } catch (err: any) {
       toast.error(err.message || 'Error executing bulk operation.')
     }

@@ -24,6 +24,7 @@ from app.api.v1.admin.user_helpers import (
     check_super_admin_mutation_permission,
     handle_admin_user_org_update,
     handle_admin_user_status_toggle,
+    handle_admin_bulk_user_action,
     purge_user_resources,
 )
 
@@ -232,3 +233,28 @@ async def delete_user(
     await db.delete(target_user)
     await db.commit()
     return success(message=f"User {target_user.email} permanently removed.")
+
+
+class AdminBulkUserActionRequest(BaseModel):
+    user_ids: list[str]
+    action: str  # "assign_org" | "assign_roles" | "deactivate" | "activate" | "delete"
+    org_id: str | None = None
+    role_slugs: list[str] | None = None
+
+
+@router.post(
+    "/users/bulk",
+    summary="Perform bulk user actions (delete, deactivate, activate, assign org/roles)",
+    dependencies=[has_permission("user:update")]
+)
+async def bulk_user_actions(
+    body: AdminBulkUserActionRequest,
+    request: Request,
+    current_user: CurrentUser,
+    db: DBSession
+):
+    affected = await handle_admin_bulk_user_action(db, body, current_user, request)
+    return success(
+        data={"affected": affected, "action": body.action},
+        message=f"Bulk action '{body.action}' successfully executed on {affected} user(s)."
+    )

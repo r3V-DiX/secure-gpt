@@ -113,3 +113,105 @@ async def purge_user_resources(db, user_id: str):
     await db.execute(delete(Session).where(Session.user_id == user_id))
     await db.execute(delete(Device).where(Device.user_id == user_id))
     await db.execute(delete(Policy).where(Policy.user_id == user_id))
+
+
+async def handle_admin_bulk_user_action(db, body, current_user, request):
+    if not body.user_ids:
+        raise NotFound("No user IDs provided.")
+
+    query = select(User).where(User.id.in_(body.user_ids))
+    if current_user.org_id:
+        is_super = await check_super_admin_mutation_permission(db, current_user.id, current_user.id)
+        if not is_super:
+            query = query.where(User.org_id == current_user.org_id)
+
+    res = await db.execute(query)
+    target_users = res.scalars().all()
+    if not target_users:
+        raise NotFound("No eligible users found for bulk operation.")
+
+    affected = 0
+    action = body.action
+
+    if action == "delete":
+        for u in target_users:
+            if u.id == current_user.id:
+                continue
+            await purge_user_resources(db, u.id)
+            await log_admin_action(
+                db, request=request, user=current_user, action="user:delete",
+                module=PermissionModule.USER,
+                description=f"Permanently deleted user {u.email} (bulk)",
+                entity_id=u.id, entity_type="User", entity_name=u.email,
+                before_state={"email": u.email, "orgId": u.org_id},
+                risk_level=RiskLevel.CRITICAL
+            )
+            await db.delete(u)
+            affected += 1
+
+    elif action == "deactivate":
+        for u in target_users:
+            if u.id == current_user.id:
+                continue
+            u.is_active = False
+            u.deactivated_at = datetime.now(timezone.utc)
+            u.deactivation_reason = "bulk_deactivation"
+            await db.execute(delete(Session).where(Session.user_id == u.id))
+            affected += 1
+        await log_admin_action(
+            db, request=request, user=current_user, action="user:bulk_deactivate",
+            module=PermissionModule.USER,
+            description=f"Bulk deactivated {affected} user(s)",
+            risk_level=RiskLevel.HIGH
+        )
+
+    elif action == "activate":
+        for u in target_users:
+            u.is_active = True
+            u.deactivated_at = None
+            u.deactivation_reason = None
+            affected += 1
+        await log_admin_action(
+            db, request=request, user=current_user, action="user:bulk_activate",
+            module=PermissionModule.USER,
+            description=f"Bulk activated {affected} user(s)",
+            risk_level=RiskLevel.MEDIUM
+        )
+
+    elif action == "assign_org":
+        org_id = body.org_id
+        if org_id:
+            org_res = await db.execute(select(Organisation).where(Organisation.id == org_id))
+            if not org_res.scalar_one_or_none():
+                db.add(Organisation(id=org_id, name=org_id.capitalize(), admin_email=current_user.email))
+                await db.flush()
+        for u in target_users:
+            u.org_id = org_id or None
+            affected += 1
+        await log_admin_action(
+            db, request=request, user=current_user, action="user:bulk_assign_org",
+            module=PermissionModule.USER,
+            description=f"Bulk assigned {affected} user(s) to organization '{org_id}'",
+            risk_level=RiskLevel.MEDIUM
+        )
+
+    elif action == "assign_roles":
+        role_slugs = body.role_slugs or []
+        role_res = await db.execute(select(Role).where(Role.slug.in_(role_slugs)))
+        db_roles = role_res.scalars().all()
+        for u in target_users:
+            await db.execute(UserRoleAssignment.__table__.delete().where(UserRoleAssignment.user_id == u.id))
+            for r in db_roles:
+                db.add(UserRoleAssignment(user_id=u.id, role_id=r.id, is_active=True))
+            affected += 1
+        await log_admin_action(
+            db, request=request, user=current_user, action="user:bulk_assign_roles",
+            module=PermissionModule.USER,
+            description=f"Bulk assigned roles {role_slugs} to {affected} user(s)",
+            risk_level=RiskLevel.MEDIUM
+        )
+    else:
+        raise NotFound(f"Unsupported bulk action '{action}'")
+
+    await db.commit()
+    return affected
