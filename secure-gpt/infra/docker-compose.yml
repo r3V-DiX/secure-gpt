@@ -44,6 +44,7 @@ services:
     environment:
       APP_NAME: "DLP Shield API"
       APP_ENV: "development"
+      PORTAL_MODE: "standard"
       DEBUG: "true"
       SECRET_KEY: ${SECRET_KEY:-change_this_to_a_secure_32_character_key_1234}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-securegpt}:${POSTGRES_PASSWORD:-securegpt_secret}@postgres:5432/${POSTGRES_DB:-securegpt_db}
@@ -67,6 +68,7 @@ services:
     environment:
       APP_NAME: "DLP Shield Admin API"
       APP_ENV: "development"
+      PORTAL_MODE: "admin"
       DEBUG: "true"
       SECRET_KEY: ${SECRET_KEY:-change_this_to_a_secure_32_character_key_1234}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-securegpt}:${POSTGRES_PASSWORD:-securegpt_secret}@postgres:5432/${POSTGRES_DB:-securegpt_db}

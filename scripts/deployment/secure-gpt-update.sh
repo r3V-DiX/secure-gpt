@@ -63,6 +63,23 @@ fi
 
 cd $DEPLOY_DIR
 
+# Older installations were generated before portal-specific cookie names existed.
+# Add a Compose overlay so an image update also assigns each backend its portal.
+cat > docker-compose.portal.yml <<'PORTAL_COMPOSE_EOF'
+services:
+  backend:
+    environment:
+      PORTAL_MODE: standard
+  admin-backend:
+    environment:
+      PORTAL_MODE: admin
+PORTAL_COMPOSE_EOF
+COMPOSE_FILE="docker-compose.yml"
+if [ -f docker-compose.override.yml ]; then
+    COMPOSE_FILE="$COMPOSE_FILE:docker-compose.override.yml"
+fi
+export COMPOSE_FILE="$COMPOSE_FILE:docker-compose.portal.yml"
+
 AWS_REGION="ap-south-1"
 ECR_REGISTRY="443370715886.dkr.ecr.ap-south-1.amazonaws.com"
 SECRET_NAME="secure-gpt-secrets"
