@@ -45,7 +45,8 @@ export function SidebarInner({
 
   if (!user) return null
 
-  const isPlatformAdmin = ['super_admin', 'security_admin', 'org_admin', 'admin'].includes(user.role)
+  const isSuperAdmin = !user.is_impersonation && (user.role === 'super_admin' || user.role === 'platform_super_admin')
+  const isPlatformAdmin = isSuperAdmin || ['security_admin', 'org_admin', 'admin'].includes(user.role)
   const isCompact = collapsed && !expanded && !isMobile
 
   async function handleLogout() {
@@ -128,9 +129,9 @@ export function SidebarInner({
         )}
 
         <nav className="p-2 space-y-4 overflow-y-auto max-h-[calc(100vh-175px)]">
-          {(IS_ADMIN_MODE || user?.role === 'super_admin' ? SUPER_ADMIN_NAV_GROUPS : STANDARD_NAV_GROUPS).map((group) => {
+          {(IS_ADMIN_MODE || (isSuperAdmin && !user.is_impersonation) ? SUPER_ADMIN_NAV_GROUPS : STANDARD_NAV_GROUPS).map((group) => {
             const filteredItems = group.items.filter((item) => {
-              if (item.superAdminOnly && user.role !== 'super_admin' && user.role !== 'platform_super_admin') return false
+              if (item.superAdminOnly && !isSuperAdmin) return false
               if (item.adminOnly && !isPlatformAdmin) return false
               return true
             })

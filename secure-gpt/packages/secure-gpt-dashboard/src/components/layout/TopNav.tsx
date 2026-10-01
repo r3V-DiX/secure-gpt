@@ -78,7 +78,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
       <div className="flex items-center gap-3">
         {user && (user.role === 'super_admin' || user.role === 'platform_super_admin') && process.env.NEXT_PUBLIC_APP_MODE !== 'admin' && (
           <a
-            href={process.env.NODE_ENV === 'production' ? 'https://admin.securegpt.rkavach.com' : 'http://localhost:3001'}
+            href={process.env.NODE_ENV === 'production' ? 'https://admin.securegpt.rkavach.com/dashboard' : 'http://localhost:3001/dashboard'}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-all shadow-xs"

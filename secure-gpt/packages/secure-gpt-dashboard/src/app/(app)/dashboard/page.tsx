@@ -47,8 +47,10 @@ export default function DashboardPage() {
 
   const firstName = user?.fullName?.split(' ')[0] ?? 'there'
 
-  const isSuperAdmin = user?.role === 'super_admin' || user?.role === 'platform_super_admin' || process.env.NEXT_PUBLIC_APP_MODE === 'admin'
-  const isOrgAdmin = ['org_admin', 'employer', 'security_admin', 'admin'].includes((user?.role || '').toLowerCase())
+  const isSuperAdmin =
+    !user?.is_impersonation &&
+    (user?.role === 'super_admin' || user?.role === 'platform_super_admin' || process.env.NEXT_PUBLIC_APP_MODE === 'admin')
+  const isOrgAdmin = ['org_admin', 'employer', 'security_admin', 'admin', 'super_admin'].includes((user?.role || '').toLowerCase())
 
   const showTopEmployees = !isSuperAdmin && Boolean(user?.orgId) && isOrgAdmin && Boolean(stats?.topEmployees && stats.topEmployees.length > 0)
   const showTopDepartments = !isSuperAdmin && Boolean(user?.orgId) && Boolean(stats?.topDepartments && stats.topDepartments.length > 0)
