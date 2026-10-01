@@ -115,7 +115,8 @@ class User(Base):
     # Relationships
     organisation: Mapped["Organisation | None"] = relationship("Organisation", back_populates="users")  # noqa: F821
     department: Mapped["Department | None"] = relationship("Department", back_populates="members")  # noqa: F821
-    sessions: Mapped[list["Session"]] = relationship("Session", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
+    sessions: Mapped[list["Session"]] = relationship("Session", foreign_keys="Session.user_id", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
+    impersonated_sessions: Mapped[list["Session"]] = relationship("Session", foreign_keys="Session.impersonator_id", back_populates="impersonator")  # noqa: F821
     auth_events: Mapped[list["AuthEvent"]] = relationship("AuthEvent", back_populates="user")  # noqa: F821
     devices: Mapped[list["Device"]] = relationship("Device", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
     audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="user")  # noqa: F821
