@@ -24,6 +24,7 @@ from app.services.auth_service import get_user_by_email
 from app.services.email_service import send_otp_email
 from app.services.org_service import extract_domain_from_email, is_public_domain, generate_dns_txt_token
 from app.services.session_service import SESSION_COOKIE_NAME, SESSION_TTL_SECONDS
+from app.api.v1.log_analytics import check_is_super_admin
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -43,10 +44,17 @@ class OTPVerifyRequest(BaseModel):
     force_personal: bool | None = False
 
 
-@router.post("/otp/request", summary="Request 6-digit OTP code to email")
+@router.post("/request-otp", summary="Request 6-digit OTP code to email")
+@router.post("/otp/request", summary="Request 6-digit OTP code to email", include_in_schema=False)
 @limiter.limit(LIMIT_AUTH)
 async def request_otp(request: Request, body: OTPRequest, db: DBSession):
     email_clean = body.email.strip().lower()
+
+    if settings.portal_mode == "admin":
+        user = await get_user_by_email(db, email_clean)
+        if not user or not (await check_is_super_admin(db, user)):
+            raise Forbidden("Access restricted to registered Super Administrators.")
+
     domain = extract_domain_from_email(email_clean)
 
     # ── Check Domain Verification & Registration Status ────────────────────────
@@ -104,7 +112,8 @@ async def request_otp(request: Request, body: OTPRequest, db: DBSession):
     )
 
 
-@router.post("/otp/verify", summary="Verify OTP code and create session")
+@router.post("/verify-otp", summary="Verify OTP code and create session")
+@router.post("/otp/verify", summary="Verify OTP code and create session", include_in_schema=False)
 @limiter.limit(LIMIT_AUTH)
 async def verify_otp(request: Request, response: Response, body: OTPVerifyRequest, db: DBSession):
     email_clean = body.email.strip().lower()
@@ -137,6 +146,11 @@ async def verify_otp(request: Request, response: Response, body: OTPVerifyReques
 
     # Fetch existing user or handle new user creation
     user = await get_user_by_email(db, email_clean)
+
+    if settings.portal_mode == "admin":
+        if not user or not (await check_is_super_admin(db, user)):
+            raise Forbidden("Access restricted to registered Super Administrators.")
+
     created_org_onboarding = False
 
     if not user:
@@ -264,13 +278,7 @@ async def verify_otp(request: Request, response: Response, body: OTPVerifyReques
     resp = JSONResponse(
         content={
             "success": True,
-            "data": {
-                "id": user.id,
-                "email": user.email,
-                "role": role_val,
-                "org_id": user.org_id,
-                "redirect_url": redirect_url,
-            },
+            "data": {"id": user.id, "email": user.email, "role": role_val, "org_id": user.org_id, "redirect_url": redirect_url},
             "message": f"Successfully verified and signed in as {user.email}",
         }
     )
