@@ -7,7 +7,51 @@ from app.core.database import AsyncSessionLocal
 from app.models.rbac import Role, UserRoleAssignment
 from app.models.user import User, UserRole
 from app.commands.seed_rbac import seed_rbac
-from sqlalchemy import select
+from sqlalchemy import select, or_, and_
+
+
+async def list_super_admins():
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(User)
+            .outerjoin(UserRoleAssignment, UserRoleAssignment.user_id == User.id)
+            .outerjoin(Role, Role.id == UserRoleAssignment.role_id)
+            .where(
+                or_(
+                    User.role.in_([UserRole.SUPER_ADMIN, UserRole.PLATFORM_SUPER_ADMIN]),
+                    and_(
+                        UserRoleAssignment.is_active == True,  # noqa: E712
+                        Role.slug.in_(["super_admin", "platform_super_admin"]),
+                    ),
+                )
+            )
+            .distinct()
+            .order_by(User.created_at.asc())
+        )
+        admins = result.scalars().all()
+
+        print("\n" + "=" * 85)
+        print("👑 SecureGPT Super Administrators")
+        print("=" * 85)
+
+        if not admins:
+            print("No Super Administrators found in database.")
+            print("=" * 85 + "\n")
+            return
+
+        print(f"Total: {len(admins)} Super Administrator(s)\n")
+        header = f"{'Email':<38} | {'Full Name':<20} | {'Status':<8} | {'Last Login':<16}"
+        print(header)
+        print("-" * len(header))
+
+        for admin in admins:
+            status = "ACTIVE" if admin.is_active else "INACTIVE"
+            last_login = admin.last_login_at.strftime("%Y-%m-%d %H:%M") if admin.last_login_at else "Never"
+            name = (admin.full_name or "—")[:20]
+            email = admin.email[:38]
+            print(f"{email:<38} | {name:<20} | {status:<8} | {last_login:<16}")
+
+        print("=" * 85 + "\n")
 
 
 async def manage_admin(email: str, action: str):
@@ -78,9 +122,24 @@ async def manage_admin(email: str, action: str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Manage super admin privileges for a user.")
-    parser.add_argument("action", choices=["add", "remove", "delete"], help="Action to perform (add or remove)")
-    parser.add_argument("email", help="Email of the user")
+    parser = argparse.ArgumentParser(description="Manage super admin privileges for users.")
+    parser.add_argument(
+        "action",
+        choices=["list", "view", "ls", "add", "remove", "delete"],
+        help="Action to perform (list, add, or remove)",
+    )
+    parser.add_argument(
+        "email",
+        nargs="?",
+        default=None,
+        help="Email of the user (required for add/remove/delete)",
+    )
     args = parser.parse_args()
 
-    asyncio.run(manage_admin(args.email, args.action))
+    if args.action in ["list", "view", "ls"]:
+        asyncio.run(list_super_admins())
+    else:
+        if not args.email:
+            print(f"❌ Error: 'email' argument is required for action '{args.action}'.")
+            sys.exit(1)
+        asyncio.run(manage_admin(args.email, args.action))
