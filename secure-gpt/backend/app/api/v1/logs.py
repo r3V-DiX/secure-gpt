@@ -173,8 +173,9 @@ async def get_dashboard_stats(
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     since = today - timedelta(days=days - 1)
 
-    is_super_admin = await check_is_super_admin(db, current_user)
-    role_str = (current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)).lower()
+    is_impersonation = getattr(request.state, "is_impersonation", False)
+    is_super_admin = False if is_impersonation else await check_is_super_admin(db, current_user)
+    role_str = "org_admin" if is_impersonation else (current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)).lower()
 
     if is_super_admin:
         role_scope = "platform"

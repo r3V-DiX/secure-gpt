@@ -20,6 +20,7 @@
 
 import secrets
 import logging
+import hashlib
 from datetime import datetime, timezone, timedelta
 
 from fastapi import Request, Response
@@ -33,10 +34,21 @@ from app.core.fingerprint import (
     verify_fingerprint,
     is_extension_request,
 )
+from app.services.impersonation_service import (
+    HANDOFF_TTL_SECONDS,
+    IMPERSONATION_TTL_SECONDS,
+    create_impersonation_session,
+    create_impersonation_handoff,
+    redeem_impersonation_handoff,
+)
 
 logger = logging.getLogger(__name__)
 
-SESSION_COOKIE_NAME = "sgpt_session"
+def cookie_name_for_portal(portal_mode: str) -> str:
+    return "sgpt_admin_session" if portal_mode == "admin" else "sgpt_session"
+
+
+SESSION_COOKIE_NAME = cookie_name_for_portal(settings.portal_mode)
 SESSION_TTL_SECONDS = settings.session_max_age
 
 # Header sent by BFF proxy to signal OAuth callback context
@@ -67,13 +79,13 @@ async def create_session(
 
     if is_oauth_callback or is_ext:
         fingerprint_hash = None
-        logger.info(
+        logger.debug(
             "Session created via %s — fingerprint unbound",
             "OAuth BFF proxy" if is_oauth_callback else "extension",
         )
     else:
         fingerprint_hash = compute_fingerprint(request)
-        logger.info("Session created directly — fingerprint bound immediately")
+        logger.debug("Session created directly — fingerprint bound immediately")
 
     session = Session(
         id=session_id,
@@ -85,26 +97,14 @@ async def create_session(
     db.add(session)
     await db.flush()
 
-    is_prod = settings.is_production
+    set_session_cookie(response, session_id, SESSION_TTL_SECONDS)
 
-    logger.info("=== SETTING COOKIE ===")
-    logger.info("  session_id      : %s...", session_id[:8])
-    logger.info("  fingerprint     : %s", "unbound" if not fingerprint_hash else "bound")
-    logger.info("  secure          : %s", is_prod)
-    logger.info("  samesite        : lax")
-    logger.info("  max_age         : %s", SESSION_TTL_SECONDS)
-
-    response.set_cookie(
-        key=SESSION_COOKIE_NAME,
-        value=session_id,
-        max_age=SESSION_TTL_SECONDS,
-        httponly=True,
-        secure=is_prod,
-        samesite="none" if is_prod else "lax",
-        path="/",
+    logger.info(
+        "Session created user_id=%s session_id=%s... fingerprint=%s",
+        user_id,
+        session_id[:8],
+        "bound" if fingerprint_hash else "unbound",
     )
-
-    logger.info("Session created for user %s", user_id)
     return session
 
 
@@ -134,25 +134,25 @@ async def validate_session(
     If fingerprint_hash is None (session created via OAuth BFF proxy),
     we bind it on this first real browser request instead of rejecting.
     """
-    logger.info("VALIDATE SESSION — id: %s...", session_id[:8] if session_id else "NONE")
+    logger.debug("Validating session session_id=%s...", session_id[:8] if session_id else "NONE")
 
     session = await get_session(db, session_id)
 
     if not session:
-        logger.info("  result: SESSION_NOT_FOUND")
+        logger.debug("Session validation failed result=SESSION_NOT_FOUND")
         return None, "SESSION_NOT_FOUND"
 
     if session.is_revoked:
-        logger.info("  result: SESSION_REVOKED")
+        logger.warning("Session validation failed result=SESSION_REVOKED session_id=%s...", session_id[:8])
         return None, "SESSION_REVOKED"
 
     if session.is_expired:
-        logger.info("  result: SESSION_EXPIRED")
+        logger.warning("Session validation failed result=SESSION_EXPIRED session_id=%s...", session_id[:8])
         return session, "SESSION_EXPIRED"
 
     # ── Extension bypass — skip fingerprint entirely ───────────────────────
     if is_extension_request(request):
-        logger.info("  result: VALID (extension request — fingerprint skipped)")
+        logger.debug("Session valid (extension request — fingerprint skipped) session_id=%s...", session_id[:8])
         await db.execute(
             update(Session)
             .where(Session.id == session_id)
@@ -164,7 +164,7 @@ async def validate_session(
 
     if session.fingerprint_hash is None:
         # ── Lazy bind: first real browser request after OAuth login ──────────
-        logger.info("  fingerprint: unbound → binding now to first real request")
+        logger.info("Session fingerprint bound session_id=%s...", session_id[:8])
         await db.execute(
             update(Session)
             .where(Session.id == session_id)
@@ -173,13 +173,12 @@ async def validate_session(
                 last_active_at=datetime.now(timezone.utc),
             )
         )
-        logger.info("  result: VALID (fingerprint bound)")
         return session, None
 
     # ── Normal path: verify fingerprint ──────────────────────────────────────
     if not verify_fingerprint(request, session.fingerprint_hash):
         await revoke_session(db, session_id)
-        logger.warning("  result: FINGERPRINT_MISMATCH — session revoked")
+        logger.warning("Session fingerprint mismatch — session revoked session_id=%s...", session_id[:8])
         return session, "FINGERPRINT_MISMATCH"
 
     # Update last active timestamp
@@ -189,7 +188,7 @@ async def validate_session(
         .values(last_active_at=datetime.now(timezone.utc))
     )
 
-    logger.info("  result: VALID")
+    logger.debug("Session valid session_id=%s...", session_id[:8])
     return session, None
 
 
@@ -210,6 +209,31 @@ async def revoke_all_user_sessions(db: AsyncSession, user_id: str) -> int:
     return result.rowcount
 
 
+async def revoke_all_org_sessions(db: AsyncSession, org_id: str) -> int:
+    """Revoke all active sessions for all users belonging to an organization."""
+    from app.models.user import User
+    user_ids_subquery = select(User.id).where(User.org_id == org_id)
+    result = await db.execute(
+        update(Session)
+        .where(Session.user_id.in_(user_ids_subquery), Session.is_revoked == False)  # noqa: E712
+        .values(is_revoked=True)
+    )
+    await db.flush()
+    return result.rowcount
+
+
+def set_session_cookie(response: Response, session_id: str, max_age: int) -> None:
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_id,
+        max_age=max_age,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="none" if settings.is_production else "lax",
+        path="/",
+    )
+
+
 def clear_session_cookie(response: Response) -> None:
     response.delete_cookie(
         key=SESSION_COOKIE_NAME,
@@ -222,5 +246,5 @@ def clear_session_cookie(response: Response) -> None:
 
 def get_session_id_from_request(request: Request) -> str | None:
     cookie = request.cookies.get(SESSION_COOKIE_NAME)
-    logger.info("GET SESSION FROM COOKIE — found: %s", bool(cookie))
+    logger.debug("Session cookie lookup found=%s", bool(cookie))
     return cookie

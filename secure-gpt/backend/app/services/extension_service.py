@@ -159,6 +159,14 @@ async def get_policy_for_extension(
     )
     policy = result.scalar_one_or_none()
 
+    is_org_suspended = False
+    if user and user.org_id:
+        from app.models.org import Organisation, OrgStatus
+        org_res = await db.execute(select(Organisation).where(Organisation.id == user.org_id))
+        org_obj = org_res.scalar_one_or_none()
+        if org_obj and org_obj.status == OrgStatus.SUSPENDED:
+            is_org_suspended = True
+
     if not policy:
         import copy
         default = copy.deepcopy(DEFAULT_POLICY_CONFIG)
@@ -167,12 +175,16 @@ async def get_policy_for_extension(
             "version": 1,
             "config": default,
             "updatedAt": datetime.now(timezone.utc).isoformat(),
+            "org_status": "SUSPENDED" if is_org_suspended else "ACTIVE",
+            "enforcement_disabled": is_org_suspended,
         }
 
     return {
         "version": policy.version,
         "config": policy.config,
         "updatedAt": policy.updated_at.isoformat(),
+        "org_status": "SUSPENDED" if is_org_suspended else "ACTIVE",
+        "enforcement_disabled": is_org_suspended,
     }
 
 
