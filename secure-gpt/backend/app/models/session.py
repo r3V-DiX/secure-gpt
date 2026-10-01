@@ -31,6 +31,12 @@ class Session(Base):
 
     user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
+    # Impersonation — set when a Super Admin logs into a tenant session
+    impersonator_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    previous_session_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -42,7 +48,8 @@ class Session(Base):
     )
     is_revoked: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    user: Mapped["User"] = relationship("User", back_populates="sessions")  # noqa: F821
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id], back_populates="sessions")  # noqa: F821
+    impersonator: Mapped["User | None"] = relationship("User", foreign_keys=[impersonator_id], back_populates="impersonated_sessions")  # noqa: F821
 
     __table_args__ = (
         Index("ix_sessions_user_id_active", "user_id", "is_revoked"),
@@ -55,3 +62,7 @@ class Session(Base):
     @property
     def is_valid(self) -> bool:
         return not self.is_revoked and not self.is_expired
+
+    @property
+    def is_impersonation(self) -> bool:
+        return bool(self.impersonator_id)

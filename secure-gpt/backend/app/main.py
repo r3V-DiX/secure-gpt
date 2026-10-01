@@ -3,10 +3,12 @@
 # FastAPI application entrypoint.
 # ─────────────────────────────────────────────────────────────────────────────
 
+import time
+import secrets
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -16,15 +18,14 @@ from app.core.database import engine, Base
 from app.core.error_handlers import register_error_handlers
 from app.core.ratelimit import limiter
 from app.core.response import error as make_error
+from app.core.logging import setup_logging, set_request_id, get_request_id
 from app.api.v1.router import api_router
 
 import app.models  # noqa: F401
 
-logging.basicConfig(
-    level=logging.DEBUG if settings.debug else logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-)
+setup_logging(settings)
 logger = logging.getLogger(__name__)
+http_logger = logging.getLogger("http")
 
 
 from app.core.database import engine, Base
@@ -35,7 +36,23 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         # Create any missing tables safely
         await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables verified/synced")
+        # Ensure new schema columns exist on previously created tables
+        from sqlalchemy import text
+        await conn.execute(
+            text("ALTER TABLE IF EXISTS sessions ADD COLUMN IF NOT EXISTS impersonator_id VARCHAR")
+        )
+        await conn.execute(
+            text("ALTER TABLE IF EXISTS sessions ADD COLUMN IF NOT EXISTS previous_session_id VARCHAR(64)")
+        )
+        await conn.execute(
+            text("ALTER TABLE IF EXISTS impersonation_handoffs ADD COLUMN IF NOT EXISTS org_id VARCHAR")
+        )
+        if settings.app_env == "development":
+            # Auto-ensure super admin test accounts are marked SUPER_ADMIN
+            await conn.execute(
+                text("UPDATE users SET role = 'SUPER_ADMIN'::userrole WHERE email IN ('admin@superadmin.com', 'superadmin@blackvector.online')")
+            )
+        logger.info("Database tables and columns verified/synced")
 
     yield
     await engine.dispose()
@@ -69,9 +86,44 @@ async def rate_limit_handler(request, exc):
 
 # ─── Middleware ───────────────────────────────────────────────────────────────
 
+@app.middleware("http")
+async def request_logging_and_correlation_middleware(request: Request, call_next):
+    # Extract existing X-Request-ID or generate new 12-char hex ID
+    incoming_req_id = request.headers.get("x-request-id")
+    req_id = incoming_req_id if incoming_req_id else secrets.token_hex(6)
+    set_request_id(req_id)
+    request.state.request_id = req_id
+
+    start_time = time.perf_counter()
+    try:
+        response = await call_next(request)
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        response.headers["X-Request-ID"] = req_id
+
+        http_logger.info(
+            "method=%s path=%s status=%d duration_ms=%.2f",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
+        return response
+    except Exception as exc:
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        http_logger.error(
+            "method=%s path=%s error=%s duration_ms=%.2f",
+            request.method,
+            request.url.path,
+            str(exc),
+            duration_ms,
+        )
+        raise
+    finally:
+        set_request_id(None)
+
 # Custom CORS handler for Chrome Extensions
 @app.middleware("http")
-async def extension_cors_interceptor(request, call_next):
+async def extension_cors_interceptor(request: Request, call_next):
     origin = request.headers.get("origin")
     # Allow approved chrome extensions to communicate with the API
     if origin and origin.startswith("chrome-extension://"):
@@ -122,5 +174,6 @@ async def health():
         "status": "ok",
         "app": settings.app_name,
         "env": settings.app_env,
+        "portal_mode": settings.portal_mode,
         "version": settings.app_version,
     }

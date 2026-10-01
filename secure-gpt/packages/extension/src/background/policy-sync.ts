@@ -176,8 +176,26 @@ async function pollOnce(): Promise<void> {
 
 // ── Shared apply logic ────────────────────────────────────────────────────────
 
-async function applyPolicyUpdate(data: { version: number; config: PIIConfig; updatedAt: string }): Promise<void> {
+async function applyPolicyUpdate(data: {
+  version: number
+  config: PIIConfig
+  updatedAt: string
+  org_status?: string
+  enforcement_disabled?: boolean
+}): Promise<void> {
   const currentVersion = await policyStorage.getPolicyVersion()
+
+  // If organization is frozen by Super Admin, pause protection
+  if (data.enforcement_disabled || data.org_status === 'SUSPENDED') {
+    console.warn('[SecureGPT] Organization is frozen: pausing extension protection')
+    const tabs = await chrome.tabs.query({ url: LLM_URL_PATTERNS })
+    for (const tab of tabs) {
+      if (tab.id) {
+        chrome.tabs.sendMessage(tab.id, { type: 'EXTENSION_PAUSED' }).catch(() => {})
+      }
+    }
+    return
+  }
 
   if (data.version >= currentVersion) {
     await policyStorage.setPolicy(data.config, data.version)

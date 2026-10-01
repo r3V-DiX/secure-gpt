@@ -15,7 +15,7 @@ set -uo pipefail
 
 # Project root directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Colors for terminal output
 BOLD='\033[1m'
@@ -123,6 +123,7 @@ check_port 3001 "SecureGPT Admin Frontend"
 log "$GREEN" "STARTING" "SecureGPT Backend on http://localhost:8000"
 (
     cd "$SECURE_GPT_DIR/backend"
+    export PORTAL_MODE=standard
     exec "$VENV_UVICORN" app.main:app --reload --host 0.0.0.0 --port 8000
 ) 2>&1 | sed -e "s/^/$(echo -e "${GREEN}[BE:8000]${NC} ")/" &
 PID_BE=$!
@@ -131,6 +132,7 @@ PID_BE=$!
 log "$MAGENTA" "STARTING" "SecureGPT Admin Backend on http://localhost:8001"
 (
     cd "$SECURE_GPT_DIR/backend"
+    export PORTAL_MODE=admin
     exec "$VENV_UVICORN" app.main:app --reload --host 0.0.0.0 --port 8001
 ) 2>&1 | sed -e "s/^/$(echo -e "${MAGENTA}[ADMIN-BE:8001]${NC} ")/" &
 PID_ADMIN_BE=$!

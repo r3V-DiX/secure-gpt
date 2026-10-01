@@ -6,6 +6,7 @@ from app.models.department import Department
 from app.models.user import User, UserRole
 from app.models.deleted_user_log import DeletedUserLog
 from app.models.session import Session
+from app.models.impersonation_handoff import ImpersonationHandoff
 from app.models.auth_event import AuthEvent, AuthEventType
 from app.models.audit_log import AuditLog, ActionType, SeverityLevel
 from app.models.device import Device
@@ -35,6 +36,7 @@ __all__ = [
     "UserRole",
     "DeletedUserLog",
     "Session",
+    "ImpersonationHandoff",
     "AuthEvent",
     "AuthEventType",
     "AuditLog",

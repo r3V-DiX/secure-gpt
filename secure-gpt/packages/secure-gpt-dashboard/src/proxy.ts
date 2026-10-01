@@ -26,7 +26,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const session = request.cookies.get(SESSION_COOKIE)?.value
+  const session =
+    request.cookies.get('sgpt_session')?.value ||
+    request.cookies.get('sgpt_admin_session')?.value
 
   if (session && AUTH_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.redirect(new URL('/dashboard', request.url))

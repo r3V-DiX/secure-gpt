@@ -38,16 +38,16 @@ export function OrgLeaderboards({
               </p>
             </div>
             <Link
-              href="/users"
+              href="/organizations"
               className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1"
             >
-              View User Directory →
+              View Org Directory →
             </Link>
           </div>
 
           {loading ? (
             <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (    
                 <div key={i} className="skeleton h-12 w-full rounded-xl" />
               ))}
             </div>

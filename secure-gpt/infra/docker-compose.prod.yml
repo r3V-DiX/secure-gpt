@@ -8,6 +8,7 @@ services:
       - "8000:8000"
     environment:
       APP_ENV: "production"
+      PORTAL_MODE: "standard"
       DEBUG: "false"
       SECRET_KEY: ${SECRET_KEY}
       DATABASE_URL: ${DATABASE_URL}
@@ -27,6 +28,7 @@ services:
       - "8001:8000"
     environment:
       APP_ENV: "production"
+      PORTAL_MODE: "admin"
       DEBUG: "false"
       SECRET_KEY: ${SECRET_KEY}
       DATABASE_URL: ${DATABASE_URL}

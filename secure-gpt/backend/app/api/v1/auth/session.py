@@ -1,13 +1,14 @@
 import secrets
+from urllib.parse import parse_qs
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select, delete
 
 from app.core.config import settings
 from app.core.dependencies import CurrentUser, DBSession
-from app.core.exceptions import Forbidden
+from app.core.exceptions import BadRequest, Forbidden
 from app.core.ratelimit import LIMIT_AUTH_ME, LIMIT_LOGOUT, limiter
 from app.core.response import success
 from app.models.device import Device
@@ -21,9 +22,15 @@ from app.services.rbac_service import get_user_permissions, get_user_roles
 from app.services.session_service import (
     SESSION_COOKIE_NAME,
     SESSION_TTL_SECONDS,
+    IMPERSONATION_TTL_SECONDS,
     clear_session_cookie,
+    create_impersonation_session,
     get_session_id_from_request,
+    get_session,
+    redeem_impersonation_handoff,
     revoke_session,
+    set_session_cookie,
+    validate_session,
 )
 
 router = APIRouter()
@@ -42,22 +49,33 @@ async def dev_login(request: Request, body: DevLoginRequest, db: DBSession):
     email_clean = body.email.strip().lower()
     user = await get_user_by_email(db, email_clean)
 
-    if not user:
-        role_map = {
-            "employer": UserRole.ORG_ADMIN,
-            "employee": UserRole.EMPLOYEE,
-            "user": UserRole.USER,
-        }
-        assigned_role = role_map.get(body.persona, UserRole.USER)
+    role_map = {
+        "super_admin": UserRole.SUPER_ADMIN,
+        "employer": UserRole.ORG_ADMIN,
+        "employee": UserRole.EMPLOYEE,
+        "user": UserRole.USER,
+    }
+    requested_role = role_map.get(body.persona.lower(), UserRole.USER)
 
+    is_super = (
+        body.persona.lower() == "super_admin"
+        or email_clean in ("admin@superadmin.com", "superadmin@blackvector.online")
+        or "superadmin" in email_clean
+    )
+    if not user:
         user = User(
             email=email_clean,
             full_name=email_clean.split("@")[0].title(),
-            role=assigned_role,
+            role=UserRole.SUPER_ADMIN if is_super else requested_role,
             is_active=True,
             privacy_accepted=True,
         )
         db.add(user)
+        await db.flush()
+    elif is_super:
+        # Elevate to SUPER_ADMIN if explicitly using the super_admin dev bypass or email
+        user.role = UserRole.SUPER_ADMIN
+        user.is_active = True
         await db.flush()
 
     session_id = secrets.token_urlsafe(32)
@@ -102,6 +120,20 @@ async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
 
     roles = await get_user_roles(db, current_user.id)
     permissions = await get_user_permissions(db, current_user.id)
+
+    is_impersonation = getattr(request.state, "is_impersonation", False)
+    impersonator_id = getattr(request.state, "impersonator_id", None)
+    impersonated_org = None
+    if is_impersonation and current_user.org_id:
+        org_res = await db.execute(select(Organisation).where(Organisation.id == current_user.org_id))
+        org_obj = org_res.scalar_one_or_none()
+        if org_obj:
+            impersonated_org = {
+                "id": org_obj.id,
+                "name": org_obj.name,
+                "domain": org_obj.domain,
+            }
+
     return success(
         data={
             "id": current_user.id,
@@ -118,8 +150,68 @@ async def get_me(request: Request, current_user: CurrentUser, db: DBSession):
             "deactivationReason": current_user.deactivation_reason,
             "roles": [r.slug for r in roles],
             "permissions": list(permissions),
+            "is_impersonation": is_impersonation,
+            "impersonator_id": impersonator_id,
+            "impersonated_org": impersonated_org,
         },
         message="User fetched successfully",
+    )
+
+
+@router.post("/impersonate/redeem", summary="Redeem a one-use tenant impersonation handoff")
+async def redeem_impersonation(request: Request, db: DBSession):
+    if settings.portal_mode != "standard":
+        raise Forbidden("Handoffs can only be redeemed on the user dashboard")
+    if request.headers.get("content-type", "").split(";", 1)[0] != "application/x-www-form-urlencoded":
+        raise BadRequest("Expected a form submission")
+    body = await request.body()
+    if len(body) > 4096:
+        raise BadRequest("Handoff request is too large")
+    ticket = parse_qs(body.decode("utf-8"), keep_blank_values=True).get("ticket", [""])[0]
+    if not ticket:
+        raise BadRequest("Missing impersonation handoff")
+
+    target_id, impersonator_id = await redeem_impersonation_handoff(db, ticket)
+    previous_id = get_session_id_from_request(request)
+    if previous_id:
+        # A top-level form POST has no X-Client-Fingerprint header. Inspect the
+        # prior session here; validate its fingerprint when restoring on exit.
+        previous = await get_session(db, previous_id)
+        if previous is None or not previous.is_valid or previous.is_impersonation or not previous.user.is_active:
+            previous_id = None
+
+    session = await create_impersonation_session(
+        db, target_user_id=target_id, impersonator_id=impersonator_id,
+        previous_session_id=previous_id,
+    )
+    await db.commit()
+    response = RedirectResponse(url="/dashboard", status_code=303)
+    set_session_cookie(response, session.id, IMPERSONATION_TTL_SECONDS)
+    return response
+
+
+@router.post("/impersonate/exit", summary="Exit tenant impersonation and restore the previous session")
+async def exit_impersonation(request: Request, response: Response, db: DBSession, current_user: CurrentUser):
+    if not request.state.is_impersonation:
+        raise Forbidden("No impersonation session is active")
+    session_id = get_session_id_from_request(request)
+    session = await get_session(db, session_id)
+    await revoke_session(db, session_id)
+    previous_id = session.previous_session_id if session else None
+    previous = None
+    if previous_id:
+        previous, error = await validate_session(db, request, previous_id)
+        if error or previous is None or previous.is_impersonation or not previous.user.is_active:
+            previous = None
+    if previous:
+        remaining = max(1, int((previous.expires_at - datetime.now(timezone.utc)).total_seconds()))
+        set_session_cookie(response, previous.id, remaining)
+    else:
+        clear_session_cookie(response)
+    await db.commit()
+    return success(
+        data={"redirect_url": "/organizations"},
+        message="Exited impersonation mode successfully"
     )
 
 

@@ -232,6 +232,8 @@ services:
     container_name: secure-gpt-backend
     restart: unless-stopped
     env_file: .env
+    environment:
+      PORTAL_MODE: standard
     ports:
       - "127.0.0.1:8000:8000"
     networks:
@@ -276,6 +278,8 @@ services:
     container_name: secure-gpt-admin-backend
     restart: unless-stopped
     env_file: .env
+    environment:
+      PORTAL_MODE: admin
     ports:
       - "127.0.0.1:8001:8000"
     networks:

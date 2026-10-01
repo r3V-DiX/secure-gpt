@@ -10,9 +10,10 @@ import { TopNav } from '@/components/layout/TopNav'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import { Modal } from '@/components/ui/modal/modal'
 import { OnboardingTour } from '@/components/layout/OnboardingTour'
+import { ImpersonationBanner } from '@/components/layout/ImpersonationBanner'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, sessionExpired, dismissExpired } = useAuth()
+  const { user, loading, sessionExpired, dismissExpired, logout } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -79,10 +80,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               Go to SecureGPT Dashboard
             </a>
             <Button variant="secondary" type="button"
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/login'
-                }
+              onClick={async () => {
+                await logout()
               }}
               className="w-full"
             >
@@ -111,6 +110,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area with TopNav */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <ImpersonationBanner />
         <TopNav onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-8 py-7">
           <ErrorBoundary>

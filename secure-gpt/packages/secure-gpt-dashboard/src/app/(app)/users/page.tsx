@@ -52,89 +52,122 @@ export default function UsersPage() {
   const hasActiveFilters = Boolean(m.debouncedSearch || m.roleFilter || m.statusFilter !== 'all')
 
   return (
-    <div className="flex-1 space-y-6 w-full animate-fade-in pb-16">
-      {/* Header */}
-      <PageHeader title={<>
+    <>
+      <div className="flex-1 space-y-6 w-full animate-fade-in pb-32">
+        <PageHeader
+          title={<>
             <Shield className="text-[var(--accent)] size-5 shrink-0" />
             User Management (RBAC)
-          </>} description={<>
+          </>}
+          description={<>
             Control dynamic role assignments, view active users, and manage account statuses across all organizations.
-          </>} actions={<><div className="flex items-center gap-2 flex-wrap">
-          <Button
-            variant="secondary"
-            size="md"
-            icon={<Download size={14} />}
-            onClick={m.handleExportCsv}
-            title="Export filtered users as CSV"
-          >
-            Export CSV
-          </Button>
-          <Button
-            variant="secondary"
-            size="md"
-            icon={<Upload size={14} />}
-            onClick={() => m.setCsvImportOpen(true)}
-            title="Bulk import user roster"
-          >
-            Import CSV
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            icon={<UserCheck size={14} />}
-            onClick={() => m.setInviteOpen(true)}
-          >
-            Add Member
-          </Button>
-        </div></>} />
+          </>}
+          actions={<div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<Download size={14} />}
+              onClick={m.handleExportCsv}
+              title="Export filtered users as CSV"
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<Upload size={14} />}
+              onClick={() => m.setCsvImportOpen(true)}
+              title="Bulk import user roster"
+            >
+              Import CSV
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              icon={<UserCheck size={14} />}
+              onClick={() => m.setInviteOpen(true)}
+            >
+              Add Member
+            </Button>
+          </div>}
+        />
 
-      <UserFilterToolbar
-        search={m.search}
-        setSearch={m.setSearch}
-        roleFilter={m.roleFilter}
-        setRoleFilter={m.setRoleFilter}
-        statusFilter={m.statusFilter}
-        setStatusFilter={m.setStatusFilter}
-        roles={m.roles}
-        onResetPage={() => m.setPage(1)}
-      />
+        <UserFilterToolbar
+          search={m.search}
+          setSearch={m.setSearch}
+          roleFilter={m.roleFilter}
+          setRoleFilter={m.setRoleFilter}
+          statusFilter={m.statusFilter}
+          setStatusFilter={m.setStatusFilter}
+          roles={m.roles}
+          onResetPage={() => m.setPage(1)}
+        />
 
-      <UserTable
-        loading={m.loading}
-        users={m.users}
-        roles={m.roles}
-        selectedIds={m.selectedIds}
-        allCurrentPageSelected={allCurrentPageSelected}
-        onToggleSelectAll={m.handleToggleSelectAll}
-        onToggleSelectOne={m.handleToggleSelectOne}
-        onOpenEditOrg={(u) => {
-          m.setEditOrgUser(u)
-          m.setOrgDraft(u.orgId || '')
-        }}
-        onOpenEditRoles={(u) => {
-          m.setEditUser(u)
-          m.setSelectedRoleSlugs(u.roles.map((r) => r.slug))
-        }}
-        onToggleStatus={m.handleToggleStatus}
-        onDeleteUser={m.handleDeleteUser}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={() => {
-          m.setSearch('')
-          m.setRoleFilter('')
-          m.setStatusFilter('all')
-          m.setPage(1)
-        }}
-        page={m.page}
-        pageSize={m.pageSize}
-        total={m.total}
-        totalPages={m.totalPages}
-        onPageChange={m.setPage}
-        onPageSizeChange={(newSize) => {
-          m.setPageSize(newSize)
-          m.setPage(1)
-        }}
-      />
+        <UserTable
+          loading={m.loading}
+          users={m.users}
+          roles={m.roles}
+          selectedIds={m.selectedIds}
+          allCurrentPageSelected={allCurrentPageSelected}
+          onToggleSelectAll={m.handleToggleSelectAll}
+          onToggleSelectOne={m.handleToggleSelectOne}
+          onOpenEditOrg={(u) => {
+            m.setEditOrgUser(u)
+            m.setOrgDraft(u.orgId || '')
+          }}
+          onOpenEditRoles={(u) => {
+            m.setEditUser(u)
+            m.setSelectedRoleSlugs(u.roles.map((r) => r.slug))
+          }}
+          onToggleStatus={m.handleToggleStatus}
+          onDeleteUser={m.handleDeleteUser}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={() => {
+            m.setSearch('')
+            m.setRoleFilter('')
+            m.setStatusFilter('all')
+            m.setPage(1)
+          }}
+          page={m.page}
+          pageSize={m.pageSize}
+          total={m.total}
+          totalPages={m.totalPages}
+          onPageChange={m.setPage}
+          onPageSizeChange={(newSize) => {
+            m.setPageSize(newSize)
+            m.setPage(1)
+          }}
+        />
 
+        <UserModals
+          editUser={m.editUser}
+          onCloseEditRoles={() => m.setEditUser(null)}
+          roles={m.roles}
+          selectedRoleSlugs={m.selectedRoleSlugs}
+          onToggleRoleSlug={(slug) =>
+            m.setSelectedRoleSlugs((prev) =>
+              prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+            )
+          }
+          savingRoles={m.savingRoles}
+          onSaveRoles={m.handleSaveRoles}
+          editOrgUser={m.editOrgUser}
+          onCloseEditOrg={() => m.setEditOrgUser(null)}
+          orgDraft={m.orgDraft}
+          setOrgDraft={m.setOrgDraft}
+          savingOrg={m.savingOrg}
+          onSaveOrg={m.handleSaveOrg}
+          inviteOpen={m.inviteOpen}
+          onCloseInvite={() => m.setInviteOpen(false)}
+          inviteEmail={m.inviteEmail}
+          setInviteEmail={m.setInviteEmail}
+          inviting={m.inviting}
+          onInviteUser={m.handleInviteUser}
+        />
+      </div>
+
+      {/* Floating Bulk Operations Toolbar — rendered outside animated/transformed parent
+          so CSS fixed positioning is relative to the viewport, not the transformed ancestor */}
       <UserBulkActionsBar
         selectedCount={m.selectedIds.length}
         selectedUserIds={m.selectedIds}
@@ -148,32 +181,6 @@ export default function UsersPage() {
         onClose={() => m.setCsvImportOpen(false)}
         onSuccess={() => void m.loadUsers()}
       />
-
-      <UserModals
-        editUser={m.editUser}
-        onCloseEditRoles={() => m.setEditUser(null)}
-        roles={m.roles}
-        selectedRoleSlugs={m.selectedRoleSlugs}
-        onToggleRoleSlug={(slug) =>
-          m.setSelectedRoleSlugs((prev) =>
-            prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-          )
-        }
-        savingRoles={m.savingRoles}
-        onSaveRoles={m.handleSaveRoles}
-        editOrgUser={m.editOrgUser}
-        onCloseEditOrg={() => m.setEditOrgUser(null)}
-        orgDraft={m.orgDraft}
-        setOrgDraft={m.setOrgDraft}
-        savingOrg={m.savingOrg}
-        onSaveOrg={m.handleSaveOrg}
-        inviteOpen={m.inviteOpen}
-        onCloseInvite={() => m.setInviteOpen(false)}
-        inviteEmail={m.inviteEmail}
-        setInviteEmail={m.setInviteEmail}
-        inviting={m.inviting}
-        onInviteUser={m.handleInviteUser}
-      />
-    </div>
+    </>
   )
 }

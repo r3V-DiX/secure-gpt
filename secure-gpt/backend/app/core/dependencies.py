@@ -101,8 +101,21 @@ async def get_current_user(
         else:
             raise UserInactive()
 
-    # Attach to request.state — used by ratelimit key function
+    # Attach session attributes to request.state
     request.state.user_id = user.id
+    request.state.is_impersonation = session.is_impersonation if session else False
+    request.state.impersonator_id = session.impersonator_id if session else None
+
+    # Read-only enforcement during tenant impersonation
+    if request.state.is_impersonation:
+        # Permit safe read methods; block state mutations
+        if request.method.upper() not in ("GET", "HEAD", "OPTIONS"):
+            allowed_mutation_paths = (
+                "/api/v1/auth/impersonate/exit",
+                "/api/v1/auth/logout",
+            )
+            if not request.url.path.endswith(allowed_mutation_paths):
+                raise Forbidden("Action prohibited during tenant impersonation (read-only mode)")
 
     return user
 

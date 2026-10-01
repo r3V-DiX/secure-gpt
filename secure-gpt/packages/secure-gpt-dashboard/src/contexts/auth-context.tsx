@@ -21,11 +21,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [sessionExpired, setSessionExpired] = useState(false)
   // Prevent firing the expired modal multiple times from concurrent 401s
   const expiredFired = useRef(false)
+  // A 401 during the first session check means the visitor needs to sign in.
+  // Only a session that was valid in this page can expire in this page.
+  const hadAuthenticatedSession = useRef(false)
 
   const refresh = useCallback(async () => {
     try {
       const me = await apiGet<AuthUser>('/auth/me')
       setUser(me)
+      hadAuthenticatedSession.current = true
       // Session is valid — clear any prior expiry state
       expiredFired.current = false
       setSessionExpired(false)
@@ -45,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Listen for 401s fired by the axios interceptor
   useEffect(() => {
     const handleExpired = () => {
-      if (expiredFired.current) return
+      if (!hadAuthenticatedSession.current || expiredFired.current) return
       expiredFired.current = true
       setUser(null)
       setSessionExpired(true)
@@ -70,12 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     setSessionExpired(false)
     expiredFired.current = false
+    hadAuthenticatedSession.current = false
     window.location.href = '/login'
   }
 
   const dismissExpired = useCallback(() => {
     setSessionExpired(false)
     expiredFired.current = false
+    hadAuthenticatedSession.current = false
     window.location.href = '/login'
   }, [])
 

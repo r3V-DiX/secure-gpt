@@ -1,18 +1,11 @@
 'use client'
 
-import { IconButton } from '@/components/ui'
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button/button'
-import {
-  Shield,
-  Building,
-  UserX,
-  UserCheck,
-  Trash2,
-  X,
-} from 'lucide-react'
+import { Shield, Building, UserX, UserCheck, Trash2 } from 'lucide-react'
 import type { Role } from '@/types'
 import { BulkModals } from './BulkModals'
+import { FloatingActionBar } from '@/components/shared/FloatingActionBar'
 
 interface UserBulkActionsBarProps {
   selectedCount: number
@@ -32,8 +25,6 @@ export function UserBulkActionsBar({
   const [modalType, setModalType] = useState<'org' | 'roles' | 'deactivate' | 'delete' | null>(null)
   const [targetOrg, setTargetOrg] = useState('')
   const [selectedRoleSlugs, setSelectedRoleSlugs] = useState<string[]>([])
-
-  if (selectedCount === 0) return null
 
   const handleOpenModal = (type: 'org' | 'roles' | 'deactivate' | 'delete') => {
     setModalType(type)
@@ -83,81 +74,72 @@ export function UserBulkActionsBar({
     }
   }
 
+  const countText = `${selectedCount} user${selectedCount !== 1 ? 's' : ''} selected`
+
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-md bg-[var(--bg-surface)] border border-[var(--border)] shadow-2xl backdrop-blur-xl animate-slide-up">
-        <div className="flex items-center gap-2 border-r border-[var(--border)] pr-3 text-xs font-semibold text-[var(--text-primary)]">
-          <span className="size-5 rounded-full bg-[var(--accent)] text-white text-[10px] flex items-center justify-center font-bold">
-            {selectedCount}
-          </span>
-          <span>Selected</span>
-        </div>
-
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleOpenModal('org')}
-            className="gap-1.5 text-xs"
-            disabled={loading}
-          >
-            <Building size={13} />
-            Assign Org
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleOpenModal('roles')}
-            className="gap-1.5 text-xs"
-            disabled={loading}
-          >
-            <Shield size={13} />
-            Assign Roles
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleDirectActivate}
-            className="gap-1.5 text-xs text-emerald-400 hover:text-emerald-300"
-            disabled={loading}
-          >
-            <UserCheck size={13} />
-            Activate
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleOpenModal('deactivate')}
-            className="gap-1.5 text-xs text-amber-400 hover:text-amber-300"
-            disabled={loading}
-          >
-            <UserX size={13} />
-            Suspend
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleOpenModal('delete')}
-            className="gap-1.5 text-xs text-rose-400 hover:text-rose-300"
-            disabled={loading}
-          >
-            <Trash2 size={13} />
-            Delete
-          </Button>
-        </div>
-
-        <IconButton aria-label="Clear selection" variant="ghost" type="button"
-          onClick={onClearSelection}
-          className="ml-1"
-          title="Clear selection"
+      <FloatingActionBar
+        visible={selectedCount > 0}
+        indicatorColor="var(--accent)"
+        label={<span className="font-semibold text-[var(--text-primary)]">{countText}</span>}
+        onDismiss={onClearSelection}
+        dismissLabel="Clear selection"
+      >
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => handleOpenModal('org')}
+          className="gap-1.5 text-xs"
+          disabled={loading}
         >
-          <X size={14} />
-        </IconButton>
-      </div>
+          <Building size={13} />
+          Assign Org
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => handleOpenModal('roles')}
+          className="gap-1.5 text-xs"
+          disabled={loading}
+        >
+          <Shield size={13} />
+          Assign Roles
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleDirectActivate}
+          className="gap-1.5 text-xs"
+          disabled={loading}
+        >
+          <UserCheck size={13} />
+          Activate
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => handleOpenModal('deactivate')}
+          className="gap-1.5 text-xs"
+          disabled={loading}
+        >
+          <UserX size={13} />
+          Suspend
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => handleOpenModal('delete')}
+          className="gap-1.5 text-xs"
+          disabled={loading}
+        >
+          <Trash2 size={13} />
+          Delete
+        </Button>
+      </FloatingActionBar>
 
       <BulkModals
         modalType={modalType}

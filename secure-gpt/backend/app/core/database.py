@@ -15,7 +15,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 engine = create_async_engine(
     settings.database_url,
-    echo=settings.debug,
+    echo=settings.sqlalchemy_echo,
     hide_parameters=not settings.debug,
     pool_pre_ping=True,
     pool_size=10,
