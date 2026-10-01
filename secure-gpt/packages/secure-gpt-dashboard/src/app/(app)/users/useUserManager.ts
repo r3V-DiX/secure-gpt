@@ -97,7 +97,7 @@ export function useUserManager() {
         org_id: params?.orgId,
         role_slugs: params?.roleSlugs,
       })
-      toast.success(json?.message || `Bulk action '${action}' succeeded.`)
+      toast.success(`Bulk action '${action}' successfully applied to ${json.affected} user(s).`)
       setSelectedIds([])
       await loadUsers()
     } catch (err: any) {
