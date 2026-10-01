@@ -5,7 +5,7 @@ import { TableRow, TableCell, Button } from '@/components/ui'
 import React from 'react'
 import {
   Building2, Globe2, CheckCircle2, AlertCircle,
-  PlayCircle, Ban, Trash2
+  PlayCircle, Ban, Trash2, Snowflake, ExternalLink
 } from 'lucide-react'
 import { clsx } from 'clsx'
 
@@ -31,6 +31,8 @@ interface OrgTableRowProps {
   onManualVerify: (orgId: string, orgName: string) => void
   onToggleStatus: (org: AdminOrgItem) => void
   onDeleteOrg: (orgId: string, orgName: string) => void
+  onOpenFreezeModal: (org: AdminOrgItem) => void
+  onImpersonate: (org: AdminOrgItem) => void
 }
 
 export function OrgTableRow({
@@ -39,6 +41,8 @@ export function OrgTableRow({
   onManualVerify,
   onToggleStatus,
   onDeleteOrg,
+  onOpenFreezeModal,
+  onImpersonate,
 }: OrgTableRowProps) {
   const isVerified = Boolean(org.domain_verified_at)
   const isPending = org.status === 'PENDING_VERIFICATION'
@@ -134,6 +138,33 @@ export function OrgTableRow({
       {/* Actions */}
       <TableCell className="px-5 py-4 text-right">
         <div className="flex items-center justify-end gap-1.5">
+          {/* Tenant Impersonation (Login-As Org) */}
+          <Button variant="ghost"
+            type="button"
+            onClick={() => onImpersonate(org)}
+            disabled={isActing || org.user_count === 0}
+            className="p-1.5 rounded-lg border text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10 transition-colors cursor-pointer"
+            title={org.user_count === 0 ? 'No active users in org to impersonate' : `Login-As Org: Inspect ${org.name} in read-only mode`}
+          >
+            <ExternalLink size={15} />
+          </Button>
+
+          {/* Emergency Killswitch / Freeze */}
+          <Button variant="ghost"
+            type="button"
+            onClick={() => onOpenFreezeModal(org)}
+            disabled={isActing || isSuspended}
+            className={clsx(
+              'p-1.5 rounded-lg border transition-colors cursor-pointer',
+              isSuspended
+                ? 'opacity-40 cursor-not-allowed border-rose-500/20 text-rose-400'
+                : 'text-rose-400 border-rose-500/30 hover:bg-rose-500/10'
+            )}
+            title={isSuspended ? 'Organization is already frozen' : 'Emergency Killswitch: Freeze org and revoke all sessions'}
+          >
+            <Snowflake size={15} />
+          </Button>
+
           {/* Suspend / Activate Toggle */}
           <Button variant="ghost"
             type="button"
