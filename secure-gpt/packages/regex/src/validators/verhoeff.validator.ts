@@ -32,12 +32,16 @@ export function verhoeffCheck(number: string): boolean {
   // Normalize OCR misreads
   const cleaned = number
     .replace(/[\s-]/g, '')
-    .toUpperCase()
-    .replace(/O/g, '0')
-    .replace(/I/g, '1')
-    .replace(/B/g, '8')
-    .replace(/S/g, '5')
-    .replace(/Z/g, '2')
+    .replace(/[OoQD]/g, '0')
+    .replace(/[Il|!i]/g, '1')
+    .replace(/[Zz]/g, '2')
+    .replace(/[E]/g, '3')
+    .replace(/[A]/g, '4')
+    .replace(/[Ss]/g, '5')
+    .replace(/[Gb]/g, '6')
+    .replace(/[T]/g, '7')
+    .replace(/[B&]/g, '8')
+    .replace(/[gq]/g, '9')
 
   if (!/^\d{12}$/.test(cleaned)) return false
 

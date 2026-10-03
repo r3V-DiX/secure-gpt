@@ -35,7 +35,7 @@ export class RegexTier extends BaseTier {
   readonly name = 'regex' as const
   readonly enabled = true
 
-  async run(text: string, config: PIIConfig): Promise<PIIEntity[]> {
+  async run(text: string, config: PIIConfig, preserveOverlaps = false): Promise<PIIEntity[]> {
     if (!text || text.trim().length === 0) return []
 
     const allRules = getActiveRules(config)
@@ -61,7 +61,7 @@ export class RegexTier extends BaseTier {
 
         // Context-gated patterns
         if (rule.requireContext) {
-          const context = getSlidingWindow(text, match.index, 100).toLowerCase()
+          const context = getSlidingWindow(text, match.index, 250).toLowerCase()
           
           // Use specific triggers if defined, otherwise fall back to category triggers
           const triggers = rule.triggers ?? 
@@ -113,7 +113,7 @@ export class RegexTier extends BaseTier {
       rule.pattern.lastIndex = 0
     }
 
-    return this.deduplicate(entities)
+    return preserveOverlaps ? entities : this.deduplicate(entities)
   }
 
   // Remove overlapping or duplicate matches — keep highest confidence

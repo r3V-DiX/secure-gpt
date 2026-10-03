@@ -18,12 +18,34 @@ export const allPIIRules: DetectionRule[] = [
     category: 'PII' as PIICategory,
     type: 'aadhaar',
     label: 'Indian Aadhaar Number',
-    pattern: /\b[2-9OISZB]{1}[0-9OISZB]{3}[\s-]?[0-9OISZB]{4}[\s-]?[0-9OISZB]{4}\b/gi,
+    pattern: /\b[2-9OISZB][0-9A-Za-z|!•*]{3}[\s-]?[0-9A-Za-z|!•*]{4}[\s-]?[0-9A-Za-z|!•*]{4}\b/gi,
     validatorId: 'verhoeff',
     requireContext: false,
     severity: 'critical',
     enabled: true,
     description: 'Indian Aadhaar (UID) 12-digit number.'
+  },
+  {
+    id: 'pii.masked_aadhaar',
+    category: 'PII' as PIICategory,
+    type: 'aadhaar',
+    label: 'Masked Indian Aadhaar Number',
+    pattern: /\b[Xx•*]{4}[\s-]?[Xx•*]{4}[\s-]?[0-9]{4}\b/gi,
+    requireContext: false,
+    severity: 'critical',
+    enabled: true,
+    description: 'Masked Indian Aadhaar number (e.g. XXXX XXXX 1234).'
+  },
+  {
+    id: 'pii.aadhaar_vid',
+    category: 'PII' as PIICategory,
+    type: 'national_id',
+    label: 'Aadhaar Virtual ID (VID)',
+    pattern: /\bVID\s*:?\s*([0-9]{4}\s*[0-9]{4}\s*[0-9]{4}\s*[0-9]{4})\b/gi,
+    requireContext: false,
+    severity: 'high',
+    enabled: true,
+    description: '16-digit Aadhaar Virtual ID.'
   },
   {
     id: 'pii.us_ssn',
@@ -42,9 +64,9 @@ export const allPIIRules: DetectionRule[] = [
     category: 'PII' as PIICategory,
     type: 'passport',
     label: 'Indian Passport Number',
-    pattern: /\b[A-PR-WY][1-9]\d\s?\d{4}[1-9]\b/gi,
+    pattern: /\b[A-Z][0-9]{7}\b/gi,
     requireContext: true,
-    triggers: ['passport', 'pp no'],
+    triggers: ['passport', 'pp no', 'passport no', 'republic of india', 'surname', 'given name'],
     severity: 'high',
     enabled: true,
     description: 'Indian Passport Number.'
