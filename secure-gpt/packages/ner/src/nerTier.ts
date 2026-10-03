@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 // ─────────────────────────────────────────────
 // Tier 2 — NER (Named Entity Recognition)
 // Irreversible detection via ONNX Runtime Web
@@ -6,38 +7,15 @@
 // ONNX load moved to worker
 import { BaseTier } from '@securegpt/shared/tier'
 import { WordPieceTokenizer } from './wordpieceTok'
-// @ts-ignore
-import NERWorkerUrl from './workers/ner.worker?worker&url'
-import type { PIIEntity } from '@securegpt/shared/types'
-import type { PIIConfig } from '@securegpt/shared/types'
-import type { PIICategory } from '@securegpt/shared/constants'
-// Handled by vite?raw or custom loader
-import vocabRaw from './vocab.txt?raw'
-
-const LABEL_MAP: Record<number, string> = {
-  0: "B-BOD", 1: "B-BUILDING", 2: "B-CITY", 3: "B-COUNTRY", 4: "B-DATE",
-  5: "B-DRIVERLICENSE", 6: "B-EMAIL", 7: "B-GEOCOORD", 8: "B-GIVENNAME1",
-  9: "B-GIVENNAME2", 10: "B-IDCARD", 11: "B-IP", 12: "B-LASTNAME1",
-  13: "B-LASTNAME2", 14: "B-LASTNAME3", 15: "B-PASS", 16: "B-PASSPORT",
-  17: "B-POSTCODE", 18: "B-SECADDRESS", 19: "B-SEX", 20: "B-SOCIALNUMBER",
-  21: "B-STATE", 22: "B-STREET", 23: "B-TEL", 24: "B-TIME", 25: "B-TITLE",
-  26: "B-USERNAME", 27: "I-BOD", 28: "I-BUILDING", 29: "I-CITY", 30: "I-COUNTRY",
-  31: "I-DATE", 32: "I-DRIVERLICENSE", 33: "I-EMAIL", 34: "I-GEOCOORD",
-  35: "I-GIVENNAME1", 36: "I-GIVENNAME2", 37: "I-IDCARD", 38: "I-IP",
-  39: "I-LASTNAME1", 40: "I-LASTNAME2", 41: "I-LASTNAME3", 42: "I-PASS",
-  43: "I-PASSPORT", 44: "I-POSTCODE", 45: "I-SECADDRESS", 46: "I-SEX",
-  47: "I-SOCIALNUMBER", 48: "I-STATE", 49: "I-STREET", 50: "I-TEL",
-  51: "I-TIME", 52: "I-TITLE", 53: "I-USERNAME", 54: "O"
-}
-
-const HIGH_PRIORITY_LABELS = new Set([
-  'B-EMAIL', 'I-EMAIL', 'B-IDCARD', 'I-IDCARD', 'B-PASSPORT', 'I-PASSPORT',
-  'B-SOCIALNUMBER', 'I-SOCIALNUMBER', 'B-DRIVERLICENSE', 'I-DRIVERLICENSE'
-])
-
-const MEDIUM_PRIORITY_LABELS = new Set([
-  'B-TEL', 'I-TEL', 'B-STREET', 'I-STREET', 'B-GIVENNAME1', 'B-LASTNAME1', 'B-DATE'
-])
+import type { PIIConfig, PIIEntity } from '@securegpt/shared/types'
+import {
+  LABEL_MAP,
+  HIGH_PRIORITY_LABELS,
+  MEDIUM_PRIORITY_LABELS,
+  spansFromLabels,
+  mapLabelToCategory,
+  formatLabel,
+} from './nerSpans'
 
 type WorkerState =
   | { status: 'unloaded' }
@@ -51,6 +29,9 @@ export class NERTier extends BaseTier {
 
   private workerState: WorkerState = { status: 'unloaded' }
   private tokenizer: WordPieceTokenizer | null = null
+  private initializingWorker: Worker | null = null
+  private rejectInitialization: ((error: Error) => void) | null = null
+  private workerGeneration = 0
   private readonly maxSeqLen = 128
   private reqId = 0
   private pendingRequests = new Map<number, { resolve: (val: number[] | null) => void, reject: (err: any) => void }>()
@@ -64,7 +45,8 @@ export class NERTier extends BaseTier {
     if (this.workerState.status === 'unavailable') return null
 
     if (this.workerState.status === 'unloaded') {
-      const promise = this.loadWorker().then((w) => {
+      const promise = this.loadWorker(this.workerGeneration).then((w) => {
+        if (this.workerState.status !== 'loading' || this.workerState.promise !== promise) return w
         if (w) {
           this.workerState = { status: 'ready', worker: w }
         } else {
@@ -79,37 +61,43 @@ export class NERTier extends BaseTier {
     return (this.workerState as any).promise
   }
 
-  private async loadWorker(): Promise<Worker | null> {
+  private async loadWorker(generation: number): Promise<Worker | null> {
     try {
+      if (typeof Worker === 'undefined') {
+        console.log('[NERTier] Worker not available in Node.js environment; skipping worker loading')
+        return null
+      }
       console.log('[NERTier] Starting worker initialization...')
+      const [{ default: NERWorkerUrl }, { default: vocabRaw }] = await Promise.all([
+        import('./workers/ner.worker?worker&url'),
+        import('./vocab.txt?raw'),
+      ])
+      if (generation !== this.workerGeneration) return null
       this.tokenizer = new WordPieceTokenizer(vocabRaw)
       console.log('[NERTier] Tokenizer ready')
 
       // Initialize worker
       console.log('[NERTier] Worker URL:', NERWorkerUrl)
       const worker = new Worker(NERWorkerUrl, { type: 'module' })
+      this.initializingWorker = worker
       
       // Wait for READY message
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          worker.removeEventListener('message', initListener)
-          reject(new Error('NER Worker initialization timed out after 10s'))
-        }, 10000)
-
+        this.rejectInitialization = reject
         const initListener = (e: MessageEvent) => {
-          console.log('[NERTier] Received init message:', e.data)
           if (e.data.type === 'READY') {
-            clearTimeout(timeout)
             worker.removeEventListener('message', initListener)
             resolve()
           } else if (e.data.type === 'ERROR') {
-            clearTimeout(timeout)
             worker.removeEventListener('message', initListener)
             reject(new Error(e.data.error))
           }
         }
         worker.addEventListener('message', initListener)
+        worker.addEventListener('error', () => this.resetWorker(), { once: true })
       })
+      this.initializingWorker = null
+      this.rejectInitialization = null
 
       // Setup main listener for predictions
       worker.addEventListener('message', (e: MessageEvent) => {
@@ -130,17 +118,67 @@ export class NERTier extends BaseTier {
       console.info('[NERTier] Worker fully ready')
       return worker
     } catch (err) {
+      this.initializingWorker?.terminate()
+      this.initializingWorker = null
+      this.rejectInitialization = null
       console.warn('[NERTier] Worker initialization failed:', (err as Error).message)
       return null
     }
   }
 
-  async run(text: string, config: PIIConfig): Promise<PIIEntity[]> {
+  private resetWorker(): void {
+    this.workerGeneration++
+    this.initializingWorker?.terminate()
+    if (this.workerState.status === 'ready') this.workerState.worker.terminate()
+    this.rejectInitialization?.(new Error('NER_UNAVAILABLE'))
+    for (const request of this.pendingRequests.values()) request.reject(new Error('NER_UNAVAILABLE'))
+    this.pendingRequests.clear()
+    this.workerState = { status: 'unloaded' }
+  }
+
+  private async documentWorker(signal?: AbortSignal): Promise<Worker | null> {
+    if (this.workerState.status === 'unavailable') this.workerState = { status: 'unloaded' }
+    let abort: (() => void) | undefined
+    try {
+      const stopped = new Promise<never>((_, reject) => {
+        abort = () => { this.resetWorker(); reject(new Error('NER_CANCELLED')) }
+        signal?.addEventListener('abort', abort, { once: true })
+      })
+      signal?.throwIfAborted()
+      return await Promise.race([this.getWorker(), stopped])
+    } finally { if (abort) signal?.removeEventListener('abort', abort) }
+  }
+
+  async run(text: string, config: PIIConfig, strict = false, signal?: AbortSignal): Promise<PIIEntity[]> {
+    signal?.throwIfAborted()
     console.log('[NERTier] Run requested for text length:', text.length)
-    const worker = await this.getWorker()
+    const worker = await (strict ? this.documentWorker(signal) : this.getWorker())
     if (!worker || !this.tokenizer) {
+      if (strict) throw new Error('NER_UNAVAILABLE')
       console.warn('[NERTier] Skip: Worker or tokenizer not available')
       return []
+    }
+
+    // The model accepts 128 tokens. Strict document scans must cover the rest
+    // of the document too, with overlap to preserve entities across windows.
+    const firstWindow = this.tokenizer.tokenize(text, this.maxSeqLen)
+    const covered = Math.max(...firstWindow.offsets.map(offset => offset[1]))
+    if (strict && covered > 0 && text.slice(covered).trim()) {
+      const entities: PIIEntity[] = []
+      let start = 0
+      while (start < text.length) {
+        signal?.throwIfAborted()
+        const window = this.tokenizer.tokenize(text.slice(start), this.maxSeqLen)
+        const ends = window.offsets.filter(offset => offset[1] > 0)
+        const end = ends.at(-1)?.[1] ?? 0
+        if (!end) break
+        const found = await this.run(text.slice(start, start + end), config, true, signal)
+        entities.push(...found.map(entity => ({ ...entity, startIndex: entity.startIndex + start, endIndex: entity.endIndex + start })))
+        if (start + end >= text.trimEnd().length) break
+        const overlap = ends[Math.max(0, ends.length - 24)]?.[0] ?? end
+        start += Math.max(1, overlap)
+      }
+      return [...new Map(entities.map(entity => [`${entity.startIndex}:${entity.endIndex}:${entity.type}`, entity])).values()]
     }
 
     try {
@@ -150,7 +188,17 @@ export class NERTier extends BaseTier {
       const id = ++this.reqId
       console.log('[NERTier] Posting INFER message, ID:', id)
       const predictions = await new Promise<number[] | null>((resolve, reject) => {
-        this.pendingRequests.set(id, { resolve, reject })
+        const abort = () => {
+          this.pendingRequests.delete(id)
+          this.resetWorker()
+          reject(new Error('NER_CANCELLED'))
+        }
+        signal?.addEventListener('abort', abort, { once: true })
+        this.pendingRequests.set(id, {
+          resolve: value => { signal?.removeEventListener('abort', abort); resolve(value) },
+          reject: error => { signal?.removeEventListener('abort', abort); reject(error) },
+        })
+        if (signal?.aborted) { abort(); return }
         worker.postMessage({
           type: 'INFER',
           id,
@@ -161,13 +209,14 @@ export class NERTier extends BaseTier {
         })
       })
 
-      if (!predictions) {
+      if (!predictions || (strict && (predictions.length !== tokens.length || predictions.some(label => LABEL_MAP[label] === undefined)))) {
+        if (strict) throw new Error('NER_INCOMPLETE')
         console.warn('[NERTier] No predictions received')
         return []
       }
 
       console.log('[NERTier] Processing predictions...')
-      const spans = this.spansFromLabels(tokens, offsets, predictions, text)
+      const spans = spansFromLabels(tokens, offsets, predictions, text)
       console.log(`[NERTier] Found ${spans.length} spans`)
       const entities: PIIEntity[] = []
 
@@ -176,14 +225,14 @@ export class NERTier extends BaseTier {
         if (HIGH_PRIORITY_LABELS.has(span.type)) severity = 'critical'
         else if (MEDIUM_PRIORITY_LABELS.has(span.type)) severity = 'high'
 
-        const category = this.mapLabelToCategory(span.type)
+        const category = mapLabelToCategory(span.type)
         if (!config.categories[category]?.enabled) continue
 
         entities.push({
           id: crypto.randomUUID(),
           ruleId: `ner.${span.type.toLowerCase()}`,
           type: span.type,
-          label: this.formatLabel(span.type),
+          label: formatLabel(span.type),
           category,
           value: span.value,
           maskedValue: '[REDACTED]',
@@ -198,75 +247,9 @@ export class NERTier extends BaseTier {
       return entities
 
     } catch (err) {
+      if (strict) throw new Error('NER_INFERENCE_FAILED')
       console.error('[NERTier] Run failed:', (err as Error).message)
       return []
     }
-  }
-
-  private spansFromLabels(
-    tokens: string[],
-    offsets: Array<[number, number]>,
-    predictions: number[],
-    originalText: string
-  ): Array<{ type: string; value: string; start: number; end: number }> {
-    const spans: Array<{ type: string; value: string; start: number; end: number }> = []
-    let currentType: string | null = null
-    let start = 0
-    let end = 0
-
-    const flush = () => {
-      const cutsStart = start > 0 && /[\p{L}\p{N}]/u.test(originalText[start - 1]!) &&
-        (/[\p{L}\p{N}]/u.test(originalText[start]!) || /[-/.]/.test(originalText[start]!) && /[\p{L}\p{N}]/u.test(originalText[start + 1] ?? ''))
-      const cutsEnd = end < originalText.length && /[\p{L}\p{N}]/u.test(originalText[end - 1]!) && /[\p{L}\p{N}]/u.test(originalText[end]!)
-      if (currentType && end > start && !cutsStart && !cutsEnd && originalText.slice(start, end).trim().length > 1) {
-        spans.push({
-          type: `B-${currentType}`,
-          value: originalText.slice(start, end),
-          start,
-          end,
-        })
-      }
-      currentType = null
-    }
-
-    for (let i = 0; i < tokens.length; i++) {
-      const label = LABEL_MAP[predictions[i]!] ?? 'O'
-      const token = tokens[i]!
-      const offset = offsets[i]
-      if (label === 'O' || token === '[PAD]' || token === '[CLS]' || token === '[SEP]' || !offset || offset[1] <= offset[0]) {
-        flush()
-      } else {
-        const type = label.slice(2)
-        if (currentType && (currentType !== type || label.startsWith('B-'))) flush()
-        if (!currentType) start = offset[0]
-        currentType = type
-        end = offset[1]
-      }
-    }
-    flush()
-    return spans
-  }
-
-  private mapLabelToCategory(label: string): PIICategory {
-    // Identity documents are PII, not FINANCIAL.
-    // Mapping them to FINANCIAL caused: (a) BLOCK when PII policy says WARN,
-    // (b) silent skip when FINANCIAL category was disabled but PII was enabled.
-    const piiIdentity = [
-      'B-IDCARD', 'I-IDCARD', 'B-PASSPORT', 'I-PASSPORT',
-      'B-SOCIALNUMBER', 'I-SOCIALNUMBER', 'B-DRIVERLICENSE', 'I-DRIVERLICENSE'
-    ]
-    if (piiIdentity.includes(label)) return 'PII'
-    const confidential = ['B-PASS', 'I-PASS', 'B-SECADDRESS', 'I-SECADDRESS']
-    if (confidential.includes(label)) return 'CONFIDENTIAL'
-    return 'PII'
-  }
-
-  private formatLabel(type: string): string {
-    return type
-      .replace(/^[BI]-/, '')
-      .toLowerCase()
-      .split('_')
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ')
   }
 }

@@ -26,15 +26,17 @@ let session: ort.InferenceSession | null = null;
 const maxSeqLen = 128; // Can receive via init message
 
 // Global error handler
-self.addEventListener('error', (event: ErrorEvent) => {
-  console.error('[NERWorker] Uncaught error:', event);
-  self.postMessage({ type: 'ERROR', error: event.message || 'Unknown error' });
-});
+if (typeof self !== 'undefined') {
+  self.addEventListener('error', (event: ErrorEvent) => {
+    console.error('[NERWorker] Uncaught error:', event);
+    self.postMessage({ type: 'ERROR', error: event.message || 'Unknown error' });
+  });
 
-self.onunhandledrejection = (event) => {
-  console.error('[NERWorker] Unhandled rejection:', event.reason);
-  self.postMessage({ type: 'ERROR', error: event.reason?.message || 'Unhandled rejection' });
-};
+  self.onunhandledrejection = (event) => {
+    console.error('[NERWorker] Unhandled rejection:', event.reason);
+    self.postMessage({ type: 'ERROR', error: event.reason?.message || 'Unhandled rejection' });
+  };
+}
 
 async function initSession() {
   console.log('[NERWorker] Initializing session...');
@@ -75,55 +77,57 @@ async function initSession() {
   }
 }
 
-initSession();
+if (typeof self !== 'undefined') {
+  initSession();
 
-self.addEventListener('message', async (e: MessageEvent) => {
-  const data = e.data;
-  if (data.type === 'INFER') {
-    if (!session) {
-      self.postMessage({ type: 'RESULT', id: data.id, predictions: null, error: 'Session not ready' });
-      return;
-    }
-    try {
-      const { id, inputIds, attentionMask, tokenTypeIds, maxSeqLen: reqMaxSeqLen } = data;
-      const _maxSeqLen = reqMaxSeqLen || maxSeqLen;
-      
-      const feeds: Record<string, ort.Tensor> = {
-        input_ids: new ort.Tensor('int64', BigInt64Array.from(inputIds.map((x: number) => BigInt(x))), [1, _maxSeqLen]),
-        attention_mask: new ort.Tensor('int64', BigInt64Array.from(attentionMask.map((x: number) => BigInt(x))), [1, _maxSeqLen]),
-      };
-      
-      if (session.inputNames.includes('token_type_ids') && tokenTypeIds) {
-        feeds['token_type_ids'] = new ort.Tensor('int64', BigInt64Array.from(tokenTypeIds.map((x: number) => BigInt(x))), [1, _maxSeqLen]);
-      }
-
-      const output = await session.run(feeds);
-      const logitsTensor = output[session.outputNames[0]!];
-      if (!logitsTensor) {
-        self.postMessage({ type: 'RESULT', id, predictions: [] });
+  self.addEventListener('message', async (e: MessageEvent) => {
+    const data = e.data;
+    if (data.type === 'INFER') {
+      if (!session) {
+        self.postMessage({ type: 'RESULT', id: data.id, predictions: null, error: 'Session not ready' });
         return;
       }
-      
-      const logits = logitsTensor.data as Float32Array;
-      const numLabels = Object.keys(LABEL_MAP).length;
-      
-      const predictions: number[] = [];
-      for (let i = 0; i < _maxSeqLen; i++) {
-        let maxIdx = 0;
-        let maxVal = -Infinity;
-        for (let j = 0; j < numLabels; j++) {
-          const val = logits[i * numLabels + j]!;
-          if (val > maxVal) {
-            maxVal = val;
-            maxIdx = j;
-          }
+      try {
+        const { id, inputIds, attentionMask, tokenTypeIds, maxSeqLen: reqMaxSeqLen } = data;
+        const _maxSeqLen = reqMaxSeqLen || maxSeqLen;
+
+        const feeds: Record<string, ort.Tensor> = {
+          input_ids: new ort.Tensor('int64', BigInt64Array.from(inputIds.map((x: number) => BigInt(x))), [1, _maxSeqLen]),
+          attention_mask: new ort.Tensor('int64', BigInt64Array.from(attentionMask.map((x: number) => BigInt(x))), [1, _maxSeqLen]),
+        };
+
+        if (session.inputNames.includes('token_type_ids') && tokenTypeIds) {
+          feeds['token_type_ids'] = new ort.Tensor('int64', BigInt64Array.from(tokenTypeIds.map((x: number) => BigInt(x))), [1, _maxSeqLen]);
         }
-        predictions.push(maxIdx);
+
+        const output = await session.run(feeds);
+        const logitsTensor = output[session.outputNames[0]!];
+        if (!logitsTensor) {
+          self.postMessage({ type: 'RESULT', id, predictions: [] });
+          return;
+        }
+
+        const logits = logitsTensor.data as Float32Array;
+        const numLabels = Object.keys(LABEL_MAP).length;
+
+        const predictions: number[] = [];
+        for (let i = 0; i < _maxSeqLen; i++) {
+          let maxIdx = 0;
+          let maxVal = -Infinity;
+          for (let j = 0; j < numLabels; j++) {
+            const val = logits[i * numLabels + j]!;
+            if (val > maxVal) {
+              maxVal = val;
+              maxIdx = j;
+            }
+          }
+          predictions.push(maxIdx);
+        }
+
+        self.postMessage({ type: 'RESULT', id, predictions });
+      } catch (err) {
+        self.postMessage({ type: 'RESULT', id: data.id, predictions: null, error: (err as Error).message });
       }
-      
-      self.postMessage({ type: 'RESULT', id, predictions });
-    } catch (err) {
-      self.postMessage({ type: 'RESULT', id: data.id, predictions: null, error: (err as Error).message });
     }
-  }
-});
+  });
+}

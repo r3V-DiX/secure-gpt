@@ -5,9 +5,16 @@ import { DEFAULT_PII_CONFIG } from '@securegpt/shared/types'
 // Mock Worker
 class MockWorker {
   onmessage: ((e: any) => void) | null = null
+  private ready = false
 
   addEventListener = vi.fn((event, cb) => {
-    if (event === 'message') this.onmessage = cb
+    if (event === 'message') {
+      this.onmessage = cb
+      if (!this.ready) {
+        this.ready = true
+        queueMicrotask(() => cb({ data: { type: 'READY' } }))
+      }
+    }
   })
 
   removeEventListener = vi.fn()
@@ -65,13 +72,6 @@ describe('NERTier', () => {
     const mockWorker = new MockWorker()
     const OriginalWorker = global.Worker
     global.Worker = function() { return mockWorker; } as any
-
-    // Mock ready message
-    setTimeout(() => {
-      if (mockWorker.onmessage) {
-        mockWorker.onmessage({ data: { type: 'READY' } } as any)
-      }
-    }, 0)
 
     await tier.initialize()
 
