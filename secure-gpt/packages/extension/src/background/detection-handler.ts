@@ -39,6 +39,26 @@ export async function handleDetectPII(
   }
 }
 
+async function sendToOffscreenWithTimeout<T>(msg: any, timeoutMs = 20000): Promise<T | null> {
+  try {
+    const isReady = await ensureOffscreenReady()
+    if (!isReady) return null
+
+    const sendPromise = chrome.runtime.sendMessage(msg) as Promise<T>
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => {
+        console.warn(`[Background] Offscreen message ${msg.action} timed out after ${timeoutMs}ms`)
+        resolve(null)
+      }, timeoutMs)
+    )
+
+    return await Promise.race([sendPromise, timeoutPromise])
+  } catch (err) {
+    console.error('[Background] Offscreen message failed:', err)
+    return null
+  }
+}
+
 export async function handleDetectPIIImage(
   imgUrl: string,
   config: PIIConfig,
@@ -48,20 +68,16 @@ export async function handleDetectPIIImage(
 
   try {
     console.log('[Background] Proxying OCR request to offscreen document...')
-    const isReady = await ensureOffscreenReady()
-    if (!isReady) {
-      console.error('[Background] Offscreen document failed to respond to PING after retries.')
-      return empty
-    }
-
-    const response: { ok: boolean; result?: DetectionResult; error?: string } =
-      await chrome.runtime.sendMessage({
+    const response = await sendToOffscreenWithTimeout<{ ok: boolean; result?: DetectionResult; error?: string }>(
+      {
         action: 'OFFSCREEN_RUN_OCR',
         data: { imageUrl: imgUrl, config },
-      })
+      },
+      20000
+    )
 
     if (!response?.ok || !response.result) {
-      console.error('[Background] Offscreen OCR returned error:', response?.error)
+      if (response?.error) console.error('[Background] Offscreen OCR returned error:', response.error)
       return empty
     }
 
@@ -83,20 +99,16 @@ export async function handleDetectPIIPDF(
 
   try {
     console.log('[Background] Proxying PDF extract to offscreen document...')
-    const isReady = await ensureOffscreenReady()
-    if (!isReady) {
-      console.error('[Background] Offscreen document failed to respond to PING after retries.')
-      return empty
-    }
-
-    const response: { ok: boolean; result?: any; error?: string } =
-      await chrome.runtime.sendMessage({
+    const response = await sendToOffscreenWithTimeout<{ ok: boolean; result?: any; error?: string }>(
+      {
         action: 'OFFSCREEN_RUN_PDF',
         data: { pdfData },
-      })
+      },
+      25000
+    )
 
     if (!response?.ok || !response.result) {
-      console.error('[Background] Offscreen PDF returned error:', response?.error)
+      if (response?.error) console.error('[Background] Offscreen PDF returned error:', response.error)
       return empty
     }
 

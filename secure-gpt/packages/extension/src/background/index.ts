@@ -2,6 +2,8 @@
 // Background Service Worker
 // Manages policy sync, log batching, OAuth tab watching
 
+import { handleDocumentRequest, forwardDocumentProgress, cancelTabDocuments } from './document-jobs'
+import { ensureOffscreenReady } from './offscreen-proxy'
 import { startPolicySync, forcePolicySync } from './policy-sync'
 import { activateOpenTabs, activateTab } from './open-tab-activation'
 import { startLogBatcher, flushLogs, queueLog, scheduleRecoveryFlush } from './log-batcher'
@@ -49,6 +51,7 @@ async function recoverOpenTabs(): Promise<void> {
 
 chrome.runtime.onInstalled.addListener(() => { void recoverOpenTabs() })
 chrome.runtime.onStartup.addListener(() => { void recoverOpenTabs() })
+chrome.tabs.onRemoved?.addListener(cancelTabDocuments)
 chrome.tabs.onActivated.addListener(({ tabId }) => { void activateTab(tabId) })
 
 // ── Watch for OAuth tab completion ────────────
@@ -93,6 +96,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action && message.action.startsWith('OFFSCREEN_')) return false
 
   switch (message.type) {
+    case 'DOCUMENT_WARM':
+      void canDetect(sender).then(allowed => allowed ? ensureOffscreenReady() : false).then(ready => sendResponse({ ready })).catch(() => sendResponse({ ready: false }))
+      return true
+    case 'DOCUMENT_SCAN':
+    case 'DOCUMENT_REDACT':
+    case 'DOCUMENT_CANCEL':
+      void handleDocumentRequest(message, sender).then(sendResponse)
+      return true
+    case 'DOCUMENT_OFFSCREEN_PROGRESS':
+      if (sender.id === chrome.runtime.id && sender.url === chrome.runtime.getURL('src/offscreen/offscreen.html')) forwardDocumentProgress(message)
+      return false
+
     case 'GET_AUTH_STATE':
       void authStorage.isLoggedIn().then((isLoggedIn) => sendResponse({ isLoggedIn }))
       return true

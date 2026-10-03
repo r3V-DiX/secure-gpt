@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SecureGPT — LLM Data Protection",
+  "name": "SecureGPT \u2014 LLM Data Protection",
   "version": "1.3.0",
   "description": "Prevent leaks into generative tools. Detect and mask PII, secrets, and confidential information on major platforms.",
   "icons": {
@@ -23,7 +23,16 @@
     {
       "matches": [
         "https://*.openai.com/*",
-        "https://*.chatgpt.com/*",
+        "https://*.chatgpt.com/*"
+      ],
+      "js": [
+        "content/index.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
         "https://gemini.google.com/*",
         "https://www.google.com/*",
         "https://google.com/*",

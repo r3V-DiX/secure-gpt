@@ -98,20 +98,25 @@ function handleGlobalClick(e: MouseEvent): void {
   if (!e.isTrusted) return
 
   const target = e.target as HTMLElement
-  const btn = target.closest('button, [role="button"]')
+  const btn = target.closest<HTMLElement>('button, [role="button"]')
   if (!btn) return
 
-  const aria = btn.getAttribute('aria-label')?.toLowerCase() || ''
-  const testId = btn.getAttribute('data-testid')?.toLowerCase() || ''
+  const aria = (btn.getAttribute('aria-label') || '').toLowerCase()
+  const testId = (btn.getAttribute('data-testid') || '').toLowerCase()
+  const btnText = (btn.innerText || btn.textContent || '').trim().toLowerCase()
+  const hasSendSvg = !!btn.querySelector('svg path[d*="M13.22"], svg path[d*="M.5 1.5"], svg[class*="send"], svg[data-icon="arrow-up"]')
   const isSendBtn =
     aria.includes('send') ||
     aria.includes('submit') ||
     aria.includes('ask') ||
     aria.includes('search') ||
+    aria.includes('generate') ||
     testId.includes('send') ||
     testId.includes('submit') ||
     testId.includes('ask') ||
-    testId.includes('composer-button')
+    testId.includes('composer-button') ||
+    btnText === 'send' ||
+    hasSendSvg
 
   if (isSendBtn) {
     const root = findEditableRoot(document.activeElement) ?? findMainEditor()

@@ -3,7 +3,7 @@
 
 export async function waitForPendingOcr(
   getPendingCount: () => number,
-  maxWaitMs = 5000,
+  maxWaitMs = 20000,
   pollIntervalMs = 50
 ): Promise<boolean> {
   const startTime = Date.now()

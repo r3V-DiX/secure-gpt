@@ -1,8 +1,7 @@
-// packages/extension/src/background/redaction-handler.ts
 import type { PIIEntity } from '@securegpt/shared/types'
 import { DASHBOARD_URL } from '@/config/api.config'
 import apiClient from '@/lib/api/client'
-import { setupOffscreen } from './offscreen-proxy'
+import { ensureOffscreenReady, setupOffscreen } from './offscreen-proxy'
 
 export async function handleRedactPDF(
   pdfData: string,
@@ -10,6 +9,23 @@ export async function handleRedactPDF(
   manualRegions: any[] = []
 ): Promise<{ ok: boolean; redactedPdfData?: string; error?: string }> {
   try {
+    // 1. Try instant client-side offscreen canvas redaction
+    try {
+      const isReady = await ensureOffscreenReady()
+      if (isReady) {
+        const localResp = await chrome.runtime.sendMessage({
+          action: 'OFFSCREEN_REDACT_PDF_LOCAL',
+          data: { pdfData, entities },
+        })
+        if (localResp?.ok && localResp.redactedPdfData) {
+          console.info('[Background] Client-side offscreen PDF redaction succeeded!')
+          return { ok: true, redactedPdfData: localResp.redactedPdfData }
+        }
+      }
+    } catch (localErr) {
+      console.warn('[Background] Local offscreen PDF redaction fallback to backend:', localErr)
+    }
+
     console.log('[Background] Sending PDF to backend for secure redaction...')
 
     const textValues = (entities || [])
@@ -61,7 +77,7 @@ export async function handleRedactPDF(
       {
         headers: { 'Content-Type': 'multipart/form-data' },
         responseType: 'blob',
-        timeout: 30000,
+        timeout: 2500,
       }
     )
 
@@ -82,12 +98,13 @@ export async function handleRedactPDF(
 export async function handleRedactOffice(
   fileData: string,
   entities: PIIEntity[],
-  fileName?: string
+  fileName?: string,
+  signal?: AbortSignal
 ): Promise<{ ok: boolean; redactedPdfData?: string; error?: string }> {
   try {
     console.log('[Background] Sending office document to backend for PII masking...')
 
-    const entityPayload = (entities || []).map((e) => ({
+    const entityPayload = [...new Map((entities || []).map(entity => [entity.value, entity])).values()].map((e) => ({
       value: e.value,
       maskedValue: e.maskedValue,
     }))
@@ -105,20 +122,22 @@ export async function handleRedactOffice(
       {
         headers: { 'Content-Type': 'multipart/form-data' },
         responseType: 'blob',
-        timeout: 30000,
+        timeout: signal ? 0 : 30000,
+        ...(signal ? { signal } : {}),
       }
     )
 
     const maskedBlob = backendResp.data
     const reader = new FileReader()
-    const maskedDataUri = await new Promise<string>((resolve) => {
+    const maskedDataUri = await new Promise<string>((resolve, reject) => {
+      reader.onerror = () => reject(new Error('DOCUMENT_OUTPUT_FAILED'))
       reader.onload = () => resolve(reader.result as string)
       reader.readAsDataURL(maskedBlob)
     })
 
     return { ok: true, redactedPdfData: maskedDataUri }
   } catch (err) {
-    console.error('[Background] Office masking failed:', err)
-    return { ok: false, error: String(err) }
+    console.error('[Background] Office masking failed')
+    return { ok: false, error: 'DOCUMENT_OFFICE_REDACTION_FAILED' }
   }
 }

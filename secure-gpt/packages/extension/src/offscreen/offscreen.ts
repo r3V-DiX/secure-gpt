@@ -1,75 +1,30 @@
 // packages/extension/src/offscreen/offscreen.ts
-// Offscreen document — handles OCR and text PII detection.
-//
-// Message protocol:
-//   OFFSCREEN_PING              → { ok: true }
-//   OFFSCREEN_RUN_OCR           → { ok, result: DetectionResult }
-//   OFFSCREEN_RUN_PDF           → { ok, result: { numPages, fullText, pages[] } }
-//   OFFSCREEN_GET_PDF_REGIONS   → { ok, regions[] }
-//   OFFSCREEN_RUN_OFFICE        → { ok, text } | { ok: false, error: ConvertErrorCode }
-//                                (data: { fileData, fileName? } — fileName needed
-//                                 for signature-less formats like CSV)
+// Offscreen document — handles OCR, PDF processing, office extraction, and text PII detection.
 
+import { scanDocument, redactDocument, cancelDocument, verifyOfficeDocument } from './document-processor'
 import init, { formatFromBytes, formatFromExtension, toMarkdownBytes } from '@firecrawl/anydoc-wasm'
-import { detectPII, OCRTier, RegexTier, NERTier } from '@securegpt/detection'
+import { detectPII, detectPIIFromImage, warmDocumentDetection } from '@securegpt/detection'
 import type { PIIConfig, DetectionResult } from '@securegpt/shared/types'
-import * as pdfjs from 'pdfjs-dist'
-
-pdfjs.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs')
+import {
+  runPdfProcessing,
+  getRegionsForValues,
+  runPdfRedactionLocal,
+  dataUrlToUint8Array
+} from './pdf-service'
 
 console.log('[Offscreen] Initialized for PII Detection and OCR')
 
-interface PdfTextItem {
-  str: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface PdfPageInfo {
-  pageNumber: number;
-  width: number;
-  height: number;
-  textItems: PdfTextItem[];
-}
-
-interface PdfRegion {
-  page: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-let lastPdfPages: PdfPageInfo[] = []
-
-async function dataUrlToUint8Array(dataUrl: string): Promise<Uint8Array> {
-  const resp = await fetch(dataUrl)
-  const arrayBuffer = await resp.arrayBuffer()
-  return new Uint8Array(arrayBuffer)
-}
-
-// anydoc WASM is initialized once per offscreen document; the module is 6.5 MB
-// and loads the .wasm via `new URL(..., import.meta.url)`, so it must be an
-// extension-page asset. Kept lazy so an office file is never scanned on boot.
 let anydocInit: ReturnType<typeof init> | null = null
 async function awaitAnyDocReady(): Promise<void> {
   anydocInit ??= init()
-  await anydocInit
+  try { await anydocInit } catch (error) { anydocInit = null; throw error }
 }
 
-// Extracts office-document text (docx/xlsx/pptx/odt/rtf/epub/csv/...) locally.
-// anydoc has no OCR: scanned/image-only PDFs throw `unsupported` here — those
-// still go through the tesseract path in the extension. Any failure surfaces
-// the anydoc error code so the caller can fail open (forward the file).
 async function runOfficeProcessing(fileData: string, fileName?: string) {
   try {
     await awaitAnyDocReady()
     const bytes = await dataUrlToUint8Array(fileData)
 
-    // Content-based detection wins; fall back to the extension for
-    // signature-less formats (CSV has no content marker, so it must be named).
     let fmt = formatFromBytes(bytes)
     if (!fmt && fileName) {
       const ext = fileName.toLowerCase().split('.').pop() ?? ''
@@ -89,79 +44,30 @@ async function runOfficeProcessing(fileData: string, fileName?: string) {
   }
 }
 
-async function runPdfProcessing(pdfData: string) {
-  const uint8Array = await dataUrlToUint8Array(pdfData)
-  const loadingTask = pdfjs.getDocument({ data: uint8Array })
-  const pdf = await loadingTask.promise
-  let fullText = ''
-  const pages: PdfPageInfo[] = []
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const viewport = page.getViewport({ scale: 1.0 })
-    const textContent = await page.getTextContent()
-
-    const items = textContent.items.map((item: any) => ({
-      str: item.str || '',
-      x: item.transform?.[4] ?? 0,
-      y: item.transform?.[5] ?? 0,
-      width: item.width ?? 0,
-      height: item.height ?? 0
-    }))
-
-    const pageText = items.map((it: any) => it.str).join(' ')
-    fullText += `--- Page ${i} ---\n` + pageText + '\n'
-
-    pages.push({
-      pageNumber: i,
-      width: viewport.width,
-      height: viewport.height,
-      textItems: items
-    })
-  }
-
-  lastPdfPages = pages
-
-  return {
-    numPages: pdf.numPages,
-    fullText,
-    pages
-  }
-}
-
-function getRegionsForValues(values: string[]) {
-  const regions: PdfRegion[] = []
-  const lowerValues = values.map((v) => v.toLowerCase().trim()).filter((v) => v.length > 1)
-
-  lastPdfPages.forEach((page, pageIdx) => {
-    page.textItems.forEach((item) => {
-      const itemText = (item.str || '').toLowerCase()
-      for (const val of lowerValues) {
-        if (itemText.includes(val)) {
-          regions.push({
-            page: pageIdx,
-            x: item.x,
-            y: page.height - item.y - (item.height || 12),
-            width: item.width || (val.length * 6),
-            height: item.height || 12
-          })
-          break
-        }
-      }
-    })
-  })
-
-  return regions
-}
-
 // ── Tier singletons ───────────────────────────────────────────────────────────
-const ocrTier = new OCRTier()
-const regexTier = new RegexTier()
-const nerTier = new NERTier()  // Bug 8 fix: NER was missing from the offscreen OCR path
+void warmDocumentDetection().catch(() => console.warn('[Offscreen] Document worker warmup failed; scans will report failures.'))
 
 // ── Message listener ──────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.action === 'OFFSCREEN_DOCUMENT_CANCEL') {
+    cancelDocument(message.key)
+    sendResponse({ ok: true })
+    return false
+  }
+  if (message.action === 'OFFSCREEN_DOCUMENT_SCAN') {
+    void scanDocument(message.key, message.request, message.config, runOfficeProcessing).then(sendResponse)
+    return true
+  }
+  if (message.action === 'OFFSCREEN_DOCUMENT_REDACT') {
+    void redactDocument(message.key, message.entities).then(sendResponse)
+    return true
+  }
+  if (message.action === 'OFFSCREEN_DOCUMENT_VERIFY_OFFICE') {
+    void verifyOfficeDocument(message.key, message.dataUrl, message.fileName, message.entities, runOfficeProcessing).then(sendResponse)
+    return true
+  }
+
   if (message.action === 'OFFSCREEN_PING') {
     sendResponse({ ok: true })
     return false
@@ -186,6 +92,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true
   }
 
+  if (message.action === 'OFFSCREEN_REDACT_PDF_LOCAL') {
+    const { pdfData, entities } = message.data
+    runPdfRedactionLocal(pdfData, entities)
+      .then(result => sendResponse(result))
+      .catch(err => sendResponse({ ok: false, error: String(err) }))
+    return true
+  }
+
   if (message.action === 'OFFSCREEN_RUN_OFFICE') {
     const { fileData, fileName } = message.data
     runOfficeProcessing(fileData, fileName)
@@ -196,12 +110,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.action === 'OFFSCREEN_GET_PDF_REGIONS') {
     const { values } = message.data
-    if (lastPdfPages.length === 0) {
-      // Bug 19 fix: surface the empty-state explicitly so the caller knows
-      // regions were not mapped rather than silently getting an empty array.
-      sendResponse({ ok: false, regions: [], error: 'No PDF pages in memory — run OFFSCREEN_RUN_PDF first' })
-      return false
-    }
     const regions = getRegionsForValues(values)
     sendResponse({ ok: true, regions })
     return false
@@ -217,63 +125,9 @@ async function runImageOcr(
   config: PIIConfig
 ): Promise<{ ok: boolean; result?: DetectionResult; error?: string }> {
   try {
-    console.log('[Offscreen] Running OCR on image…')
-    const { rawText, ocrData, severityFloor, rotatedImageUrl, scale, rotation, imgWidth, imgHeight } = await ocrTier.runOnImage(imageUrl, config)
-
-    if (!rawText) {
-      return {
-        ok: true,
-        result: { hasFindings: false, entities: [], tier: 'ocr', processingTimeMs: 0, inputLength: 0 }
-      }
-    }
-
-    // Bug 8 fix: run the same regex → NER cascade that detectPIIFromImage uses
-    // so freeform names, addresses, and prose PII are detected in images too.
-    const regexEntities = await regexTier.run(rawText, config)
-
-    // Mask regex hits before NER so the model doesn't double-tag them
-    let maskedText = rawText
-    if (regexEntities.length > 0) {
-      for (const entity of regexEntities) {
-        const spaces = ' '.repeat(entity.endIndex - entity.startIndex)
-        maskedText =
-          maskedText.substring(0, entity.startIndex) +
-          spaces +
-          maskedText.substring(entity.endIndex)
-      }
-    }
-
-    const nerEntities = await nerTier.run(maskedText, config)
-
-    // Merge all found entities, then map to image bounding boxes
-    const allEntities = [...regexEntities, ...nerEntities]
-    const mappedEntities = ocrTier.mapEntitiesToBboxes(
-      allEntities,
-      ocrData,
-      rawText,
-      severityFloor,
-      scale,
-      rotation,
-      imgWidth,
-      imgHeight
-    )
-
-    const result: DetectionResult = {
-      hasFindings: mappedEntities.length > 0,
-      entities: mappedEntities,
-      tier: 'ocr',
-      processingTimeMs: 0,
-      inputLength: rawText.length,
-      ...(rotatedImageUrl ? { rotatedImageUrl } : {})
-    }
-
-    console.log(`[Offscreen] OCR complete — ${rawText.length} chars, ${mappedEntities.length} entities`)
-    return { ok: true, result }
-
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err ?? 'Unknown OCR error')
-    console.error('[Offscreen] Image OCR failed:', msg)
-    return { ok: false, error: msg }
+    return { ok: true, result: await detectPIIFromImage(imageUrl, config, { strict: true }) }
+  } catch {
+    return { ok: false, error: 'DOCUMENT_SCAN_FAILED' }
   }
 }
 

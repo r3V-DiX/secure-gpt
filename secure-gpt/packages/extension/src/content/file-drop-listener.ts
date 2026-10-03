@@ -1,3 +1,4 @@
+import { isChatGptHost } from './chatgpt-upload-gate'
 // packages/extension/src/content/file-drop-listener.ts
 // Handlers for file drag & drop, file inputs, and clipboard paste attachments
 
@@ -15,6 +16,7 @@ export interface FileListenerContext {
 }
 
 export function handleGlobalPaste(ev: ClipboardEvent, ctx: FileListenerContext): void {
+  if (isChatGptHost()) return // Handled by the document_start upload gate.
   if (!ev.isTrusted) return
   if (!ctx.isProtectionActive()) return
   const items = ev.clipboardData?.items
@@ -58,6 +60,7 @@ export function handleGlobalPaste(ev: ClipboardEvent, ctx: FileListenerContext):
 }
 
 export function handleGlobalFileChange(ev: Event, ctx: FileListenerContext): void {
+  if (isChatGptHost()) return // Handled by the document_start upload gate.
   if (!ev.isTrusted) return
   if (!ctx.isProtectionActive()) return
   const target = ev.target as HTMLInputElement
@@ -77,6 +80,7 @@ export function handleGlobalFileChange(ev: Event, ctx: FileListenerContext): voi
 }
 
 export function handleGlobalDrop(ev: DragEvent, ctx: FileListenerContext): void {
+  if (isChatGptHost()) return // Handled by the document_start upload gate.
   if (!ev.isTrusted) return
   if (!ctx.isProtectionActive()) return
   const files = ev.dataTransfer?.files

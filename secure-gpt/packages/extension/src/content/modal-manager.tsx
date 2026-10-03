@@ -58,7 +58,7 @@ export function showShieldModal(
   shadowHost = document.createElement('div')
   shadowHost.setAttribute('data-securegpt', 'true')
   shadowHost.setAttribute('data-securegpt-modal', 'true')
-  shadowHost.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;'
+  shadowHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2147483647; pointer-events: auto; display: block;'
   if (detectHostIsDark()) {
     shadowHost.classList.add('dark')
   }

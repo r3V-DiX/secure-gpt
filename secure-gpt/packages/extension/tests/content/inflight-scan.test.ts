@@ -7,7 +7,7 @@ import { applyImageMasking } from '../../src/features/actions/services/masking.s
 vi.mock('../../src/content/dom-utils', () => ({
   dispatchImagePaste: vi.fn(), dispatchFilePaste: vi.fn(), clearAttachments: vi.fn(),
 }))
-vi.mock('../../src/content/banners', () => ({ showBanner: vi.fn(), removeBanner: vi.fn() }))
+vi.mock('../../src/content/banners', () => ({ showBanner: vi.fn(), removeBanner: vi.fn(), removeLoadingBanner: vi.fn() }))
 vi.mock('../../src/content/audit-logger', () => ({ logDetectionEvent: vi.fn() }))
 vi.mock('../../src/content/submit-handler', () => ({ getMostRestrictiveAction: vi.fn() }))
 vi.mock('../../src/features/actions/services/masking.service', () => ({ applyImageMasking: vi.fn() }))

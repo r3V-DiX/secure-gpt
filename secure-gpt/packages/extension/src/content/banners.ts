@@ -66,6 +66,12 @@ export function showBanner(
   const categoryLabel = PII_CATEGORY_LABELS[category] ?? category
   const message = BANNER_MESSAGES[type](categoryLabel, matchCount)
 
+  const isDark =
+    document.documentElement.classList.contains('dark') ||
+    document.body.classList.contains('dark') ||
+    document.documentElement.getAttribute('data-theme') === 'dark' ||
+    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+
   const banner = document.createElement('div')
   banner.setAttribute('data-securegpt-banner', type)
   banner.setAttribute('data-securegpt', 'true')
@@ -73,20 +79,26 @@ export function showBanner(
   banner.style.cssText = `
     position: relative;
     width: 100%;
-    padding: 10px 14px;
-    background: ${style.bg};
-    border-left: 3px solid ${style.border};
-    border-radius: 6px;
-    margin-bottom: 8px;
+    padding: 12px 16px;
+    background: ${isDark ? 'rgba(15, 23, 42, 0.95)' : style.bg};
+    border-left: 4px solid ${style.border};
+    border-top: 1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)'};
+    border-right: 1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)'};
+    border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)'};
+    border-radius: 8px;
+    margin-bottom: 10px;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 12.5px;
-    color: #0f172a;
+    font-size: 13px;
+    font-weight: 500;
+    color: ${isDark ? '#f8fafc' : '#0f172a'};
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     z-index: 9999;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     animation: securegpt-slide-in 0.2s ease-out;
   `
 
@@ -99,16 +111,23 @@ export function showBanner(
         from { opacity: 0; transform: translateY(-8px); }
         to { opacity: 1; transform: translateY(0); }
       }
+      .spin-animation {
+        animation: securegpt-spin 1s linear infinite;
+      }
+      @keyframes securegpt-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
     `
     document.head.appendChild(styleEl)
   }
 
   const leftSection = document.createElement('div')
-  leftSection.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1;'
-  const clickCue = onClick ? ' <span style="font-size: 11px; opacity: 0.6; text-decoration: underline;">(click to view findings)</span>' : ''
+  leftSection.style.cssText = 'display: flex; align-items: center; gap: 10px; flex: 1;'
+  const clickCue = onClick ? ' <span style="font-size: 11.5px; opacity: 0.75; text-decoration: underline;">(click to view details)</span>' : ''
   leftSection.innerHTML = `
-    <span style="font-size: 16px;">${style.icon}</span>
-    <span><strong style="color: ${style.border};">SecureGPT</strong> — ${message}${clickCue}</span>
+    <span style="font-size: 18px; display: flex; align-items: center;">${style.icon}</span>
+    <span><strong style="color: ${style.border}; font-weight: 700;">SecureGPT</strong> — ${message}${clickCue}</span>
   `
 
   if (onClick) {
@@ -172,6 +191,10 @@ export function showBanner(
   if (type === 'allow') {
     setTimeout(() => removeBanner(), 4000)
   }
+}
+
+export function removeLoadingBanner(): void {
+  document.querySelectorAll('[data-securegpt-banner="loading"], [data-securegpt-banner="loading_pdf"]').forEach((el) => el.remove())
 }
 
 export function removeBanner(): void {
