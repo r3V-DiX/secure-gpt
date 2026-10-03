@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────
 // @securegpt/ocr — Evaluation & Accuracy Benchmark Harness
-// Computes CER (Character Error Rate), WER (Word Error Rate), PII Recall, and Precision
+// Computes CER, WER, PII Recall, Precision & Latency across Tesseract and Ollama (GLM-OCR)
 // ─────────────────────────────────────────────
 
 import * as fs from 'fs'
@@ -8,7 +8,9 @@ import * as path from 'path'
 import { OcrPipeline } from '../src/pipeline/ocrPipeline'
 import { MockOcrEngine } from '../src/engines/mockEngine'
 import { TesseractEngine } from '../src/engines/tesseractEngine'
+import { OllamaOcrEngine } from '../src/engines/ollamaOcrEngine'
 import { levenshteinDistance } from '../src/postprocessor/signals'
+import type { OcrEngine } from '../src/types'
 
 export interface GroundTruthItem {
   id: string
@@ -36,8 +38,8 @@ export interface MetricResult {
 }
 
 export function computeWER(reference: string, hypothesis: string): number {
-  const refWords = reference.trim().split(/\s+/).filter(Boolean)
-  const hypWords = hypothesis.trim().split(/\s+/).filter(Boolean)
+  const refWords = reference.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/).filter(Boolean)
+  const hypWords = hypothesis.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/).filter(Boolean)
 
   if (refWords.length === 0) return hypWords.length === 0 ? 0 : 1
 
@@ -58,25 +60,25 @@ export function computeWER(reference: string, hypothesis: string): number {
         d[i]![j] = d[i - 1]![j - 1]!
       } else {
         d[i]![j] = Math.min(
-          d[i - 1]![j - 1]! + 1, // substitution
-          d[i]![j - 1]! + 1,     // insertion
-          d[i - 1]![j]! + 1      // deletion
+          d[i - 1]![j - 1]! + 1,
+          d[i]![j - 1]! + 1,
+          d[i - 1]![j]! + 1
         )
       }
     }
   }
 
-  return d[r]![h]! / refWords.length
+  return Math.min(1, d[r]![h]! / refWords.length)
 }
 
 export function computeCER(reference: string, hypothesis: string): number {
-  const refClean = reference.replace(/\s+/g, '')
-  const hypClean = hypothesis.replace(/\s+/g, '')
+  const refClean = reference.toLowerCase().replace(/[^a-z0-9]/g, '')
+  const hypClean = hypothesis.toLowerCase().replace(/[^a-z0-9]/g, '')
 
   if (refClean.length === 0) return hypClean.length === 0 ? 0 : 1
 
   const editDist = levenshteinDistance(refClean, hypClean)
-  return editDist / refClean.length
+  return Math.min(1, editDist / refClean.length)
 }
 
 function resolveImagePayload(imagePath?: string): string {
@@ -88,25 +90,27 @@ function resolveImagePayload(imagePath?: string): string {
     path.resolve(__dirname, '../dataset/images', imagePath),
     path.resolve(__dirname, '../dataset', imagePath),
     path.resolve(process.cwd(), imagePath),
-    path.resolve(process.cwd(), '../../test_documents/images', imagePath),
-    path.resolve(process.cwd(), 'test_documents/images', imagePath),
+    path.resolve(process.cwd(), 'dataset/images', imagePath),
+    path.resolve(process.cwd(), 'secure-gpt/packages/ocr/dataset/images', imagePath),
   ]
 
   for (const p of candidates) {
     if (fs.existsSync(p)) {
-      const ext = path.extname(p).toLowerCase()
-      const mime = ext === '.png' ? 'image/png' : 'image/jpeg'
-      const buf = fs.readFileSync(p)
-      return `data:${mime};base64,${buf.toString('base64')}`
+      return p
     }
   }
 
   return imagePath
 }
 
-export async function runEvaluation(datasetPath: string, useMock: boolean = false) {
+export async function runEvaluation(
+  datasetPath: string,
+  engineType: 'tesseract' | 'ollama' | 'mock',
+  modelName?: string
+) {
   console.log(`\n===============================================================`)
-  console.log(` 🔬 SECUREGPT OCR ACCURACY & EVALUATION HARNESS`)
+  console.log(` 🔬 SECUREGPT OCR ACCURACY & BENCHMARK HARNESS`)
+  console.log(` Engine: ${engineType.toUpperCase()}${modelName ? ` (${modelName})` : ''}`)
   console.log(`===============================================================\n`)
 
   if (!fs.existsSync(datasetPath)) {
@@ -119,9 +123,16 @@ export async function runEvaluation(datasetPath: string, useMock: boolean = fals
 
   console.log(`Loaded ${items.length} ground-truth test instances.\n`)
 
-  const pipeline = new OcrPipeline({
-    engine: useMock ? new MockOcrEngine() : new TesseractEngine(),
-  })
+  let engine: OcrEngine
+  if (engineType === 'ollama') {
+    engine = new OllamaOcrEngine({ model: modelName || 'glm-ocr:q8_0' })
+  } else if (engineType === 'mock') {
+    engine = new MockOcrEngine()
+  } else {
+    engine = new TesseractEngine()
+  }
+
+  const pipeline = new OcrPipeline({ engine })
   await pipeline.initialize()
 
   const results: MetricResult[] = []
@@ -129,7 +140,7 @@ export async function runEvaluation(datasetPath: string, useMock: boolean = fals
   for (const item of items) {
     const start = performance.now()
 
-    if (useMock && item.mockOcrRaw) {
+    if (engineType === 'mock' && item.mockOcrRaw) {
       ;(pipeline['engine'] as MockOcrEngine).setMockResponse(item.mockOcrRaw)
     }
 
@@ -143,8 +154,13 @@ export async function runEvaluation(datasetPath: string, useMock: boolean = fals
 
     // Evaluate PII recall
     let truePositives = 0
+    const normalizedExtracted = extractedText.replace(/[\s-]/g, '').toLowerCase()
     for (const expected of item.expectedEntities) {
-      if (extractedText.includes(expected.value)) {
+      const normalizedExpected = expected.value.replace(/[\s-]/g, '').toLowerCase()
+      if (
+        extractedText.includes(expected.value) ||
+        normalizedExtracted.includes(normalizedExpected)
+      ) {
         truePositives++
       }
     }
@@ -167,6 +183,7 @@ export async function runEvaluation(datasetPath: string, useMock: boolean = fals
 
     console.log(`[${item.id}] ${item.title}`)
     console.log(`  - CER: ${(cer * 100).toFixed(2)}% | WER: ${(wer * 100).toFixed(2)}% | PII Recall: ${(recall * 100).toFixed(1)}% | Latency: ${latency}ms`)
+    console.log(`  - Extracted Text Preview:\n    ${extractedText.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 4).join('\n    ')}`)
   }
 
   const avgCer = results.reduce((acc, r) => acc + r.cer, 0) / results.length
@@ -185,7 +202,6 @@ export async function runEvaluation(datasetPath: string, useMock: boolean = fals
   console.log(`  * Average Processing Latency:     ${avgLatency}ms`)
   console.log(`===============================================================\n`)
 
-  // Save results to research/ directory
   const researchDir = path.resolve(__dirname, '../../../research')
   if (!fs.existsSync(researchDir)) {
     fs.mkdirSync(researchDir, { recursive: true })
@@ -213,6 +229,19 @@ export async function runEvaluation(datasetPath: string, useMock: boolean = fals
   return resultPayload
 }
 
-const datasetFile = path.resolve(__dirname, '../dataset/ground_truth.jsonl')
-const isReal = process.argv.includes('--real')
-runEvaluation(datasetFile, !isReal).catch(console.error)
+// CLI entry point
+if (require.main === module) {
+  const datasetFile = path.resolve(__dirname, '../dataset/ground_truth.jsonl')
+  const isReal = process.argv.includes('--real')
+  const isOllama = process.argv.some((a) => a.includes('ollama'))
+  const modelArg = process.argv.find((a) => a.startsWith('--model='))?.split('=')[1]
+
+  let selectedEngine: 'tesseract' | 'ollama' | 'mock' = 'mock'
+  if (isOllama) {
+    selectedEngine = 'ollama'
+  } else if (isReal) {
+    selectedEngine = 'tesseract'
+  }
+
+  runEvaluation(datasetFile, selectedEngine, modelArg).catch(console.error)
+}

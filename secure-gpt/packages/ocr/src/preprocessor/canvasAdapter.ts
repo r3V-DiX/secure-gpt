@@ -28,10 +28,13 @@ export async function loadImageElement(src: string): Promise<HTMLImageElement> {
  */
 export function extractImageDataFromElement(
   img: HTMLImageElement,
-  scale: number = 1
+  scale: number = 1,
+  padding: number = 6
 ): { imageData: ProcessedImageData; canvas?: HTMLCanvasElement } {
-  const width = Math.round(img.width * scale)
-  const height = Math.round(img.height * scale)
+  const baseW = Math.round(img.width * scale)
+  const baseH = Math.round(img.height * scale)
+  const width = baseW + padding * 2
+  const height = baseH + padding * 2
 
   if (isBrowser) {
     const canvas = document.createElement('canvas')
@@ -40,8 +43,10 @@ export function extractImageDataFromElement(
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
     if (ctx) {
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, width, height)
       ctx.imageSmoothingEnabled = scale > 1 ? false : true
-      ctx.drawImage(img, 0, 0, width, height)
+      ctx.drawImage(img, padding, padding, baseW, baseH)
       const raw = ctx.getImageData(0, 0, width, height)
       return {
         imageData: {

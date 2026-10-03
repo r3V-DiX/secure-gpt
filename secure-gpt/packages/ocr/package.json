@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "evaluate": "node --loader ts-node/esm scripts/evaluate_ocr.ts"
+    "evaluate": "tsx scripts/evaluate.ts",
+    "redact": "tsx scripts/redact.ts"
   },
   "dependencies": {
     "@securegpt/shared": "*",

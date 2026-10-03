@@ -34,6 +34,7 @@ export interface OcrEngineResult {
 }
 
 export interface OcrEngineOptions {
+  signal?: AbortSignal | undefined
   psm?: number | string
   dpi?: number
   language?: string
@@ -76,6 +77,7 @@ export interface ProcessedImageResult {
 }
 
 export interface OcrPipelineOptions {
+  signal?: AbortSignal | undefined
   engine?: OcrEngine
   preprocessing?: PreprocessingOptions
   enableSparsePass?: boolean
