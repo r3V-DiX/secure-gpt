@@ -11,7 +11,7 @@ import {
 } from '@/config/versions.data'
 
 const getVersion = (version: VersionItem[]) =>
-  version[0]?.version ?? 'Not Available'
+  version[0]?.version ?? 'NA'
 
 export interface SystemVersionContextType {
   currentVersion: string

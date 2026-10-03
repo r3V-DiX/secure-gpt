@@ -142,7 +142,7 @@ def build_confusion_matrix(rows):
 def print_ascii_matrix(matrix):
     headers = CATEGORIES + ["NONE"]
     print("\n" + "=" * 76 + "\n                      CATEGORY CONFUSION MATRIX\n" + "=" * 76)
-    header_line = f"{'Actual \\ Pred':<14} | " + " | ".join(f"{h:>10}" for h in headers)
+    header_line = f"{'Actual Pred':<14} | " + " | ".join(f"{h:>10}" for h in headers)
     print(header_line + "\n" + "-" * len(header_line))
     for actual in headers:
         print(f"{actual:<14} | " + " | ".join(f"{matrix[actual][pred]:>10}" for pred in headers))
