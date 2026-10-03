@@ -109,3 +109,4 @@ packages/extension/*.zip
 skills-lock.json
 script.md
 research/
+.temp_ocr/

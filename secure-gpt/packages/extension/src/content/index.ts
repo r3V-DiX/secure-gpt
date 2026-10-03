@@ -1,15 +1,17 @@
+import { installChatGptUploadGate } from './chatgpt-upload-gate'
 import { setupInterceptor, teardown } from './interceptor'
 import { initSiteDetectionIndicator, removeSiteDetectionIndicator } from './site-detection-indicator'
 import { getPlatformForUrl, isPlatformEnabled } from './platform-routing'
 import { DEFAULT_EXTENSION_CONFIG } from '@/config/defaults.config'
 import { handleSubmit, isExtensionContextValid } from './submit-handler'
-import type { PIIConfig } from '@securegpt/shared/types'
+import type { PIIConfig, DocumentProgress } from '@securegpt/shared/types'
 import type { LLMPlatform } from '@securegpt/shared/constants'
 
 type ContentGlobal = typeof globalThis & { __securegptContentState?: { dispose: () => void } }
 const contentGlobal = globalThis as ContentGlobal
 
 try { contentGlobal.__securegptContentState?.dispose() } catch { /* stale extension context */ }
+const documentGate = installChatGptUploadGate()
 {
 
   let generation = 0
@@ -20,7 +22,9 @@ try { contentGlobal.__securegptContentState?.dispose() } catch { /* stale extens
   let googleEntryPolicy: PIIConfig | null = null
   const googleHost = location.hostname === 'www.google.com' || location.hostname === 'google.com'
 
-  const stop = () => {
+  const stop = (unavailable = false) => {
+    if (unavailable) documentGate.invalidate()
+    else documentGate.setPolicy(null)
     googleEntryPolicy = null
     if (!activePlatform) return
     teardown()
@@ -65,13 +69,14 @@ try { contentGlobal.__securegptContentState?.dispose() } catch { /* stale extens
       const policySignature = JSON.stringify(policy)
       if (activePlatform === platform && activePolicySignature === policySignature) return
       setupInterceptor(policy)
+      documentGate.setPolicy(policy)
       initSiteDetectionIndicator(policy)
       activePlatform = platform
       activePolicySignature = policySignature
       if (retryTimer) clearTimeout(retryTimer)
     } catch {
       if (run !== generation) return
-      stop()
+      stop(true)
       googleEntryPolicy = null
       if (retryTimer) clearTimeout(retryTimer)
       retryTimer = setTimeout(() => void reconcile(), 2000)
@@ -102,6 +107,10 @@ try { contentGlobal.__securegptContentState?.dispose() } catch { /* stale extens
 
   // This listener must exist even while logged out, paused, or on ordinary Search.
   const messageListener = (message: { type: string; policy?: PIIConfig }, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+    if (message.type === 'DOCUMENT_PROGRESS') {
+      documentGate.progress(message as DocumentProgress)
+      return
+    }
     if (message.type === 'SECUREGPT_PING') {
       sendResponse({ ready: isExtensionContextValid() })
       return
@@ -141,6 +150,7 @@ try { contentGlobal.__securegptContentState?.dispose() } catch { /* stale extens
   const recoveryPoll = setInterval(() => void reconcile(), 30_000)
 
   contentGlobal.__securegptContentState = { dispose: () => {
+    documentGate.dispose()
     ++generation
     stop()
     if (retryTimer) clearTimeout(retryTimer)

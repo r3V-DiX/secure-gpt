@@ -21,7 +21,7 @@ describe('platform routing', () => {
   })
 
   it('covers every registered hostname in the manifest', () => {
-    const matches = manifest.content_scripts[0]!.matches
+    const matches = manifest.content_scripts.flatMap(script => script.matches)
     const permissions = manifest.host_permissions
     for (const [platform, domains] of Object.entries(PLATFORM_DOMAINS)) {
       for (const domain of [domains].flat()) {

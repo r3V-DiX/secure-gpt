@@ -5,6 +5,7 @@
 
 import type {
   OcrEngine,
+  OcrEngineResult,
   OcrPipelineOptions,
   OcrPipelineResult,
 } from '../types'
@@ -16,6 +17,12 @@ import { normalizeText } from '@securegpt/shared/utils/detection-helpers'
 import { loadImageElement, rotateImageCanvas } from '../preprocessor/canvasAdapter'
 
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined'
+
+export function recognitionScore(result: OcrEngineResult): number {
+  // Confidence alone can prefer five easy words in the wrong orientation over
+  // an entire page. Reward the amount of confidently recognized text as well.
+  return result.words.reduce((sum, word) => sum + word.text.replace(/\W/g, '').length * Math.max(0, word.confidence - 20), 0)
+}
 
 export class OcrPipeline {
   private engine: OcrEngine
@@ -35,7 +42,7 @@ export class OcrPipeline {
   }
 
   /**
-   * Executes full end-to-end OCR extraction on an image URL or base64 payload.
+   * Executes full end-to-end OCR extraction on an image URL, base64 payload, or file path.
    */
   async processImage(
     imageUrl: string,
@@ -49,8 +56,8 @@ export class OcrPipeline {
     let activeImageElement: HTMLImageElement | null = null
 
     // 1. Stage 1 — Universal Image Preprocessing
-    if (isBrowser) {
-      try {
+    try {
+      if (isBrowser) {
         const img = await loadImageElement(imageUrl)
         imgWidth = img.width
         imgHeight = img.height
@@ -62,56 +69,54 @@ export class OcrPipeline {
           currentScale = prepResult.scale
           activeImageElement = await loadImageElement(processedUrl)
         }
-      } catch (err) {
-        console.warn('[@securegpt/ocr] Preprocessing fallback to raw image:', err)
-      }
-    }
-
-    // 2. Stage 2 — Primary OCR Pass
-    let ocrResult = await this.engine.recognize(processedUrl)
-    let rawText = normalizeText(ocrResult.text)
-
-    // Optional Sparse Pass (PSM 11) for scattered identity card details
-    const enableSparse = options?.enableSparsePass ?? true
-    if (enableSparse && !/\b([A-Z0-9]{5}\s*[0-9OISLZBQG]{4}\s*[A-Z0-9])\b/gi.test(rawText)) {
-      try {
-        const sparseResult = await this.engine.recognize(processedUrl, { psm: 11 })
-        if (/\b([A-Z0-9]{5}\s*[0-9OISLZBQG]{4}\s*[A-Z0-9])\b/gi.test(sparseResult.text)) {
-          rawText += '\n' + normalizeText(sparseResult.text)
-          ocrResult.words.push(...sparseResult.words)
-        }
-      } catch (sparseErr) {
-        console.warn('[@securegpt/ocr] Sparse pass skipped:', sparseErr)
-      }
-    }
-
-    // 3. Stage 3 — Multi-angle Auto-Rotation Check if needed
-    const enableRotation = options?.enableRotationChecks ?? true
-    if (enableRotation && isBrowser && activeImageElement) {
-      const isPortrait = activeImageElement.height > activeImageElement.width
-      const hasFewWords = ocrResult.words.length < 3
-
-      if (isPortrait || hasFewWords) {
-        const rotations = options?.rotationsToTest || [90, 270, 180]
-        for (const deg of rotations) {
-          try {
-            const rotUrl = rotateImageCanvas(activeImageElement, deg)
-            const rotResult = await this.engine.recognize(rotUrl)
-            const rotText = normalizeText(rotResult.text)
-
-            if (rotResult.words.length > ocrResult.words.length + 2) {
-              ocrResult = rotResult
-              rawText = rotText
-              currentRotation = deg
-              processedUrl = rotUrl
-              break
-            }
-          } catch (rotErr) {
-            console.warn(`[@securegpt/ocr] Rotation ${deg} test skipped:`, rotErr)
-          }
+      } else {
+        const prepResult = await this.preprocessor.processUrl(imageUrl, options?.preprocessing)
+        if (prepResult.url) {
+          processedUrl = prepResult.url
+          currentScale = prepResult.scale
         }
       }
+    } catch (err) {
+      console.warn('[@securegpt/ocr] Preprocessing fallback to raw image:', err)
     }
+
+    // Retry based on recognition quality, never on the presence of a particular
+    // country's ID. Clear ordinary documents should not incur eight OCR passes.
+    const recognize = async (url: string, psm: number) => {
+      options?.signal?.throwIfAborted()
+      const start = performance.now()
+      const result = await this.engine.recognize(url, { psm, signal: options?.signal })
+      console.info('[OCR pass]', JSON.stringify({ psm, milliseconds: Math.round(performance.now() - start), words: result.words.length, confidence: result.confidence }))
+      return result
+    }
+    const hasId = (text: string) => /\b\d{4}\s*\d{4}\s*\d{4}\b/i.test(text) || /\b[A-Z]{5}\s*[0-9]{4}\s*[A-Z]\b/i.test(text)
+    const adequate = (result: OcrEngineResult) => (result.words.length >= 5 && result.confidence >= 75 && hasId(result.text))
+    let ocrResult = await recognize(processedUrl, 11)
+    if (!adequate(ocrResult) && options?.enableSparsePass !== false) {
+      const fallback = await recognize(processedUrl, 3)
+      if (recognitionScore(fallback) > recognitionScore(ocrResult) || !ocrResult.words.length) {
+        ocrResult = fallback
+      }
+    }
+
+    if (!hasId(ocrResult.text) && options?.enableRotationChecks !== false && isBrowser && activeImageElement) {
+      for (const deg of options?.rotationsToTest ?? [270, 90, 180]) {
+        const rotUrl = rotateImageCanvas(activeImageElement, deg)
+        let candidate = await recognize(rotUrl, 11)
+        if (!hasId(candidate.text) && options?.enableSparsePass !== false) {
+          const sparse = await recognize(rotUrl, 3)
+          if (recognitionScore(sparse) > recognitionScore(candidate)) candidate = sparse
+        }
+        if (candidate.words.length && (hasId(candidate.text) || recognitionScore(candidate) > recognitionScore(ocrResult) || !ocrResult.words.length)) {
+          ocrResult = candidate
+          currentRotation = deg
+          processedUrl = rotUrl
+        }
+        if (hasId(ocrResult.text)) break
+      }
+    }
+    options?.signal?.throwIfAborted()
+    const rawText = normalizeText(ocrResult.text)
 
     // 4. Stage 4 — Post-Processing, Glyph Repair & Fuzzy Classification
     const repairedText = repairOcrText(rawText)

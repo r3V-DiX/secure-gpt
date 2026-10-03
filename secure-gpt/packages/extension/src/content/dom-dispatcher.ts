@@ -51,13 +51,36 @@ export async function dispatchFilePaste(
   bypassSet.add(el)
   el.focus()
   const blob = await dataUrlToBlob(dataUrl)
-  const file = new File([blob], fileName, { type: mimeType })
+  const file = new File([blob], fileName, { type: mimeType, lastModified: Date.now() })
   const dt = new DataTransfer()
   dt.items.add(file)
+
+  // 1. Dispatch clipboard paste event on focused element
   el.dispatchEvent(
     new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true, composed: true })
   )
-  setTimeout(() => bypassSet.delete(el), 50)
+
+  // 2. Dispatch drop event on the composer container / form
+  const container = el.closest('form') || el.closest('[class*="composer"]') || el.parentElement || el
+  bypassSet.add(container as HTMLElement)
+  container.dispatchEvent(
+    new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true })
+  )
+
+  // 3. Populate hidden file inputs if present on page
+  const fileInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="file"]'))
+  for (const input of fileInputs) {
+    try {
+      input.files = dt.files
+      input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }))
+      input.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }))
+    } catch (_e) {}
+  }
+
+  setTimeout(() => {
+    bypassSet.delete(el)
+    bypassSet.delete(container as HTMLElement)
+  }, 100)
 }
 
 /**

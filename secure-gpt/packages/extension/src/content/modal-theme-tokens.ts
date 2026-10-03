@@ -5,7 +5,9 @@ export const MODAL_THEME_TOKENS = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   
   :host {
-    all: initial;
+    display: block;
+    width: 100%;
+    height: 100%;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     
     /* Light Mode Palette */

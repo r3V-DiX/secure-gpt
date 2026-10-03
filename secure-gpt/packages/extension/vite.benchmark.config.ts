@@ -9,6 +9,9 @@ export default defineConfig({
   publicDir: false,
   resolve: {
     alias: {
+      'pdf-lib': resolve(repo, 'secure-gpt/node_modules/pdf-lib/es/index.js'),
+      'pdfjs-dist': resolve(repo, 'secure-gpt/node_modules/pdfjs-dist/build/pdf.mjs'),
+      '@': resolve(repo, 'secure-gpt/packages/extension/src'),
       '@securegpt/shared': resolve(repo, 'secure-gpt/packages/shared/src'),
       '@securegpt/ocr': resolve(repo, 'secure-gpt/packages/ocr/src/index.ts'),
       '@securegpt/regex': resolve(repo, 'secure-gpt/packages/regex/src/index.ts'),
@@ -19,5 +22,9 @@ export default defineConfig({
   build: {
     outDir: resolve(repo, 'secure-gpt/packages/extension/dist/benchmark'),
     emptyOutDir: true,
+    rollupOptions: { input: {
+      index: resolve(repo, 'benchmarks/detection/index.html'),
+      documents: resolve(repo, 'benchmarks/detection/documents.html'),
+    } },
   },
 })

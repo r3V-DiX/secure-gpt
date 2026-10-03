@@ -99,3 +99,4 @@ next-env.d.ts
 /images
 /store-assets
 CHROMEWEBSTORE.md
+.temp_ocr/

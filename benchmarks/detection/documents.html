@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>SecureGPT document verification</title>
+<style>body{font:16px/1.5 system-ui;margin:32px;max-width:1100px;color:#182238}button{font:inherit;padding:8px 16px;margin:0 12px 16px 0}pre{white-space:pre-wrap;background:#f2f5f9;padding:16px}img{max-width:600px;border:1px solid #ddd}</style></head>
+<body><h1>Document detection and redaction verification</h1>
+<p>Local browser benchmark using the packaged OCR and NER workers. Synthetic inputs are generated in this page. No documents are sent to an external service.</p>
+<button id="synthetic">Run synthetic suite</button><button id="corpus">Run repository image corpus</button>
+<p id="status" role="status">Ready</p><pre id="results"></pre><div id="preview"></div>
+<script>window.addEventListener('error', event => { document.querySelector('#status').textContent = 'Startup failed: ' + event.message }); window.addEventListener('unhandledrejection', event => { document.querySelector('#status').textContent = 'Test failed: ' + String(event.reason) })</script>
+<script type="module" src="./documents.ts"></script></body></html>

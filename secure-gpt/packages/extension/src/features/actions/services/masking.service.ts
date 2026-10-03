@@ -68,25 +68,30 @@ export function applyImageMasking(
   const bboxes = entities.flatMap((e) => (e as PIIEntity & { bboxes?: { x0: number; y0: number; x1: number; y1: number }[] }).bboxes ?? [])
   console.info(`[SecureGPT Masking] Applying image mask with ${bboxes.length} bounding box(es).`)
 
-  if (bboxes.length === 0) {
-    console.warn('[SecureGPT Masking] No bounding boxes found — returning original image.')
-    return Promise.resolve(imageUrl)
+  if (!entities.length || entities.some(entity => !entity.bboxes?.length)) {
+    return Promise.reject(new Error('DOCUMENT_MISSING_REDACTION_BOXES'))
   }
 
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
+      try {
       console.info(`[SecureGPT Masking] Image loaded (${img.width}×${img.height}). Redacting…`)
       const canvas = document.createElement('canvas')
       canvas.width = img.width
       canvas.height = img.height
       const ctx = canvas.getContext('2d')
       if (!ctx) {
-        // Canvas unavailable — fall back to original
-        resolve(imageUrl)
+        reject(new Error('DOCUMENT_CANVAS_UNAVAILABLE'))
         return
       }
 
+      if (bboxes.some(box => ![box.x0, box.y0, box.x1, box.y1].every(Number.isFinite) ||
+          box.x1 <= box.x0 || box.y1 <= box.y0 || box.x0 < 0 || box.y0 < 0 ||
+          box.x1 > img.width || box.y1 > img.height)) {
+        reject(new Error('DOCUMENT_INVALID_REDACTION_BOXES'))
+        return
+      }
       // Draw the original image
       ctx.drawImage(img, 0, 0)
 
@@ -98,11 +103,15 @@ export function applyImageMasking(
         ctx.fillRect(box.x0 - 2, box.y0 - 2, w + 4, h + 4)
       }
 
-      resolve(canvas.toDataURL('image/png'))
+      const result = canvas.toDataURL('image/png')
+      if (!result.startsWith('data:image/png;base64,')) throw new Error('DOCUMENT_REDACTION_FAILED')
+      resolve(result)
+      } catch {
+        reject(new Error('DOCUMENT_REDACTION_FAILED'))
+      }
     }
-    img.onerror = (err) => {
-      console.error('[SecureGPT Masking] Image load failed:', err)
-      reject(err)
+    img.onerror = () => {
+      reject(new Error('DOCUMENT_IMAGE_LOAD_FAILED'))
     }
     img.src = imageUrl
   })

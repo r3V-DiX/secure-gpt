@@ -182,16 +182,6 @@ export async function handleSubmit(
       console.log('[SecureGPT] Automatic masking triggered')
       const maskedText = applyMasking(text, result.entities)
       setInputValue(el, maskedText)
-
-      await clearAttachments()
-      for (const [fileUrl] of ocrCache.entries()) {
-        const isPdf = fileUrl.startsWith('data:application/pdf')
-        if (isPdf) {
-          await dispatchFilePaste(el, fileUrl, 'redacted.pdf', 'application/pdf')
-        } else {
-          await dispatchImagePaste(el, fileUrl)
-        }
-      }
       ocrCache.clear()
 
       void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })

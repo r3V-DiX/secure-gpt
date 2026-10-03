@@ -74,11 +74,16 @@ export function verhoeffCheck(num: string): boolean {
   // Correct common OCR misreads before validation
   const cleaned = num
     .replace(/[\s-]/g, '')
-    .replace(/O/gi, '0')
-    .replace(/I/gi, '1')
-    .replace(/B/gi, '8')
-    .replace(/S/gi, '5')
-    .replace(/Z/gi, '2')
+    .replace(/[OoQD]/g, '0')
+    .replace(/[Il|!i]/g, '1')
+    .replace(/[Zz]/g, '2')
+    .replace(/[E]/g, '3')
+    .replace(/[A]/g, '4')
+    .replace(/[Ss]/g, '5')
+    .replace(/[Gb]/g, '6')
+    .replace(/[T]/g, '7')
+    .replace(/[B&]/g, '8')
+    .replace(/[gq]/g, '9')
 
   if (!/^\d{12}$/.test(cleaned)) return false
 

@@ -1,44 +1,22 @@
 // packages/extension/src/content/file-scanner.ts
 // Handles file upload inspection (Images, PDFs, Office docs) and redaction
 
-import { dispatchImagePaste, dispatchFilePaste, clearAttachments } from './dom-utils'
-import { showBanner, removeBanner } from './banners'
+import { dispatchImagePaste, dispatchFilePaste } from './dom-utils'
+import { showBanner, removeLoadingBanner } from './banners'
+import { showShieldModal } from './modal-manager'
 import { logDetectionEvent } from './audit-logger'
 import { applyImageMasking } from '@/features/actions/services/masking.service'
 import { getMostRestrictiveAction } from './submit-handler'
 import type { PIIConfig, DetectionResult, PIIEntity } from '@securegpt/shared/types'
 import type { PIICategory } from '@securegpt/shared/constants'
+import {
+  isOfficeFile,
+  isMaskableOffice,
+  MAX_OFFICE_SCAN_BYTES,
+  sendMsgWithTimeout,
+} from './file-scanner-utils'
 
-// Office MIME types are unreliable (docx often reports application/octet-stream),
-// so detect by filename extension whitelist + known office MIME prefixes.
-const OFFICE_EXTENSIONS = new Set([
-  'doc', 'docx', 'docm',
-  'ppt', 'pps', 'pot', 'pptx', 'pptm', 'ppsx', 'ppsm',
-  'xls', 'xlsx', 'xlsm', 'xlsb',
-  'odt', 'ods', 'odp',
-  'rtf', 'epub', 'csv'
-])
-
-export function isOfficeFile(file: File): boolean {
-  if (file.type.startsWith('application/vnd.ms-')) return true
-  if (file.type.startsWith('application/vnd.openxmlformats-officedocument.')) return true
-  const ext = file.name.toLowerCase().split('.').pop() ?? ''
-  return OFFICE_EXTENSIONS.has(ext)
-}
-
-// Legacy binary OLE/BIFF formats aren't zip containers, so the backend can't
-// structurally rewrite their text — these stay on the hard-block path.
-const LEGACY_BINARY_EXTENSIONS = new Set(['doc', 'ppt', 'pps', 'pot', 'xls', 'xlsb'])
-
-export function isMaskableOffice(file: File): boolean {
-  if (!isOfficeFile(file)) return false
-  const ext = file.name.toLowerCase().split('.').pop() ?? ''
-  return !LEGACY_BINARY_EXTENSIONS.has(ext)
-}
-
-// anydoc conversion is synchronous in the offscreen document — cap office
-// scans so a huge file can't stall it. Oversized files forward unscanned.
-export const MAX_OFFICE_SCAN_BYTES = 20 * 1024 * 1024
+export { isOfficeFile, isMaskableOffice, MAX_OFFICE_SCAN_BYTES }
 
 export async function handleImagePasteInternal(
   el: HTMLElement,
@@ -59,18 +37,19 @@ export async function handleImagePasteInternal(
     console.info('[SecureGPT] Image paste detected, running OCR scan…')
     showBanner('loading', 'FINANCIAL', 0)
 
-    const result = await new Promise<DetectionResult>((resolve) => {
-      chrome.runtime.sendMessage(
-        { type: 'DETECT_PII_IMAGE', imgUrl, config: currentPolicy },
-        (res) => {
-          if (chrome.runtime.lastError || !res) {
-            resolve({ hasFindings: false, entities: [], tier: 'ocr', processingTimeMs: 0, inputLength: 0 })
-          } else {
-            resolve(res)
-          }
-        }
-      )
-    })
+    const res = await sendMsgWithTimeout<DetectionResult>({
+      type: 'DETECT_PII_IMAGE',
+      imgUrl,
+      config: currentPolicy
+    }, 20000)
+
+    const result: DetectionResult = res || {
+      hasFindings: false,
+      entities: [],
+      tier: 'ocr',
+      processingTimeMs: 0,
+      inputLength: 0
+    }
 
     if (!isScanningEnabled()) {
       await dispatchImagePaste(el, imgUrl)
@@ -81,22 +60,25 @@ export async function handleImagePasteInternal(
       const { action, topEntity } = getMostRestrictiveAction(result.entities, currentPolicy)
       console.info(`[SecureGPT] OCR found ${result.entities.length} entities. Policy Action: ${action} (${topEntity.category})`)
 
-      if (action === 'BLOCK') {
-        await clearAttachments()
-        showBanner('block', topEntity.category, result.entities.length)
-        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
-        void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)
-        return
-      }
-
-      console.info(`[SecureGPT] Redacting ${result.entities.length} entities before upload…`)
-      const baseImg = result.rotatedImageUrl || imgUrl
-      const redactedUrl = await applyImageMasking(baseImg, result.entities)
+      console.info(`[SecureGPT] Redacting ${result.entities.length} entities before prompt injection…`)
+      const redactedUrl = await applyImageMasking(imgUrl, result.entities)
       if (!isScanningEnabled()) {
         await dispatchImagePaste(el, imgUrl)
         return
       }
-      ocrCache.set(redactedUrl, result.entities)
+
+      if (action === 'BLOCK') {
+        ocrCache.set(redactedUrl, result.entities)
+        const onBannerClick = () => showShieldModal(result, currentPolicy, 'Pasted Image', undefined, true, 'Image Upload Blocked')
+        showBanner('block', topEntity.category, result.entities.length, undefined, onBannerClick)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)
+        await dispatchImagePaste(el, redactedUrl)
+        showShieldModal(result, currentPolicy, 'Pasted Image', undefined, true, 'Image Upload Blocked')
+        return
+      }
+
+      ocrCache.set(redactedUrl, [])
 
       if (action === 'MASK') {
         showBanner('mask', topEntity.category, result.entities.length)
@@ -119,7 +101,7 @@ export async function handleImagePasteInternal(
     await dispatchImagePaste(el, imgUrl)
   } finally {
     decPending()
-    if (getPendingCount() === 0) removeBanner()
+    if (getPendingCount() === 0) removeLoadingBanner()
   }
 }
 
@@ -173,19 +155,19 @@ export async function handleFileScan(
     console.info(`[SecureGPT] ${isPdf ? 'PDF' : isOffice ? 'Office doc' : 'Image'} upload detected, scanning: ${file.name}`)
     showBanner(isPdf ? 'loading_pdf' : 'loading', 'FINANCIAL' as PIICategory, 0)
 
-    const result = await new Promise<DetectionResult>((resolve) => {
-      const msgType = isImage ? 'DETECT_PII_IMAGE' : isPdf ? 'DETECT_PII_PDF' : 'DETECT_PII_OFFICE'
-      chrome.runtime.sendMessage(
-        { type: msgType, imgUrl: dataUrl, pdfData: dataUrl, config: currentPolicy, fileName: file.name },
-        (res) => {
-          if (chrome.runtime.lastError || !res) {
-            resolve({ hasFindings: false, entities: [], tier: 'ocr', processingTimeMs: 0, inputLength: 0 })
-          } else {
-            resolve(res)
-          }
-        }
-      )
-    })
+    const msgType = isImage ? 'DETECT_PII_IMAGE' : isPdf ? 'DETECT_PII_PDF' : 'DETECT_PII_OFFICE'
+    const res = await sendMsgWithTimeout<DetectionResult>(
+      { type: msgType, imgUrl: dataUrl, pdfData: dataUrl, config: currentPolicy, fileName: file.name },
+      25000
+    )
+
+    const result: DetectionResult = res || {
+      hasFindings: false,
+      entities: [],
+      tier: 'ocr',
+      processingTimeMs: 0,
+      inputLength: 0
+    }
 
     if (!isScanningEnabled()) {
       await dispatchFilePaste(el, dataUrl, file.name, file.type)
@@ -196,25 +178,14 @@ export async function handleFileScan(
       const { action, topEntity } = getMostRestrictiveAction(result.entities, currentPolicy)
       console.info(`[SecureGPT] Found ${result.entities.length} entities in ${file.name}. Policy Action: ${action} (${topEntity.category})`)
 
-      if (action === 'BLOCK' && !isOffice) {
-        await clearAttachments()
-        showBanner('block', topEntity.category, result.entities.length)
-        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
-        void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)
-        return
-      }
+      let redactedUrl = dataUrl
 
       if (isOffice) {
-        const topEntity = result.entities[0]
-        if (!topEntity) return
-
         if (isMaskableOffice(file)) {
-          const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
-            chrome.runtime.sendMessage(
-              { type: 'REDACT_OFFICE', pdfData: dataUrl, entities: result.entities, fileName: file.name },
-              resolve
-            )
-          })
+          const resp = await sendMsgWithTimeout<{ ok: boolean; redactedPdfData?: string }>(
+            { type: 'REDACT_OFFICE', pdfData: dataUrl, entities: result.entities, fileName: file.name },
+            7000
+          )
           if (!isScanningEnabled()) {
             await dispatchFilePaste(el, dataUrl, file.name, file.type)
             return
@@ -225,54 +196,48 @@ export async function handleFileScan(
             await dispatchFilePaste(el, resp.redactedPdfData, file.name, file.type)
             void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
             void logDetectionEvent({ ...result, hasFindings: true }, 'MASK', topEntity, false)
+            showBanner('mask', topEntity.category, result.entities.length)
             return
           }
-          console.error('[SecureGPT] Office masking failed — falling back to block')
         }
-
-        showBanner('block', topEntity.category, result.entities.length)
-        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
-        void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)
-        return
-      }
-
-      let redactedUrl = dataUrl
-      if (isPdf) {
-        const resp = await new Promise<{ ok: boolean; redactedPdfData?: string }>((resolve) => {
-          chrome.runtime.sendMessage({ type: 'REDACT_PDF', pdfData: dataUrl, entities: result.entities }, resolve)
-        })
-        if (!isScanningEnabled()) {
-          await dispatchFilePaste(el, dataUrl, file.name, file.type)
-          return
-        }
+      } else if (isPdf) {
+        const resp = await sendMsgWithTimeout<{ ok: boolean; redactedPdfData?: string }>(
+          { type: 'REDACT_PDF', pdfData: dataUrl, entities: result.entities },
+          8000
+        )
         if (resp && resp.ok && resp.redactedPdfData) {
           redactedUrl = resp.redactedPdfData
-        } else {
-          console.error('[SecureGPT] PDF pre-upload redaction failed')
-          return
         }
       } else {
-        const baseImg = result.rotatedImageUrl || dataUrl
-        redactedUrl = await applyImageMasking(baseImg, result.entities)
+        redactedUrl = await applyImageMasking(dataUrl, result.entities)
       }
 
       if (!isScanningEnabled()) {
         await dispatchFilePaste(el, dataUrl, file.name, file.type)
         return
       }
-      ocrCache.set(redactedUrl, result.entities)
 
-      if (action === 'MASK') {
-        showBanner('mask', topEntity.category, result.entities.length)
-        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
-        void logDetectionEvent({ ...result, hasFindings: true }, 'MASK', topEntity, false)
-      } else if (action === 'WARN_ALLOW') {
-        showBanner('warn', topEntity.category, result.entities.length)
-        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'warn' })
-        void logDetectionEvent({ ...result, hasFindings: true }, 'WARN_ALLOW', topEntity, true)
+      const isRedactedPng = isPdf && redactedUrl.startsWith('data:image/png')
+      const targetFileName = isRedactedPng ? file.name.replace(/\.pdf$/i, '.png') : file.name
+      const targetMimeType = isRedactedPng ? 'image/png' : file.type
+
+      console.info(`[SecureGPT] Dispatching redacted document (${targetFileName}) to prompt input...`)
+      await dispatchFilePaste(el, redactedUrl, targetFileName, targetMimeType)
+
+      if (action === 'BLOCK') {
+        ocrCache.set(redactedUrl, result.entities)
+        const onBannerClick = () => showShieldModal(result, currentPolicy, file.name, undefined, true, 'Document Upload Blocked')
+        showBanner('block', topEntity.category, result.entities.length, undefined, onBannerClick)
+        void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'block' })
+        void logDetectionEvent({ ...result, hasFindings: true }, 'BLOCK', topEntity, false)
+        showShieldModal(result, currentPolicy, file.name, undefined, true, 'Document Upload Blocked')
+        return
       }
 
-      await dispatchFilePaste(el, redactedUrl, file.name, file.type)
+      ocrCache.set(redactedUrl, [])
+      showBanner('mask', topEntity.category, result.entities.length)
+      void chrome.runtime.sendMessage({ type: 'INCREMENT_STAT', action: 'mask' })
+      void logDetectionEvent({ ...result, hasFindings: true }, 'MASK', topEntity, false)
     } else {
       console.info(`[SecureGPT] ${file.name} is clean. Forwarding original.`)
       ocrCache.set(dataUrl, [])
@@ -286,6 +251,6 @@ export async function handleFileScan(
     }
   } finally {
     decPending()
-    if (getPendingCount() === 0) removeBanner()
+    if (getPendingCount() === 0) removeLoadingBanner()
   }
 }

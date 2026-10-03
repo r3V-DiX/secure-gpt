@@ -6,6 +6,10 @@ import React, { useState, useEffect } from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal/modal'
 import { CheckCircle2, RefreshCw, Server, Laptop, ShieldCheck, ExternalLink, AlertCircle } from 'lucide-react'
 import apiClient from '@/lib/api/client'
+import { useSystemVersion } from '@/contexts/system-version-context'
+import type { VersionItem } from '@/config/versions.data'
+
+const getVersion = (items?: VersionItem[]) => items?.[0]?.version ?? 'NA'
 
 interface VersionData {
   status: string
@@ -27,6 +31,7 @@ interface VersionModalProps {
 }
 
 export function VersionModal({ open, onClose }: VersionModalProps) {
+  const { releases, currentVersion, adminVersion, extensionVersion, refresh: refreshSystemVersion } = useSystemVersion()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<VersionData | null>(null)
@@ -44,11 +49,17 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
     }
   }
 
+  const handleRefresh = async () => {
+    await Promise.all([fetchVersion(), refreshSystemVersion()])
+  }
+
   useEffect(() => {
     if (open) {
       fetchVersion()
     }
   }, [open])
+
+  const activeVersion = data?.version || currentVersion || getVersion(releases?.baseline)
 
   return (
     <Modal open={open} onClose={onClose} size="md">
@@ -75,7 +86,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
             <AlertCircle size={16} className="shrink-0" />
             <span>{error}</span>
           </div>
-        ) : data ? (
+        ) : (
           <div className="space-y-4">
             {/* Primary Status Card */}
             <div className="p-4 rounded-xl bg-[var(--bg-surface-2)] border border-[var(--border)] flex items-center justify-between">
@@ -83,11 +94,11 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                 <span className="text-xs text-[var(--text-muted)] font-medium">Active Release</span>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xl font-bold font-mono text-[var(--text-primary)]">
-                    v{data.version}
+                    v{activeVersion}
                   </span>
-                  <Badge variant="success" >
+                  <Badge variant="success">
                     <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    {data.env}
+                    {data?.env || 'production'}
                   </Badge>
                 </div>
               </div>
@@ -114,7 +125,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Backend API</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.backend ?? data.version}
+                    v{data?.components?.backend ?? currentVersion ?? getVersion(releases?.baseline)}
                   </span>
                 </div>
 
@@ -124,7 +135,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Dashboard</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.dashboard ?? 'Not Available'}
+                    v{data?.components?.dashboard ?? adminVersion ?? getVersion(releases?.admin)}
                   </span>
                 </div>
 
@@ -134,7 +145,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
                     <span className="text-[11px]">Extension</span>
                   </div>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    v{data.components?.extension ?? 'Not Available'}
+                    v{data?.components?.extension ?? extensionVersion ?? getVersion(releases?.extension)}
                   </span>
                 </div>
               </div>
@@ -144,11 +155,11 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
             <div className="p-3 rounded-xl bg-[var(--bg-surface-2)] border border-[var(--border)] text-xs space-y-1.5 font-mono">
               <div className="flex justify-between">
                 <span className="text-[var(--text-muted)]">Git Commit:</span>
-                <span className="text-[var(--text-primary)]">{data.commit}</span>
+                <span className="text-[var(--text-primary)]">{data?.commit || 'latest'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[var(--text-muted)]">Build Time:</span>
-                <span className="text-[var(--text-primary)]">{data.buildTime}</span>
+                <span className="text-[var(--text-primary)]">{data?.buildTime || 'live'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[var(--text-muted)]">API Spec:</span>
@@ -156,7 +167,7 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
               </div>
             </div>
           </div>
-        ) : null}
+        )}
       </ModalBody>
 
       <ModalFooter>
@@ -171,18 +182,11 @@ export function VersionModal({ open, onClose }: VersionModalProps) {
           </a>
 
           <div className="flex items-center gap-2">
-            <Button variant="secondary" type="button"
-              onClick={fetchVersion}
-              disabled={loading}
-
-            >
+            <Button variant="secondary" type="button" onClick={handleRefresh} disabled={loading}>
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               Refresh
             </Button>
-            <Button variant="primary" type="button"
-              onClick={onClose}
-
-            >
+            <Button variant="primary" type="button" onClick={onClose}>
               Close
             </Button>
           </div>

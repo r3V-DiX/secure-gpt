@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────
 // Universal Image Preprocessor
-// Orchestrates DPI scaling, auto-inversion, contrast stretch, sharpening, and Otsu binarization
+// Supports both Browser (Canvas/Otsu) and Node.js environments (Native filters / Python / ImageMagick)
 // ─────────────────────────────────────────────
 
 import type { PreprocessingOptions, ProcessedImageData, ProcessedImageResult } from '../types'
@@ -14,16 +14,27 @@ import {
 } from './filters'
 import { applyOtsuBinarization } from './otsuThreshold'
 import { extractImageDataFromElement, imageDataToDataUrl, loadImageElement } from './canvasAdapter'
+import { NodeImagePreprocessor } from './nodeImagePreprocessor'
+
+const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined'
 
 export class ImagePreprocessor {
   private defaultOptions: Required<PreprocessingOptions> = {
-    enableOtsu: true,
+    enableOtsu: false,
     enableAutoInvert: true,
-    enableSharpening: true,
+    enableSharpening: false,
     enableContrastStretch: true,
     upscaleThreshold: 1000,
     scaleFactor: 2,
     targetRotation: 0,
+  }
+
+  private nodePreprocessor: NodeImagePreprocessor | null = null
+
+  constructor() {
+    if (!isBrowser) {
+      this.nodePreprocessor = new NodeImagePreprocessor()
+    }
   }
 
   /**
@@ -87,7 +98,7 @@ export class ImagePreprocessor {
   }
 
   /**
-   * Preprocesses an image URL or base64 string directly from the browser/DOM.
+   * Preprocesses an image URL, base64 string, or file path.
    */
   async processUrl(
     imageUrl: string,
@@ -95,13 +106,27 @@ export class ImagePreprocessor {
   ): Promise<ProcessedImageResult> {
     const opts = { ...this.defaultOptions, ...options }
 
+    if (!isBrowser && this.nodePreprocessor) {
+      const nodeRes = await this.nodePreprocessor.preprocessImage(imageUrl, opts)
+      return {
+        url: nodeRes.dataUrl,
+        imageData: { width: 0, height: 0, data: new Uint8ClampedArray(0) },
+        scale: nodeRes.scale,
+        rotation: nodeRes.rotation,
+        isDarkMode: false,
+        optimalThreshold: 128,
+      }
+    }
+
     try {
       const img = await loadImageElement(imageUrl)
-      const scale = (img.width < opts.upscaleThreshold || img.height < opts.upscaleThreshold)
+      const scale = Math.max(img.width, img.height) < opts.upscaleThreshold
         ? opts.scaleFactor
         : 1
 
-      const { imageData } = extractImageDataFromElement(img, scale)
+      // Coordinates map back by scale/rotation only; do not introduce an
+      // untracked border offset into every redaction box.
+      const { imageData } = extractImageDataFromElement(img, scale, 0)
       const processed = this.processBuffer(imageData, opts)
 
       return {
