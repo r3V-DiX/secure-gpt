@@ -26,18 +26,21 @@ async function initializePipeline(): Promise<void> {
   initPromise = (async () => {
     const tasks: Promise<void>[] = []
     if (regexTier.enabled) tasks.push(regexTier.initialize())
-    if (nerTier.enabled) tasks.push(nerTier.initialize())
-    if (ocrTier.enabled) tasks.push(ocrTier.initialize())
     await Promise.all(tasks)
   })()
 
-  return initPromise
+  try { await initPromise } catch (error) { initPromise = null; throw error }
+}
+
+export async function warmDocumentDetection(): Promise<void> {
+  await Promise.all([initializePipeline(), nerTier.initialize(), ocrTier.initialize()])
 }
 
 // ─── Main export ──────────────────────────────
 export async function detectPII(
   text: string,
-  config: PIIConfig
+  config: PIIConfig,
+  options?: { strict?: boolean; signal?: AbortSignal; onFindings?: (entities: PIIEntity[]) => void }
 ): Promise<DetectionResult> {
   const startTime = performance.now()
 
@@ -45,14 +48,16 @@ export async function detectPII(
     return buildResult([], 'regex', startTime, text)
   }
 
+  options?.signal?.throwIfAborted()
   await initializePipeline()
 
   const regexEntities = regexTier.enabled
-    ? await regexTier.run(text, config)
+    ? await regexTier.run(text, config, options?.strict)
     : []
+  options?.onFindings?.(applyAllowlist(regexEntities, config))
 
   let maskedText = text
-  if (nerTier.enabled && regexEntities.length > 0) {
+  if (!options?.strict && nerTier.enabled && regexEntities.length > 0) {
     for (const entity of regexEntities) {
       const length = entity.endIndex - entity.startIndex
       const spaces = ' '.repeat(length)
@@ -61,12 +66,14 @@ export async function detectPII(
   }
 
   const nerEntities = nerTier.enabled
-    ? await nerTier.run(maskedText, config)
+    ? await nerTier.run(maskedText, config, options?.strict, options?.signal)
     : []
+  options?.onFindings?.(applyAllowlist(nerEntities, config))
 
   const ocrEntities: PIIEntity[] = []
 
-  const merged = mergeEntities(regexEntities, nerEntities, ocrEntities)
+  options?.signal?.throwIfAborted()
+  const merged = options?.strict ? [...regexEntities, ...nerEntities] : mergeEntities(regexEntities, nerEntities, ocrEntities)
   const filtered = applyAllowlist(merged, config)
   const tier = getHighestTier(filtered)
 
@@ -76,7 +83,8 @@ export async function detectPII(
 // ─── OCR entry point (image input) ────────────
 export async function detectPIIFromImage(
   imageData: string,
-  config: PIIConfig
+  config: PIIConfig,
+  options?: { strict?: boolean; signal?: AbortSignal; onFindings?: (entities: PIIEntity[]) => void }
 ): Promise<DetectionResult> {
   const startTime = performance.now()
 
@@ -84,20 +92,24 @@ export async function detectPIIFromImage(
     return buildResult([], 'ocr', startTime, '')
   }
 
+  options?.signal?.throwIfAborted()
   await initializePipeline()
 
-  const { rawText, ocrData, severityFloor, scale, rotation, imgWidth, imgHeight } = await ocrTier.runOnImage(imageData, config)
+  const { rawText, ocrData, severityFloor, scale, rotation, imgWidth, imgHeight, confidence } = await ocrTier.runOnImage(imageData, config, options?.signal)
+  if (options?.strict && confidence < 50) throw new Error('DOCUMENT_UNREADABLE_IMAGE')
 
   if (!rawText) {
+    if (options?.strict) throw new Error('DOCUMENT_UNREADABLE_IMAGE')
     return buildResult([], 'ocr', startTime, '')
   }
 
   const regexEntities = regexTier.enabled
-    ? await regexTier.run(rawText, config)
+    ? await regexTier.run(rawText, config, options?.strict)
     : await Promise.resolve<PIIEntity[]>([])
+  options?.onFindings?.(applyAllowlist(regexEntities, config))
 
   let maskedRawText = rawText
-  if (nerTier.enabled && regexEntities.length > 0) {
+  if (!options?.strict && nerTier.enabled && regexEntities.length > 0) {
     for (const entity of regexEntities) {
       const length = entity.endIndex - entity.startIndex
       const spaces = ' '.repeat(length)
@@ -106,10 +118,12 @@ export async function detectPIIFromImage(
   }
 
   const nerEntities = nerTier.enabled
-    ? await nerTier.run(maskedRawText, config)
+    ? await nerTier.run(maskedRawText, config, options?.strict, options?.signal)
     : await Promise.resolve<PIIEntity[]>([])
+  options?.onFindings?.(applyAllowlist(nerEntities, config))
 
-  const merged = mergeEntities(regexEntities, nerEntities, [])
+  options?.signal?.throwIfAborted()
+  const merged = options?.strict ? [...regexEntities, ...nerEntities] : mergeEntities(regexEntities, nerEntities, [])
   const ocrEntities = ocrTier.mapEntitiesToBboxes(merged, ocrData, rawText, severityFloor, scale, rotation, imgWidth, imgHeight)
 
   const filtered = applyAllowlist(ocrEntities, config)

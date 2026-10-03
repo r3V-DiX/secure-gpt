@@ -29,7 +29,7 @@ export class OCRTier extends BaseTier {
   /**
    * Run OCR on image with advanced preprocessing, multi-pass segmentation, and error recovery.
    */
-  async runOnImage(imageUrl: string, config: PIIConfig): Promise<{
+  async runOnImage(imageUrl: string, config: PIIConfig, signal?: AbortSignal): Promise<{
     rawText: string
     ocrData: any
     isConfidential: boolean
@@ -39,9 +39,10 @@ export class OCRTier extends BaseTier {
     rotation: number
     imgWidth: number
     imgHeight: number
+    confidence: number
   }> {
     try {
-      const result = await this.pipeline.processImage(imageUrl)
+      const result = await this.pipeline.processImage(imageUrl, { signal })
 
       // Check if downstream regex confirms PII findings in the extracted / repaired text
       const regexTier = new RegexTier()
@@ -58,20 +59,12 @@ export class OCRTier extends BaseTier {
         rotation: result.rotation,
         imgWidth: result.imgWidth,
         imgHeight: result.imgHeight,
+        confidence: result.confidence,
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err ?? 'Unknown OCR error')
       console.error('[OCRTier] OCR processing failed:', msg)
-      return {
-        rawText: '',
-        ocrData: null,
-        isConfidential: false,
-        severityFloor: 'medium',
-        scale: 1,
-        rotation: 0,
-        imgWidth: 0,
-        imgHeight: 0,
-      }
+      throw new Error('OCR_PROCESSING_FAILED')
     }
   }
 
